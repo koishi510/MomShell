@@ -3,12 +3,27 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    if: |
+      !contains(github.event.head_commit.message, 'docs:') &&
+      !contains(github.event.head_commit.message, 'chore:') &&
+      !contains(github.event.head_commit.message, '[skip ci]')
 
     steps:
       - uses: actions/checkout@v4
