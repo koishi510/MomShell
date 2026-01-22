@@ -8,7 +8,7 @@
 
 ### 1.1 安装 uv 包管理器
 
-本项目使用 **uv** 进行 Python 版本管理与依赖锁定。请根据您的操作系统执行相应命令。
+本项目使用 uv 进行 Python 版本管理与依赖锁定。请根据您的操作系统执行相应命令。
 
 - **Linux / macOS**:
   ```bash
@@ -75,10 +75,12 @@ uv run pre-commit install
 
 ### 4.1 每日同步
 
-在开始编写代码前，请务必执行以下操作以同步远程代码与依赖环境：
+在开始编写代码前，请务必更新本地的开发分支。建议使用 `rebase` 模式拉取远程代码，以保持提交历史的线性整洁：
 
 ```bash
-git pull
+# 切换到 dev 分支并拉取最新代码
+git checkout dev
+git pull --rebase origin dev
 uv sync
 ```
 
@@ -146,11 +148,54 @@ uv sync
 3.  **质量管控**: 代码须通过 Linter 静态分析，杜绝未使用的变量、高风险语法及过时的 Python 特性。
 4.  **类型安全**: 必须编写类型提示 (Type Hints)，并通过 Mypy 静态类型检查以确保逻辑稳健。
 
+### 5.4 提交信息规范 (Commit Convention)
+
+为配合 CI/CD 自动化流程及节省构建资源，所有 Commit Message 必须遵循 Conventional Commits 规范。格式为 `type: description`。
+
+| 类型 (Type)  | 说明                      | CI 行为          |
+| :----------- | :------------------------ | :--------------- |
+| **feat**     | 新增功能                  | 触发构建与测试   |
+| **fix**      | 修复 Bug                  | 触发构建与测试   |
+| **refactor** | 代码重构 (无逻辑变更)     | 触发构建与测试   |
+| **docs**     | 仅修改文档 (README, 注释) | **跳过 CI 构建** |
+| **chore**    | 构建配置或工具变动        | **跳过 CI 构建** |
+
+### 5.5 分支管理与 Pull Request 流程
+
+本项目采用 **双主分支策略** (`main` 为生产分支，`dev` 为开发集成分支)。
+
+1.  **分支结构与命名**:
+    - **dev**: 日常开发的主干分支，所有新功能分支应基于此分支创建。
+    - **main**: 仅用于发布生产版本，严禁直接推送。
+    - **Feature 分支**: 命名为 `feat/功能名称` 或 `fix/问题描述`。
+
+2.  **同步与变基 (Rebase)**:
+    - 为保持提交历史的线性, **不要在Feature分支上使用Merge合并dev代码**。
+    - 在提交 Pull Request 前，必须将本地 Feature 分支变基 (Rebase) 到最新的 `dev` 分支：
+      ```bash
+      git fetch origin
+      git rebase origin/dev
+      ```
+    - 如遇冲突，请在本地解决冲突后继续变基过程。
+
+3.  **提交流程**:
+    - 确保本地 `uv run pytest` 全部通过。
+    - 推送分支至远程仓库（如使用了 rebase，可能需要 `git push --force-with-lease`）。
+    - 创建 Pull Request，**目标分支必须选择 `dev`**。
+
+4.  **合并标准**:
+    - **CI 检查**: 所有自动化测试与 Linter 检查必须通过。
+    - **代码评审**: 必须获得至少一位管理员的批准 (Approve) 方可合并。
+
 ## 6. 常见问题排查
 
-- **Q: 找不到 `uv` 命令？**
+- **Q: 找不到 uv 命令？**
   - A: 请检查是否配置了环境变量或未重启终端。Windows 用户请尝试以管理员身份运行 PowerShell。
 - **Q: VS Code 代码提示报错？**
   - A: 请确认 IDE 右下角的 Python 解释器已选择 `.venv` 目录下的虚拟环境，而非系统全局 Python。
 - **Q: 提交代码被 Git 拒绝？**
   - A: 请仔细阅读终端报错信息。通常是因为未通过 Pre-commit 检查（如格式错误或遗留了调试代码）。Ruff 通常会自动修复格式问题，您只需再次执行 `git add` 并 `git commit` 即可。
+
+```
+
+```
