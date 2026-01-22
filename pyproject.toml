@@ -10,8 +10,11 @@ dependencies = []
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv]
-dev-dependencies = [
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[dependency-groups]
+dev = [
     "ruff>=0.3.0",
     "pre-commit>=3.6.0",
     "mypy>=1.8.0",
@@ -20,13 +23,7 @@ dev-dependencies = [
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-exclude = [
-    ".git",
-    ".venv",
-    "__pycache__",
-    "build",
-    "dist",
-]
+exclude = [".git", ".venv", "__pycache__", "build", "dist"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP"]
