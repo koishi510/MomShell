@@ -123,7 +123,7 @@ uv sync
   ```bash
   uv run ruff check . --fix
   ```
-- **单元测试**:
+- **单元测试 (可选)**:
   ```bash
   uv run pytest
   ```
