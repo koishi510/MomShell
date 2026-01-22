@@ -2,14 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main]
-    paths-ignore:
+    branches:
+      - "**"
   pull_request:
-    branches: [main]
-    paths-ignore:
+    branches:
+      - "**"
 
 jobs:
-  build:
+  cq:
+    name: Code Quality & Test
     runs-on: ubuntu-latest
 
     if: |
