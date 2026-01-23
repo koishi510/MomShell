@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from app.api.routes import exercises, progress, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
+from app.services.chat import router as companion_router
 
 settings = get_settings()
 
@@ -26,7 +27,7 @@ def preload_mediapipe() -> None:
     """Preload MediaPipe to avoid blocking during WebSocket handling."""
     print("[Startup] Preloading MediaPipe...")
     try:
-        from app.recovery_coach.pose.detector import PoseDetector
+        from app.services.rehab.pose.detector import PoseDetector
 
         # Create and close a detector to trigger model download and initialization
         detector = PoseDetector()
@@ -56,7 +57,11 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=[
+        "http://localhost:3000",  # Next.js frontend
+        "http://127.0.0.1:3000",
+        "*",  # In production, remove this and specify exact origins
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -73,6 +78,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 app.include_router(websocket.router, prefix="/api")
 app.include_router(exercises.router, prefix="/api")
 app.include_router(progress.router, prefix="/api")
+app.include_router(companion_router, prefix="/api/v1")
 
 
 @app.get("/", response_class=HTMLResponse)

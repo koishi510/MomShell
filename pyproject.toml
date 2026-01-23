@@ -30,6 +30,8 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "greenlet>=3.3.0",
     "langchain-openai>=1.1.7",
+    # AI Chat (Companion)
+    "zhipuai>=2.1.5",
 ]
 
 [build-system]
