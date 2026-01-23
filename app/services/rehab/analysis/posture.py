@@ -1,5 +1,7 @@
 """Posture analysis module for exercise form evaluation."""
 
+from app.schemas.exercise import AngleRequirement, Exercise, PhaseRequirement
+from app.schemas.pose import Keypoint, PoseAnalysisResult, PoseData
 from app.services.rehab.pose.keypoints import (
     calculate_angle,
     get_hip_angle,
@@ -8,8 +10,6 @@ from app.services.rehab.pose.keypoints import (
     get_spine_alignment,
     is_lying_down,
 )
-from app.schemas.exercise import AngleRequirement, Exercise, PhaseRequirement
-from app.schemas.pose import Keypoint, PoseAnalysisResult, PoseData
 
 
 class PostureAnalyzer:
