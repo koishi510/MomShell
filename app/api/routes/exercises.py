@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.recovery_coach.exercises.library import (
+from app.services.rehab.exercises.library import (
     get_all_exercises,
     get_all_sessions,
     get_exercise,
