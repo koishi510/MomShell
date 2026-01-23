@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MomShell - AI 康复教练</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🌸</span>
+                <span class="logo-text">MomShell</span>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-view="exercises">动作库</button>
+                <button class="nav-btn" data-view="progress">我的进度</button>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Exercise Selection View -->
+            <section id="exercises-view" class="view active">
+                <h2>康复动作</h2>
+                <div class="exercise-categories">
+                    <button class="category-btn active" data-category="all">全部</button>
+                    <button class="category-btn" data-category="breathing">呼吸训练</button>
+                    <button class="category-btn" data-category="pelvic_floor">盆底肌</button>
+                    <button class="category-btn" data-category="diastasis_recti">腹直肌修复</button>
+                    <button class="category-btn" data-category="posture">体态矫正</button>
+                    <button class="category-btn" data-category="strength">力量训练</button>
+                </div>
+                <div id="exercise-list" class="exercise-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Progress View -->
+            <section id="progress-view" class="view">
+                <h2>我的进度</h2>
+                <div class="progress-summary">
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-sessions">0</span>
+                        <span class="stat-label">训练次数</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="current-streak">0</span>
+                        <span class="stat-label">连续天数</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-minutes">0</span>
+                        <span class="stat-label">训练分钟</span>
+                    </div>
+                </div>
+                <div class="strength-metrics">
+                    <h3>力量恢复进度</h3>
+                    <div id="metrics-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                <div class="achievements">
+                    <h3>成就勋章</h3>
+                    <div id="achievements-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Coaching Session View -->
+            <section id="session-view" class="view">
+                <div class="session-header">
+                    <h2 id="session-exercise-name">动作名称</h2>
+                    <button id="end-session-btn" class="btn btn-danger">结束训练</button>
+                </div>
+
+                <div class="session-content">
+                    <!-- Video Area -->
+                    <div class="video-area">
+                        <div class="video-container">
+                            <video id="local-video" autoplay playsinline muted></video>
+                            <canvas id="pose-canvas"></canvas>
+                            <div class="video-overlay">
+                                <div class="phase-indicator" id="phase-indicator">准备中...</div>
+                                <div class="score-display" id="score-display">
+                                    <span class="score-value">--</span>
+                                    <span class="score-label">得分</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Panel -->
+                    <div class="info-panel">
+                        <!-- Progress -->
+                        <div class="session-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="session-progress-bar"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span>第 <span id="current-set">1</span>/<span id="total-sets">3</span> 组</span>
+                                <span>第 <span id="current-rep">1</span>/<span id="total-reps">10</span> 次</span>
+                            </div>
+                        </div>
+
+                        <!-- Current Phase -->
+                        <div class="current-phase">
+                            <h4>当前阶段</h4>
+                            <p id="phase-description">准备开始</p>
+                            <ul id="phase-cues" class="phase-cues">
+                                <!-- Cues populated dynamically -->
+                            </ul>
+                        </div>
+
+                        <!-- Feedback Area -->
+                        <div class="feedback-area">
+                            <div class="feedback-message" id="feedback-message">
+                                准备开始
+                            </div>
+                        </div>
+
+                        <!-- Control Buttons -->
+                        <div class="session-controls">
+                            <button id="start-btn" class="btn btn-primary btn-large">开始训练</button>
+                            <button id="pause-btn" class="btn btn-secondary hidden">暂停</button>
+                            <button id="resume-btn" class="btn btn-primary hidden">继续</button>
+                            <button id="rest-btn" class="btn btn-secondary hidden">休息一下</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Session Complete Modal -->
+            <div id="session-complete-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>做得很棒！</h2>
+                    <div class="session-summary">
+                        <div class="summary-stat">
+                            <span class="summary-value" id="summary-score">--</span>
+                            <span class="summary-label">平均得分</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="summary-value" id="summary-reps">--</span>
+                            <span class="summary-label">完成次数</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="summary-value" id="summary-duration">--</span>
+                            <span class="summary-label">训练时长</span>
+                        </div>
+                    </div>
+                    <div id="new-achievements" class="new-achievements hidden">
+                        <h3>获得新成就！</h3>
+                        <div id="achievements-earned"></div>
+                    </div>
+                    <button id="close-modal-btn" class="btn btn-primary">继续</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
