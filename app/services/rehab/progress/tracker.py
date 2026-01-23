@@ -2,15 +2,15 @@
 
 from datetime import datetime
 
-from app.services.rehab.progress.achievements import (
-    create_achievement_system,
-)
 from app.schemas.progress import (
     Achievement,
     ExerciseProgress,
     SessionRecord,
     StrengthMetric,
     UserProgress,
+)
+from app.services.rehab.progress.achievements import (
+    create_achievement_system,
 )
 
 

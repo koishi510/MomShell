@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.schemas.exercise import Exercise, ExerciseCategory, ExerciseSession
 from app.services.rehab.exercises.library import (
     get_all_exercises,
     get_all_sessions,
@@ -9,7 +10,6 @@ from app.services.rehab.exercises.library import (
     get_exercises_by_category,
     get_session,
 )
-from app.schemas.exercise import Exercise, ExerciseCategory, ExerciseSession
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 

@@ -5,10 +5,10 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 
 from app.core.config import get_settings
-from app.services.rehab.analysis.safety import SafetyAlert, SafetyAlertLevel
 from app.schemas.exercise import Exercise, PhaseRequirement
 from app.schemas.feedback import FeedbackMessage, FeedbackType
 from app.schemas.pose import PoseAnalysisResult
+from app.services.rehab.analysis.safety import SafetyAlert, SafetyAlertLevel
 
 settings = get_settings()
 

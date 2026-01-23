@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-from app.services.rehab.progress.tracker import create_progress_tracker
 from app.schemas.progress import UserProgress
+from app.services.rehab.progress.tracker import create_progress_tracker
 
 router = APIRouter(prefix="/progress", tags=["progress"])
 
