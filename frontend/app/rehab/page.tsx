@@ -13,6 +13,16 @@ const WS_BASE = API_BASE.replace('http', 'ws');
 const FRAME_RATE = 8;
 const USER_ID = 'default_user';
 
+// Phase names mapping (module-level to avoid recreation on each render)
+const PHASE_NAMES: Record<string, string> = {
+  preparation: '准备',
+  inhale: '吸气',
+  exhale: '呼气',
+  hold: '保持',
+  release: '放松',
+  rest: '休息',
+};
+
 // Types
 interface Exercise {
   id: string;
@@ -104,6 +114,7 @@ export default function RehabPage() {
   const audioQueueRef = useRef<string[]>([]);
   const isPlayingAudioRef = useRef(false);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const processAudioQueueRef = useRef<() => void>(() => {});
 
   // Category names
   const categoryNames: Record<string, string> = {
@@ -119,15 +130,6 @@ export default function RehabPage() {
     beginner: '初级',
     intermediate: '中级',
     advanced: '高级',
-  };
-
-  const phaseNames: Record<string, string> = {
-    preparation: '准备',
-    inhale: '吸气',
-    exhale: '呼气',
-    hold: '保持',
-    release: '放松',
-    rest: '休息',
   };
 
   const metricNames: Record<string, string> = {
@@ -198,26 +200,31 @@ export default function RehabPage() {
       audio.onended = () => {
         isPlayingAudioRef.current = false;
         currentAudioRef.current = null;
-        setTimeout(processAudioQueue, 500);
+        setTimeout(() => processAudioQueueRef.current(), 500);
       };
 
       audio.onerror = () => {
         isPlayingAudioRef.current = false;
         currentAudioRef.current = null;
-        setTimeout(processAudioQueue, 100);
+        setTimeout(() => processAudioQueueRef.current(), 100);
       };
 
       audio.play().catch(() => {
         isPlayingAudioRef.current = false;
         currentAudioRef.current = null;
-        processAudioQueue();
+        processAudioQueueRef.current();
       });
     } catch (error) {
       console.error('Failed to create audio:', error);
       isPlayingAudioRef.current = false;
-      processAudioQueue();
+      processAudioQueueRef.current();
     }
   }, []);
+
+  // Keep ref updated with latest function
+  useEffect(() => {
+    processAudioQueueRef.current = processAudioQueue;
+  }, [processAudioQueue]);
 
   const playAudio = useCallback((base64Data: string) => {
     audioQueueRef.current.push(base64Data);
@@ -322,7 +329,7 @@ export default function RehabPage() {
               totalSets: stateData.progress.total_sets || 3,
               currentRep: stateData.progress.current_rep || 1,
               totalReps: stateData.progress.total_reps || 10,
-              currentPhase: phaseNames[stateData.progress.current_phase] || stateData.progress.current_phase,
+              currentPhase: PHASE_NAMES[stateData.progress.current_phase] || stateData.progress.current_phase,
             });
           }
           if (stateData.analysis) {
@@ -361,7 +368,7 @@ export default function RehabPage() {
         setFeedback({ text: data.message, type: 'info' });
         break;
     }
-  }, [displayAnnotatedFrame, playAudio, stopFrameSending, phaseNames]);
+  }, [displayAnnotatedFrame, playAudio, stopFrameSending]);
 
   // WebSocket connection
   const connectWebSocket = useCallback((exerciseId: string) => {
@@ -486,6 +493,7 @@ export default function RehabPage() {
 
   // Initialize
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data fetch is a valid pattern
     fetchExercises();
   }, [fetchExercises]);
 
