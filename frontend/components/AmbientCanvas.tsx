@@ -7,8 +7,8 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import type { VisualMetadata, ColorTone } from '@/types/companion';
-import { COLOR_TONE_MAP } from '@/types/companion';
+import type { VisualMetadata, ColorTone } from '../types/companion';
+import { COLOR_TONE_MAP } from '../types/companion';
 
 interface AmbientCanvasProps {
   visualState: VisualMetadata | null;

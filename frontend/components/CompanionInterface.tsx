@@ -7,7 +7,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCompanion } from '@/hooks/useCompanion';
+import { useCompanion } from '../hooks/useCompanion';
 import { AmbientCanvas } from './AmbientCanvas';
 import { ResponseText } from './ResponseText';
 import { InputArea } from './InputArea';
