@@ -41,3 +41,17 @@ repos:
         language: system
         files: ^pyproject\.toml$
         pass_filenames: false
+
+      - id: frontend-eslint
+        name: Frontend ESLint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: false
+
+      - id: frontend-typecheck
+        name: Frontend TypeScript check
+        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false
