@@ -1,3 +1,9 @@
+# =============================================================================
+# MomShell Backend (Python/FastAPI)
+# =============================================================================
+# For frontend, see frontend/Dockerfile
+# =============================================================================
+
 FROM python:3.11.5-slim-bookworm AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
