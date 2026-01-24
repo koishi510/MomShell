@@ -1,11 +1,11 @@
 """Community module for MomShell."""
 
 from .enums import (
+    PROFESSIONAL_ROLES,
     CertificationStatus,
     ChannelType,
     ContentStatus,
     ModerationResult,
-    PROFESSIONAL_ROLES,
     SensitiveCategory,
     UserRole,
 )

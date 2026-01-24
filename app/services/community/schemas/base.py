@@ -5,7 +5,7 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
-from ..enums import CertificationStatus, UserRole
+from ..enums import UserRole
 
 T = TypeVar("T")
 

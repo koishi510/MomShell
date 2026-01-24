@@ -4,9 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from ..dependencies import (
     AdminUser,
-    CommunityServiceDep,
     DbSession,
-    OptionalUser,
 )
 from ..schemas import TagCreate, TagDetail, TagListItem, TagUpdate
 
@@ -22,9 +20,10 @@ async def list_tags(
 ) -> list[TagListItem]:
     """Get list of tags."""
     from sqlalchemy import select
+
     from ..models import Tag
 
-    query = select(Tag).where(Tag.is_active == True)
+    query = select(Tag).where(Tag.is_active.is_(True))
 
     if is_featured is not None:
         query = query.where(Tag.is_featured == is_featured)
@@ -56,11 +55,12 @@ async def list_hot_tags(
 ) -> list[TagListItem]:
     """Get hot tags sorted by question count."""
     from sqlalchemy import select
+
     from ..models import Tag
 
     query = (
         select(Tag)
-        .where(Tag.is_active == True)
+        .where(Tag.is_active.is_(True))
         .order_by(Tag.question_count.desc())
         .limit(limit)
     )
@@ -115,6 +115,7 @@ async def create_tag(
 ) -> TagDetail:
     """Create a new tag (admin only)."""
     from sqlalchemy import select
+
     from ..models import Tag
 
     # Check if tag already exists

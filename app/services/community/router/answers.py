@@ -111,8 +111,9 @@ async def create_answer(
     answer = await service.create_answer(db, question_id, answer_in, current_user)
 
     # Build response
-    from ..schemas import AuthorInfo
     import json
+
+    from ..schemas import AuthorInfo
 
     return AnswerDetail(
         id=answer.id,

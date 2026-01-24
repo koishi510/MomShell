@@ -7,7 +7,7 @@ from ..dependencies import (
     CurrentUser,
     DbSession,
 )
-from ..enums import CertificationStatus, PROFESSIONAL_ROLES
+from ..enums import PROFESSIONAL_ROLES, CertificationStatus
 from ..schemas import (
     CertificationCreate,
     CertificationListItem,
@@ -26,8 +26,8 @@ async def create_certification(
     current_user: CurrentUser,
 ) -> CertificationStatus_:
     """Submit a certification application."""
-    from datetime import datetime
     import json
+
     from ..models import UserCertification
 
     # Check if certification type is valid
@@ -126,7 +126,8 @@ async def list_certifications(
     """Get list of certification applications (admin only)."""
     from sqlalchemy import func, select
     from sqlalchemy.orm import selectinload
-    from ..models import UserCertification, User
+
+    from ..models import UserCertification
 
     query = select(UserCertification).options(selectinload(UserCertification.user))
 
@@ -177,7 +178,8 @@ async def review_certification(
 ) -> CertificationStatus_:
     """Review a certification application (admin only)."""
     from datetime import datetime
-    from ..models import UserCertification, User
+
+    from ..models import User, UserCertification
 
     cert = await db.get(UserCertification, cert_id)
     if not cert:
@@ -186,8 +188,13 @@ async def review_certification(
     if cert.status != CertificationStatus.PENDING:
         raise HTTPException(status_code=400, detail="该申请已被处理")
 
-    if review_in.status not in (CertificationStatus.APPROVED, CertificationStatus.REJECTED):
-        raise HTTPException(status_code=400, detail="审核状态必须是: approved 或 rejected")
+    if review_in.status not in (
+        CertificationStatus.APPROVED,
+        CertificationStatus.REJECTED,
+    ):
+        raise HTTPException(
+            status_code=400, detail="审核状态必须是: approved 或 rejected"
+        )
 
     # Update certification
     cert.status = review_in.status

@@ -10,12 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from .enums import (
+    PROFESSIONAL_ROLES,
     CertificationStatus,
     ChannelType,
     ContentStatus,
     ModerationResult,
-    PROFESSIONAL_ROLES,
-    UserRole,
 )
 from .models import (
     Answer,
@@ -27,23 +26,16 @@ from .models import (
     QuestionTag,
     Tag,
     User,
-    UserCertification,
 )
 from .moderation import ModerationService, get_moderation_service
 from .schemas import (
     AnswerCreate,
-    AnswerDetail,
     AnswerListItem,
     AuthorInfo,
-    CertificationCreate,
-    CollectionCreate,
-    CommentCreate,
-    CommentListItem,
     PaginatedResponse,
     QuestionCreate,
     QuestionDetail,
     QuestionListItem,
-    QuestionUpdate,
     TagInfo,
 )
 
@@ -70,7 +62,10 @@ class CommunityService:
         certification_title = None
         is_certified = False
 
-        if user.certification and user.certification.status == CertificationStatus.APPROVED:
+        if (
+            user.certification
+            and user.certification.status == CertificationStatus.APPROVED
+        ):
             is_certified = True
             parts = []
             if user.certification.hospital_or_institution:
@@ -102,7 +97,9 @@ class CommunityService:
         channel: ChannelType | None = None,
         tag_id: str | None = None,
         status: ContentStatus = ContentStatus.PUBLISHED,
-        sort_by: Literal["created_at", "view_count", "answer_count", "like_count"] = "created_at",
+        sort_by: Literal[
+            "created_at", "view_count", "answer_count", "like_count"
+        ] = "created_at",
         order: Literal["asc", "desc"] = "desc",
         page: int = 1,
         page_size: int = 20,
@@ -147,7 +144,9 @@ class CommunityService:
                 QuestionListItem(
                     id=q.id,
                     title=q.title,
-                    content_preview=q.content[:100] + "..." if len(q.content) > 100 else q.content,
+                    content_preview=q.content[:100] + "..."
+                    if len(q.content) > 100
+                    else q.content,
                     channel=q.channel,
                     author=self._build_author_info(q.author),
                     tags=[self._build_tag_info(t) for t in q.tags],
@@ -215,17 +214,19 @@ class CommunityService:
                 Collection.user_id == current_user_id,
                 Collection.question_id == question_id,
             )
-            is_collected = (await db.execute(collection_query)).scalar_one_or_none() is not None
+            is_collected = (
+                await db.execute(collection_query)
+            ).scalar_one_or_none() is not None
 
         # Count professional vs experience answers
         pro_count_query = select(func.count()).where(
             Answer.question_id == question_id,
-            Answer.is_professional == True,
+            Answer.is_professional.is_(True),
             Answer.status == ContentStatus.PUBLISHED,
         )
         exp_count_query = select(func.count()).where(
             Answer.question_id == question_id,
-            Answer.is_professional == False,
+            Answer.is_professional.is_(False),
             Answer.status == ContentStatus.PUBLISHED,
         )
         professional_count = (await db.execute(pro_count_query)).scalar() or 0
@@ -237,7 +238,9 @@ class CommunityService:
             id=question.id,
             title=question.title,
             content=question.content,
-            content_preview=question.content[:100] + "..." if len(question.content) > 100 else question.content,
+            content_preview=question.content[:100] + "..."
+            if len(question.content) > 100
+            else question.content,
             channel=question.channel,
             status=question.status,
             author=self._build_author_info(question.author),
@@ -296,7 +299,9 @@ class CommunityService:
             channel=question_in.channel,
             status=status,
             published_at=published_at,
-            image_urls=json.dumps(question_in.image_urls) if question_in.image_urls else None,
+            image_urls=json.dumps(question_in.image_urls)
+            if question_in.image_urls
+            else None,
         )
         db.add(question)
         await db.flush()
@@ -307,7 +312,9 @@ class CommunityService:
                 db.add(QuestionTag(question_id=question.id, tag_id=tag_id))
                 # Update tag question count
                 await db.execute(
-                    update(Tag).where(Tag.id == tag_id).values(question_count=Tag.question_count + 1)
+                    update(Tag)
+                    .where(Tag.id == tag_id)
+                    .values(question_count=Tag.question_count + 1)
                 )
 
         # Log moderation result
@@ -379,7 +386,9 @@ class CommunityService:
                     id=a.id,
                     question_id=a.question_id,
                     author=self._build_author_info(a.author),
-                    content_preview=a.content[:200] + "..." if len(a.content) > 200 else a.content,
+                    content_preview=a.content[:200] + "..."
+                    if len(a.content) > 200
+                    else a.content,
                     is_professional=a.is_professional,
                     is_accepted=a.is_accepted,
                     like_count=a.like_count,
@@ -412,7 +421,9 @@ class CommunityService:
         # Check permission for professional channel
         if question.channel == ChannelType.PROFESSIONAL:
             if not self.is_certified_professional(author):
-                raise HTTPException(status_code=403, detail="专业频道仅限认证专业人士回答")
+                raise HTTPException(
+                    status_code=403, detail="专业频道仅限认证专业人士回答"
+                )
 
         # Content moderation
         decision = await self._moderation.moderate_text(answer_in.content, author.id)
@@ -443,7 +454,9 @@ class CommunityService:
             author_role=author.role,
             is_professional=is_professional,
             status=status,
-            image_urls=json.dumps(answer_in.image_urls) if answer_in.image_urls else None,
+            image_urls=json.dumps(answer_in.image_urls)
+            if answer_in.image_urls
+            else None,
         )
         db.add(answer)
 
@@ -507,14 +520,14 @@ class CommunityService:
             await db.delete(existing)
             await db.execute(
                 update(model)
-                .where(model.id == target_id)
-                .values(like_count=model.like_count - 1)
+                .where(model.id == target_id)  # type: ignore[attr-defined]
+                .values(like_count=model.like_count - 1)  # type: ignore[attr-defined]
             )
             await db.commit()
 
             # Get new count
             target = await db.get(model, target_id)
-            return False, target.like_count if target else 0
+            return False, target.like_count if target else 0  # type: ignore[attr-defined]
         else:
             # Like
             db.add(
@@ -526,13 +539,13 @@ class CommunityService:
             )
             await db.execute(
                 update(model)
-                .where(model.id == target_id)
-                .values(like_count=model.like_count + 1)
+                .where(model.id == target_id)  # type: ignore[attr-defined]
+                .values(like_count=model.like_count + 1)  # type: ignore[attr-defined]
             )
             await db.commit()
 
             target = await db.get(model, target_id)
-            return True, target.like_count if target else 1
+            return True, target.like_count if target else 1  # type: ignore[attr-defined]
 
     # ==================== Collection Operations ====================
 
