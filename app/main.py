@@ -14,6 +14,7 @@ from app.api.routes import exercises, progress, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.services.chat import router as companion_router
+from app.services.community import community_router
 
 settings = get_settings()
 
@@ -79,6 +80,7 @@ app.include_router(websocket.router, prefix="/api")
 app.include_router(exercises.router, prefix="/api")
 app.include_router(progress.router, prefix="/api")
 app.include_router(companion_router, prefix="/api/v1")
+app.include_router(community_router, prefix="/api/v1/community")
 
 
 @app.get("/", response_class=HTMLResponse)

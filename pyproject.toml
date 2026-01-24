@@ -32,6 +32,7 @@ dependencies = [
     "langchain-openai>=1.1.7",
     # AI Chat (Companion)
     "zhipuai>=2.1.5",
+    "httpx[socks]>=0.28.1",
 ]
 
 [build-system]
