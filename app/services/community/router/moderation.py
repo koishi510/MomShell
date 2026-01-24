@@ -4,7 +4,6 @@ from fastapi import APIRouter, HTTPException, Query
 
 from ..dependencies import AdminUser, DbSession
 from ..enums import ContentStatus, ModerationResult
-from ..schemas import PaginatedResponse
 
 router = APIRouter(prefix="/moderation", tags=["Community - Moderation"])
 
@@ -18,55 +17,64 @@ async def list_pending_content(
     page_size: int = Query(20, ge=1, le=100),
 ) -> dict:
     """Get list of content pending moderation (admin only)."""
-    from sqlalchemy import select, func
-    from ..models import Question, Answer, Comment
+    from sqlalchemy import select
 
-    items = []
+    from ..models import Answer, Comment, Question
+
+    items: list[dict] = []
 
     # Get pending questions
     if content_type is None or content_type == "question":
-        query = select(Question).where(Question.status == ContentStatus.PENDING_REVIEW)
-        result = await db.execute(query)
+        q_query = select(Question).where(
+            Question.status == ContentStatus.PENDING_REVIEW
+        )
+        result = await db.execute(q_query)
         questions = result.scalars().all()
         for q in questions:
-            items.append({
-                "type": "question",
-                "id": q.id,
-                "author_id": q.author_id,
-                "title": q.title,
-                "content_preview": q.content[:200] if q.content else "",
-                "created_at": q.created_at.isoformat(),
-            })
+            items.append(
+                {
+                    "type": "question",
+                    "id": q.id,
+                    "author_id": q.author_id,
+                    "title": q.title,
+                    "content_preview": q.content[:200] if q.content else "",
+                    "created_at": q.created_at.isoformat(),
+                }
+            )
 
     # Get pending answers
     if content_type is None or content_type == "answer":
-        query = select(Answer).where(Answer.status == ContentStatus.PENDING_REVIEW)
-        result = await db.execute(query)
+        a_query = select(Answer).where(Answer.status == ContentStatus.PENDING_REVIEW)
+        result = await db.execute(a_query)
         answers = result.scalars().all()
         for a in answers:
-            items.append({
-                "type": "answer",
-                "id": a.id,
-                "author_id": a.author_id,
-                "question_id": a.question_id,
-                "content_preview": a.content[:200] if a.content else "",
-                "created_at": a.created_at.isoformat(),
-            })
+            items.append(
+                {
+                    "type": "answer",
+                    "id": a.id,
+                    "author_id": a.author_id,
+                    "question_id": a.question_id,  # type: ignore[attr-defined]
+                    "content_preview": a.content[:200] if a.content else "",
+                    "created_at": a.created_at.isoformat(),
+                }
+            )
 
     # Get pending comments
     if content_type is None or content_type == "comment":
-        query = select(Comment).where(Comment.status == ContentStatus.PENDING_REVIEW)
-        result = await db.execute(query)
+        c_query = select(Comment).where(Comment.status == ContentStatus.PENDING_REVIEW)
+        result = await db.execute(c_query)
         comments = result.scalars().all()
         for c in comments:
-            items.append({
-                "type": "comment",
-                "id": c.id,
-                "author_id": c.author_id,
-                "answer_id": c.answer_id,
-                "content_preview": c.content[:200] if c.content else "",
-                "created_at": c.created_at.isoformat(),
-            })
+            items.append(
+                {
+                    "type": "comment",
+                    "id": c.id,
+                    "author_id": c.author_id,
+                    "answer_id": c.answer_id,  # type: ignore[attr-defined]
+                    "content_preview": c.content[:200] if c.content else "",
+                    "created_at": c.created_at.isoformat(),
+                }
+            )
 
     # Sort by created_at
     items.sort(key=lambda x: x["created_at"], reverse=True)
@@ -95,8 +103,8 @@ async def approve_content(
 ) -> dict:
     """Approve pending content (admin only)."""
     from datetime import datetime
-    import json
-    from ..models import Question, Answer, Comment, ModerationLog
+
+    from ..models import Answer, Comment, ModerationLog, Question
 
     model_map = {
         "question": Question,
@@ -113,11 +121,11 @@ async def approve_content(
     if not content:
         raise HTTPException(status_code=404, detail="内容不存在")
 
-    if content.status != ContentStatus.PENDING_REVIEW:
+    if content.status != ContentStatus.PENDING_REVIEW:  # type: ignore[attr-defined]
         raise HTTPException(status_code=400, detail="内容不在待审核状态")
 
     # Update status
-    content.status = ContentStatus.PUBLISHED
+    content.status = ContentStatus.PUBLISHED  # type: ignore[attr-defined]
     if hasattr(content, "published_at"):
         content.published_at = datetime.utcnow()
 
@@ -134,7 +142,11 @@ async def approve_content(
 
     await db.commit()
 
-    return {"status": "approved", "content_type": content_type, "content_id": content_id}
+    return {
+        "status": "approved",
+        "content_type": content_type,
+        "content_id": content_id,
+    }
 
 
 @router.post("/{content_type}/{content_id}/reject")
@@ -142,12 +154,11 @@ async def reject_content(
     content_type: str,
     content_id: str,
     reason: str | None = None,
-    db: DbSession = None,
-    admin: AdminUser = None,
+    db: DbSession = None,  # type: ignore[assignment]
+    admin: AdminUser = None,  # type: ignore[assignment]
 ) -> dict:
     """Reject pending content (admin only)."""
-    import json
-    from ..models import Question, Answer, Comment, ModerationLog
+    from ..models import Answer, Comment, ModerationLog, Question
 
     model_map = {
         "question": Question,
@@ -164,11 +175,11 @@ async def reject_content(
     if not content:
         raise HTTPException(status_code=404, detail="内容不存在")
 
-    if content.status != ContentStatus.PENDING_REVIEW:
+    if content.status != ContentStatus.PENDING_REVIEW:  # type: ignore[attr-defined]
         raise HTTPException(status_code=400, detail="内容不在待审核状态")
 
     # Update status
-    content.status = ContentStatus.HIDDEN
+    content.status = ContentStatus.HIDDEN  # type: ignore[attr-defined]
 
     # Log moderation
     db.add(
@@ -185,7 +196,11 @@ async def reject_content(
 
     await db.commit()
 
-    return {"status": "rejected", "content_type": content_type, "content_id": content_id}
+    return {
+        "status": "rejected",
+        "content_type": content_type,
+        "content_id": content_id,
+    }
 
 
 @router.get("/logs")
@@ -198,7 +213,8 @@ async def list_moderation_logs(
     page_size: int = Query(20, ge=1, le=100),
 ) -> dict:
     """Get moderation logs (admin only)."""
-    from sqlalchemy import select, func
+    from sqlalchemy import func, select
+
     from ..models import ModerationLog
 
     query = select(ModerationLog)

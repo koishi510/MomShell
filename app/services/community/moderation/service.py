@@ -3,8 +3,8 @@
 from typing import NamedTuple
 
 from ..enums import ModerationResult, SensitiveCategory
+from .crisis import trigger_crisis_intervention
 from .keywords import KeywordFilter
-from .crisis import trigger_crisis_intervention, CRISIS_MESSAGE
 
 
 class ModerationDecision(NamedTuple):

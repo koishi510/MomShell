@@ -7,13 +7,15 @@ from uuid import uuid4
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as SAEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
     UniqueConstraint,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,7 +30,7 @@ from .enums import (
 )
 
 if TYPE_CHECKING:
-    from typing import List
+    pass
 
 
 def generate_uuid() -> str:
@@ -46,9 +48,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
@@ -75,15 +75,15 @@ class User(Base):
     certification: Mapped["UserCertification | None"] = relationship(
         "UserCertification", back_populates="user", uselist=False
     )
-    questions: Mapped["List[Question]"] = relationship(
+    questions: Mapped["list[Question]"] = relationship(
         "Question", back_populates="author"
     )
-    answers: Mapped["List[Answer]"] = relationship("Answer", back_populates="author")
-    comments: Mapped["List[Comment]"] = relationship(
+    answers: Mapped["list[Answer]"] = relationship("Answer", back_populates="author")
+    comments: Mapped["list[Comment]"] = relationship(
         "Comment", back_populates="author", foreign_keys="[Comment.author_id]"
     )
-    likes: Mapped["List[Like]"] = relationship("Like", back_populates="user")
-    collections: Mapped["List[Collection]"] = relationship(
+    likes: Mapped["list[Like]"] = relationship("Like", back_populates="user")
+    collections: Mapped["list[Collection]"] = relationship(
         "Collection", back_populates="user"
     )
 
@@ -93,9 +93,7 @@ class UserCertification(Base):
 
     __tablename__ = "user_certifications"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), unique=True
     )
@@ -150,11 +148,11 @@ class Tag(Base):
 
     __tablename__ = "tags"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     name: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    slug: Mapped[str] = mapped_column(String(50), unique=True, index=True)  # URL-friendly
+    slug: Mapped[str] = mapped_column(
+        String(50), unique=True, index=True
+    )  # URL-friendly
     description: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Statistics
@@ -168,7 +166,7 @@ class Tag(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    questions: Mapped["List[Question]"] = relationship(
+    questions: Mapped["list[Question]"] = relationship(
         "Question", secondary="question_tags", back_populates="tags"
     )
 
@@ -192,9 +190,7 @@ class Question(Base):
 
     __tablename__ = "questions"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     author_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
@@ -238,10 +234,10 @@ class Question(Base):
 
     # Relationships
     author: Mapped["User"] = relationship("User", back_populates="questions")
-    answers: Mapped["List[Answer]"] = relationship(
+    answers: Mapped["list[Answer]"] = relationship(
         "Answer", back_populates="question", cascade="all, delete-orphan"
     )
-    tags: Mapped["List[Tag]"] = relationship(
+    tags: Mapped["list[Tag]"] = relationship(
         "Tag", secondary="question_tags", back_populates="questions"
     )
 
@@ -251,9 +247,7 @@ class Answer(Base):
 
     __tablename__ = "answers"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     question_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("questions.id", ondelete="CASCADE"), index=True
     )
@@ -292,7 +286,7 @@ class Answer(Base):
     # Relationships
     question: Mapped["Question"] = relationship("Question", back_populates="answers")
     author: Mapped["User"] = relationship("User", back_populates="answers")
-    comments: Mapped["List[Comment]"] = relationship(
+    comments: Mapped["list[Comment]"] = relationship(
         "Comment", back_populates="answer", cascade="all, delete-orphan"
     )
 
@@ -302,9 +296,7 @@ class Comment(Base):
 
     __tablename__ = "comments"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     answer_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("answers.id", ondelete="CASCADE"), index=True
     )
@@ -363,9 +355,7 @@ class Like(Base):
         UniqueConstraint("user_id", "target_type", "target_id", name="uq_user_like"),
     )
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
@@ -390,9 +380,7 @@ class Collection(Base):
         UniqueConstraint("user_id", "question_id", name="uq_user_collection"),
     )
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
@@ -421,9 +409,7 @@ class ModerationLog(Base):
 
     __tablename__ = "moderation_logs"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=generate_uuid
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
 
     # Moderation target (polymorphic)
     target_type: Mapped[str] = mapped_column(

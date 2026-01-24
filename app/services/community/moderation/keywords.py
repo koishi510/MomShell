@@ -124,9 +124,7 @@ class KeywordFilter:
 
         return detected
 
-    def get_matched_keywords(
-        self, content: str
-    ) -> dict[SensitiveCategory, list[str]]:
+    def get_matched_keywords(self, content: str) -> dict[SensitiveCategory, list[str]]:
         """
         Get all matched keywords for each category.
 
