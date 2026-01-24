@@ -10,7 +10,7 @@ from ..dependencies import (
     DbSession,
     OptionalUser,
 )
-from ..enums import ChannelType, ContentStatus
+from ..enums import ChannelType
 from ..schemas import (
     PaginatedResponse,
     QuestionCreate,
@@ -29,7 +29,9 @@ async def list_questions(
     current_user: OptionalUser,
     channel: ChannelType | None = None,
     tag_id: str | None = None,
-    sort_by: Literal["created_at", "view_count", "answer_count", "like_count"] = "created_at",
+    sort_by: Literal[
+        "created_at", "view_count", "answer_count", "like_count"
+    ] = "created_at",
     order: Literal["asc", "desc"] = "desc",
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),

@@ -11,7 +11,8 @@ class CertificationCreate(BaseModel):
     """Request schema for creating a certification."""
 
     certification_type: UserRole = Field(
-        ..., description="Must be one of: certified_doctor, certified_therapist, certified_nurse"
+        ...,
+        description="Must be one of: certified_doctor, certified_therapist, certified_nurse",
     )
     real_name: str = Field(..., min_length=2, max_length=50)
     id_card_number: str | None = Field(None, min_length=18, max_length=18)
@@ -27,9 +28,7 @@ class CertificationCreate(BaseModel):
 class CertificationReview(BaseModel):
     """Request schema for reviewing a certification."""
 
-    status: CertificationStatus = Field(
-        ..., description="Must be: approved, rejected"
-    )
+    status: CertificationStatus = Field(..., description="Must be: approved, rejected")
     review_comment: str | None = Field(None, max_length=500)
     valid_from: datetime | None = None
     valid_until: datetime | None = None

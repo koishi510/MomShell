@@ -2,14 +2,13 @@
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 
 from .models import User
 from .service import CommunityService, get_community_service
-
 
 # Type aliases for dependency injection
 DbSession = Annotated[AsyncSession, Depends(get_db)]

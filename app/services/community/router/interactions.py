@@ -68,7 +68,8 @@ async def get_like_status(
 ) -> LikeStatus:
     """Check if current user has liked a target."""
     from sqlalchemy import select
-    from ..models import Like, Question, Answer, Comment
+
+    from ..models import Answer, Comment, Like, Question
 
     # Check like status
     query = select(Like).where(
@@ -89,7 +90,7 @@ async def get_like_status(
 
     return LikeStatus(
         is_liked=like is not None,
-        like_count=target.like_count if target else 0,
+        like_count=target.like_count if target else 0,  # type: ignore[attr-defined]
     )
 
 
@@ -130,10 +131,12 @@ async def delete_collection(
     collection = await db.get(Collection, collection_id)
     if not collection:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="收藏不存在")
 
     if collection.user_id != current_user.id:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=403, detail="无权操作")
 
     await service.toggle_collection(
@@ -154,5 +157,6 @@ async def list_my_collections(
 ) -> PaginatedResponse[CollectionItem]:
     """Get current user's collections."""
     from fastapi import HTTPException
+
     # TODO: Implement list collections
     raise HTTPException(status_code=501, detail="功能开发中")
