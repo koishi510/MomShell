@@ -257,3 +257,4 @@ ehthumbs.db
 *.temp
 tmp/
 temp/
+*.tsbuildinfo
