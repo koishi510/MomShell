@@ -4,8 +4,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { sendMessage } from '@/lib/api';
-import type { VisualResponse, VisualMetadata } from '@/types/companion';
+import { sendMessage } from '../lib/api';
+import type { VisualResponse, VisualMetadata } from '../types/companion';
 
 interface UseCompanionReturn {
   isLoading: boolean;
