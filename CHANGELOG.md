@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-24
+
+### Changed
+
+#### Architecture Refactoring - Frontend/Backend Separation
+
+- **Backend (FastAPI)**
+  - Migrated to pure API server architecture
+  - Added CORS middleware for cross-origin requests
+  - API routes served under `/api` prefix
+  - Health check endpoint at `/health`
+
+- **Frontend (Next.js)**
+  - New Next.js 16 + React 19 frontend in `frontend/` directory
+  - TailwindCSS 4 for styling
+  - Framer Motion for animations
+  - TypeScript support
+
+### Added
+
+#### Soulful Companion Chat Module (`app/services/chat/`)
+
+- **AI Chat Service**
+  - Zhipu GLM-4 powered emotional companion
+  - Warm, validating, non-judgmental conversation style
+  - Designed specifically for postpartum women support
+  - User profile and conversation memory management
+  - Visual metadata generation for UI effects
+
+- **Chat API**
+  - `POST /api/v1/companion/chat` - Send message and receive AI response
+  - Visual response with color tones and effects
+
+- **Chat Frontend**
+  - `CompanionInterface` component for chat UI
+  - `AmbientCanvas` for visual ambient effects
+  - `InputArea` and `ResponseText` components
+
+### Dependencies
+
+- zhipuai >= 2.1.5 (GLM-4 chat integration)
+- next 16.1.4 (frontend framework)
+- react 19.2.3 (UI library)
+- tailwindcss 4 (styling)
+- framer-motion 12.29.0 (animations)
+
+---
+
 ## [0.1.0] - 2026-01-23
 
 ### Added
