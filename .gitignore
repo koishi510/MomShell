@@ -218,6 +218,8 @@ CLAUDE.md
 node_modules/
 .pnp/
 .pnp.js
+.pnp.cjs
+.yarn/
 
 # Next.js
 .next/
@@ -226,6 +228,33 @@ out/
 # Build
 build/
 dist/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.pem
+.vercel
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env*.local
+
+# Turbo
+.turbo
+
+# ESLint
+.eslintcache
 
 # =============================================================================
 # MomShell Project Specific
@@ -257,4 +286,3 @@ ehthumbs.db
 *.temp
 tmp/
 temp/
-*.tsbuildinfo
