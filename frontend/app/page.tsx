@@ -27,6 +27,15 @@ const features = [
     gradient: 'from-blue-100 to-cyan-100',
     hoverGradient: 'hover:from-blue-200 hover:to-cyan-200',
   },
+  {
+    title: '互助社区',
+    subtitle: 'Community',
+    description: '分享经验，获取专业建议',
+    href: '/community',
+    icon: '👩‍👩‍👧',
+    gradient: 'from-amber-100 to-orange-100',
+    hoverGradient: 'hover:from-amber-200 hover:to-orange-200',
+  },
 ];
 
 export default function HomePage() {
