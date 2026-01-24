@@ -9,8 +9,8 @@ on:
       - "**"
 
 jobs:
-  cq:
-    name: Code Quality & Test
+  python-cq:
+    name: Python Code Quality
     runs-on: ubuntu-latest
 
     if: |
@@ -40,3 +40,42 @@ jobs:
       - run: uv run ruff check . --output-format=github
 
       - run: uv run mypy .
+
+  frontend-cq:
+    name: Frontend Code Quality
+    runs-on: ubuntu-latest
+
+    if: |
+      (github.event_name == 'push' &&
+       !contains(github.event.head_commit.message, 'docs:') &&
+       !contains(github.event.head_commit.message, 'chore:') &&
+       !contains(github.event.head_commit.message, '[skip ci]')) ||
+      (github.event_name == 'pull_request' &&
+       !contains(github.event.pull_request.title, 'docs:') &&
+       !contains(github.event.pull_request.title, 'chore:') &&
+       !contains(github.event.pull_request.title, '[skip ci]'))
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read .nvmrc
+        id: nvmrc
+        run: echo "node_version=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nvmrc.node_version }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
