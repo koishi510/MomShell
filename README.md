@@ -30,8 +30,8 @@ MomShell/
 
 ### Prerequisites
 
-- Node.js >= 18
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
+- [nvm](https://github.com/nvm-sh/nvm) (Node.js version manager)
 
 ### Install uv
 
@@ -41,6 +41,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Windows (PowerShell)
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### Install nvm
+
+```bash
+# Linux / macOS
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+# Windows: use nvm-windows
+# https://github.com/coreybutler/nvm-windows
 ```
 
 ### Installation
@@ -69,6 +79,8 @@ uv sync
 
 ```bash
 cd frontend
+nvm install
+nvm use
 npm install
 ```
 
