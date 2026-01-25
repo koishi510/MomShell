@@ -3,7 +3,7 @@
 Soulful Companion 情感交互服务层
 
 实现 AI 交互逻辑，包括：
-- 智谱 GLM-4 API 调用
+- ModelScope API 调用 (OpenAI 兼容)
 - 用户记忆管理
 - 视觉元数据生成
 """
@@ -15,7 +15,9 @@ import traceback
 import uuid
 from typing import Any
 
-from zhipuai import ZhipuAI
+from openai import OpenAI
+
+from app.core.config import get_settings
 
 from .schemas import (
     ColorTone,
@@ -99,9 +101,14 @@ class CompanionService:
         初始化服务
 
         Args:
-            api_key: 智谱 API Key，如未提供则从环境变量读取
+            api_key: ModelScope API Key，如未提供则从环境变量读取
         """
-        self._api_key = api_key or os.getenv("ZHIPUAI_API_KEY", "")
+        settings = get_settings()
+        self._api_key = (
+            api_key or settings.modelscope_key or os.getenv("MODELSCOPE_KEY", "")
+        )
+        self._base_url = settings.modelscope_base_url
+        self._model = settings.modelscope_model
         # DEBUG: 打印 API key 状态
         print(
             f"[Service] __init__: api_key loaded = {bool(self._api_key)}",
@@ -114,36 +121,39 @@ class CompanionService:
             )
         else:
             print(
-                "[Service] __init__: WARNING - ZHIPUAI_API_KEY is empty or not set!",
+                "[Service] __init__: WARNING - MODELSCOPE_KEY is empty or not set!",
                 file=sys.stderr,
             )
-        self._client: ZhipuAI | None = None
+        self._client: OpenAI | None = None
         self._memory_store: dict[str, ConversationMemory] = {}
         self._profile_store: dict[str, UserProfile] = {}
 
     @property
-    def client(self) -> ZhipuAI:
-        """懒加载 ZhipuAI 客户端"""
+    def client(self) -> OpenAI:
+        """懒加载 OpenAI 客户端 (连接 ModelScope)"""
         if self._client is None:
             if not self._api_key:
                 print(
-                    "[Service] client: ERROR - ZHIPUAI_API_KEY is empty!",
+                    "[Service] client: ERROR - MODELSCOPE_KEY is empty!",
                     file=sys.stderr,
                 )
-                raise ValueError("ZHIPUAI_API_KEY 未配置")
+                raise ValueError("MODELSCOPE_KEY 未配置")
             print(
-                "[Service] client: initializing ZhipuAI client with key...",
+                "[Service] client: initializing OpenAI client with ModelScope...",
                 file=sys.stderr,
             )
             try:
-                self._client = ZhipuAI(api_key=self._api_key)
+                self._client = OpenAI(
+                    api_key=self._api_key,
+                    base_url=self._base_url,
+                )
                 print(
-                    "[Service] client: ZhipuAI client initialized successfully",
+                    "[Service] client: OpenAI client initialized successfully",
                     file=sys.stderr,
                 )
             except Exception as e:
                 print(
-                    f"[Service] client: ERROR initializing ZhipuAI: {e}",
+                    f"[Service] client: ERROR initializing OpenAI client: {e}",
                     file=sys.stderr,
                 )
                 traceback.print_exc(file=sys.stderr)
@@ -281,9 +291,9 @@ class CompanionService:
         print("[Service] chat: calling ZhipuAI API...", file=sys.stderr)
 
         try:
-            # 调用智谱 GLM-4 API (同步调用，可能在 async 中有问题)
+            # 调用 ModelScope API (OpenAI 兼容)
             response = self.client.chat.completions.create(
-                model="glm-4",
+                model=self._model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message.content},
@@ -291,10 +301,10 @@ class CompanionService:
                 temperature=0.7,
                 max_tokens=1024,
             )
-            print("[Service] chat: ZhipuAI response received", file=sys.stderr)
+            print("[Service] chat: ModelScope response received", file=sys.stderr)
         except Exception as e:
             print(
-                f"[Service] chat: ZhipuAI API error: {type(e).__name__}: {e}",
+                f"[Service] chat: ModelScope API error: {type(e).__name__}: {e}",
                 file=sys.stderr,
             )
             traceback.print_exc(file=sys.stderr)

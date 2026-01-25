@@ -1,12 +1,13 @@
-"""MomShell Recovery Coach - Main FastAPI Application."""
+"""MomShell Recovery Coach - Main FastAPI Application (ModelScope Deploy)."""
 
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -22,6 +23,8 @@ settings = get_settings()
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
+# Frontend static files (built from Next.js export)
+FRONTEND_DIR = Path("/app/frontend_dist")
 
 
 def preload_mediapipe() -> None:
@@ -58,24 +61,20 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Next.js frontend
-        "http://127.0.0.1:3000",
-        "*",  # In production, remove this and specify exact origins
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Static files
+# Backend static files (for backend-specific assets)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
-# Include routers
+# Include API routers
 app.include_router(websocket.router, prefix="/api")
 app.include_router(exercises.router, prefix="/api")
 app.include_router(progress.router, prefix="/api")
@@ -83,13 +82,56 @@ app.include_router(companion_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
 
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request) -> HTMLResponse:
-    """Serve the main application page."""
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
 @app.get("/health")
 async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+# Mount frontend static files if exists
+if FRONTEND_DIR.exists():
+    # Mount _next directory for Next.js static assets
+    next_static = FRONTEND_DIR / "_next"
+    if next_static.exists():
+        app.mount("/_next", StaticFiles(directory=str(next_static)), name="next_static")
+
+    # SPA fallback - serve frontend for all non-API routes
+    @app.get("/{full_path:path}", response_class=HTMLResponse)
+    async def serve_spa(request: Request, full_path: str):
+        """Serve frontend SPA for all non-API routes."""
+        # Try to serve the exact file first
+        file_path = FRONTEND_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+
+        # Try with index.html for directory paths (Next.js trailingSlash)
+        if file_path.exists() and file_path.is_dir():
+            index_file = file_path / "index.html"
+            if index_file.exists():
+                return FileResponse(index_file)
+
+        # Try adding .html extension
+        html_file = FRONTEND_DIR / f"{full_path}.html"
+        if html_file.exists():
+            return FileResponse(html_file)
+
+        # Fallback to index.html for SPA routing
+        index_html = FRONTEND_DIR / "index.html"
+        if index_html.exists():
+            return FileResponse(index_html)
+
+        # Final fallback to backend template
+        return templates.TemplateResponse("index.html", {"request": request})
+else:
+    # No frontend build, serve backend template
+    @app.get("/", response_class=HTMLResponse)
+    async def root(request: Request) -> HTMLResponse:
+        """Serve the main application page."""
+        return templates.TemplateResponse("index.html", {"request": request})
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run(app, host="0.0.0.0", port=port)

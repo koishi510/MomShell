@@ -27,8 +27,23 @@ import {
 } from '../../components/coach';
 import type { EnergyMetrics } from '../../types/coach';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const WS_BASE = API_BASE.replace('http', 'ws');
+// 动态获取API和WebSocket基础URL（支持同域部署）
+const getApiBase = () => {
+  if (typeof window === 'undefined') return '';
+  return process.env.NEXT_PUBLIC_API_URL || '';
+};
+
+const getWsBase = () => {
+  if (typeof window === 'undefined') return '';
+  const apiBase = getApiBase();
+  if (apiBase) {
+    return apiBase.replace(/^http/, 'ws');
+  }
+  // 同域部署时，使用当前页面的协议和主机
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}`;
+};
+
 const FRAME_RATE = 20;
 const USER_ID = 'default_user';
 
@@ -152,7 +167,7 @@ export default function RehabPage() {
   // Fetch exercises
   const fetchExercises = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/exercises/`);
+      const response = await fetch(`${getApiBase()}/api/exercises/`);
       const data = await response.json();
       setExercises(data);
     } catch (error) {
@@ -163,7 +178,7 @@ export default function RehabPage() {
   // Fetch progress
   const fetchProgress = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/progress/${USER_ID}/summary`);
+      const response = await fetch(`${getApiBase()}/api/progress/${USER_ID}/summary`);
       const data = await response.json();
       setProgressSummary(data);
     } catch (error) {
@@ -174,7 +189,7 @@ export default function RehabPage() {
   // Fetch achievements
   const fetchAchievements = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/progress/${USER_ID}/achievements`);
+      const response = await fetch(`${getApiBase()}/api/progress/${USER_ID}/achievements`);
       const data = await response.json();
       setAchievements(data);
     } catch (error) {
@@ -429,7 +444,7 @@ export default function RehabPage() {
   // WebSocket connection
   const connectWebSocket = useCallback((exerciseId: string) => {
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const wsUrl = `${WS_BASE}/api/ws/coach/${sessionId}`;
+    const wsUrl = `${getWsBase()}/api/ws/coach/${sessionId}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {

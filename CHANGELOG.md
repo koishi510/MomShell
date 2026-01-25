@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Docker Deployment Support
+
+- **Docker Compose (Multi-container)**
+  - nginx reverse proxy for unified access on port 7860
+  - Separate containers for backend, frontend, and nginx
+  - Health checks for backend service
+  - Persistent data volume for database
+
+- **Single Container Deployment (ModelScope)**
+  - Combined frontend/backend in one container
+  - Multi-stage build for optimized image size
+  - Static frontend served by FastAPI backend
+  - Suitable for platforms requiring single container
+
+- **nginx Configuration**
+  - Reverse proxy with WebSocket support
+  - API routing to backend (`/api/`, `/ws/`, `/health`)
+  - Frontend routing for all other requests
+  - 50MB max upload size for file uploads
+
 #### Community Module - Mutual Support Community (`frontend/app/community/`, `frontend/components/community/`)
 
 - **Dual-Channel System**

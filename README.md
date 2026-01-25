@@ -139,6 +139,64 @@ npm run dev
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
+## Docker Deployment
+
+### Quick Start with Docker Compose
+
+The recommended way to deploy MomShell in production.
+
+```bash
+# 1. Set up environment variables
+cp .env.example .env
+# Edit .env and fill in your API keys
+
+# 2. Build and start all services
+docker compose up -d --build
+
+# 3. View logs
+docker compose logs -f
+```
+
+**Access**: http://localhost:7860
+
+The Docker Compose setup includes:
+- **nginx**: Reverse proxy on port 7860
+- **backend**: FastAPI server (internal port 8000)
+- **frontend**: Next.js server (internal port 7860)
+
+### Single Container Deployment (ModelScope)
+
+For platforms like ModelScope that require a single container:
+
+```bash
+# Build the image
+docker build -t momshell .
+
+# Run the container
+docker run -d -p 7860:7860 --env-file .env momshell
+```
+
+**Access**: http://localhost:7860
+
+This mode bundles frontend and backend into a single container, with the backend serving static frontend files.
+
+### Docker Commands
+
+```bash
+# Stop all services
+docker compose down
+
+# Rebuild after code changes
+docker compose up -d --build
+
+# View service status
+docker compose ps
+
+# Check specific service logs
+docker compose logs -f backend
+docker compose logs -f frontend
+```
+
 ## Environment Variables
 
 | Variable | Description | Required | Default |

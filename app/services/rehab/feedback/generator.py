@@ -1,4 +1,4 @@
-"""AI-powered feedback generator using LangChain and OpenAI-compatible APIs."""
+"""AI-powered feedback generator using LangChain and ModelScope API."""
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -45,25 +45,17 @@ class FeedbackGenerator:
         Args:
             use_llm: Whether to use LLM for dynamic feedback generation.
         """
-        self.use_llm = use_llm and bool(settings.llm_api_key)
+        self.use_llm = use_llm and bool(settings.modelscope_key)
 
         if self.use_llm:
-            # Create ChatOpenAI with explicit kwargs to satisfy mypy
-            if settings.llm_base_url:
-                self.llm = ChatOpenAI(
-                    model=settings.llm_model,
-                    api_key=settings.llm_api_key,  # type: ignore[arg-type]
-                    temperature=0.7,
-                    base_url=settings.llm_base_url,
-                    model_kwargs={"max_tokens": 100},
-                )
-            else:
-                self.llm = ChatOpenAI(
-                    model=settings.llm_model,
-                    api_key=settings.llm_api_key,  # type: ignore[arg-type]
-                    temperature=0.7,
-                    model_kwargs={"max_tokens": 100},
-                )
+            # Create ChatOpenAI with ModelScope API
+            self.llm = ChatOpenAI(
+                model=settings.modelscope_model,
+                api_key=settings.modelscope_key,  # type: ignore[arg-type]
+                temperature=0.7,
+                base_url=settings.modelscope_base_url,
+                model_kwargs={"max_tokens": 100},
+            )
             self.parser = StrOutputParser()
 
         # Pre-defined feedback templates for fallback

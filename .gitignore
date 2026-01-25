@@ -272,6 +272,8 @@ tts_cache/
 *.db
 *.sqlite
 data.db
+data/*.db
+!data/.gitkeep
 
 # OS files
 .DS_Store
