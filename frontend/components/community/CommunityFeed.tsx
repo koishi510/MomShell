@@ -7,15 +7,20 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChannelSwitcher from './ChannelSwitcher';
 import PostCard from './PostCard';
+import QuestionModal from './QuestionModal';
+import QuestionDetailModal from './QuestionDetailModal';
 import { type ChannelType, type Question, type HotTopic } from '../../types/community';
 import { mockQuestions, mockHotTopics, mockCollections } from './mockData';
 
 export default function CommunityFeed() {
   const [activeChannel, setActiveChannel] = useState<ChannelType>('experience');
   const [questions, setQuestions] = useState<Question[]>(mockQuestions);
+  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
 
   // 根据频道筛选问题
   const filteredQuestions = questions.filter(
@@ -45,12 +50,72 @@ export default function CommunityFeed() {
   };
 
   const handlePostClick = (question: Question) => {
-    // TODO: 打开详情弹窗或跳转详情页
-    console.log('Open question:', question.id);
+    setSelectedQuestion(question);
+  };
+
+  const handleNewQuestion = (title: string, content: string, channel: ChannelType) => {
+    const newQuestion: Question = {
+      id: `new-${Date.now()}`,
+      title,
+      content,
+      content_preview: content.slice(0, 100) + '...',
+      channel,
+      status: 'pending_review',
+      author: {
+        id: 'current-user',
+        nickname: '我',
+        avatar_url: null,
+        role: 'mom',
+        is_certified: false,
+      },
+      tags: [],
+      image_urls: [],
+      view_count: 0,
+      answer_count: 0,
+      like_count: 0,
+      collection_count: 0,
+      is_liked: false,
+      is_collected: false,
+      professional_answer_count: 0,
+      experience_answer_count: 0,
+      created_at: new Date().toISOString(),
+      has_accepted_answer: false,
+    };
+    setQuestions((prev) => [newQuestion, ...prev]);
+    setIsQuestionModalOpen(false);
+  };
+
+  // 点击热门话题
+  const handleTopicClick = (topic: HotTopic) => {
+    // 查找包含该话题关键词的问题
+    const relatedQuestion = questions.find(
+      (q) => q.title.includes(topic.name.slice(0, 4)) || q.tags.some((t) => t.name.includes(topic.name.slice(0, 4)))
+    );
+    if (relatedQuestion) {
+      setSelectedQuestion(relatedQuestion);
+    } else {
+      alert(`暂无"${topic.name}"相关的问题，快来发起讨论吧！`);
+    }
+  };
+
+  // 点击收藏
+  const handleCollectionClick = (collection: { id: string; title: string }) => {
+    const question = questions.find((q) => q.title === collection.title);
+    if (question) {
+      setSelectedQuestion(question);
+    }
   };
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* 返回首页按钮 */}
+      <Link
+        href="/"
+        className="fixed top-4 left-4 z-50 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full text-stone-500 hover:text-stone-700 hover:bg-white transition-all shadow-sm"
+      >
+        ← 返回首页
+      </Link>
+
       {/* 页面头部 */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100">
         <div className="max-w-6xl mx-auto px-4 py-3">
@@ -74,6 +139,7 @@ export default function CommunityFeed() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              onClick={() => setIsQuestionModalOpen(true)}
               className="
                 px-5 py-2.5 rounded-full
                 bg-stone-800 text-white text-sm font-medium
@@ -139,10 +205,10 @@ export default function CommunityFeed() {
           <aside className="hidden lg:block w-80 shrink-0">
             <div className="sticky top-20 space-y-4">
               {/* 今日热门话题 */}
-              <HotTopicsCard topics={mockHotTopics} />
+              <HotTopicsCard topics={mockHotTopics} onTopicClick={handleTopicClick} />
 
               {/* 我的收藏 */}
-              <MyCollectionsCard collections={mockCollections} />
+              <MyCollectionsCard collections={mockCollections} onCollectionClick={handleCollectionClick} />
 
               {/* 环境音效入口 */}
               <AmbientSoundCard />
@@ -150,6 +216,22 @@ export default function CommunityFeed() {
           </aside>
         </div>
       </main>
+
+      {/* 提问弹窗 */}
+      <QuestionModal
+        isOpen={isQuestionModalOpen}
+        onClose={() => setIsQuestionModalOpen(false)}
+        onSubmit={handleNewQuestion}
+        defaultChannel={activeChannel}
+      />
+
+      {/* 问题详情弹窗 */}
+      <QuestionDetailModal
+        question={selectedQuestion}
+        onClose={() => setSelectedQuestion(null)}
+        onLike={handleLike}
+        onCollect={handleCollect}
+      />
     </div>
   );
 }
@@ -181,7 +263,13 @@ function EmptyState({ channel }: { channel: ChannelType }) {
 }
 
 // 热门话题卡片
-function HotTopicsCard({ topics }: { topics: HotTopic[] }) {
+function HotTopicsCard({
+  topics,
+  onTopicClick
+}: {
+  topics: HotTopic[];
+  onTopicClick: (topic: HotTopic) => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -196,7 +284,10 @@ function HotTopicsCard({ topics }: { topics: HotTopic[] }) {
       <ul className="space-y-3">
         {topics.map((topic, index) => (
           <li key={topic.id}>
-            <button className="w-full flex items-center gap-3 group">
+            <button
+              onClick={() => onTopicClick(topic)}
+              className="w-full flex items-center gap-3 group"
+            >
               <span
                 className={`
                   w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium
@@ -226,8 +317,10 @@ function HotTopicsCard({ topics }: { topics: HotTopic[] }) {
 // 我的收藏卡片
 function MyCollectionsCard({
   collections,
+  onCollectionClick,
 }: {
   collections: { id: string; title: string }[];
+  onCollectionClick: (collection: { id: string; title: string }) => void;
 }) {
   return (
     <motion.div
@@ -244,7 +337,10 @@ function MyCollectionsCard({
         <ul className="space-y-2">
           {collections.slice(0, 5).map((item) => (
             <li key={item.id}>
-              <button className="w-full text-sm text-stone-600 text-left truncate hover:text-stone-800 transition-colors">
+              <button
+                onClick={() => onCollectionClick(item)}
+                className="w-full text-sm text-stone-600 text-left truncate hover:text-stone-800 transition-colors"
+              >
                 {item.title}
               </button>
             </li>
@@ -264,6 +360,33 @@ function MyCollectionsCard({
 
 // 环境音效入口卡片
 function AmbientSoundCard() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audio] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const a = new Audio('/sounds/ambient-relax.mp3');
+      a.loop = true;
+      return a;
+    }
+    return null;
+  });
+
+  const toggleSound = () => {
+    if (!audio) {
+      alert('音效功能即将上线，敬请期待！');
+      return;
+    }
+
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {
+        // 如果音频文件不存在，显示提示
+        alert('音效功能即将上线，敬请期待！');
+      });
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -290,14 +413,21 @@ function AmbientSoundCard() {
 
       <div className="relative z-10">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-2xl">🎵</span>
+          <span className="text-2xl">{isPlaying ? '🎶' : '🎵'}</span>
           <h3 className="text-stone-700 font-medium">放松一下</h3>
         </div>
         <p className="text-sm text-stone-600 mb-3">
-          开启舒缓音乐，放松身心
+          {isPlaying ? '正在播放舒缓音乐...' : '开启舒缓音乐，放松身心'}
         </p>
-        <button className="px-4 py-2 bg-white/80 backdrop-blur-sm text-stone-700 text-sm rounded-full hover:bg-white transition-colors">
-          打开音效 →
+        <button
+          onClick={toggleSound}
+          className={`px-4 py-2 backdrop-blur-sm text-sm rounded-full transition-colors ${
+            isPlaying
+              ? 'bg-stone-700 text-white hover:bg-stone-800'
+              : 'bg-white/80 text-stone-700 hover:bg-white'
+          }`}
+        >
+          {isPlaying ? '关闭音效' : '打开音效 →'}
         </button>
       </div>
     </motion.div>
