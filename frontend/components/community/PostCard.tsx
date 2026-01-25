@@ -2,14 +2,15 @@
 
 // frontend/components/community/PostCard.tsx
 /**
- * 信息流卡片组件
- * 支持问题展示、用户信息、互动功能
+ * 帖子卡片组件
+ * 圆润卡片 + 彩色软阴影 + 悬停浮动 + 专业认证徽章
  */
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import { type Question, ROLE_CONFIG } from '../../types/community';
+import { motion } from 'framer-motion';
+import { type Question, type UserRole } from '../../types/community';
+import { CHANNEL_COLORS, ROLE_COLORS, SPRING_CONFIGS } from '../../lib/design-tokens';
 
 interface PostCardProps {
   question: Question;
@@ -17,6 +18,16 @@ interface PostCardProps {
   onCollect?: (id: string) => void;
   onClick?: (question: Question) => void;
 }
+
+// 角色配置
+const ROLE_CONFIG: Record<UserRole, { label: string; badgeClass: string; icon?: string }> = {
+  mom: { label: '妈妈', badgeClass: 'bg-pink-100 text-pink-700' },
+  dad: { label: '爸爸', badgeClass: 'bg-blue-100 text-blue-700' },
+  family: { label: '家属', badgeClass: 'bg-stone-100 text-stone-600' },
+  certified_doctor: { label: '认证医生', badgeClass: 'bg-emerald-100 text-emerald-700', icon: '✓' },
+  certified_therapist: { label: '认证康复师', badgeClass: 'bg-teal-100 text-teal-700', icon: '✓' },
+  certified_nurse: { label: '认证护士', badgeClass: 'bg-cyan-100 text-cyan-700', icon: '✓' },
+};
 
 export default function PostCard({
   question,
@@ -31,6 +42,7 @@ export default function PostCard({
   const isPending = question.status === 'pending_review';
   const roleConfig = ROLE_CONFIG[question.author.role];
   const isCertified = question.author.is_certified;
+  const channelColors = CHANNEL_COLORS[question.channel];
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,197 +59,211 @@ export default function PostCard({
 
   return (
     <motion.article
-      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      whileHover={{ y: -2 }}
+      whileHover={{ y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      transition={SPRING_CONFIGS.gentle}
       onClick={() => onClick?.(question)}
-      className={`
-        relative bg-white rounded-2xl p-5
-        shadow-sm hover:shadow-lg
-        transition-shadow duration-300
-        cursor-pointer
-        ${isPending ? 'opacity-70' : ''}
-      `}
+      className="relative cursor-pointer"
     >
-      {/* 审核中状态 - Shimmer 效果 */}
-      {isPending && <ShimmerOverlay />}
+      {/* 卡片主体 */}
+      <motion.div
+        className={`
+          relative rounded-3xl p-6
+          bg-white/80 backdrop-blur-sm
+          border border-white/60
+          ${isPending ? 'opacity-70' : ''}
+        `}
+        style={{
+          boxShadow: `
+            0 4px 24px ${channelColors.shadow},
+            0 8px 48px rgba(0, 0, 0, 0.04),
+            0 0 0 1px rgba(255, 255, 255, 0.8) inset
+          `,
+        }}
+        whileHover={{
+          boxShadow: `
+            0 8px 32px ${channelColors.shadow.replace('0.25', '0.35')},
+            0 16px 64px rgba(0, 0, 0, 0.06),
+            0 0 0 1px rgba(255, 255, 255, 0.9) inset
+          `,
+        }}
+      >
+        {/* 审核中状态 - Shimmer 效果 */}
+        {isPending && <ShimmerOverlay />}
 
-      {/* 头部：用户信息 */}
-      <header className="flex items-center gap-3 mb-4">
-        {/* 头像 */}
-        <div className="relative">
-          <div className="w-10 h-10 rounded-full bg-stone-200 overflow-hidden">
-            {question.author.avatar_url ? (
-              <Image
-                src={question.author.avatar_url}
-                alt={question.author.nickname}
-                width={40}
-                height={40}
-                className="object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-stone-400 text-sm font-medium">
-                {question.author.nickname.charAt(0)}
-              </div>
+        {/* 头部：用户信息 */}
+        <header className="flex items-center gap-3 mb-4">
+          {/* 头像 + 认证徽章 */}
+          <div className="relative">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-stone-100 to-stone-200 overflow-hidden">
+              {question.author.avatar_url ? (
+                <Image
+                  src={question.author.avatar_url}
+                  alt={question.author.nickname}
+                  width={44}
+                  height={44}
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-stone-400 text-sm font-medium">
+                  {question.author.nickname.charAt(0)}
+                </div>
+              )}
+            </div>
+
+            {/* 专业认证徽章 - 呼吸闪烁效果 */}
+            {isCertified && <CertifiedBadge role={question.author.role} />}
+          </div>
+
+          {/* 用户信息 */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`font-medium truncate ${
+                  question.author.role === 'mom'
+                    ? 'text-pink-600'
+                    : isCertified
+                    ? 'text-emerald-600'
+                    : 'text-stone-700'
+                }`}
+              >
+                {question.author.nickname}
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${roleConfig.badgeClass}`}
+              >
+                {roleConfig.icon && <span className="mr-0.5">{roleConfig.icon}</span>}
+                {roleConfig.label}
+              </span>
+            </div>
+            {question.author.certification_title && (
+              <p className="text-xs text-stone-400 truncate mt-0.5">
+                {question.author.certification_title}
+              </p>
             )}
           </div>
 
-          {/* 认证徽章 */}
-          {isCertified && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center"
-            >
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 24 24"
-                fill="white"
-                stroke="white"
-                strokeWidth="3"
+          {/* 时间 */}
+          <time className="text-xs text-stone-400 shrink-0">
+            {formatRelativeTime(question.created_at)}
+          </time>
+        </header>
+
+        {/* 内容区 */}
+        <div className="mb-4">
+          <h3 className="text-lg font-medium text-stone-800 leading-snug mb-2 line-clamp-2">
+            {question.title}
+          </h3>
+          <p className="text-stone-600 text-sm leading-relaxed line-clamp-3">
+            {question.content_preview}
+          </p>
+        </div>
+
+        {/* 图片网格 */}
+        {question.image_urls.length > 0 && (
+          <ImageGrid images={question.image_urls} />
+        )}
+
+        {/* 标签 */}
+        {question.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {question.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag.id}
+                className="px-3 py-1 bg-stone-50 text-stone-500 text-xs rounded-full border border-stone-100"
               >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </motion.div>
-          )}
-        </div>
-
-        {/* 用户信息 */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-stone-700 truncate">
-              {question.author.nickname}
-            </span>
-            <span
-              className={`
-                px-2 py-0.5 rounded-full text-xs font-medium
-                ${roleConfig.badgeColor}
-              `}
-            >
-              {roleConfig.icon && <span className="mr-0.5">{roleConfig.icon}</span>}
-              {roleConfig.label}
-            </span>
+                #{tag.name}
+              </span>
+            ))}
+            {question.tags.length > 3 && (
+              <span className="px-2.5 py-1 text-stone-400 text-xs">
+                +{question.tags.length - 3}
+              </span>
+            )}
           </div>
-          {question.author.certification_title && (
-            <p className="text-xs text-stone-400 truncate mt-0.5">
-              {question.author.certification_title}
-            </p>
-          )}
-        </div>
+        )}
 
-        {/* 时间 */}
-        <time className="text-xs text-stone-400 shrink-0">
-          {formatRelativeTime(question.created_at)}
-        </time>
-      </header>
+        {/* 互动栏 */}
+        <footer className="flex items-center justify-between pt-4 border-t border-stone-100/80">
+          <div className="flex items-center gap-5">
+            {/* 点赞 */}
+            <LikeButton
+              isLiked={isLiked}
+              count={likeCount}
+              onClick={handleLike}
+            />
 
-      {/* 内容区 */}
-      <div className="mb-4">
-        <h3 className="text-lg font-medium text-stone-800 leading-snug mb-2 line-clamp-2">
-          {question.title}
-        </h3>
-        <p className="text-stone-600 text-sm leading-relaxed line-clamp-3">
-          {question.content_preview}
-        </p>
-      </div>
+            {/* 评论 */}
+            <button className="flex items-center gap-1.5 text-stone-400 hover:text-stone-600 transition-colors">
+              <CommentIcon />
+              <span className="text-sm">{question.answer_count}</span>
+            </button>
 
-      {/* 图片网格 */}
-      {question.image_urls.length > 0 && (
-        <ImageGrid images={question.image_urls} />
-      )}
+            {/* 分享 */}
+            <button className="flex items-center gap-1.5 text-stone-400 hover:text-stone-600 transition-colors">
+              <ShareIcon />
+            </button>
+          </div>
 
-      {/* 标签 */}
-      {question.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {question.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag.id}
-              className="px-2.5 py-1 bg-stone-100 text-stone-600 text-xs rounded-full"
-            >
-              #{tag.name}
-            </span>
-          ))}
-          {question.tags.length > 3 && (
-            <span className="px-2.5 py-1 text-stone-400 text-xs">
-              +{question.tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* 互动栏 */}
-      <footer className="flex items-center justify-between pt-3 border-t border-stone-100">
-        <div className="flex items-center gap-4">
-          {/* 点赞 */}
-          <LikeButton
-            isLiked={isLiked}
-            count={likeCount}
-            onClick={handleLike}
+          {/* 收藏 */}
+          <CollectButton
+            isCollected={isCollected}
+            onClick={handleCollect}
           />
+        </footer>
 
-          {/* 评论 */}
-          <button className="flex items-center gap-1.5 text-stone-500 hover:text-stone-700 transition-colors">
-            <CommentIcon />
-            <span className="text-sm">{question.answer_count}</span>
-          </button>
-
-          {/* 分享 */}
-          <button className="flex items-center gap-1.5 text-stone-500 hover:text-stone-700 transition-colors">
-            <ShareIcon />
-          </button>
-        </div>
-
-        {/* 收藏 */}
-        <CollectButton
-          isCollected={isCollected}
-          onClick={handleCollect}
+        {/* 频道指示器 - 静态 */}
+        <div
+          className="absolute top-5 right-5 w-2.5 h-2.5 rounded-full"
+          style={{ backgroundColor: channelColors.primary }}
+          title={question.channel === 'professional' ? '专业频道' : '经验频道'}
         />
-      </footer>
-
-      {/* 频道指示器 */}
-      <div
-        className={`
-          absolute top-4 right-4 w-2 h-2 rounded-full
-          ${question.channel === 'professional' ? 'bg-sky-400' : 'bg-amber-400'}
-        `}
-        title={question.channel === 'professional' ? '专业频道' : '经验频道'}
-      />
+      </motion.div>
     </motion.article>
   );
 }
 
-// Shimmer 审核中效果
+// 专业认证徽章（静态发光）
+function CertifiedBadge({ role }: { role: UserRole }) {
+  const glowColor = role === 'certified_doctor'
+    ? 'rgba(16, 185, 129, 0.5)'
+    : role === 'certified_therapist'
+    ? 'rgba(20, 184, 166, 0.5)'
+    : 'rgba(6, 182, 212, 0.5)';
+
+  return (
+    <div
+      className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+      style={{
+        background: 'linear-gradient(135deg, #10B981, #059669)',
+        boxShadow: `0 0 0 2px white, 0 0 10px ${glowColor}`,
+      }}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="3">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </div>
+  );
+}
+
+// Shimmer 审核中效果（简化版）
 function ShimmerOverlay() {
   return (
-    <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-10">
-      <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]" />
-      <motion.div
-        className="absolute inset-0 -translate-x-full"
+    <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none z-10">
+      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px]" />
+      <div
+        className="absolute inset-0 animate-shimmer"
         style={{
-          background:
-            'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-        }}
-        animate={{
-          translateX: ['−100%', '100%'],
-        }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: 'linear',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)',
         }}
       />
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="flex items-center gap-2 px-4 py-2 bg-white/90 rounded-full shadow-sm">
-          <motion.div
-            className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          />
-          <span className="text-sm text-stone-600">AI 安全卫士正在审核中...</span>
+          <div className="w-4 h-4 border-2 border-stone-300 border-t-emerald-500 rounded-full animate-spin" />
+          <span className="text-sm text-stone-600">AI 安全卫士审核中...</span>
         </div>
       </div>
     </div>
@@ -261,7 +287,7 @@ function ImageGrid({ images }: { images: string[] }) {
         <div
           key={index}
           className={`
-            relative rounded-xl overflow-hidden bg-stone-100
+            relative rounded-2xl overflow-hidden bg-stone-100
             ${count === 1 ? 'aspect-video' : 'aspect-square'}
           `}
         >
@@ -284,7 +310,7 @@ function ImageGrid({ images }: { images: string[] }) {
   );
 }
 
-// 点赞按钮（带弹簧动画）
+// 点赞按钮
 function LikeButton({
   isLiked,
   count,
@@ -297,19 +323,14 @@ function LikeButton({
   return (
     <motion.button
       onClick={onClick}
-      className={`
-        flex items-center gap-1.5 transition-colors
-        ${isLiked ? 'text-rose-500' : 'text-stone-500 hover:text-stone-700'}
-      `}
+      className={`flex items-center gap-1.5 transition-colors ${
+        isLiked ? 'text-rose-500' : 'text-stone-400 hover:text-stone-600'
+      }`}
       whileTap={{ scale: 0.9 }}
     >
       <motion.div
         animate={isLiked ? { scale: 1.2 } : { scale: 1 }}
-        transition={{
-          type: 'spring',
-          stiffness: 400,
-          damping: 10,
-        }}
+        transition={SPRING_CONFIGS.bouncy}
       >
         <HeartIcon filled={isLiked} />
       </motion.div>
@@ -329,10 +350,9 @@ function CollectButton({
   return (
     <motion.button
       onClick={onClick}
-      className={`
-        transition-colors
-        ${isCollected ? 'text-amber-500' : 'text-stone-400 hover:text-stone-600'}
-      `}
+      className={`transition-colors ${
+        isCollected ? 'text-amber-500' : 'text-stone-300 hover:text-stone-500'
+      }`}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
     >
@@ -341,19 +361,10 @@ function CollectButton({
   );
 }
 
-// 图标组件
+// 图标
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
     </svg>
   );
@@ -361,16 +372,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 function CommentIcon() {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
     </svg>
   );
@@ -378,16 +380,7 @@ function CommentIcon() {
 
 function ShareIcon() {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="18" cy="5" r="3" />
       <circle cx="6" cy="12" r="3" />
       <circle cx="18" cy="19" r="3" />
@@ -399,16 +392,7 @@ function ShareIcon() {
 
 function BookmarkIcon({ filled }: { filled: boolean }) {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
     </svg>
   );
