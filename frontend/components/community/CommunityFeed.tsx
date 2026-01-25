@@ -4,6 +4,7 @@
 /**
  * 社区主页面组件
  * Feed 流 + 侧边栏布局
+ * 视觉风格与首页"呼吸感"保持一致
  */
 
 import { useState, useCallback } from 'react';
@@ -13,8 +14,10 @@ import ChannelSwitcher from './ChannelSwitcher';
 import PostCard from './PostCard';
 import QuestionModal from './QuestionModal';
 import QuestionDetailModal from './QuestionDetailModal';
+import CommunityBackground from './CommunityBackground';
 import { type ChannelType, type Question, type HotTopic } from '../../types/community';
 import { mockQuestions, mockHotTopics, mockCollections } from './mockData';
+import { SPRING_CONFIGS, GLASS_STYLES } from '../../lib/design-tokens';
 
 // 敏感词库（模拟）
 const SENSITIVE_KEYWORDS = {
@@ -191,19 +194,28 @@ export default function CommunityFeed() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* 动态弥散渐变背景（低透明度） */}
+      <CommunityBackground />
+
       {/* 审核结果提示 */}
       <AnimatePresence>
         {moderationAlert.show && (
           <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-lg ${
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            transition={SPRING_CONFIGS.gentle}
+            className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-lg backdrop-blur-md ${
               moderationAlert.passed
-                ? 'bg-emerald-500 text-white'
-                : 'bg-red-500 text-white'
+                ? 'bg-emerald-500/90 text-white'
+                : 'bg-red-500/90 text-white'
             }`}
+            style={{
+              boxShadow: moderationAlert.passed
+                ? '0 8px 32px rgba(16, 185, 129, 0.4)'
+                : '0 8px 32px rgba(239, 68, 68, 0.4)',
+            }}
           >
             <div className="flex items-center gap-2">
               {moderationAlert.passed ? (
@@ -229,16 +241,28 @@ export default function CommunityFeed() {
       </AnimatePresence>
 
       {/* 返回首页按钮 */}
-      <Link
-        href="/"
-        className="fixed top-4 left-4 z-50 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full text-stone-500 hover:text-stone-700 hover:bg-white transition-all shadow-sm"
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
       >
-        ← 返回首页
-      </Link>
+        <Link
+          href="/"
+          className="fixed top-4 left-4 z-50 px-4 py-2.5 bg-white/70 backdrop-blur-md rounded-full text-stone-500 hover:text-stone-700 hover:bg-white/90 transition-all shadow-sm border border-white/50"
+        >
+          ← 返回首页
+        </Link>
+      </motion.div>
 
       {/* 页面头部 */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100">
-        <div className="max-w-6xl mx-auto px-4 py-3">
+      <header
+        className="sticky top-0 z-40 border-b border-white/30"
+        style={{
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(16px)',
+        }}
+      >
+        <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo / 标题 */}
             <div className="flex items-center gap-3">
@@ -250,22 +274,30 @@ export default function CommunityFeed() {
               >
                 互助社区
               </motion.h1>
-              <span className="px-2 py-0.5 bg-rose-100 text-rose-600 text-xs rounded-full">
+              <motion.span
+                className="px-2.5 py-1 bg-gradient-to-r from-rose-100 to-pink-100 text-rose-600 text-xs rounded-full font-medium"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+              >
                 Beta
-              </span>
+              </motion.span>
             </div>
 
             {/* 发帖按钮 */}
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsQuestionModalOpen(true)}
-              className="
-                px-5 py-2.5 rounded-full
-                bg-stone-800 text-white text-sm font-medium
-                shadow-lg shadow-stone-800/20
-                hover:bg-stone-700 transition-colors
-              "
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="px-6 py-2.5 rounded-full text-sm font-medium transition-all"
+              style={{
+                background: 'linear-gradient(135deg, #1c1917 0%, #44403c 100%)',
+                color: 'white',
+                boxShadow: '0 4px 20px rgba(28, 25, 23, 0.3)',
+              }}
             >
               <span className="flex items-center gap-2">
                 <PlusIcon />
@@ -329,9 +361,6 @@ export default function CommunityFeed() {
 
               {/* 我的收藏 */}
               <MyCollectionsCard collections={mockCollections} onCollectionClick={handleCollectionClick} />
-
-              {/* 环境音效入口 */}
-              <AmbientSoundCard />
             </div>
           </aside>
         </div>
@@ -395,7 +424,13 @@ function HotTopicsCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-white rounded-2xl p-5 shadow-sm"
+      whileHover={{ y: -3 }}
+      className="rounded-3xl p-5 border border-white/50"
+      style={{
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 4px 24px rgba(251, 113, 133, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
+      }}
     >
       <h3 className="flex items-center gap-2 text-stone-700 font-medium mb-4">
         <span className="text-lg">🔥</span>
@@ -404,16 +439,18 @@ function HotTopicsCard({
       <ul className="space-y-3">
         {topics.map((topic, index) => (
           <li key={topic.id}>
-            <button
+            <motion.button
               onClick={() => onTopicClick(topic)}
               className="w-full flex items-center gap-3 group"
+              whileHover={{ x: 3 }}
+              transition={{ duration: 0.2 }}
             >
               <span
                 className={`
-                  w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium
+                  w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
                   ${
                     index < 3
-                      ? 'bg-rose-100 text-rose-600'
+                      ? 'bg-gradient-to-br from-rose-100 to-pink-100 text-rose-600'
                       : 'bg-stone-100 text-stone-500'
                   }
                 `}
@@ -426,7 +463,7 @@ function HotTopicsCard({
               <span className="text-xs text-stone-400">
                 {topic.question_count}讨论
               </span>
-            </button>
+            </motion.button>
           </li>
         ))}
       </ul>
@@ -447,7 +484,13 @@ function MyCollectionsCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="bg-white rounded-2xl p-5 shadow-sm"
+      whileHover={{ y: -3 }}
+      className="rounded-3xl p-5 border border-white/50"
+      style={{
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 4px 24px rgba(251, 191, 36, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
+      }}
     >
       <h3 className="flex items-center gap-2 text-stone-700 font-medium mb-4">
         <span className="text-lg">⭐</span>
@@ -457,12 +500,14 @@ function MyCollectionsCard({
         <ul className="space-y-2">
           {collections.slice(0, 5).map((item) => (
             <li key={item.id}>
-              <button
+              <motion.button
                 onClick={() => onCollectionClick(item)}
                 className="w-full text-sm text-stone-600 text-left truncate hover:text-stone-800 transition-colors"
+                whileHover={{ x: 3 }}
+                transition={{ duration: 0.2 }}
               >
                 {item.title}
-              </button>
+              </motion.button>
             </li>
           ))}
         </ul>
@@ -474,82 +519,6 @@ function MyCollectionsCard({
           查看全部 →
         </button>
       )}
-    </motion.div>
-  );
-}
-
-// 环境音效入口卡片
-function AmbientSoundCard() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audio] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const a = new Audio('/sounds/ambient-relax.mp3');
-      a.loop = true;
-      return a;
-    }
-    return null;
-  });
-
-  const toggleSound = () => {
-    if (!audio) {
-      alert('音效功能即将上线，敬请期待！');
-      return;
-    }
-
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play().catch(() => {
-        // 如果音频文件不存在，显示提示
-        alert('音效功能即将上线，敬请期待！');
-      });
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-      className="relative overflow-hidden rounded-2xl p-5"
-      style={{
-        background: 'linear-gradient(135deg, #DDD6FE 0%, #BFDBFE 100%)',
-      }}
-    >
-      {/* 装饰性光晕 */}
-      <motion.div
-        className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/30 blur-2xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-2xl">{isPlaying ? '🎶' : '🎵'}</span>
-          <h3 className="text-stone-700 font-medium">放松一下</h3>
-        </div>
-        <p className="text-sm text-stone-600 mb-3">
-          {isPlaying ? '正在播放舒缓音乐...' : '开启舒缓音乐，放松身心'}
-        </p>
-        <button
-          onClick={toggleSound}
-          className={`px-4 py-2 backdrop-blur-sm text-sm rounded-full transition-colors ${
-            isPlaying
-              ? 'bg-stone-700 text-white hover:bg-stone-800'
-              : 'bg-white/80 text-stone-700 hover:bg-white'
-          }`}
-        >
-          {isPlaying ? '关闭音效' : '打开音效 →'}
-        </button>
-      </div>
     </motion.div>
   );
 }
