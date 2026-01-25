@@ -15,9 +15,11 @@ import PostCard from './PostCard';
 import QuestionModal from './QuestionModal';
 import QuestionDetailModal from './QuestionDetailModal';
 import CommunityBackground from './CommunityBackground';
+import DailyResonance from './DailyResonance';
+import ShellPicks from './ShellPicks';
 import { type ChannelType, type Question, type HotTopic } from '../../types/community';
-import { mockQuestions, mockHotTopics, mockCollections } from './mockData';
-import { SPRING_CONFIGS, GLASS_STYLES } from '../../lib/design-tokens';
+import { mockQuestions, mockHotTopics } from './mockData';
+import { SPRING_CONFIGS } from '../../lib/design-tokens';
 
 // 敏感词库（模拟）
 const SENSITIVE_KEYWORDS = {
@@ -185,14 +187,6 @@ export default function CommunityFeed() {
     }
   };
 
-  // 点击收藏
-  const handleCollectionClick = (collection: { id: string; title: string }) => {
-    const question = questions.find((q) => q.title === collection.title);
-    if (question) {
-      setSelectedQuestion(question);
-    }
-  };
-
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* 动态弥散渐变背景（低透明度） */}
@@ -355,12 +349,12 @@ export default function CommunityFeed() {
 
           {/* 右侧侧边栏 */}
           <aside className="hidden lg:block w-80 shrink-0">
-            <div className="sticky top-20 space-y-4">
-              {/* 今日热门话题 */}
-              <HotTopicsCard topics={mockHotTopics} onTopicClick={handleTopicClick} />
+            <div className="sticky top-24 space-y-6">
+              {/* 今日共鸣 */}
+              <DailyResonance topics={mockHotTopics} onTopicClick={handleTopicClick} />
 
-              {/* 我的收藏 */}
-              <MyCollectionsCard collections={mockCollections} onCollectionClick={handleCollectionClick} />
+              {/* 拾贝入口 */}
+              <ShellPicks />
             </div>
           </aside>
         </div>
@@ -407,118 +401,6 @@ function EmptyState({ channel }: { channel: ChannelType }) {
       <button className="px-4 py-2 bg-stone-800 text-white text-sm rounded-full hover:bg-stone-700 transition-colors">
         立即提问
       </button>
-    </motion.div>
-  );
-}
-
-// 热门话题卡片
-function HotTopicsCard({
-  topics,
-  onTopicClick
-}: {
-  topics: HotTopic[];
-  onTopicClick: (topic: HotTopic) => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-      whileHover={{ y: -3 }}
-      className="rounded-3xl p-5 border border-white/50"
-      style={{
-        background: 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(12px)',
-        boxShadow: '0 4px 24px rgba(251, 113, 133, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
-      }}
-    >
-      <h3 className="flex items-center gap-2 text-stone-700 font-medium mb-4">
-        <span className="text-lg">🔥</span>
-        今日热门话题
-      </h3>
-      <ul className="space-y-3">
-        {topics.map((topic, index) => (
-          <li key={topic.id}>
-            <motion.button
-              onClick={() => onTopicClick(topic)}
-              className="w-full flex items-center gap-3 group"
-              whileHover={{ x: 3 }}
-              transition={{ duration: 0.2 }}
-            >
-              <span
-                className={`
-                  w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
-                  ${
-                    index < 3
-                      ? 'bg-gradient-to-br from-rose-100 to-pink-100 text-rose-600'
-                      : 'bg-stone-100 text-stone-500'
-                  }
-                `}
-              >
-                {index + 1}
-              </span>
-              <span className="flex-1 text-sm text-stone-600 text-left truncate group-hover:text-stone-800 transition-colors">
-                {topic.name}
-              </span>
-              <span className="text-xs text-stone-400">
-                {topic.question_count}讨论
-              </span>
-            </motion.button>
-          </li>
-        ))}
-      </ul>
-    </motion.div>
-  );
-}
-
-// 我的收藏卡片
-function MyCollectionsCard({
-  collections,
-  onCollectionClick,
-}: {
-  collections: { id: string; title: string }[];
-  onCollectionClick: (collection: { id: string; title: string }) => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
-      whileHover={{ y: -3 }}
-      className="rounded-3xl p-5 border border-white/50"
-      style={{
-        background: 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(12px)',
-        boxShadow: '0 4px 24px rgba(251, 191, 36, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
-      }}
-    >
-      <h3 className="flex items-center gap-2 text-stone-700 font-medium mb-4">
-        <span className="text-lg">⭐</span>
-        我的收藏
-      </h3>
-      {collections.length > 0 ? (
-        <ul className="space-y-2">
-          {collections.slice(0, 5).map((item) => (
-            <li key={item.id}>
-              <motion.button
-                onClick={() => onCollectionClick(item)}
-                className="w-full text-sm text-stone-600 text-left truncate hover:text-stone-800 transition-colors"
-                whileHover={{ x: 3 }}
-                transition={{ duration: 0.2 }}
-              >
-                {item.title}
-              </motion.button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-stone-400">还没有收藏内容</p>
-      )}
-      {collections.length > 5 && (
-        <button className="mt-3 text-sm text-stone-500 hover:text-stone-700 transition-colors">
-          查看全部 →
-        </button>
-      )}
     </motion.div>
   );
 }
