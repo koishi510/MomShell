@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # MediaPipe Configuration
     pose_model_complexity: int = 1  # 0, 1, or 2
     min_detection_confidence: float = 0.5
-    min_tracking_confidence: float = 0.5
+    min_tracking_confidence: float = 0.3  # Lowered to reduce re-detection frequency
 
     # TTS Configuration
     tts_voice: str = "zh-CN-XiaoxiaoNeural"
