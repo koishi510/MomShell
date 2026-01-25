@@ -6,7 +6,7 @@
  * Feed 流 + 侧边栏布局
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChannelSwitcher from './ChannelSwitcher';
@@ -16,11 +16,91 @@ import QuestionDetailModal from './QuestionDetailModal';
 import { type ChannelType, type Question, type HotTopic } from '../../types/community';
 import { mockQuestions, mockHotTopics, mockCollections } from './mockData';
 
+// 敏感词库（模拟）
+const SENSITIVE_KEYWORDS = {
+  // 色情相关
+  pornography: ['色情', '裸体', '性爱', '约炮', '一夜情', '援交', '卖淫', '嫖娼', 'AV', '黄片', '做爱'],
+  // 暴力相关
+  violence: ['杀人', '砍死', '打死', '暴力', '血腥', '虐待', '施暴', '殴打致死'],
+  // 赌博相关
+  gambling: ['赌博', '赌钱', '赌场', '博彩', '押注', '下注', '赌球', '六合彩', '时时彩', '网赌'],
+  // 毒品相关
+  drugs: ['毒品', '吸毒', '贩毒', '冰毒', '海洛因', '大麻', '摇头丸', 'K粉', '可卡因'],
+  // 诈骗相关
+  fraud: ['诈骗', '骗钱', '传销', '非法集资', '庞氏骗局'],
+  // 政治敏感
+  political: ['反党', '反政府', '颠覆政权', '分裂国家'],
+  // 自残自杀
+  selfHarm: ['自杀方法', '割腕教程', '跳楼方式', '怎么去死'],
+};
+
+// 审核函数
+function moderateContent(title: string, content: string): { passed: boolean; reason?: string; category?: string } {
+  const fullText = `${title} ${content}`.toLowerCase();
+
+  for (const [category, keywords] of Object.entries(SENSITIVE_KEYWORDS)) {
+    for (const keyword of keywords) {
+      if (fullText.includes(keyword.toLowerCase())) {
+        const categoryNames: Record<string, string> = {
+          pornography: '色情低俗',
+          violence: '暴力血腥',
+          gambling: '赌博相关',
+          drugs: '毒品相关',
+          fraud: '诈骗信息',
+          political: '敏感内容',
+          selfHarm: '危险信息',
+        };
+        return {
+          passed: false,
+          reason: `内容包含${categoryNames[category] || '敏感'}信息`,
+          category,
+        };
+      }
+    }
+  }
+
+  return { passed: true };
+}
+
 export default function CommunityFeed() {
   const [activeChannel, setActiveChannel] = useState<ChannelType>('experience');
   const [questions, setQuestions] = useState<Question[]>(mockQuestions);
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [moderationAlert, setModerationAlert] = useState<{ show: boolean; passed: boolean; reason?: string }>({
+    show: false,
+    passed: true,
+  });
+
+  // 模拟审核过程
+  const simulateModeration = useCallback((questionId: string, title: string, content: string) => {
+    // 模拟 2-4 秒的审核时间
+    const delay = 2000 + Math.random() * 2000;
+
+    setTimeout(() => {
+      const result = moderateContent(title, content);
+
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId
+            ? { ...q, status: result.passed ? 'published' : 'hidden' }
+            : q
+        )
+      );
+
+      // 显示审核结果提示
+      setModerationAlert({
+        show: true,
+        passed: result.passed,
+        reason: result.reason,
+      });
+
+      // 3秒后隐藏提示
+      setTimeout(() => {
+        setModerationAlert({ show: false, passed: true });
+      }, 3000);
+    }, delay);
+  }, []);
 
   // 根据频道筛选问题
   const filteredQuestions = questions.filter(
@@ -54,8 +134,9 @@ export default function CommunityFeed() {
   };
 
   const handleNewQuestion = (title: string, content: string, channel: ChannelType) => {
+    const questionId = `new-${Date.now()}`;
     const newQuestion: Question = {
-      id: `new-${Date.now()}`,
+      id: questionId,
       title,
       content,
       content_preview: content.slice(0, 100) + '...',
@@ -83,6 +164,9 @@ export default function CommunityFeed() {
     };
     setQuestions((prev) => [newQuestion, ...prev]);
     setIsQuestionModalOpen(false);
+
+    // 触发模拟审核
+    simulateModeration(questionId, title, content);
   };
 
   // 点击热门话题
@@ -108,6 +192,42 @@ export default function CommunityFeed() {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* 审核结果提示 */}
+      <AnimatePresence>
+        {moderationAlert.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-lg ${
+              moderationAlert.passed
+                ? 'bg-emerald-500 text-white'
+                : 'bg-red-500 text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {moderationAlert.passed ? (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>审核通过，已发布</span>
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  <span>审核未通过：{moderationAlert.reason}</span>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 返回首页按钮 */}
       <Link
         href="/"

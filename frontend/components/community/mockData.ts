@@ -146,7 +146,7 @@ export const mockQuestions: Question[] = [
     content_preview:
       '宝宝出生15天了，母乳喂养一直不太顺利。乳头皲裂特别疼，而且感觉奶水不够宝宝吃...',
     channel: 'experience',
-    status: 'pending_review',
+    status: 'published',
     author: {
       id: 'u5',
       nickname: '新手妈妈小白',
