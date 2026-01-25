@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const WS_BASE = API_BASE.replace('http', 'ws');
-const FRAME_RATE = 8;
+const FRAME_RATE = 20; // Increased frame rate for smoother experience
 const USER_ID = 'default_user';
 
 // Phase names mapping (module-level to avoid recreation on each render)
@@ -21,6 +21,27 @@ const PHASE_NAMES: Record<string, string> = {
   hold: '保持',
   release: '放松',
   rest: '休息',
+};
+
+// Pose connections for drawing skeleton (MediaPipe 33 landmarks)
+const POSE_CONNECTIONS = [
+  [0, 1], [1, 2], [2, 3], [3, 7],  // Face
+  [0, 4], [4, 5], [5, 6], [6, 8],
+  [9, 10],  // Mouth
+  [11, 12],  // Shoulders
+  [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],  // Left arm
+  [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],  // Right arm
+  [11, 23], [12, 24], [23, 24],  // Torso
+  [23, 25], [25, 27], [27, 29], [27, 31], [29, 31],  // Left leg
+  [24, 26], [26, 28], [28, 30], [28, 32], [30, 32],  // Right leg
+];
+
+// Skeleton colors
+const SKELETON_COLORS: Record<string, string> = {
+  green: '#00ff00',
+  yellow: '#ffff00',
+  red: '#ff0000',
+  white: '#ffffff',
 };
 
 // Types
@@ -109,12 +130,15 @@ export default function RehabPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const frameIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const frameIntervalRef = useRef<number | null>(null);  // For requestAnimationFrame
   const videoStreamRef = useRef<MediaStream | null>(null);
   const audioQueueRef = useRef<string[]>([]);
   const isPlayingAudioRef = useRef(false);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const processAudioQueueRef = useRef<() => void>(() => {});
+  // Keypoint smoothing - store previous keypoints for interpolation
+  const prevKeypointsRef = useRef<Record<string, { x: number; y: number; visibility: number }> | null>(null);
+  const SMOOTHING_FACTOR = 0.25; // Reduced from 0.4 for more responsive skeleton
 
   // Category names
   const categoryNames: Record<string, string> = {
@@ -266,50 +290,142 @@ export default function RehabPage() {
     }
   }, []);
 
-  // Frame sending
+  // Frame sending - optimized with higher resolution and throttling
   const startFrameSending = useCallback(() => {
     if (frameIntervalRef.current) return;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    frameIntervalRef.current = setInterval(() => {
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-      if (!videoRef.current || !videoRef.current.videoWidth) return;
-      if (!ctx) return;
+    // Increased resolution for better detection
+    const SEND_WIDTH = 480;
+    const SEND_HEIGHT = 360;
 
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      ctx.drawImage(videoRef.current, 0, 0);
+    let lastSendTime = 0;
+    const minInterval = 1000 / FRAME_RATE;
 
+    const sendFrame = () => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        frameIntervalRef.current = requestAnimationFrame(sendFrame);
+        return;
+      }
+      if (!videoRef.current || !videoRef.current.videoWidth) {
+        frameIntervalRef.current = requestAnimationFrame(sendFrame);
+        return;
+      }
+      if (!ctx) {
+        frameIntervalRef.current = requestAnimationFrame(sendFrame);
+        return;
+      }
+
+      const now = performance.now();
+      if (now - lastSendTime < minInterval) {
+        frameIntervalRef.current = requestAnimationFrame(sendFrame);
+        return;
+      }
+      lastSendTime = now;
+
+      // Draw at higher resolution
+      canvas.width = SEND_WIDTH;
+      canvas.height = SEND_HEIGHT;
+      ctx.drawImage(videoRef.current, 0, 0, SEND_WIDTH, SEND_HEIGHT);
+
+      // Use toDataURL (fast enough for this size)
       const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
       const base64 = dataUrl.split(',')[1];
 
       wsRef.current.send(JSON.stringify({ type: 'frame', data: base64 }));
-    }, 1000 / FRAME_RATE);
+      frameIntervalRef.current = requestAnimationFrame(sendFrame);
+    };
+
+    frameIntervalRef.current = requestAnimationFrame(sendFrame);
   }, []);
 
   const stopFrameSending = useCallback(() => {
     if (frameIntervalRef.current) {
-      clearInterval(frameIntervalRef.current);
+      cancelAnimationFrame(frameIntervalRef.current);
       frameIntervalRef.current = null;
     }
   }, []);
 
-  // Display annotated frame
-  const displayAnnotatedFrame = useCallback((base64Data: string) => {
+  // Draw skeleton on canvas from keypoints with smoothing
+  const drawSkeleton = useCallback((
+    keypoints: Record<string, { x: number; y: number; visibility: number }>,
+    color: string = 'green'
+  ) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-    };
-    img.src = `data:image/jpeg;base64,${base64Data}`;
+    // Match canvas size to video
+    canvas.width = video.videoWidth || 480;
+    canvas.height = video.videoHeight || 360;
+
+    // Clear previous frame
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Apply smoothing to reduce jitter
+    let smoothedKeypoints = keypoints;
+    if (prevKeypointsRef.current) {
+      smoothedKeypoints = {};
+      for (const [idx, point] of Object.entries(keypoints)) {
+        const prevPoint = prevKeypointsRef.current[idx];
+        if (prevPoint && prevPoint.visibility > 0.3) {
+          // Exponential moving average smoothing
+          smoothedKeypoints[idx] = {
+            x: point.x * (1 - SMOOTHING_FACTOR) + prevPoint.x * SMOOTHING_FACTOR,
+            y: point.y * (1 - SMOOTHING_FACTOR) + prevPoint.y * SMOOTHING_FACTOR,
+            visibility: point.visibility,
+          };
+        } else {
+          smoothedKeypoints[idx] = point;
+        }
+      }
+    }
+    // Store for next frame
+    prevKeypointsRef.current = smoothedKeypoints;
+
+    const strokeColor = SKELETON_COLORS[color] || SKELETON_COLORS.white;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Draw connections
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    for (const [startIdx, endIdx] of POSE_CONNECTIONS) {
+      const start = smoothedKeypoints[startIdx.toString()];
+      const end = smoothedKeypoints[endIdx.toString()];
+      if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(start.x * w, start.y * h);
+        ctx.lineTo(end.x * w, end.y * h);
+        ctx.stroke();
+      }
+    }
+
+    // Draw keypoints
+    for (const [, point] of Object.entries(smoothedKeypoints)) {
+      if (point.visibility > 0.5) {
+        const x = point.x * w;
+        const y = point.y * h;
+
+        // Outer white circle
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Inner colored circle
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = strokeColor;
+        ctx.fill();
+      }
+    }
   }, []);
 
   // WebSocket message handler
@@ -339,8 +455,9 @@ export default function RehabPage() {
             setSessionState(stateData.session_state);
           }
         }
-        if (data.annotated_frame) {
-          displayAnnotatedFrame(data.annotated_frame);
+        // Draw skeleton from keypoints (much faster than receiving full image)
+        if (data.keypoints) {
+          drawSkeleton(data.keypoints, data.skeleton_color || 'white');
         }
         if (data.feedback) {
           setFeedback(data.feedback);
@@ -368,7 +485,7 @@ export default function RehabPage() {
         setFeedback({ text: data.message, type: 'info' });
         break;
     }
-  }, [displayAnnotatedFrame, playAudio, stopFrameSending]);
+  }, [drawSkeleton, playAudio, stopFrameSending]);
 
   // WebSocket connection
   const connectWebSocket = useCallback((exerciseId: string) => {

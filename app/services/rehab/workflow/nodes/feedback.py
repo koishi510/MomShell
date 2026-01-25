@@ -1,5 +1,7 @@
 """Feedback generation node for the workflow."""
 
+import asyncio
+
 from app.schemas.feedback import FeedbackMessage, FeedbackType
 from app.services.rehab.feedback.generator import FeedbackGenerator
 from app.services.rehab.feedback.tts import TTSEngine, TTSQueue
@@ -22,9 +24,14 @@ class FeedbackNode:
         self._min_feedback_interval: float = (
             6.0  # 6 seconds between feedback for performance
         )
+        # Background task for non-blocking feedback generation
+        self._pending_generation: asyncio.Task[FeedbackMessage | None] | None = None
+        self._pending_feedback_result: FeedbackMessage | None = None
 
     async def __call__(self, state: CoachState) -> CoachState:
         """Generate feedback based on current state.
+
+        Non-blocking: LLM calls run in background, results delivered on next frame.
 
         Args:
             state: Current workflow state.
@@ -36,7 +43,25 @@ class FeedbackNode:
 
         current_time = time.time()
 
-        # Rate limit feedback
+        # Check if background generation completed
+        if self._pending_generation is not None and self._pending_generation.done():
+            try:
+                self._pending_feedback_result = self._pending_generation.result()
+            except Exception as e:
+                print(f"[FEEDBACK] Background generation failed: {e}")
+                self._pending_feedback_result = None
+            self._pending_generation = None
+
+        # Apply pending feedback result if available
+        if self._pending_feedback_result is not None:
+            state.pending_feedback = self._pending_feedback_result
+            state.should_speak = self._pending_feedback_result.should_speak
+            state.feedback_history.append(self._pending_feedback_result)
+            if len(state.feedback_history) > 50:
+                state.feedback_history = state.feedback_history[-50:]
+            self._pending_feedback_result = None
+
+        # Rate limit feedback generation
         if current_time - self._last_feedback_time < self._min_feedback_interval:
             return state
 
@@ -51,23 +76,32 @@ class FeedbackNode:
         if current_phase is None:
             return state
 
-        # Generate feedback
-        feedback = await self._generator.generate(
-            analysis=state.analysis_result,
-            exercise=state.current_exercise,
-            phase=current_phase,
-            safety_alerts=state.safety_alerts if state.safety_alerts else None,
-        )
+        # Skip if already generating
+        if self._pending_generation is not None and not self._pending_generation.done():
+            return state
 
-        state.pending_feedback = feedback
-        state.should_speak = feedback.should_speak
-
-        # Add to history
-        state.feedback_history.append(feedback)
-        if len(state.feedback_history) > 50:
-            state.feedback_history = state.feedback_history[-50:]
-
+        # Start background generation (non-blocking)
         self._last_feedback_time = current_time
+
+        # Capture values for the background task (mypy can't infer they're not None)
+        analysis = state.analysis_result
+        exercise = state.current_exercise
+        phase = current_phase
+        safety_alerts = state.safety_alerts if state.safety_alerts else None
+
+        async def generate_in_background() -> FeedbackMessage | None:
+            try:
+                return await self._generator.generate(
+                    analysis=analysis,
+                    exercise=exercise,
+                    phase=phase,
+                    safety_alerts=safety_alerts,
+                )
+            except Exception as e:
+                print(f"[FEEDBACK] Generation error: {e}")
+                return None
+
+        self._pending_generation = asyncio.create_task(generate_in_background())
 
         return state
 
