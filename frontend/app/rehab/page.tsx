@@ -1,19 +1,38 @@
 // frontend/app/rehab/page.tsx
 /**
- * AI 康复教练页面 - 完整功能版
+ * AI 康复教练页面 - 现代化重构版
+ * 使用 Tailwind CSS + Framer Motion
  */
 
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  CoachBackground,
+  EnergyRing,
+  MetricLegend,
+  ExerciseCard,
+  SessionProgress,
+  SessionProgressOverlay,
+  AchievementBadge,
+  AchievementProgress,
+  PoseOverlay,
+  FeedbackPanel,
+  PhaseTransition,
+  ScorePopup,
+  type PoseOverlayHandle,
+  type Feedback,
+} from '../../components/coach';
+import type { EnergyMetrics } from '../../types/coach';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const WS_BASE = API_BASE.replace('http', 'ws');
-const FRAME_RATE = 20; // Increased frame rate for smoother experience
+const FRAME_RATE = 20;
 const USER_ID = 'default_user';
 
-// Phase names mapping (module-level to avoid recreation on each render)
+// Phase names mapping
 const PHASE_NAMES: Record<string, string> = {
   preparation: '准备',
   inhale: '吸气',
@@ -21,27 +40,6 @@ const PHASE_NAMES: Record<string, string> = {
   hold: '保持',
   release: '放松',
   rest: '休息',
-};
-
-// Pose connections for drawing skeleton (MediaPipe 33 landmarks)
-const POSE_CONNECTIONS = [
-  [0, 1], [1, 2], [2, 3], [3, 7],  // Face
-  [0, 4], [4, 5], [5, 6], [6, 8],
-  [9, 10],  // Mouth
-  [11, 12],  // Shoulders
-  [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],  // Left arm
-  [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],  // Right arm
-  [11, 23], [12, 24], [23, 24],  // Torso
-  [23, 25], [25, 27], [27, 29], [27, 31], [29, 31],  // Left leg
-  [24, 26], [26, 28], [28, 30], [28, 32], [30, 32],  // Right leg
-];
-
-// Skeleton colors
-const SKELETON_COLORS: Record<string, string> = {
-  green: '#00ff00',
-  yellow: '#ffff00',
-  red: '#ff0000',
-  white: '#ffffff',
 };
 
 // Types
@@ -70,27 +68,6 @@ interface Achievement {
   is_earned: boolean;
 }
 
-interface SessionState {
-  progress?: {
-    progress: number;
-    current_set: number;
-    total_sets: number;
-    current_rep: number;
-    total_reps: number;
-    current_phase: string;
-  };
-  analysis?: {
-    score: number;
-  };
-  session_state?: string;
-}
-
-interface Feedback {
-  text: string;
-  type: 'correction' | 'safety_warning' | 'encouragement' | 'info';
-  audio?: string;
-}
-
 interface SessionSummary {
   average_score: number;
   completed_reps: number;
@@ -99,6 +76,29 @@ interface SessionSummary {
 }
 
 type ViewType = 'exercises' | 'progress' | 'session';
+
+// Category names for filter buttons
+const categoryNames: Record<string, string> = {
+  all: '全部',
+  breathing: '呼吸训练',
+  pelvic_floor: '盆底肌',
+  diastasis_recti: '腹直肌修复',
+  posture: '体态矫正',
+  strength: '力量训练',
+};
+
+// Achievement icons for session complete modal
+const achievementIcons: Record<string, string> = {
+  footprints: '👣',
+  fire: '🔥',
+  'calendar-check': '📅',
+  trophy: '🏆',
+  star: '⭐',
+  'check-circle': '✅',
+  medal: '🏅',
+  'trending-up': '📈',
+  award: '🎖️',
+};
 
 export default function RehabPage() {
   // View state
@@ -122,57 +122,31 @@ export default function RehabPage() {
     currentPhase: '准备中',
   });
   const [score, setScore] = useState<number | null>(null);
+  const [prevScore, setPrevScore] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showPhaseTransition, setShowPhaseTransition] = useState(false);
+  const [showScorePopup, setShowScorePopup] = useState(false);
+  const [skeletonColor, setSkeletonColor] = useState<'green' | 'yellow' | 'red' | 'white'>('white');
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const poseOverlayRef = useRef<PoseOverlayHandle>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const frameIntervalRef = useRef<number | null>(null);  // For requestAnimationFrame
+  const frameIntervalRef = useRef<number | null>(null);
   const videoStreamRef = useRef<MediaStream | null>(null);
   const audioQueueRef = useRef<string[]>([]);
   const isPlayingAudioRef = useRef(false);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const processAudioQueueRef = useRef<() => void>(() => {});
-  // Keypoint smoothing - store previous keypoints for interpolation
-  const prevKeypointsRef = useRef<Record<string, { x: number; y: number; visibility: number }> | null>(null);
-  const SMOOTHING_FACTOR = 0.25; // Reduced from 0.4 for more responsive skeleton
 
-  // Category names
-  const categoryNames: Record<string, string> = {
-    all: '全部',
-    breathing: '呼吸训练',
-    pelvic_floor: '盆底肌',
-    diastasis_recti: '腹直肌修复',
-    posture: '体态矫正',
-    strength: '力量训练',
-  };
-
-  const difficultyNames: Record<string, string> = {
-    beginner: '初级',
-    intermediate: '中级',
-    advanced: '高级',
-  };
-
-  const metricNames: Record<string, string> = {
-    core_strength: '核心力量',
-    pelvic_floor: '盆底肌',
-    posture: '体态',
-    flexibility: '柔韧性',
-  };
-
-  const achievementIcons: Record<string, string> = {
-    footprints: '👣',
-    fire: '🔥',
-    'calendar-check': '📅',
-    trophy: '🏆',
-    star: '⭐',
-    'check-circle': '✅',
-    medal: '🏅',
-    'trending-up': '📈',
-    award: '🎖️',
+  // Convert progress summary to EnergyMetrics
+  const energyMetrics: EnergyMetrics = {
+    core_strength: progressSummary?.strength_metrics?.core_strength?.value ?? 0,
+    pelvic_floor: progressSummary?.strength_metrics?.pelvic_floor?.value ?? 0,
+    posture: progressSummary?.strength_metrics?.posture?.value ?? 0,
+    flexibility: progressSummary?.strength_metrics?.flexibility?.value ?? 0,
   };
 
   // Fetch exercises
@@ -210,9 +184,7 @@ export default function RehabPage() {
 
   // Audio queue management
   const processAudioQueue = useCallback(() => {
-    if (isPlayingAudioRef.current || audioQueueRef.current.length === 0) {
-      return;
-    }
+    if (isPlayingAudioRef.current || audioQueueRef.current.length === 0) return;
 
     isPlayingAudioRef.current = true;
     const base64Data = audioQueueRef.current.shift()!;
@@ -245,7 +217,6 @@ export default function RehabPage() {
     }
   }, []);
 
-  // Keep ref updated with latest function
   useEffect(() => {
     processAudioQueueRef.current = processAudioQueue;
   }, [processAudioQueue]);
@@ -266,18 +237,63 @@ export default function RehabPage() {
 
   // Camera functions
   const startCamera = useCallback(async () => {
+    // 1. 先清理旧流
+    if (videoStreamRef.current) {
+      videoStreamRef.current.getTracks().forEach(track => track.stop());
+      videoStreamRef.current = null;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 480 }, height: { ideal: 360 }, facingMode: 'user' },
         audio: false,
       });
       videoStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+
+      // 2. 等待 video 元素挂载
+      const video = videoRef.current;
+      if (!video) {
+        console.error('Video element not mounted');
+        stream.getTracks().forEach(track => track.stop());
+        videoStreamRef.current = null;
+        return false;
       }
+
+      video.srcObject = stream;
+
+      // 3. 显式调用 play() 并等待就绪
+      await video.play();
+
+      // 4. 等待视频元数据加载完成
+      await new Promise<void>((resolve, reject) => {
+        if (video.videoWidth > 0) {
+          resolve();
+          return;
+        }
+
+        const timeout = setTimeout(() => {
+          reject(new Error('Video load timeout'));
+        }, 5000);
+
+        video.onloadedmetadata = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+
+        video.onerror = () => {
+          clearTimeout(timeout);
+          reject(new Error('Video load error'));
+        };
+      });
+
       return true;
     } catch (error) {
       console.error('Failed to start camera:', error);
+      // 清理失败的流
+      if (videoStreamRef.current) {
+        videoStreamRef.current.getTracks().forEach(track => track.stop());
+        videoStreamRef.current = null;
+      }
       alert('无法访问摄像头，请检查权限设置。');
       return false;
     }
@@ -290,14 +306,12 @@ export default function RehabPage() {
     }
   }, []);
 
-  // Frame sending - optimized with higher resolution and throttling
+  // Frame sending
   const startFrameSending = useCallback(() => {
     if (frameIntervalRef.current) return;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
-    // Increased resolution for better detection
     const SEND_WIDTH = 480;
     const SEND_HEIGHT = 360;
 
@@ -305,15 +319,8 @@ export default function RehabPage() {
     const minInterval = 1000 / FRAME_RATE;
 
     const sendFrame = () => {
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        frameIntervalRef.current = requestAnimationFrame(sendFrame);
-        return;
-      }
-      if (!videoRef.current || !videoRef.current.videoWidth) {
-        frameIntervalRef.current = requestAnimationFrame(sendFrame);
-        return;
-      }
-      if (!ctx) {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN ||
+          !videoRef.current || !videoRef.current.videoWidth || !ctx) {
         frameIntervalRef.current = requestAnimationFrame(sendFrame);
         return;
       }
@@ -325,15 +332,12 @@ export default function RehabPage() {
       }
       lastSendTime = now;
 
-      // Draw at higher resolution
       canvas.width = SEND_WIDTH;
       canvas.height = SEND_HEIGHT;
       ctx.drawImage(videoRef.current, 0, 0, SEND_WIDTH, SEND_HEIGHT);
 
-      // Use toDataURL (fast enough for this size)
       const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
       const base64 = dataUrl.split(',')[1];
-
       wsRef.current.send(JSON.stringify({ type: 'frame', data: base64 }));
       frameIntervalRef.current = requestAnimationFrame(sendFrame);
     };
@@ -348,116 +352,53 @@ export default function RehabPage() {
     }
   }, []);
 
-  // Draw skeleton on canvas from keypoints with smoothing
-  const drawSkeleton = useCallback((
-    keypoints: Record<string, { x: number; y: number; visibility: number }>,
-    color: string = 'green'
-  ) => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Match canvas size to video
-    canvas.width = video.videoWidth || 480;
-    canvas.height = video.videoHeight || 360;
-
-    // Clear previous frame
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Apply smoothing to reduce jitter
-    let smoothedKeypoints = keypoints;
-    if (prevKeypointsRef.current) {
-      smoothedKeypoints = {};
-      for (const [idx, point] of Object.entries(keypoints)) {
-        const prevPoint = prevKeypointsRef.current[idx];
-        if (prevPoint && prevPoint.visibility > 0.3) {
-          // Exponential moving average smoothing
-          smoothedKeypoints[idx] = {
-            x: point.x * (1 - SMOOTHING_FACTOR) + prevPoint.x * SMOOTHING_FACTOR,
-            y: point.y * (1 - SMOOTHING_FACTOR) + prevPoint.y * SMOOTHING_FACTOR,
-            visibility: point.visibility,
-          };
-        } else {
-          smoothedKeypoints[idx] = point;
-        }
-      }
-    }
-    // Store for next frame
-    prevKeypointsRef.current = smoothedKeypoints;
-
-    const strokeColor = SKELETON_COLORS[color] || SKELETON_COLORS.white;
-    const w = canvas.width;
-    const h = canvas.height;
-
-    // Draw connections
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 2;
-    for (const [startIdx, endIdx] of POSE_CONNECTIONS) {
-      const start = smoothedKeypoints[startIdx.toString()];
-      const end = smoothedKeypoints[endIdx.toString()];
-      if (start && end && start.visibility > 0.5 && end.visibility > 0.5) {
-        ctx.beginPath();
-        ctx.moveTo(start.x * w, start.y * h);
-        ctx.lineTo(end.x * w, end.y * h);
-        ctx.stroke();
-      }
-    }
-
-    // Draw keypoints
-    for (const [, point] of Object.entries(smoothedKeypoints)) {
-      if (point.visibility > 0.5) {
-        const x = point.x * w;
-        const y = point.y * h;
-
-        // Outer white circle
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, 2 * Math.PI);
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Inner colored circle
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, 2 * Math.PI);
-        ctx.fillStyle = strokeColor;
-        ctx.fill();
-      }
-    }
-  }, []);
-
   // WebSocket message handler
   const handleWebSocketMessage = useCallback((data: any) => {
     switch (data.type) {
       case 'ack':
         console.log('Server acknowledged:', data.message);
         break;
-
       case 'state':
         if (data.data) {
-          const stateData = data.data as SessionState;
+          const stateData = data.data;
           if (stateData.progress) {
-            setSessionProgress({
-              progress: stateData.progress.progress || 0,
-              currentSet: stateData.progress.current_set || 1,
-              totalSets: stateData.progress.total_sets || 3,
-              currentRep: stateData.progress.current_rep || 1,
-              totalReps: stateData.progress.total_reps || 10,
-              currentPhase: PHASE_NAMES[stateData.progress.current_phase] || stateData.progress.current_phase,
+            const newPhase = PHASE_NAMES[stateData.progress.current_phase] || stateData.progress.current_phase;
+
+            // Check for phase transition
+            setSessionProgress((prev) => {
+              if (prev.currentPhase !== newPhase) {
+                setShowPhaseTransition(true);
+                setTimeout(() => setShowPhaseTransition(false), 1500);
+              }
+              return {
+                progress: stateData.progress.progress || 0,
+                currentSet: stateData.progress.current_set || 1,
+                totalSets: stateData.progress.total_sets || 3,
+                currentRep: stateData.progress.current_rep || 1,
+                totalReps: stateData.progress.total_reps || 10,
+                currentPhase: newPhase,
+              };
             });
           }
           if (stateData.analysis) {
-            setScore(Math.round(stateData.analysis.score));
+            const newScore = Math.round(stateData.analysis.score);
+            setScore((prev) => {
+              if (prev !== null && Math.abs(newScore - prev) >= 5) {
+                setPrevScore(prev);
+                setShowScorePopup(true);
+                setTimeout(() => setShowScorePopup(false), 1000);
+              }
+              return newScore;
+            });
           }
           if (stateData.session_state) {
             setSessionState(stateData.session_state);
           }
         }
-        // Draw skeleton from keypoints (much faster than receiving full image)
         if (data.keypoints) {
-          drawSkeleton(data.keypoints, data.skeleton_color || 'white');
+          const color = (data.skeleton_color || 'white') as 'green' | 'yellow' | 'red' | 'white';
+          setSkeletonColor(color);
+          poseOverlayRef.current?.drawSkeleton(data.keypoints, color);
         }
         if (data.feedback) {
           setFeedback(data.feedback);
@@ -466,32 +407,29 @@ export default function RehabPage() {
           }
         }
         break;
-
       case 'feedback':
         setFeedback(data.feedback);
         if (data.feedback?.audio) {
           playAudio(data.feedback.audio);
         }
         break;
-
       case 'session_ended':
         setSessionSummary(data.summary);
         setShowModal(true);
         stopFrameSending();
+        poseOverlayRef.current?.clear();
         break;
-
       case 'error':
         console.error('Server error:', data.message);
         setFeedback({ text: data.message, type: 'info' });
         break;
     }
-  }, [drawSkeleton, playAudio, stopFrameSending]);
+  }, [playAudio, stopFrameSending]);
 
   // WebSocket connection
   const connectWebSocket = useCallback((exerciseId: string) => {
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const wsUrl = `${WS_BASE}/api/ws/coach/${sessionId}`;
-
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -539,6 +477,7 @@ export default function RehabPage() {
     setCurrentView('session');
     setSessionState('preparing');
     setScore(null);
+    setPrevScore(null);
     setFeedback(null);
     setSessionProgress({
       progress: 0,
@@ -548,6 +487,9 @@ export default function RehabPage() {
       totalReps: exercise.repetitions,
       currentPhase: '准备中',
     });
+
+    // 等待 React 完成渲染，确保 video 元素已挂载
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     const cameraStarted = await startCamera();
     if (!cameraStarted) {
@@ -572,14 +514,17 @@ export default function RehabPage() {
     stopFrameSending();
     stopCamera();
     stopAllAudio();
+    poseOverlayRef.current?.clear();
 
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
+
+    setCurrentView('exercises');  // 返回动作选择界面
   }, [sendControl, stopFrameSending, stopCamera, stopAllAudio]);
 
-  // Close modal and return
+  // Close modal
   const closeModal = useCallback(() => {
     setShowModal(false);
     setCurrentView('exercises');
@@ -610,8 +555,11 @@ export default function RehabPage() {
 
   // Initialize
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data fetch is a valid pattern
-    fetchExercises();
+    // 使用 setTimeout 避免同步调用 setState
+    const timer = setTimeout(() => {
+      fetchExercises();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchExercises]);
 
   // Cleanup
@@ -620,460 +568,345 @@ export default function RehabPage() {
       stopCamera();
       stopFrameSending();
       stopAllAudio();
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      if (wsRef.current) wsRef.current.close();
     };
   }, [stopCamera, stopFrameSending, stopAllAudio]);
 
   return (
-    <div className="rehab-app">
-      <style jsx global>{`
-        .rehab-app {
-          --primary: #e8a4b8;
-          --primary-dark: #d88a9f;
-          --secondary: #f5e6e8;
-          --accent: #7eb8da;
-          --success: #8bc99b;
-          --warning: #f5c869;
-          --danger: #e67e7e;
-          --text: #4a4a4a;
-          --text-light: #787878;
-          --background: #fefbf6;
-          --card-bg: #ffffff;
-          --border: #eee;
-
-          min-height: 100vh;
-          background: var(--background);
-          color: var(--text);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
-        }
-
-        .rehab-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem 1.5rem;
-          background: var(--card-bg);
-          border-bottom: 1px solid var(--border);
-          position: sticky;
-          top: 0;
-          z-index: 100;
-        }
-
-        .logo { display: flex; align-items: center; gap: 0.5rem; }
-        .logo-icon { font-size: 1.8rem; }
-        .logo-text { font-size: 1.4rem; font-weight: 600; color: var(--primary-dark); }
-
-        .nav { display: flex; gap: 0.5rem; }
-        .nav-btn {
-          padding: 0.5rem 1rem;
-          border: none;
-          background: transparent;
-          color: var(--text-light);
-          font-size: 0.95rem;
-          cursor: pointer;
-          border-radius: 8px;
-          transition: all 0.2s;
-        }
-        .nav-btn:hover { background: var(--secondary); }
-        .nav-btn.active { background: var(--primary); color: white; }
-
-        .main-content { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
-
-        .view { display: none; }
-        .view.active { display: block; }
-
-        .btn {
-          padding: 0.5rem 1.5rem;
-          border: none;
-          border-radius: 8px;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-weight: 500;
-        }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-secondary { background: var(--secondary); color: var(--text); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-large { padding: 1rem 2rem; font-size: 1.1rem; }
-
-        .exercise-categories {
-          display: flex;
-          gap: 0.5rem;
-          margin-bottom: 1.5rem;
-          flex-wrap: wrap;
-        }
-        .category-btn {
-          padding: 0.5rem 1rem;
-          border: 2px solid var(--border);
-          background: var(--card-bg);
-          border-radius: 20px;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 0.9rem;
-        }
-        .category-btn:hover { border-color: var(--primary); }
-        .category-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
-
-        .exercise-list {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 1.5rem;
-        }
-        .exercise-card {
-          background: var(--card-bg);
-          border-radius: 12px;
-          padding: 1.5rem;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-          cursor: pointer;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .exercise-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .exercise-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-        .exercise-card h3 { font-size: 1.1rem; color: var(--text); }
-        .difficulty { font-size: 0.75rem; padding: 2px 8px; border-radius: 8px; background: var(--secondary); }
-        .difficulty.beginner { background: #d4edda; color: #155724; }
-        .difficulty.intermediate { background: #fff3cd; color: #856404; }
-        .difficulty.advanced { background: #f8d7da; color: #721c24; }
-        .exercise-card p { color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem; }
-        .exercise-card-footer { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-light); }
-        .category-tag { background: var(--secondary); padding: 2px 8px; border-radius: 8px; }
-
-        .progress-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background: var(--card-bg); border-radius: 12px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .stat-value { display: block; font-size: 2.5rem; font-weight: 700; color: var(--primary-dark); }
-        .stat-label { color: var(--text-light); font-size: 0.9rem; }
-
-        .strength-metrics, .achievements-section {
-          background: var(--card-bg);
-          border-radius: 12px;
-          padding: 1.5rem;
-          margin-bottom: 1.5rem;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .strength-metrics h3, .achievements-section h3 { margin-bottom: 1rem; }
-        .metric-item { margin-bottom: 1rem; }
-        .metric-header { display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.9rem; }
-        .metric-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-        .metric-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; transition: width 0.5s; }
-
-        .achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
-        .achievement-badge { text-align: center; padding: 1rem; border-radius: 12px; background: var(--secondary); opacity: 0.5; }
-        .achievement-badge.earned { opacity: 1; background: linear-gradient(135deg, var(--warning), #ffeaa7); }
-        .achievement-icon { font-size: 2rem; margin-bottom: 0.25rem; }
-        .achievement-name { font-size: 0.85rem; font-weight: 600; }
-
-        .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .session-content { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
-
-        .video-area { background: #000; border-radius: 12px; overflow: hidden; }
-        .video-container { position: relative; width: 100%; padding-bottom: 75%; }
-        .video-container video, .video-container canvas {
-          position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
-        }
-        .video-container canvas { pointer-events: none; }
-        .video-overlay {
-          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          pointer-events: none; display: flex; justify-content: space-between; padding: 1rem;
-        }
-        .phase-indicator, .score-display {
-          background: rgba(0,0,0,0.7); color: white;
-          padding: 0.5rem 1rem; border-radius: 8px; height: fit-content;
-        }
-        .score-value { display: block; font-size: 1.5rem; font-weight: 700; }
-        .score-label { font-size: 0.8rem; opacity: 0.8; }
-        .score-display.good .score-value { color: var(--success); }
-        .score-display.ok .score-value { color: var(--warning); }
-        .score-display.poor .score-value { color: var(--danger); }
-
-        .info-panel { display: flex; flex-direction: column; gap: 1.5rem; }
-        .session-progress-card, .current-phase, .feedback-area {
-          background: var(--card-bg); padding: 1rem; border-radius: 12px;
-        }
-        .progress-bar { height: 12px; background: var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 0.5rem; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--success)); border-radius: 6px; transition: width 0.3s; }
-        .progress-text { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-light); }
-
-        .current-phase h4 { margin-bottom: 0.5rem; color: var(--primary-dark); }
-        .phase-cues { list-style: none; margin-top: 0.5rem; }
-        .phase-cues li { padding: 0.25rem 0; color: var(--text-light); font-size: 0.9rem; }
-        .phase-cues li::before { content: "✓ "; color: var(--success); }
-
-        .feedback-area { min-height: 80px; }
-        .feedback-message { font-size: 1.1rem; color: var(--text); animation: fadeIn 0.3s; }
-        .feedback-message.correction { color: var(--warning); }
-        .feedback-message.warning { color: var(--danger); }
-        .feedback-message.encouragement { color: var(--success); }
-
-        .session-controls { display: flex; gap: 1rem; flex-wrap: wrap; }
-
-        .modal {
-          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
-        }
-        .modal-content {
-          background: var(--card-bg); padding: 2rem; border-radius: 20px;
-          text-align: center; max-width: 500px; width: 90%;
-        }
-        .modal-content h2 { color: var(--primary-dark); margin-bottom: 1.5rem; }
-        .session-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-        .summary-stat { padding: 1rem; background: var(--secondary); border-radius: 12px; }
-        .summary-value { display: block; font-size: 1.8rem; font-weight: 700; color: var(--primary-dark); }
-        .summary-label { font-size: 0.85rem; color: var(--text-light); }
-        .new-achievements { margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, var(--warning), #ffeaa7); border-radius: 12px; }
-
-        .back-link { color: var(--text-light); text-decoration: none; }
-        .back-link:hover { color: var(--primary-dark); }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        @media (max-width: 768px) {
-          .session-content { grid-template-columns: 1fr; }
-          .progress-summary { grid-template-columns: 1fr; }
-          .exercise-list { grid-template-columns: 1fr; }
-          .rehab-header { flex-direction: column; gap: 1rem; }
-        }
-      `}</style>
+    <div className="min-h-screen relative">
+      {/* 背景层 */}
+      <CoachBackground />
 
       {/* Header */}
-      <header className="rehab-header">
-        <div className="logo">
-          <Link href="/" className="back-link">← 首页</Link>
-          <span className="logo-icon">🌸</span>
-          <span className="logo-text">MomShell</span>
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-stone-200/50">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              ← 首页
+            </Link>
+            <span className="text-2xl">🧘‍♀️</span>
+            <span className="text-lg font-medium text-stone-700">AI 康复教练</span>
+          </div>
+          <nav className="flex gap-2">
+            <button
+              onClick={() => changeView('exercises')}
+              className={`px-4 py-2 rounded-full text-sm transition-all ${
+                currentView === 'exercises'
+                  ? 'bg-[#e8a4b8] text-white shadow-lg shadow-[#e8a4b8]/30'
+                  : 'text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              动作库
+            </button>
+            <button
+              onClick={() => changeView('progress')}
+              className={`px-4 py-2 rounded-full text-sm transition-all ${
+                currentView === 'progress'
+                  ? 'bg-[#e8a4b8] text-white shadow-lg shadow-[#e8a4b8]/30'
+                  : 'text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              我的进度
+            </button>
+          </nav>
         </div>
-        <nav className="nav">
-          <button
-            className={`nav-btn ${currentView === 'exercises' ? 'active' : ''}`}
-            onClick={() => changeView('exercises')}
-          >
-            动作库
-          </button>
-          <button
-            className={`nav-btn ${currentView === 'progress' ? 'active' : ''}`}
-            onClick={() => changeView('progress')}
-          >
-            我的进度
-          </button>
-        </nav>
       </header>
 
-      <main className="main-content">
+      <main className="relative z-10 max-w-5xl mx-auto px-4 py-6">
         {/* Exercise Selection View */}
-        <section className={`view ${currentView === 'exercises' ? 'active' : ''}`}>
-          <h2>康复动作</h2>
-          <div className="exercise-categories">
-            {Object.entries(categoryNames).map(([key, name]) => (
-              <button
-                key={key}
-                className={`category-btn ${selectedCategory === key ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(key)}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-          <div className="exercise-list">
-            {filteredExercises.map(exercise => (
-              <div
-                key={exercise.id}
-                className="exercise-card"
-                onClick={() => startSession(exercise)}
-              >
-                <div className="exercise-card-header">
-                  <h3>{exercise.name}</h3>
-                  <span className={`difficulty ${exercise.difficulty}`}>
-                    {difficultyNames[exercise.difficulty] || exercise.difficulty}
-                  </span>
-                </div>
-                <p>{exercise.description?.substring(0, 100)}...</p>
-                <div className="exercise-card-footer">
-                  <span className="category-tag">{categoryNames[exercise.category] || exercise.category}</span>
-                  <span>{exercise.sets}组 × {exercise.repetitions}次</span>
+        <AnimatePresence mode="wait">
+          {currentView === 'exercises' && (
+            <motion.section
+              key="exercises"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-medium text-stone-700 mb-6">康复动作</h2>
+
+              {/* Category Filter */}
+              <div className="flex gap-2 mb-6 flex-wrap">
+                {Object.entries(categoryNames).map(([key, name]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedCategory(key)}
+                    className={`px-4 py-2 rounded-full text-sm border-2 transition-all ${
+                      selectedCategory === key
+                        ? 'bg-[#e8a4b8] border-[#e8a4b8] text-white'
+                        : 'bg-white/70 border-stone-200 text-stone-600 hover:border-[#e8a4b8]'
+                    }`}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+
+              {/* Exercise Cards */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredExercises.map((exercise, index) => (
+                  <ExerciseCard
+                    key={exercise.id}
+                    id={exercise.id}
+                    name={exercise.name}
+                    description={exercise.description}
+                    category={exercise.category}
+                    difficulty={exercise.difficulty}
+                    sets={exercise.sets}
+                    repetitions={exercise.repetitions}
+                    index={index}
+                    onClick={() => startSession(exercise)}
+                  />
+                ))}
+              </div>
+            </motion.section>
+          )}
+
+          {/* Progress View */}
+          {currentView === 'progress' && (
+            <motion.section
+              key="progress"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-2xl font-medium text-stone-700 mb-6">我的进度</h2>
+
+              {/* Energy Ring Section */}
+              <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-sm">
+                <div className="flex flex-col items-center">
+                  <EnergyRing metrics={energyMetrics} size={220} />
+                  <MetricLegend metrics={energyMetrics} />
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* Progress View */}
-        <section className={`view ${currentView === 'progress' ? 'active' : ''}`}>
-          <h2>我的进度</h2>
-          <div className="progress-summary">
-            <div className="stat-card">
-              <span className="stat-value">{progressSummary?.total_sessions || 0}</span>
-              <span className="stat-label">训练次数</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{progressSummary?.current_streak || 0}</span>
-              <span className="stat-label">连续天数</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{Math.round(progressSummary?.total_minutes || 0)}</span>
-              <span className="stat-label">训练分钟</span>
-            </div>
-          </div>
-
-          <div className="strength-metrics">
-            <h3>力量恢复进度</h3>
-            {progressSummary?.strength_metrics && Object.entries(progressSummary.strength_metrics).map(([name, data]) => (
-              <div key={name} className="metric-item">
-                <div className="metric-header">
-                  <span>{metricNames[name] || name}</span>
-                  <span>{Math.round(data.value)}%</span>
-                </div>
-                <div className="metric-bar">
-                  <div className="metric-fill" style={{ width: `${data.progress}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="achievements-section">
-            <h3>成就勋章</h3>
-            <div className="achievements-grid">
-              {achievements.map(achievement => (
-                <div
-                  key={achievement.id}
-                  className={`achievement-badge ${achievement.is_earned ? 'earned' : ''}`}
+              {/* Stats Summary */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 text-center shadow-sm"
                 >
-                  <div className="achievement-icon">
-                    {achievementIcons[achievement.icon] || '🌟'}
-                  </div>
-                  <div className="achievement-name">{achievement.name}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Session View */}
-        <section className={`view ${currentView === 'session' ? 'active' : ''}`}>
-          <div className="session-header">
-            <h2>{selectedExercise?.name || '动作名称'}</h2>
-            <button className="btn btn-danger" onClick={endSession}>结束训练</button>
-          </div>
-
-          <div className="session-content">
-            {/* Video Area */}
-            <div className="video-area">
-              <div className="video-container">
-                <video ref={videoRef} autoPlay playsInline muted />
-                <canvas ref={canvasRef} />
-                <div className="video-overlay">
-                  <div className="phase-indicator">{sessionProgress.currentPhase}</div>
-                  <div className={`score-display ${score !== null ? (score >= 80 ? 'good' : score >= 60 ? 'ok' : 'poor') : ''}`}>
-                    <span className="score-value">{score ?? '--'}</span>
-                    <span className="score-label">得分</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Info Panel */}
-            <div className="info-panel">
-              {/* Progress */}
-              <div className="session-progress-card">
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${sessionProgress.progress}%` }} />
-                </div>
-                <div className="progress-text">
-                  <span>第 {sessionProgress.currentSet}/{sessionProgress.totalSets} 组</span>
-                  <span>第 {sessionProgress.currentRep}/{sessionProgress.totalReps} 次</span>
-                </div>
+                  <span className="block text-3xl font-light text-[#e8a4b8]">
+                    {progressSummary?.total_sessions || 0}
+                  </span>
+                  <span className="text-sm text-stone-500">训练次数</span>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 text-center shadow-sm"
+                >
+                  <span className="block text-3xl font-light text-[#f5c869]">
+                    {progressSummary?.current_streak || 0}
+                  </span>
+                  <span className="text-sm text-stone-500">连续天数</span>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 text-center shadow-sm"
+                >
+                  <span className="block text-3xl font-light text-[#8bc99b]">
+                    {Math.round(progressSummary?.total_minutes || 0)}
+                  </span>
+                  <span className="text-sm text-stone-500">训练分钟</span>
+                </motion.div>
               </div>
 
-              {/* Current Phase */}
-              <div className="current-phase">
-                <h4>当前阶段</h4>
-                <p>{selectedExercise?.phases?.[0]?.description || '准备开始'}</p>
-                <ul className="phase-cues">
-                  {selectedExercise?.phases?.[0]?.cues?.map((cue, i) => (
-                    <li key={i}>{cue}</li>
+              {/* Achievements */}
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-stone-700">成就勋章</h3>
+                  <AchievementProgress
+                    earned={achievements.filter(a => a.is_earned).length}
+                    total={achievements.length}
+                  />
+                </div>
+                <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                  {achievements.map((achievement) => (
+                    <AchievementBadge
+                      key={achievement.id}
+                      id={achievement.id}
+                      name={achievement.name}
+                      icon={achievement.icon}
+                      isEarned={achievement.is_earned}
+                    />
                   ))}
-                </ul>
-              </div>
-
-              {/* Feedback Area */}
-              <div className="feedback-area">
-                <div className={`feedback-message ${feedback?.type || ''}`}>
-                  {feedback?.text || '准备开始'}
                 </div>
               </div>
+            </motion.section>
+          )}
 
-              {/* Control Buttons */}
-              <div className="session-controls">
-                {sessionState === 'preparing' && (
-                  <button className="btn btn-primary btn-large" onClick={beginExercise}>
-                    开始训练
-                  </button>
-                )}
-                {sessionState === 'exercising' && (
-                  <>
-                    <button className="btn btn-secondary" onClick={() => sendControl('pause')}>
-                      暂停
-                    </button>
-                    <button className="btn btn-secondary" onClick={() => sendControl('rest')}>
-                      休息一下
-                    </button>
-                  </>
-                )}
-                {sessionState === 'paused' && (
-                  <button className="btn btn-primary" onClick={() => sendControl('resume')}>
-                    继续
-                  </button>
-                )}
-                {sessionState === 'resting' && (
-                  <button className="btn btn-secondary" onClick={() => sendControl('rest')}>
-                    休息一下
-                  </button>
-                )}
+          {/* Session View */}
+          {currentView === 'session' && (
+            <motion.section
+              key="session"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-medium text-stone-700">
+                  {selectedExercise?.name || '训练中'}
+                </h2>
+                <button
+                  onClick={endSession}
+                  className="px-4 py-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition-colors"
+                >
+                  结束训练
+                </button>
               </div>
-            </div>
-          </div>
-        </section>
+
+              <div className="grid lg:grid-cols-3 gap-4">
+                {/* Video Area */}
+                <div className="lg:col-span-2 bg-black rounded-2xl overflow-hidden relative">
+                  <div className="aspect-[4/3] relative">
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                    <PoseOverlay
+                      ref={poseOverlayRef}
+                      width={480}
+                      height={360}
+                      glowEnabled={true}
+                    />
+                    <SessionProgressOverlay
+                      currentPhase={sessionProgress.currentPhase}
+                      score={score}
+                    />
+                    {/* Phase Transition Animation */}
+                    <PhaseTransition
+                      phase={sessionProgress.currentPhase}
+                      show={showPhaseTransition}
+                    />
+                    {/* Score Change Popup */}
+                    <ScorePopup
+                      score={score ?? 0}
+                      previousScore={prevScore}
+                      show={showScorePopup}
+                    />
+                  </div>
+                </div>
+
+                {/* Info Panel */}
+                <div className="space-y-4">
+                  {/* Progress */}
+                  <SessionProgress
+                    progress={sessionProgress.progress}
+                    currentSet={sessionProgress.currentSet}
+                    totalSets={sessionProgress.totalSets}
+                    currentRep={sessionProgress.currentRep}
+                    totalReps={sessionProgress.totalReps}
+                    currentPhase={sessionProgress.currentPhase}
+                    score={score}
+                  />
+
+                  {/* Feedback */}
+                  <FeedbackPanel feedback={feedback} />
+
+                  {/* Controls */}
+                  <div className="flex gap-2">
+                    {sessionState === 'preparing' && (
+                      <button
+                        onClick={beginExercise}
+                        className="flex-1 py-3 bg-[#e8a4b8] text-white rounded-full font-medium hover:bg-[#d88a9f] transition-colors"
+                      >
+                        开始训练
+                      </button>
+                    )}
+                    {sessionState === 'exercising' && (
+                      <button
+                        onClick={() => sendControl('pause')}
+                        className="flex-1 py-3 bg-stone-200 text-stone-700 rounded-full font-medium hover:bg-stone-300 transition-colors"
+                      >
+                        暂停
+                      </button>
+                    )}
+                    {sessionState === 'paused' && (
+                      <button
+                        onClick={() => sendControl('resume')}
+                        className="flex-1 py-3 bg-[#e8a4b8] text-white rounded-full font-medium hover:bg-[#d88a9f] transition-colors"
+                      >
+                        继续
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Session Complete Modal */}
-      {showModal && sessionSummary && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>🎉 做得很棒！</h2>
-            <div className="session-summary">
-              <div className="summary-stat">
-                <span className="summary-value">{Math.round(sessionSummary.average_score || 0)}</span>
-                <span className="summary-label">平均得分</span>
-              </div>
-              <div className="summary-stat">
-                <span className="summary-value">{sessionSummary.completed_reps || 0}</span>
-                <span className="summary-label">完成次数</span>
-              </div>
-              <div className="summary-stat">
-                <span className="summary-value">{formatDuration(sessionSummary.session_duration || 0)}</span>
-                <span className="summary-label">训练时长</span>
-              </div>
-            </div>
+      <AnimatePresence>
+        {showModal && sessionSummary && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl"
+            >
+              <div className="text-4xl mb-4">🎉</div>
+              <h2 className="text-2xl font-medium text-[#e8a4b8] mb-6">做得很棒！</h2>
 
-            {sessionSummary.new_achievements && sessionSummary.new_achievements.length > 0 && (
-              <div className="new-achievements">
-                <h3>🏆 获得新成就！</h3>
-                <div className="achievements-grid">
-                  {sessionSummary.new_achievements.map(a => (
-                    <div key={a.id} className="achievement-badge earned">
-                      <div className="achievement-icon">{achievementIcons[a.icon] || '🌟'}</div>
-                      <div className="achievement-name">{a.name}</div>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-stone-100 rounded-2xl p-4">
+                  <span className="block text-2xl font-bold text-[#e8a4b8]">
+                    {Math.round(sessionSummary.average_score || 0)}
+                  </span>
+                  <span className="text-xs text-stone-500">平均得分</span>
+                </div>
+                <div className="bg-stone-100 rounded-2xl p-4">
+                  <span className="block text-2xl font-bold text-[#8bc99b]">
+                    {sessionSummary.completed_reps || 0}
+                  </span>
+                  <span className="text-xs text-stone-500">完成次数</span>
+                </div>
+                <div className="bg-stone-100 rounded-2xl p-4">
+                  <span className="block text-2xl font-bold text-[#7eb8da]">
+                    {formatDuration(sessionSummary.session_duration || 0)}
+                  </span>
+                  <span className="text-xs text-stone-500">训练时长</span>
                 </div>
               </div>
-            )}
 
-            <button className="btn btn-primary" onClick={closeModal}>继续</button>
-          </div>
-        </div>
-      )}
+              {sessionSummary.new_achievements && sessionSummary.new_achievements.length > 0 && (
+                <div className="bg-gradient-to-r from-amber-100 to-yellow-100 rounded-2xl p-4 mb-6">
+                  <h3 className="font-medium text-amber-700 mb-2">🏆 获得新成就！</h3>
+                  <div className="flex justify-center gap-2">
+                    {sessionSummary.new_achievements.map(a => (
+                      <span key={a.id} className="text-2xl">
+                        {achievementIcons[a.icon] || '🌟'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={closeModal}
+                className="w-full py-3 bg-[#e8a4b8] text-white rounded-full font-medium hover:bg-[#d88a9f] transition-colors"
+              >
+                继续
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
