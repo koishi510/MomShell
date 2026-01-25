@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-01-25
+
+### Performance Optimization - Non-blocking LLM Feedback
+
+#### Fixed
+
+- **Critical: Eliminated 1-2 second stuttering** caused by blocking LLM API calls
+  - Root cause: `FeedbackNode` awaited LLM API response synchronously, blocking frame processing
+  - Solution: LLM feedback generation now runs in background using `asyncio.create_task()`
+
+#### Changed
+
+- **Feedback Node** (`app/services/rehab/workflow/nodes/feedback.py`)
+  - Background task pattern: feedback generated asynchronously, results delivered on next frame
+  - Added `_pending_generation` task tracking to prevent duplicate generations
+  - No blocking of frame processing pipeline
+
+- **Pose Detection** (`app/services/rehab/pose/detector.py`)
+  - Switched back to VIDEO mode from LIVE_STREAM for better responsiveness
+  - Upgraded to FULL model for improved accuracy
+  - VIDEO mode provides synchronous results without the 1-frame delay of LIVE_STREAM
+
+- **Frontend** (`frontend/app/rehab/page.tsx`)
+  - Increased frame rate to 20 FPS
+  - Added keypoint smoothing (EMA) for smoother skeleton rendering
+  - Using `requestAnimationFrame` for optimal frame timing
+  - Increased capture resolution to 480x360 for better detection
+  - `PHASE_NAMES` moved to module level constant
+
+#### Technical Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Background LLM generation | LLM API calls take 1-2 seconds; running in background prevents frame blocking |
+| VIDEO mode over LIVE_STREAM | LIVE_STREAM has 1-frame delay; VIDEO mode is synchronous and more responsive |
+| FULL model over LITE | Better accuracy with acceptable performance now that LLM is non-blocking |
+| Keypoint smoothing (EMA) | Reduces jitter in skeleton rendering, factor of 0.25 for responsiveness |
+
+#### Performance Impact
+
+- **Eliminated periodic 1-2 second freezes** during exercise sessions
+- Smooth 20+ FPS skeleton rendering
+- LLM feedback still generated every 6 seconds but no longer blocks UI
+
+---
+
 ## [0.2.1] - 2026-01-24
 
 ### Performance Optimization - Async Processing & Data Transfer
