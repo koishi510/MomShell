@@ -4,8 +4,22 @@ An AI powered assistant for postpartum mothers.
 
 ## Features
 
-- **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection
+- **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection and voice feedback
 - **Soulful Companion**: Emotional support chat companion powered by Zhipu GLM-4
+
+## Tech Stack
+
+### Backend
+- **FastAPI** - High-performance async web framework
+- **MediaPipe** - Real-time pose detection (33 landmarks)
+- **LangGraph** - Workflow orchestration for coaching logic
+- **Edge TTS** - Microsoft neural voice synthesis
+- **SQLite + SQLAlchemy** - Lightweight database
+
+### Frontend
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
 
 ## Project Structure
 
@@ -19,6 +33,12 @@ MomShell/
 │   └── services/          # Business logic
 │       ├── chat/          # Soulful Companion service
 │       └── rehab/         # Recovery Coach service
+│           ├── pose/      # MediaPipe pose detection
+│           ├── exercises/ # Exercise library
+│           ├── analysis/  # Pose analysis & scoring
+│           ├── feedback/  # LLM feedback & TTS
+│           ├── progress/  # Progress tracking
+│           └── workflow/  # LangGraph workflow
 └── frontend/              # Next.js frontend
     ├── app/               # App router pages
     ├── components/        # React components
@@ -109,14 +129,35 @@ npm run dev
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ANTHROPIC_API_KEY` | Anthropic API key for AI feedback | - |
-| `ZHIPUAI_API_KEY` | Zhipu AI API key for chat companion | - |
-| `DATABASE_URL` | Database connection URL | `sqlite+aiosqlite:///./momshell.db` |
-| `DEBUG` | Enable debug mode | `false` |
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `LLM_API_KEY` | API key for LLM provider (OpenAI-compatible) | Yes | - |
+| `LLM_BASE_URL` | Custom API endpoint (leave empty for OpenAI) | No | - |
+| `LLM_MODEL` | Model name for feedback generation | No | `gpt-3.5-turbo` |
+| `ZHIPUAI_API_KEY` | Zhipu AI API key for chat companion | No | - |
+| `DATABASE_URL` | Database connection URL | No | `sqlite+aiosqlite:///./momshell.db` |
+| `DEBUG` | Enable debug mode | No | `false` |
+| `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence | No | `0.3` |
+| `TTS_VOICE` | Microsoft Edge TTS voice | No | `zh-CN-XiaoxiaoNeural` |
 
 See `.env.example` for all available configuration options.
+
+## Architecture Highlights
+
+### Real-time Pose Detection
+- Uses MediaPipe Pose Landmarker with VIDEO mode for tracking
+- FULL model for better accuracy
+- Client-side skeleton rendering for minimal latency
+
+### Non-blocking Feedback
+- LLM feedback generation runs in background
+- TTS synthesis is fire-and-forget
+- No blocking of the frame processing pipeline
+
+### WebSocket Protocol
+- Real-time bidirectional communication
+- Client sends video frames, server returns keypoints
+- Skeleton drawn on client side for smooth 20+ FPS experience
 
 ## License
 
