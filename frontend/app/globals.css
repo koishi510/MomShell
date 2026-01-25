@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, 'Times New Roman', serif;
 }
 
 body {
@@ -18,6 +19,11 @@ body {
   font-family: 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 衬线字体类 */
+.font-serif {
+  font-family: var(--font-serif);
 }
 
 /* 隐藏滚动条但保持滚动功能 */
