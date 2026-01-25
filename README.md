@@ -6,6 +6,11 @@ An AI powered assistant for postpartum mothers.
 
 - **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection and voice feedback
 - **Soulful Companion**: Emotional support chat companion powered by Zhipu GLM-4
+- **Community**: Mutual support community for postpartum mothers to share experiences and get professional advice
+  - Dual-channel system: Professional Channel (doctors' advice) & Experience Channel (moms' stories)
+  - Verified healthcare professionals: doctors, therapists, nurses
+  - Q&A with likes, collections, and content moderation
+  - Daily Resonance topics and Shell Picks (collections)
 
 ## Tech Stack
 
@@ -41,9 +46,16 @@ MomShell/
 │           └── workflow/  # LangGraph workflow
 └── frontend/              # Next.js frontend
     ├── app/               # App router pages
+    │   ├── community/     # Community pages
+    │   ├── companion/     # Soulful Companion page
+    │   └── rehab/         # Recovery Coach page
     ├── components/        # React components
+    │   ├── community/     # Community components
+    │   ├── companion/     # Companion components
+    │   └── home/          # Home page components
     ├── hooks/             # Custom hooks
-    └── lib/               # Utilities
+    ├── lib/               # Utilities & design tokens
+    └── types/             # TypeScript type definitions
 ```
 
 ## Getting Started
