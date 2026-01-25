@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-25
+
+### Added
+
+#### Community Module - Mutual Support Community (`frontend/app/community/`, `frontend/components/community/`)
+
+- **Dual-Channel System**
+  - Professional Channel: Expert advice from verified healthcare professionals
+  - Experience Channel: Real stories and tips from fellow mothers
+  - Smooth channel switching with animated transitions
+
+- **User Role System**
+  - Regular users: Mom, Dad, Family Member
+  - Certified professionals: Doctor, Therapist, Nurse
+  - Visual badges and verification indicators
+
+- **Q&A Features**
+  - Question posting with rich text and images
+  - Like and collection functionality
+  - Professional vs experience answer distinction
+  - Accepted answer marking
+
+- **Content Moderation**
+  - Automated sensitive content filtering
+  - Multi-category keyword detection (violence, fraud, self-harm, etc.)
+  - Real-time moderation status feedback with animations
+
+- **Community Components**
+  - `CommunityFeed`: Main feed with infinite scroll layout
+  - `ChannelSwitcher`: Animated dual-channel toggle
+  - `PostCard`: Glass-morphism post cards with hover effects
+  - `QuestionModal`: Full-screen question composer
+  - `QuestionDetailModal`: Detailed question view with answers
+  - `DailyResonance`: Trending topics with staggered card layout
+  - `ShellPicks`: Collections entry point ("拾贝")
+  - `CommunityBackground`: Animated gradient background
+
+### Changed
+
+#### UI/UX Improvements
+
+- **Design System Enhancement**
+  - Consistent "breathing" visual style across all pages
+  - Glass-morphism cards with backdrop blur effects
+  - Warm, healing color palette (rose, amber, stone tones)
+  - Smooth Framer Motion animations throughout
+
+- **Home Page Polish**
+  - Refined navigation and layout consistency
+  - Improved visual hierarchy and spacing
+
+- **Component Architecture**
+  - Added `lib/design-tokens.ts` for centralized design constants
+  - Unified animation spring configurations
+  - Reusable motion variants
+
+---
+
 ## [0.2.2] - 2026-01-25
 
 ### Performance Optimization - Non-blocking LLM Feedback
