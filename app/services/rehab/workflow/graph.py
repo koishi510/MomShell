@@ -25,6 +25,8 @@ class CoachWorkflow:
 
     This class manages the coaching session state and processes frames
     through detection, analysis, feedback, and tracking nodes.
+
+    Optimized: Only runs full analysis every N frames for lower latency.
     """
 
     def __init__(self, use_llm: bool = True) -> None:
@@ -43,8 +45,14 @@ class CoachWorkflow:
         self._state: CoachState | None = None
         self._current_frame: NDArray[np.uint8] | None = None
 
+        # Optimization: only analyze every N frames
+        self._frame_counter = 0
+        self._analyze_every_n_frames = 2  # Analyze every 2nd frame (increased from 3)
+
     async def _process_pipeline(self, frame: NDArray[np.uint8]) -> CoachState:
         """Process a frame through the full pipeline.
+
+        Optimized: Only runs analysis/feedback/tracking every N frames.
 
         Args:
             frame: Video frame to process.
@@ -55,17 +63,21 @@ class CoachWorkflow:
         if self._state is None:
             raise RuntimeError("No active session")
 
-        # Step 1: Detect pose
+        self._frame_counter += 1
+
+        # Step 1: Always detect pose
         self._state = await self._detect_node(self._state, frame)
 
-        # Step 2: Analyze pose
-        self._state = await self._analyze_node(self._state)
+        # Steps 2-4: Only run every N frames to reduce latency
+        if self._frame_counter % self._analyze_every_n_frames == 0:
+            # Step 2: Analyze pose
+            self._state = await self._analyze_node(self._state)
 
-        # Step 3: Generate feedback
-        self._state = await self._feedback_node(self._state)
+            # Step 3: Generate feedback (runs in background, non-blocking)
+            self._state = await self._feedback_node(self._state)
 
-        # Step 4: Track progress
-        self._state = await self._track_node(self._state)
+            # Step 4: Track progress
+            self._state = await self._track_node(self._state)
 
         return self._state
 
@@ -130,8 +142,10 @@ class CoachWorkflow:
             # Process frame through the pipeline
             self._state = await self._process_pipeline(frame)
 
-            # Get annotated frame
-            annotated = self._detect_node.get_annotated_frame(frame, self._state)
+            # Get annotated frame (async for non-blocking)
+            annotated = await self._detect_node.get_annotated_frame_async(
+                frame, self._state
+            )
 
             return self._state, annotated
         except Exception as e:

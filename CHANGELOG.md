@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-01-24
+
+### Performance Optimization - Async Processing & Data Transfer
+
+#### Changed
+
+- **Critical: Eliminated Full Image Return** (`app/api/routes/websocket.py`)
+  - Server now returns only keypoint coordinates (~1KB) instead of full annotated images (~15KB)
+  - **90%+ reduction in WebSocket data transfer**
+  - Removed server-side skeleton drawing and image encoding for each frame
+
+- **Frontend Skeleton Rendering** (`frontend/app/rehab/page.tsx`)
+  - Added client-side skeleton drawing using Canvas API
+  - `drawSkeleton()` function renders pose with color-coded feedback
+  - Increased frame rate from 8 to 10 FPS (feasible due to reduced latency)
+  - Added `POSE_CONNECTIONS` constant for MediaPipe 33-landmark skeleton
+
+- **Pose Detection** (`app/services/rehab/pose/detector.py`)
+  - Added `detect_async()` method using thread pool executor
+  - Added `draw_landmarks_async()` method for non-blocking drawing
+  - Added `detection_scale` parameter (default 0.5x) for faster detection
+  - Frame downscaling before MediaPipe processing reduces computation time
+  - Shared `ThreadPoolExecutor` with 2 workers for CPU-bound operations
+
+- **Detection Node** (`app/services/rehab/workflow/nodes/detect.py`)
+  - Updated to use async pose detection
+  - Added `get_annotated_frame_async()` method
+  - Configurable `detection_scale` parameter passed through factory function
+
+- **WebSocket Handler** (`app/api/routes/websocket.py`)
+  - Added async `decode_frame_async()` for base64 decoding
+  - Dedicated `ThreadPoolExecutor` with 2 workers for image I/O
+  - Returns `keypoints` and `skeleton_color` instead of `annotated_frame`
+
+#### Technical Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Client-side skeleton rendering | Eliminates ~15KB/frame return transfer, removes encoding latency |
+| Thread pool for pose detection | MediaPipe is CPU-bound, thread pool prevents blocking async event loop |
+| 0.5x detection scale default | MediaPipe landmarks are normalized, half resolution sufficient for accuracy |
+| Return keypoints as JSON | ~1KB vs ~15KB per frame, 90%+ bandwidth reduction |
+
+#### Performance Impact
+
+- **Network transfer reduced by 90%+** (keypoints ~1KB vs full image ~15KB)
+- Event loop no longer blocked by CPU-intensive operations
+- Server no longer encodes images for each frame
+- Smoother real-time feedback with lower latency
+
+---
+
 ## [0.2.0] - 2026-01-24
 
 ### Changed
