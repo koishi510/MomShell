@@ -1,0 +1,102 @@
+name: Recovery Coach Issue
+description: Report issues with pose detection, exercises, or voice feedback
+title: "[Coach]: "
+labels: ["coach", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for issues specifically related to the Recovery Coach feature, including pose detection, exercise tracking, and voice feedback.
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What type of coach issue are you experiencing?
+      options:
+        - Camera/Video not working
+        - Pose detection inaccurate
+        - Exercise not recognized
+        - Voice feedback not playing
+        - Progress not saved
+        - Performance issues (lag/slow)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: exercise
+    attributes:
+      label: Exercise (if applicable)
+      description: Which exercise were you doing when the issue occurred?
+      options:
+        - N/A
+        - Diaphragmatic Breathing
+        - Kegel Exercise
+        - Dead Bug
+        - Bridge
+        - Cat-Cow Stretch
+        - Wall Push-up
+        - Standing Balance
+        - Gentle Squat
+        - Shoulder Roll
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the issue in detail.
+      placeholder: What happened? What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Start the Recovery Coach
+        2. Select exercise '...'
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: camera
+    attributes:
+      label: Camera Type
+      description: What type of camera are you using?
+      options:
+        - Built-in webcam
+        - External USB camera
+        - Virtual camera
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: Which browser are you using?
+      placeholder: "e.g., Chrome 120, Firefox 121"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs / Console Output
+      description: |
+        Please provide any relevant logs:
+        - Browser console (F12 → Console)
+        - Backend terminal output
+        - WebSocket connection errors
+      placeholder: Paste logs here...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add screenshots, screen recordings, or any other helpful information.
