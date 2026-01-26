@@ -33,31 +33,24 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # =============================================================================
-# Production stage
+# Production stage - serve static export
 # =============================================================================
 FROM base AS runner
 
 WORKDIR /app
 
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 nextjs && \
+    npm install -g serve
 
-# Copy public folder if it has contents
-COPY --from=builder /app/public ./public
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy static export output
+COPY --from=builder --chown=nextjs:nodejs /app/out ./out
 
 USER nextjs
 
 EXPOSE 7860
 
-ENV PORT=7860 \
-    HOSTNAME="0.0.0.0"
-
-CMD ["node", "server.js"]
+# Serve static files
+CMD ["serve", "-s", "out", "-l", "7860"]

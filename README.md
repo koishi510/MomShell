@@ -5,7 +5,7 @@ An AI powered assistant for postpartum mothers.
 ## Features
 
 - **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection and voice feedback
-- **Soulful Companion**: Emotional support chat companion powered by Zhipu GLM-4
+- **Soulful Companion**: Emotional support chat companion powered by ModelScope Qwen
 - **Community**: Mutual support community for postpartum mothers to share experiences and get professional advice
   - Dual-channel system: Professional Channel (doctors' advice) & Experience Channel (moms' stories)
   - Verified healthcare professionals: doctors, therapists, nurses
@@ -16,7 +16,7 @@ An AI powered assistant for postpartum mothers.
 
 ### Backend
 - **FastAPI** - High-performance async web framework
-- **MediaPipe** - Real-time pose detection (33 landmarks)
+- **MediaPipe** - Real-time pose detection (33 landmarks, LITE model by default)
 - **LangGraph** - Workflow orchestration for coaching logic
 - **Edge TTS** - Microsoft neural voice synthesis
 - **SQLite + SQLAlchemy** - Lightweight database
@@ -141,72 +141,57 @@ npm run dev
 
 ## Docker Deployment
 
-### Quick Start with Docker Compose
-
-The recommended way to deploy MomShell in production.
+### Prerequisites
 
 ```bash
-# 1. Set up environment variables
+# Arch Linux
+sudo pacman -S docker docker-compose
+
+# Ubuntu/Debian
+sudo apt install docker.io docker-compose
+
+# Start Docker daemon
+sudo systemctl start docker
+```
+
+### Quick Start
+
+```bash
+# 1. Configure
 cp .env.example .env
-# Edit .env and fill in your API keys
+# Edit .env, fill in MODELSCOPE_KEY
 
-# 2. Build and start all services
+# 2. Run
 docker compose up -d --build
 
-# 3. View logs
-docker compose logs -f
+# 3. Access
+open http://localhost:7860
 ```
 
-**Access**: http://localhost:7860
-
-The Docker Compose setup includes:
-- **nginx**: Reverse proxy on port 7860
-- **backend**: FastAPI server (internal port 8000)
-- **frontend**: Next.js server (internal port 7860)
-
-### Single Container Deployment (ModelScope)
-
-For platforms like ModelScope that require a single container:
+### Commands
 
 ```bash
-# Build the image
+docker compose down          # Stop
+docker compose up -d --build # Rebuild
+docker compose logs -f       # Logs
+```
+
+### Single Container (ModelScope)
+
+```bash
 docker build -t momshell .
-
-# Run the container
 docker run -d -p 7860:7860 --env-file .env momshell
-```
-
-**Access**: http://localhost:7860
-
-This mode bundles frontend and backend into a single container, with the backend serving static frontend files.
-
-### Docker Commands
-
-```bash
-# Stop all services
-docker compose down
-
-# Rebuild after code changes
-docker compose up -d --build
-
-# View service status
-docker compose ps
-
-# Check specific service logs
-docker compose logs -f backend
-docker compose logs -f frontend
 ```
 
 ## Environment Variables
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `LLM_API_KEY` | API key for LLM provider (OpenAI-compatible) | Yes | - |
-| `LLM_BASE_URL` | Custom API endpoint (leave empty for OpenAI) | No | - |
-| `LLM_MODEL` | Model name for feedback generation | No | `gpt-3.5-turbo` |
-| `ZHIPUAI_API_KEY` | Zhipu AI API key for chat companion | No | - |
+| `MODELSCOPE_KEY` | ModelScope API key for AI services | Yes | - |
+| `MODELSCOPE_MODEL` | Model name for chat and feedback | No | `Qwen/Qwen2.5-72B-Instruct` |
 | `DATABASE_URL` | Database connection URL | No | `sqlite+aiosqlite:///./momshell.db` |
 | `DEBUG` | Enable debug mode | No | `false` |
+| `MEDIAPIPE_MODEL` | Pose detection model (`lite` or `full`) | No | `lite` |
 | `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence | No | `0.3` |
 | `TTS_VOICE` | Microsoft Edge TTS voice | No | `zh-CN-XiaoxiaoNeural` |
 
@@ -216,7 +201,7 @@ See `.env.example` for all available configuration options.
 
 ### Real-time Pose Detection
 - Uses MediaPipe Pose Landmarker with VIDEO mode for tracking
-- FULL model for better accuracy
+- LITE model by default for better performance on low-end servers (configurable via `MEDIAPIPE_MODEL`)
 - Client-side skeleton rendering for minimal latency
 
 ### Non-blocking Feedback

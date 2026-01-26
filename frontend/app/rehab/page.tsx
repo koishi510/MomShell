@@ -503,8 +503,26 @@ export default function RehabPage() {
       currentPhase: '准备中',
     });
 
-    // 等待 React 完成渲染，确保 video 元素已挂载
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // 等待 video 元素真正挂载（最多 2 秒）
+    const videoMounted = await new Promise<boolean>((resolve) => {
+      const startTime = Date.now();
+      const checkVideo = () => {
+        if (videoRef.current) {
+          resolve(true);
+        } else if (Date.now() - startTime > 2000) {
+          resolve(false);
+        } else {
+          requestAnimationFrame(checkVideo);
+        }
+      };
+      checkVideo();
+    });
+
+    if (!videoMounted) {
+      console.error('Video element did not mount in time');
+      setCurrentView('exercises');
+      return;
+    }
 
     const cameraStarted = await startCamera();
     if (!cameraStarted) {

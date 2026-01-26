@@ -18,6 +18,7 @@ services:
       - "8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - PORT=8000
     env_file:
       - .env
     volumes:
@@ -35,8 +36,8 @@ services:
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=
-    ports:
-      - "7860:7860"
+    expose:
+      - "7860"
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8000
     depends_on:

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    app_name: str = "MomShell Recovery Coach"
+    app_name: str = "MomShell"
     debug: bool = False
 
     # Database (use /app/data for Docker)

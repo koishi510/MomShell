@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-01-26
+
+### Changed
+
+#### AI Provider Migration
+
+- **Soulful Companion**: Migrated from Zhipu GLM-4 to ModelScope Qwen (Qwen2.5-72B-Instruct)
+  - Uses OpenAI-compatible API via ModelScope
+  - Environment variable changed from `ZHIPUAI_API_KEY` to `MODELSCOPE_KEY`
+
+- **Pose Detection Model**: Default changed from FULL to LITE
+  - LITE model provides better performance on low-end servers
+  - Configurable via `MEDIAPIPE_MODEL` environment variable (`lite` or `full`)
+
+#### Bug Fixes
+
+- Fixed race condition in camera initialization where video element might not be mounted in time
+  - Replaced fixed 100ms delay with `requestAnimationFrame` polling (max 2s timeout)
+
+- Fixed port configuration inconsistency
+  - Local development now correctly defaults to port 8000
+  - Docker single-container deployment uses 7860 (set via Dockerfile ENV)
+
+- Fixed Docker Compose configuration
+  - Removed port conflict (both nginx and frontend were binding to host port 7860)
+  - Added `PORT=8000` to backend environment for correct port binding
+  - Frontend now uses `expose` instead of `ports` (nginx handles external access)
+
+- Fixed frontend Dockerfile for static export mode
+  - Previous Dockerfile expected `output: "standalone"` but next.config.ts uses `output: "export"`
+  - Now uses `serve` package to serve static files from `out/` directory
+
+---
+
 ## [0.3.0] - 2026-01-25
 
 ### Added
@@ -102,7 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Pose Detection** (`app/services/rehab/pose/detector.py`)
   - Switched back to VIDEO mode from LIVE_STREAM for better responsiveness
-  - Upgraded to FULL model for improved accuracy
+  - Default model changed to LITE for performance (configurable via `MEDIAPIPE_MODEL` env var)
   - VIDEO mode provides synchronous results without the 1-frame delay of LIVE_STREAM
 
 - **Frontend** (`frontend/app/rehab/page.tsx`)
@@ -118,7 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 |----------|-----------|
 | Background LLM generation | LLM API calls take 1-2 seconds; running in background prevents frame blocking |
 | VIDEO mode over LIVE_STREAM | LIVE_STREAM has 1-frame delay; VIDEO mode is synchronous and more responsive |
-| FULL model over LITE | Better accuracy with acceptable performance now that LLM is non-blocking |
+| LITE model by default | Better performance on low-end servers; FULL available via env var |
 | Keypoint smoothing (EMA) | Reduces jitter in skeleton rendering, factor of 0.25 for responsiveness |
 
 #### Performance Impact
