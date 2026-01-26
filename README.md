@@ -1,20 +1,30 @@
 # MomShell
 
-An AI powered assistant for postpartum mothers.
+A warm, AI-powered companion for postpartum recovery — offering emotional support, exercise coaching, and a caring community for new mothers.
 
 ## Features
 
-- **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection and voice feedback
 - **Soulful Companion**: Emotional support chat companion powered by ModelScope Qwen
+  - Warm, validating, non-judgmental conversation style
+  - Designed specifically for postpartum emotional support
+  - Visual ambient effects with healing UI design
+  - Conversation memory for personalized interactions
 - **Community**: Mutual support community for postpartum mothers to share experiences and get professional advice
   - Dual-channel system: Professional Channel (doctors' advice) & Experience Channel (moms' stories)
   - Verified healthcare professionals: doctors, therapists, nurses
   - Q&A with likes, collections, and content moderation
   - Daily Resonance topics and Shell Picks (collections)
+- **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection and voice feedback
+  - Real-time pose detection with MediaPipe (33 body landmarks)
+  - 9 postpartum-specific exercises across 5 categories (breathing, pelvic floor, diastasis recti, posture, strength)
+  - LLM-powered voice feedback with Edge TTS in gentle, encouraging tone
+  - Progress tracking with achievements, streaks, and strength metrics
+  - Safety monitoring with fatigue detection and automatic rest prompts
 
 ## Tech Stack
 
 ### Backend
+
 - **FastAPI** - High-performance async web framework
 - **MediaPipe** - Real-time pose detection (33 landmarks, LITE model by default)
 - **LangGraph** - Workflow orchestration for coaching logic
@@ -22,6 +32,7 @@ An AI powered assistant for postpartum mothers.
 - **SQLite + SQLAlchemy** - Lightweight database
 
 ### Frontend
+
 - **Next.js 14** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first styling
@@ -193,31 +204,34 @@ docker run -d -p 7860:7860 --env-file .env momshell
 
 ## Environment Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `MODELSCOPE_KEY` | ModelScope API key for AI services | Yes | - |
-| `MODELSCOPE_MODEL` | Model name for chat and feedback | No | `Qwen/Qwen2.5-72B-Instruct` |
-| `DATABASE_URL` | Database connection URL | No | `sqlite+aiosqlite:///./momshell.db` |
-| `DEBUG` | Enable debug mode | No | `false` |
-| `MEDIAPIPE_MODEL` | Pose detection model (`lite` or `full`) | No | `lite` |
-| `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence | No | `0.3` |
-| `TTS_VOICE` | Microsoft Edge TTS voice | No | `zh-CN-XiaoxiaoNeural` |
+| Variable                  | Description                             | Required | Default                             |
+| ------------------------- | --------------------------------------- | -------- | ----------------------------------- |
+| `MODELSCOPE_KEY`          | ModelScope API key for AI services      | Yes      | -                                   |
+| `MODELSCOPE_MODEL`        | Model name for chat and feedback        | No       | `Qwen/Qwen2.5-72B-Instruct`         |
+| `DATABASE_URL`            | Database connection URL                 | No       | `sqlite+aiosqlite:///./momshell.db` |
+| `DEBUG`                   | Enable debug mode                       | No       | `false`                             |
+| `MEDIAPIPE_MODEL`         | Pose detection model (`lite` or `full`) | No       | `lite`                              |
+| `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence           | No       | `0.3`                               |
+| `TTS_VOICE`               | Microsoft Edge TTS voice                | No       | `zh-CN-XiaoxiaoNeural`              |
 
 See `.env.example` for all available configuration options.
 
 ## Architecture Highlights
 
 ### Real-time Pose Detection
+
 - Uses MediaPipe Pose Landmarker with VIDEO mode for tracking
 - LITE model by default for better performance on low-end servers (configurable via `MEDIAPIPE_MODEL`)
 - Client-side skeleton rendering for minimal latency
 
 ### Non-blocking Feedback
+
 - LLM feedback generation runs in background
 - TTS synthesis is fire-and-forget
 - No blocking of the frame processing pipeline
 
 ### WebSocket Protocol
+
 - Real-time bidirectional communication
 - Client sends video frames, server returns keypoints
 - Skeleton drawn on client side for smooth 20+ FPS experience

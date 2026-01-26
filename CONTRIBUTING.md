@@ -1,14 +1,14 @@
-# 开发环境配置与协作指南
+# Development Environment Setup & Collaboration Guide
 
-本文档旨在规范项目成员的开发环境配置流程与日常协作标准。为了确保跨平台环境的一致性及代码质量，所有成员在开始开发前必须严格按照以下步骤完成环境搭建。
+This document outlines the development environment setup process and collaboration standards for project contributors. To ensure cross-platform consistency and code quality, all team members must follow these steps before starting development.
 
-## 1. 系统预置要求
+## 1. System Prerequisites
 
-在获取项目代码前，请确保您的操作系统已安装以下基础工具。
+Before cloning the project, ensure your operating system has the following tools installed.
 
-### 1.1 安装 uv 包管理器
+### 1.1 Install uv Package Manager
 
-本项目使用 uv 进行 Python 版本管理与依赖锁定。请根据您的操作系统执行相应命令。
+This project uses uv for Python version management and dependency locking. Run the appropriate command for your operating system.
 
 - **Linux / macOS**:
   ```bash
@@ -19,183 +19,180 @@
   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
   ```
 
-**注意**：安装完成后，请重启终端或命令行窗口，并运行 `uv --version` 验证安装是否成功。
+**Note**: After installation, restart your terminal and run `uv --version` to verify the installation.
 
-### 1.2 安装 Git LFS
+### 1.2 Install Git LFS
 
-本项目启用 Git LFS (Large File Storage) 以管理模型权重及二进制数据文件。
+This project uses Git LFS (Large File Storage) to manage model weights and binary data files.
 
-- **Linux**: 执行 `sudo apt install git-lfs` (以 Ubuntu 为例)
-- **macOS**: 执行 `brew install git-lfs`
-- **Windows**: 通常 Git for Windows 已预装。如未安装，请前往官网下载。
+- **Linux**: Run `sudo apt install git-lfs` (Ubuntu example)
+- **macOS**: Run `brew install git-lfs`
+- **Windows**: Usually pre-installed with Git for Windows. If not, download from the official website.
 
-安装后，请在终端执行一次全局初始化命令：
+After installation, run the global initialization command:
 
 ```bash
 git lfs install
 ```
 
-## 2. 项目初始化流程
+## 2. Project Initialization
 
-克隆项目代码仓库后，请在项目根目录下按顺序执行以下指令以完成环境构建。
+After cloning the repository, run the following commands in order from the project root directory.
 
-### 2.1 同步开发环境
+### 2.1 Sync Development Environment
 
-执行以下命令，uv 将自动下载项目指定的 Python 3.11.5 版本，创建虚拟环境，并根据 `uv.lock` 安装精确版本的依赖库。
+Run the following command. uv will automatically download Python 3.11.5, create a virtual environment, and install exact dependency versions from `uv.lock`.
 
 ```bash
 uv sync
 ```
 
-### 2.2 部署 Git 钩子 (Pre-commit)
+### 2.2 Install Git Hooks (Pre-commit)
 
-本项目配置了自动化代码检查机制。执行以下命令安装 Git 钩子，确保在提交代码时自动进行格式化与质量检查。
+This project uses automated code checks. Run the following command to install Git hooks for automatic formatting and quality checks on commit.
 
 ```bash
 uv run pre-commit install
 ```
 
-## 3. 集成开发环境 (IDE) 配置
+## 3. IDE Configuration
 
-建议使用 VS Code 进行开发，并进行如下配置以确保解释器与工具链正常工作。
+We recommend VS Code for development. Configure it as follows to ensure proper interpreter and toolchain integration.
 
-1.  **选择 Python 解释器**:
-    - 打开命令面板 (Windows: `Ctrl+Shift+P`, macOS: `Cmd+Shift+P`)。
-    - 输入并选择 `Python: Select Interpreter`。
-    - 选择路径中包含 `.venv` 的选项 (通常标记为 Recommended)。
+1. **Select Python Interpreter**:
+   - Open Command Palette (Windows: `Ctrl+Shift+P`, macOS: `Cmd+Shift+P`)
+   - Type and select `Python: Select Interpreter`
+   - Choose the option containing `.venv` (usually marked as Recommended)
 
-2.  **安装推荐插件**:
-    - **Python** (Microsoft)
-    - **Ruff** (Astral Software): 用于代码格式化与静态检查。
-    - **Mypy** (Microsoft): 用于静态类型检查。
+2. **Install Recommended Extensions**:
+   - **Python** (Microsoft)
+   - **Ruff** (Astral Software): For code formatting and linting
+   - **Mypy** (Microsoft): For static type checking
 
-## 4. 日常开发工作流
+## 4. Daily Development Workflow
 
-为维护代码库的整洁与稳定，请在开发过程中遵循以下操作规范。
+Follow these guidelines to maintain a clean and stable codebase.
 
-### 4.1 每日同步
+### 4.1 Daily Sync
 
-在开始编写代码前，请务必更新本地的开发分支。建议使用 `rebase` 模式拉取远程代码，以保持提交历史的线性整洁：
+Before writing code, always update your local development branch. Use `rebase` mode to maintain a linear commit history:
 
 ```bash
-# 切换到 dev 分支并拉取最新代码
+# Switch to dev branch and pull latest code
 git checkout dev
 git pull --rebase origin dev
 uv sync
 ```
 
-### 4.2 运行项目
+### 4.2 Running the Project
 
-请使用 `uv run` 指令启动应用，以确保程序运行在隔离的虚拟环境中。具体启动命令取决于最终选用的框架或入口文件：
+Use `uv run` to start the application within the isolated virtual environment:
 
-- **运行通用 Python 脚本**:
+- **Run Python script**:
   ```bash
   uv run python app/main.py
   ```
-- **运行框架专用指令**:
-  若使用了特定框架，请按照以下格式执行：
+- **Run framework-specific commands**:
   ```bash
-  uv run [框架命令] [入口文件路径]
+  uv run [framework-command] [entry-file-path]
   ```
 
-### 4.3 依赖管理
+### 4.3 Dependency Management
 
-禁止直接使用 pip 安装依赖。请使用以下标准指令管理包，以保证 `pyproject.toml` 与 `uv.lock` 的同步更新。
+Do not use pip directly. Use the following commands to manage packages, ensuring `pyproject.toml` and `uv.lock` stay in sync.
 
-- **添加生产依赖** (如 numpy, pandas):
+- **Add production dependency** (e.g., numpy, pandas):
   ```bash
   uv add numpy
   ```
-- **添加开发依赖** (如测试工具):
+- **Add development dependency** (e.g., testing tools):
   ```bash
   uv add --dev pytest
   ```
 
-### 4.4 代码质量自查
+### 4.4 Code Quality Checks
 
-在提交代码前，建议在本地手动运行以下检查指令：
+Before committing, run these checks locally:
 
-- **代码格式化**:
+- **Code formatting**:
   ```bash
   uv run ruff format .
   ```
-- **静态代码分析 (Lint)**:
+- **Static analysis (Lint)**:
   ```bash
   uv run ruff check . --fix
   ```
-- **单元测试 (可选)**:
+- **Unit tests (optional)**:
   ```bash
   uv run pytest
   ```
 
-## 5. 协作规范与注意事项
+## 5. Collaboration Standards
 
-### 5.1 依赖与锁文件管理
+### 5.1 Dependency & Lock File Management
 
-- **uv.lock**: 该文件由工具自动生成，**严禁手动修改**。该文件必须提交至版本控制系统，以保证团队环境的一致性。
-- **冲突解决**: 若在 `git pull` 后出现 `uv.lock` 冲突，禁止手动合并文本，请直接执行 `uv lock` 命令重新生成锁定文件，并提交变更。
+- **uv.lock**: Auto-generated by the tool. **Do not edit manually**. This file must be committed to version control to ensure team environment consistency.
+- **Conflict Resolution**: If `uv.lock` conflicts after `git pull`, do not manually merge. Run `uv lock` to regenerate the lock file, then commit.
 
-### 5.2 大文件处理
+### 5.2 Large File Handling
 
-- 提交非文本的大型文件 (如 .pt, .parquet, .db) 前，请确认其后缀已包含在 `.gitattributes` 配置中，以确保通过 LFS 存储。
+- Before committing large binary files (.pt, .parquet, .db), verify their extensions are listed in `.gitattributes` to ensure LFS storage.
 
-### 5.3 代码规范体系
+### 5.3 Code Standards
 
-本项目采用自动化工具链强制执行统一的代码标准，所有提交均需通过 CI 校验：
+This project enforces unified code standards through automated tooling. All commits must pass CI checks:
 
-1.  **格式规范**: 遵循 PEP 8 与 Black 标准（**双引号**、**88 字符行宽**、**4 空格缩进**），由 `ruff format` 自动处理。
-2.  **导入规范**: Import 语句须按“标准库 > 第三方库 > 本地模块”的分组顺序排列，严禁保留未使用的引用。
-3.  **质量管控**: 代码须通过 Linter 静态分析，杜绝未使用的变量、高风险语法及过时的 Python 特性。
-4.  **类型安全**: 必须编写类型提示 (Type Hints)，并通过 Mypy 静态类型检查以确保逻辑稳健。
+1. **Formatting**: Follows PEP 8 and Black standards (**double quotes**, **88-character line width**, **4-space indentation**), handled by `ruff format`.
+2. **Imports**: Must be ordered as "standard library > third-party > local modules". Unused imports are prohibited.
+3. **Quality Control**: Code must pass linter analysis. No unused variables, risky syntax, or deprecated Python features.
+4. **Type Safety**: Type hints are required and must pass Mypy static type checking.
 
-### 5.4 提交信息规范 (Commit Convention)
+### 5.4 Commit Message Convention
 
-为配合 CI/CD 自动化流程及节省构建资源，所有 Commit Message 必须遵循 Conventional Commits 规范。格式为 `type: description`。
+All commit messages must follow Conventional Commits format: `type: description`.
 
-| 类型 (Type)  | 说明                      | CI 行为          |
-| :----------- | :------------------------ | :--------------- |
-| **feat**     | 新增功能                  | 触发构建与测试   |
-| **fix**      | 修复 Bug                  | 触发构建与测试   |
-| **refactor** | 代码重构 (无逻辑变更)     | 触发构建与测试   |
-| **docs**     | 仅修改文档 (README, 注释) | **跳过 CI 构建** |
-| **chore**    | 构建配置或工具变动        | **跳过 CI 构建** |
+| Type         | Description                        | CI Behavior        |
+| :----------- | :--------------------------------- | :----------------- |
+| **feat**     | New feature                        | Triggers build/test |
+| **fix**      | Bug fix                            | Triggers build/test |
+| **refactor** | Code refactoring (no logic change) | Triggers build/test |
+| **docs**     | Documentation only (README, comments) | **Skips CI build** |
+| **chore**    | Build config or tooling changes    | **Skips CI build** |
 
-### 5.5 分支管理与 Pull Request 流程
+### 5.5 Branch Management & Pull Request Process
 
-本项目采用 **双主分支策略** (`main` 为生产分支，`dev` 为开发集成分支)。
+This project uses a **dual main branch strategy** (`main` for production, `dev` for development integration).
 
-1.  **分支结构与命名**:
-    - **dev**: 日常开发的主干分支，所有新功能分支应基于此分支创建。
-    - **main**: 仅用于发布生产版本，严禁直接推送。
-    - **Feature 分支**: 命名为 `feat/功能名称` 或 `fix/问题描述`。
+1. **Branch Structure & Naming**:
+   - **dev**: Main development branch. All feature branches should be created from here.
+   - **main**: Production releases only. Direct pushes are prohibited.
+   - **Feature branches**: Name as `feat/feature-name` or `fix/issue-description`.
 
-2.  **同步与变基 (Rebase)**:
-    - 为保持提交历史的线性, **不要在Feature分支上使用Merge合并dev代码**。
-    - 在提交 Pull Request 前，必须将本地 Feature 分支变基 (Rebase) 到最新的 `dev` 分支：
-      ```bash
-      git fetch origin
-      git rebase origin/dev
-      ```
-    - 如遇冲突，请在本地解决冲突后继续变基过程。
+2. **Sync & Rebase**:
+   - To maintain linear history, **do not merge dev into feature branches**.
+   - Before creating a Pull Request, rebase your feature branch onto the latest `dev`:
+     ```bash
+     git fetch origin
+     git rebase origin/dev
+     ```
+   - If conflicts occur, resolve them locally and continue the rebase.
 
-3.  **提交流程**:
-    - 确保本地 `uv run pytest` 全部通过。
-    - 推送分支至远程仓库（如使用了 rebase，可能需要 `git push --force-with-lease`）。
-    - 创建 Pull Request，**目标分支必须选择 `dev`**。
+3. **Submission Process**:
+   - Ensure `uv run pytest` passes locally.
+   - Push branch to remote (may require `git push --force-with-lease` after rebase).
+   - Create Pull Request with **target branch set to `dev`**.
 
-4.  **合并标准**:
-    - **CI 检查**: 所有自动化测试与 Linter 检查必须通过。
-    - **代码评审**: 必须获得至少一位项目成员的批准 (Approve) 方可合并。
+4. **Merge Criteria**:
+   - **CI Checks**: All automated tests and linter checks must pass.
+   - **Code Review**: At least one team member approval required before merging.
 
-## 6. 常见问题排查
+## 6. Troubleshooting
 
-- **Q: 找不到 uv 命令？**
-  - A: 请检查是否配置了环境变量或未重启终端。Windows 用户请尝试以管理员身份运行 PowerShell。
-- **Q: VS Code 代码提示报错？**
-  - A: 请确认 IDE 右下角的 Python 解释器已选择 `.venv` 目录下的虚拟环境，而非系统全局 Python。
-- **Q: 提交代码被 Git 拒绝？**
-  - A: 请仔细阅读终端报错信息。通常是因为未通过 Pre-commit 检查（如格式错误或遗留了调试代码）。Ruff 通常会自动修复格式问题，您只需再次执行 `git add` 并 `git commit` 即可。
+- **Q: uv command not found?**
+  - A: Check if environment variables are set or if you need to restart the terminal. Windows users should try running PowerShell as administrator.
 
-```
+- **Q: VS Code showing code errors?**
+  - A: Verify the Python interpreter (bottom-right corner) is set to the `.venv` virtual environment, not the system Python.
 
-```
+- **Q: Git rejecting commits?**
+  - A: Read the terminal error message carefully. Usually caused by failing pre-commit checks (formatting errors or leftover debug code). Ruff typically auto-fixes formatting issues — just run `git add` and `git commit` again.
