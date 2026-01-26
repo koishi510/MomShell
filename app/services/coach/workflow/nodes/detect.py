@@ -6,8 +6,8 @@ Uses async pose detection with thread pool for non-blocking operation.
 import numpy as np
 from numpy.typing import NDArray
 
-from app.services.rehab.pose.detector import PoseDetector
-from app.services.rehab.workflow.state import CoachState
+from app.services.coach.pose.detector import PoseDetector
+from app.services.coach.workflow.state import CoachState
 
 
 class DetectNode:

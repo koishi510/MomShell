@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from app.schemas.exercise import Exercise, ExerciseCategory, ExerciseSession
-from app.services.rehab.exercises.library import (
+from app.services.coach.exercises.library import (
     get_all_exercises,
     get_all_sessions,
     get_exercise,

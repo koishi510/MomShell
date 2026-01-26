@@ -129,17 +129,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Changed
 
-- **Feedback Node** (`app/services/rehab/workflow/nodes/feedback.py`)
+- **Feedback Node** (`app/services/coach/workflow/nodes/feedback.py`)
   - Background task pattern: feedback generated asynchronously, results delivered on next frame
   - Added `_pending_generation` task tracking to prevent duplicate generations
   - No blocking of frame processing pipeline
 
-- **Pose Detection** (`app/services/rehab/pose/detector.py`)
+- **Pose Detection** (`app/services/coach/pose/detector.py`)
   - Switched back to VIDEO mode from LIVE_STREAM for better responsiveness
   - Default model changed to LITE for performance (configurable via `MEDIAPIPE_MODEL` env var)
   - VIDEO mode provides synchronous results without the 1-frame delay of LIVE_STREAM
 
-- **Frontend** (`frontend/app/rehab/page.tsx`)
+- **Frontend** (`frontend/app/coach/page.tsx`)
   - Increased frame rate to 20 FPS
   - Added keypoint smoothing (EMA) for smoother skeleton rendering
   - Using `requestAnimationFrame` for optimal frame timing
@@ -180,14 +180,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Increased frame rate from 8 to 10 FPS (feasible due to reduced latency)
   - Added `POSE_CONNECTIONS` constant for MediaPipe 33-landmark skeleton
 
-- **Pose Detection** (`app/services/rehab/pose/detector.py`)
+- **Pose Detection** (`app/services/coach/pose/detector.py`)
   - Added `detect_async()` method using thread pool executor
   - Added `draw_landmarks_async()` method for non-blocking drawing
   - Added `detection_scale` parameter (default 0.5x) for faster detection
   - Frame downscaling before MediaPipe processing reduces computation time
   - Shared `ThreadPoolExecutor` with 2 workers for CPU-bound operations
 
-- **Detection Node** (`app/services/rehab/workflow/nodes/detect.py`)
+- **Detection Node** (`app/services/coach/workflow/nodes/detect.py`)
   - Updated to use async pose detection
   - Added `get_annotated_frame_async()` method
   - Configurable `detection_scale` parameter passed through factory function

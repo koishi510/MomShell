@@ -30,32 +30,40 @@ An AI powered assistant for postpartum mothers.
 
 ```
 MomShell/
-├── app/                    # FastAPI backend
-│   ├── api/               # API routes (REST + WebSocket)
-│   ├── core/              # Configuration and database
-│   ├── models/            # Database models
-│   ├── schemas/           # Pydantic schemas
-│   └── services/          # Business logic
-│       ├── chat/          # Soulful Companion service
-│       └── rehab/         # Recovery Coach service
-│           ├── pose/      # MediaPipe pose detection
-│           ├── exercises/ # Exercise library
-│           ├── analysis/  # Pose analysis & scoring
-│           ├── feedback/  # LLM feedback & TTS
-│           ├── progress/  # Progress tracking
-│           └── workflow/  # LangGraph workflow
-└── frontend/              # Next.js frontend
-    ├── app/               # App router pages
-    │   ├── community/     # Community pages
-    │   ├── companion/     # Soulful Companion page
-    │   └── rehab/         # Recovery Coach page
-    ├── components/        # React components
-    │   ├── community/     # Community components
-    │   ├── companion/     # Companion components
-    │   └── home/          # Home page components
-    ├── hooks/             # Custom hooks
-    ├── lib/               # Utilities & design tokens
-    └── types/             # TypeScript type definitions
+├── app/                        # FastAPI backend
+│   ├── api/routes/             # API routes (REST + WebSocket)
+│   ├── core/                   # Configuration and database
+│   ├── models/                 # Database models
+│   ├── schemas/                # Pydantic schemas
+│   ├── services/               # Business logic
+│   │   ├── chat/               # Soulful Companion service
+│   │   ├── community/          # Community service
+│   │   │   ├── moderation/     # Content moderation
+│   │   │   ├── router/         # Community API routes
+│   │   │   └── schemas/        # Community schemas
+│   │   └── coach/              # Recovery Coach service
+│   │       ├── pose/           # MediaPipe pose detection
+│   │       ├── exercises/      # Exercise library
+│   │       ├── analysis/       # Pose analysis & scoring
+│   │       ├── feedback/       # LLM feedback & TTS
+│   │       ├── progress/       # Progress tracking
+│   │       └── workflow/       # LangGraph workflow
+│   ├── static/                 # Static assets (CSS, JS)
+│   └── templates/              # HTML templates
+└── frontend/                   # Next.js frontend
+    ├── app/                    # App router pages
+    │   ├── chat/               # Soulful Companion page
+    │   ├── community/          # Community pages
+    │   │   └── collections/    # Shell Picks collections
+    │   └── coach/              # Recovery Coach page
+    ├── components/             # React components
+    │   ├── coach/              # Recovery Coach components
+    │   ├── community/          # Community components
+    │   └── home/               # Home page components
+    ├── hooks/                  # Custom hooks
+    ├── lib/                    # Utilities & design tokens
+    ├── public/                 # Public assets
+    └── types/                  # TypeScript type definitions
 ```
 
 ## Getting Started

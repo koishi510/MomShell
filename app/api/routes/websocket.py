@@ -19,9 +19,9 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from numpy.typing import NDArray
 
 from app.schemas.progress import SessionRecord
-from app.services.rehab.progress.tracker import ProgressTracker, create_progress_tracker
-from app.services.rehab.workflow.graph import CoachWorkflow, create_workflow
-from app.services.rehab.workflow.state import SessionState
+from app.services.coach.progress.tracker import ProgressTracker, create_progress_tracker
+from app.services.coach.workflow.graph import CoachWorkflow, create_workflow
+from app.services.coach.workflow.state import SessionState
 
 router = APIRouter()
 

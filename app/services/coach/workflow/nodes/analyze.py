@@ -1,8 +1,8 @@
 """Analysis node for the workflow."""
 
-from app.services.rehab.analysis.posture import PostureAnalyzer
-from app.services.rehab.analysis.safety import SafetyMonitor
-from app.services.rehab.workflow.state import CoachState, SessionState
+from app.services.coach.analysis.posture import PostureAnalyzer
+from app.services.coach.analysis.safety import SafetyMonitor
+from app.services.coach.workflow.state import CoachState, SessionState
 
 
 class AnalyzeNode:

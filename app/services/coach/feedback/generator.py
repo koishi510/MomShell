@@ -8,7 +8,7 @@ from app.core.config import get_settings
 from app.schemas.exercise import Exercise, PhaseRequirement
 from app.schemas.feedback import FeedbackMessage, FeedbackType
 from app.schemas.pose import PoseAnalysisResult
-from app.services.rehab.analysis.safety import SafetyAlert, SafetyAlertLevel
+from app.services.coach.analysis.safety import SafetyAlert, SafetyAlertLevel
 
 settings = get_settings()
 

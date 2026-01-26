@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from app.schemas.exercise import Exercise, PhaseRequirement
 from app.schemas.feedback import FeedbackMessage
 from app.schemas.pose import PoseAnalysisResult, PoseData
-from app.services.rehab.analysis.safety import SafetyAlert
+from app.services.coach.analysis.safety import SafetyAlert
 
 
 class SessionState(str, Enum):

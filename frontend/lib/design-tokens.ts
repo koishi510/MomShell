@@ -25,7 +25,7 @@ export const MODULE_COLORS = {
     gradient: ['#FFF3E0', '#FFE4B5'],
     shadow: 'rgba(255, 179, 71, 0.3)',
   },
-  rehab: {
+  coach: {
     primary: '#4DD0E1',
     gradient: ['#E0F7FA', '#B2EBF2'],
     shadow: 'rgba(77, 208, 225, 0.3)',

@@ -188,7 +188,7 @@ export const mockQuestions: Question[] = [
     },
     tags: [
       { id: 't2', name: '产后恢复', slug: 'postpartum-recovery' },
-      { id: 't9', name: '康复知识', slug: 'rehab-knowledge' },
+      { id: 't9', name: '康复知识', slug: 'coach-knowledge' },
     ],
     image_urls: [
       'https://picsum.photos/400/300?random=3',

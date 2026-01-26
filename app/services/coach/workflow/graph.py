@@ -10,14 +10,14 @@ import uuid
 import numpy as np
 from numpy.typing import NDArray
 
-from app.services.rehab.exercises.library import get_exercise
-from app.services.rehab.workflow.nodes.analyze import create_analyze_node
-from app.services.rehab.workflow.nodes.detect import create_detect_node
-from app.services.rehab.workflow.nodes.feedback import (
+from app.services.coach.exercises.library import get_exercise
+from app.services.coach.workflow.nodes.analyze import create_analyze_node
+from app.services.coach.workflow.nodes.detect import create_detect_node
+from app.services.coach.workflow.nodes.feedback import (
     create_feedback_node,
 )
-from app.services.rehab.workflow.nodes.track import create_track_node
-from app.services.rehab.workflow.state import CoachState, SessionState
+from app.services.coach.workflow.nodes.track import create_track_node
+from app.services.coach.workflow.state import CoachState, SessionState
 
 
 class CoachWorkflow:
