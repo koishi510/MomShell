@@ -1,37 +1,55 @@
-### 关联 Issue
+### Related Issue
 
-<!-- 请输入关联的 Issue 编号，例如：Fixes #123 -->
+<!-- Enter the related issue number, e.g., Fixes #123 -->
 
-### 变更概述
+### Summary
 
-<!-- 请简要描述本次变更的内容、目的及解决的问题 -->
+<!-- Briefly describe the changes, purpose, and problem solved -->
 
-### 变更类型
+### Change Type
 
-<!-- 请在对应的方括号内填入 "x" -->
+<!-- Mark with "x" in the appropriate checkbox -->
 
-- [ ] 新功能 (New Feature)
-- [ ] 缺陷修复 (Bug Fix)
-- [ ] 代码重构 (Refactor)
-- [ ] 性能优化 (Performance)
-- [ ] 文档更新 (Documentation)
-- [ ] 依赖或配置调整 (Dependency / Configuration)
+- [ ] New Feature (feat)
+- [ ] Bug Fix (fix)
+- [ ] Refactoring (refactor)
+- [ ] Performance Improvement (perf)
+- [ ] Documentation (docs)
+- [ ] Dependency / Configuration (chore)
 
-### 自测清单
+### Self-Check Checklist
 
-<!-- 提交前请务必确认已完成以下事项 -->
+<!-- Please confirm the following before submitting -->
 
-- [ ] 代码已在本地环境运行测试，功能逻辑符合预期。
-- [ ] 已执行格式化与静态检查：`uv run ruff format .` 与 `uv run ruff check . --fix`。
-- [ ] 已执行类型检查：`uv run mypy .`。
-- [ ] (如涉及依赖变更) 已运行 `uv sync` 并提交了更新后的 `uv.lock` 文件。
-- [ ] 提交的代码已移除所有临时的调试输出 (print/log)。
-- [ ] 本次变更已包含必要的单元测试或文档更新。
+**Backend**:
+- [ ] Code runs correctly in local environment
+- [ ] Ran `uv run ruff format .` and `uv run ruff check . --fix`
+- [ ] Ran `uv run mypy app/`
+- [ ] (If dependencies changed) Ran `uv lock && uv export > requirements.txt` and committed both files
 
-### 测试步骤
+**Frontend**:
+- [ ] (If frontend changed) Ran `npm run lint` in `frontend/`
+- [ ] (If frontend changed) Ran `npm run build` in `frontend/` without errors
 
-<!-- 请提供复现或验证本次变更的具体步骤，以便 Reviewer 进行测试 -->
+**General**:
+- [ ] Removed all temporary debug output (print/console.log)
+- [ ] No sensitive data (API keys, credentials) in the code
 
-1. 拉取分支并同步环境: `uv sync`
-2. 运行指令: ...
-3. 操作步骤: ...
+### Test Steps
+
+<!-- Provide steps to verify this change -->
+
+1. Pull branch and sync environment:
+   ```bash
+   uv sync
+   cd frontend && npm install && cd ..
+   ```
+2. Run the application:
+   ```bash
+   # Terminal 1 - Backend
+   uv run uvicorn app.main:app --reload --port 8000
+   # Terminal 2 - Frontend
+   cd frontend && npm run dev
+   ```
+3. Verification steps:
+   - ...
