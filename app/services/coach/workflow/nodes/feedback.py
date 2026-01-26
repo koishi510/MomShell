@@ -3,9 +3,9 @@
 import asyncio
 
 from app.schemas.feedback import FeedbackMessage, FeedbackType
-from app.services.rehab.feedback.generator import FeedbackGenerator
-from app.services.rehab.feedback.tts import TTSEngine, TTSQueue
-from app.services.rehab.workflow.state import CoachState, SessionState
+from app.services.coach.feedback.generator import FeedbackGenerator
+from app.services.coach.feedback.tts import TTSEngine, TTSQueue
+from app.services.coach.workflow.state import CoachState, SessionState
 
 
 class FeedbackNode:

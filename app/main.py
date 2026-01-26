@@ -32,7 +32,7 @@ def preload_mediapipe() -> None:
     """Preload MediaPipe to avoid blocking during WebSocket handling."""
     print("[Startup] Preloading MediaPipe...")
     try:
-        from app.services.rehab.pose.detector import PoseDetector
+        from app.services.coach.pose.detector import PoseDetector
 
         # Create and close a detector to trigger model download and initialization
         detector = PoseDetector()

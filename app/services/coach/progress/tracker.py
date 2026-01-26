@@ -9,7 +9,7 @@ from app.schemas.progress import (
     StrengthMetric,
     UserProgress,
 )
-from app.services.rehab.progress.achievements import (
+from app.services.coach.progress.achievements import (
     create_achievement_system,
 )
 

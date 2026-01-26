@@ -59,7 +59,23 @@ COPY app/ /app/app/
 RUN mkdir -p /app/data /app/models
 
 # 预下载 MediaPipe LITE 模型（更快，适合低配服务器）
-RUN python -c "import urllib.request; urllib.request.urlretrieve('https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', '/app/models/pose_landmarker_lite.task')"
+# 添加重试逻辑，避免网络不稳定导致构建失败
+RUN python3 << 'PYEOF'
+import urllib.request, time
+url = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+path = "/app/models/pose_landmarker_lite.task"
+for i in range(5):
+    try:
+        urllib.request.urlretrieve(url, path)
+        print("Downloaded successfully")
+        break
+    except Exception as e:
+        print(f"Attempt {i+1} failed: {e}")
+        if i < 4:
+            time.sleep(3 * (i + 1))
+else:
+    raise Exception("Failed to download after 5 attempts")
+PYEOF
 
 # 从 Stage 1 复制前端静态文件
 # Next.js export 输出在 out 目录

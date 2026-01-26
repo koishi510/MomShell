@@ -2,7 +2,7 @@
 
 import time
 
-from app.services.rehab.workflow.state import CoachState, SessionState
+from app.services.coach.workflow.state import CoachState, SessionState
 
 
 class TrackNode:

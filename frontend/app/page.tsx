@@ -35,7 +35,7 @@ const features = [
     title: 'AI 康复教练',
     subtitle: 'Recovery Coach',
     description: '专业指导，温柔陪伴你的恢复之旅',
-    href: '/rehab',
+    href: '/coach',
     icon: '🧘‍♀️',
     gradient: '#E0F7FA, #B2EBF2',
     shadowColor: '#4DD0E1',
