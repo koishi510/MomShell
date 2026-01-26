@@ -1,5 +1,6 @@
 """MomShell Recovery Coach - Main FastAPI Application (ModelScope Deploy)."""
 
+import asyncio
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -41,12 +42,19 @@ def preload_mediapipe() -> None:
         print(f"[Startup] MediaPipe preload warning: {e}")
 
 
+async def preload_mediapipe_background() -> None:
+    """Preload MediaPipe in background to not block startup."""
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, preload_mediapipe)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
     # Startup
     await init_db()
-    preload_mediapipe()
+    # Start MediaPipe preloading in background (non-blocking)
+    asyncio.create_task(preload_mediapipe_background())
     yield
     # Shutdown
 
@@ -82,7 +90,7 @@ app.include_router(companion_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "healthy"}
@@ -96,7 +104,9 @@ if FRONTEND_DIR.exists():
         app.mount("/_next", StaticFiles(directory=str(next_static)), name="next_static")
 
     # SPA fallback - serve frontend for all non-API routes
-    @app.get("/{full_path:path}", response_class=HTMLResponse)
+    @app.api_route(
+        "/{full_path:path}", methods=["GET", "HEAD"], response_class=HTMLResponse
+    )
     async def serve_spa(request: Request, full_path: str):
         """Serve frontend SPA for all non-API routes."""
         # Try to serve the exact file first
@@ -124,7 +134,7 @@ if FRONTEND_DIR.exists():
         return templates.TemplateResponse("index.html", {"request": request})
 else:
     # No frontend build, serve backend template
-    @app.get("/", response_class=HTMLResponse)
+    @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
     async def root(request: Request) -> HTMLResponse:
         """Serve the main application page."""
         return templates.TemplateResponse("index.html", {"request": request})
@@ -132,6 +142,15 @@ else:
 
 if __name__ == "__main__":
     import uvicorn
+
+    # Try to use uvloop for better async performance
+    try:
+        import uvloop
+
+        uvloop.install()
+        print("[Startup] uvloop installed for better async performance")
+    except ImportError:
+        pass
 
     port = int(os.environ.get("PORT", 7860))
     uvicorn.run(app, host="0.0.0.0", port=port)

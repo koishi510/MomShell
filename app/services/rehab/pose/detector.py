@@ -4,6 +4,7 @@ Optimized for real-time performance with VIDEO mode tracking.
 """
 
 import asyncio
+import os
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -24,9 +25,26 @@ settings = get_settings()
 # Shared thread pool for CPU-bound pose detection (increased for better parallelism)
 _pose_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="pose_detect")
 
-# Model download URL - use FULL model for better accuracy
-MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task"
-MODEL_PATH = Path("./models/pose_landmarker_full.task")
+# Model configuration - Use LITE for faster performance on low-end servers
+# Set MEDIAPIPE_MODEL=lite to use lighter model
+# Set DISABLE_MEDIAPIPE=true to completely disable pose detection
+
+_DISABLE_MEDIAPIPE = os.getenv("DISABLE_MEDIAPIPE", "").lower() in ("true", "1", "yes")
+_USE_LITE_MODEL = os.getenv("MEDIAPIPE_MODEL", "lite").lower() == "lite"
+
+if _DISABLE_MEDIAPIPE:
+    print("[PoseDetector] MediaPipe is DISABLED via environment variable")
+    MODEL_URL = ""
+    MODEL_PATH = Path("/dev/null")
+    MODEL_PATH_LOCAL = Path("/dev/null")
+elif _USE_LITE_MODEL:
+    MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+    MODEL_PATH = Path("/app/models/pose_landmarker_lite.task")
+    MODEL_PATH_LOCAL = Path("./models/pose_landmarker_lite.task")
+else:
+    MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task"
+    MODEL_PATH = Path("/app/models/pose_landmarker_full.task")
+    MODEL_PATH_LOCAL = Path("./models/pose_landmarker_full.task")
 
 # Pose connections for drawing (33 landmarks)
 POSE_CONNECTIONS = [
@@ -70,14 +88,21 @@ POSE_CONNECTIONS = [
 
 def ensure_model_exists() -> Path:
     """Download the pose landmarker model if it doesn't exist."""
-    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # Check Docker path first (pre-downloaded during build)
+    if MODEL_PATH.exists():
+        return MODEL_PATH
 
-    if not MODEL_PATH.exists():
-        print(f"Downloading pose landmarker model to {MODEL_PATH}...")
-        urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
-        print("Model downloaded successfully.")
+    # Fallback to local path for development
+    if MODEL_PATH_LOCAL.exists():
+        return MODEL_PATH_LOCAL
 
-    return MODEL_PATH
+    # Download if neither exists
+    MODEL_PATH_LOCAL.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Downloading pose landmarker model to {MODEL_PATH_LOCAL}...")
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH_LOCAL)
+    print("Model downloaded successfully.")
+
+    return MODEL_PATH_LOCAL
 
 
 class PoseDetector:
@@ -104,26 +129,43 @@ class PoseDetector:
             min_tracking_confidence: Minimum confidence for tracking.
             detection_scale: Scale factor for detection (0.5 = half resolution).
         """
-        model_path = ensure_model_exists()
-
-        base_options = python.BaseOptions(model_asset_path=str(model_path))
-
-        # Use VIDEO mode for synchronous operation with tracking
-        options = vision.PoseLandmarkerOptions(
-            base_options=base_options,
-            running_mode=vision.RunningMode.VIDEO,
-            min_pose_detection_confidence=(
-                min_detection_confidence or settings.min_detection_confidence
-            ),
-            min_tracking_confidence=(
-                min_tracking_confidence or settings.min_tracking_confidence
-            ),
-        )
-
-        self.landmarker = vision.PoseLandmarker.create_from_options(options)
+        self._initialized = False
+        self.landmarker = None
         self._frame_count = 0
         self._start_time = time.time()
         self._detection_scale = detection_scale
+
+        # Skip initialization if disabled
+        if _DISABLE_MEDIAPIPE:
+            print("[PoseDetector] Skipping initialization (disabled)")
+            return
+
+        try:
+            model_path = ensure_model_exists()
+            print(f"[PoseDetector] Loading model from: {model_path}")
+
+            base_options = python.BaseOptions(model_asset_path=str(model_path))
+
+            # Use VIDEO mode for synchronous operation with tracking
+            options = vision.PoseLandmarkerOptions(
+                base_options=base_options,
+                running_mode=vision.RunningMode.VIDEO,
+                min_pose_detection_confidence=(
+                    min_detection_confidence or settings.min_detection_confidence
+                ),
+                min_tracking_confidence=(
+                    min_tracking_confidence or settings.min_tracking_confidence
+                ),
+            )
+
+            self.landmarker = vision.PoseLandmarker.create_from_options(options)
+            self._initialized = True
+            print("[PoseDetector] Initialized successfully")
+        except Exception as e:
+            print(f"[PoseDetector] ERROR: Failed to initialize MediaPipe: {e}")
+            import traceback
+
+            traceback.print_exc()
 
     def detect(self, frame: NDArray[np.uint8]) -> PoseData | None:
         """Detect pose in a single frame using VIDEO mode.
@@ -136,54 +178,62 @@ class PoseDetector:
         Returns:
             PoseData if pose detected, None otherwise.
         """
-        # Downscale frame for faster detection
-        if self._detection_scale < 1.0:
-            h, w = frame.shape[:2]
-            new_w = int(w * self._detection_scale)
-            new_h = int(h * self._detection_scale)
-            scaled_frame = cv2.resize(
-                frame, (new_w, new_h), interpolation=cv2.INTER_AREA
-            )
-        else:
-            scaled_frame = frame
-
-        # Convert BGR to RGB for MediaPipe
-        rgb_frame = cv2.cvtColor(scaled_frame, cv2.COLOR_BGR2RGB)
-
-        # Create MediaPipe Image
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-
-        # Get timestamp in milliseconds (must be monotonically increasing)
-        timestamp_ms = int((time.time() - self._start_time) * 1000)
-
-        # Detect pose with VIDEO mode (synchronous with tracking)
-        result = self.landmarker.detect_for_video(mp_image, timestamp_ms)
-
-        if not result.pose_landmarks or len(result.pose_landmarks) == 0:
+        # Return None if not initialized
+        if not self._initialized or self.landmarker is None:
             return None
 
-        # Extract keypoints from the first detected pose
-        landmarks = result.pose_landmarks[0]
-        keypoints: dict[int, Point3D] = {}
+        try:
+            # Downscale frame for faster detection
+            if self._detection_scale < 1.0:
+                h, w = frame.shape[:2]
+                new_w = int(w * self._detection_scale)
+                new_h = int(h * self._detection_scale)
+                scaled_frame = cv2.resize(
+                    frame, (new_w, new_h), interpolation=cv2.INTER_AREA
+                )
+            else:
+                scaled_frame = frame
 
-        for idx, landmark in enumerate(landmarks):
-            keypoints[idx] = Point3D(
-                x=landmark.x,
-                y=landmark.y,
-                z=landmark.z,
-                visibility=landmark.visibility
-                if hasattr(landmark, "visibility")
-                else 1.0,
+            # Convert BGR to RGB for MediaPipe
+            rgb_frame = cv2.cvtColor(scaled_frame, cv2.COLOR_BGR2RGB)
+
+            # Create MediaPipe Image
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+
+            # Get timestamp in milliseconds (must be monotonically increasing)
+            timestamp_ms = int((time.time() - self._start_time) * 1000)
+
+            # Detect pose with VIDEO mode (synchronous with tracking)
+            result = self.landmarker.detect_for_video(mp_image, timestamp_ms)
+
+            if not result.pose_landmarks or len(result.pose_landmarks) == 0:
+                return None
+
+            # Extract keypoints from the first detected pose
+            landmarks = result.pose_landmarks[0]
+            keypoints: dict[int, Point3D] = {}
+
+            for idx, landmark in enumerate(landmarks):
+                keypoints[idx] = Point3D(
+                    x=landmark.x,
+                    y=landmark.y,
+                    z=landmark.z,
+                    visibility=landmark.visibility
+                    if hasattr(landmark, "visibility")
+                    else 1.0,
+                )
+
+            self._frame_count += 1
+            timestamp = time.time() - self._start_time
+
+            return PoseData(
+                keypoints=keypoints,
+                timestamp=timestamp,
+                frame_id=self._frame_count,
             )
-
-        self._frame_count += 1
-        timestamp = time.time() - self._start_time
-
-        return PoseData(
-            keypoints=keypoints,
-            timestamp=timestamp,
-            frame_id=self._frame_count,
-        )
+        except Exception as e:
+            print(f"[PoseDetector] Detection error: {e}")
+            return None
 
     async def detect_async(self, frame: NDArray[np.uint8]) -> PoseData | None:
         """Detect pose asynchronously using thread pool.
@@ -293,8 +343,11 @@ class PoseDetector:
 
     def close(self) -> None:
         """Release resources."""
-        if hasattr(self, "landmarker"):
-            self.landmarker.close()
+        if hasattr(self, "landmarker") and self.landmarker is not None:
+            try:
+                self.landmarker.close()
+            except Exception:
+                pass
 
     def __enter__(self) -> "PoseDetector":
         return self

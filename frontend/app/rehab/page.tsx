@@ -167,7 +167,7 @@ export default function RehabPage() {
   // Fetch exercises
   const fetchExercises = useCallback(async () => {
     try {
-      const response = await fetch(`${getApiBase()}/api/exercises/`);
+      const response = await fetch(`${getApiBase()}/api/exercises`);
       const data = await response.json();
       setExercises(data);
     } catch (error) {

@@ -14,6 +14,7 @@ from app.services.rehab.exercises.library import (
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 
 
+@router.get("", response_model=list[Exercise])
 @router.get("/", response_model=list[Exercise])
 async def list_exercises() -> list[Exercise]:
     """List all available exercises."""
@@ -32,6 +33,7 @@ async def get_exercise_detail(exercise_id: str) -> Exercise | None:
     return get_exercise(exercise_id)
 
 
+@router.get("/sessions", response_model=list[ExerciseSession])
 @router.get("/sessions/", response_model=list[ExerciseSession])
 async def list_sessions() -> list[ExerciseSession]:
     """List all available training sessions."""
