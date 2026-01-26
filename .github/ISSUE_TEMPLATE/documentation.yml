@@ -1,0 +1,56 @@
+name: Documentation Issue
+description: Report issues with documentation or request documentation improvements
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve our documentation! Use this template to report errors, missing information, or suggest improvements.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Documentation Issue Type
+      description: What type of documentation issue is this?
+      options:
+        - Incorrect information
+        - Missing information
+        - Unclear explanation
+        - Outdated content
+        - Typo / Grammar
+        - Broken link
+        - Request new documentation
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      description: Where is the documentation issue? (file path or URL)
+      placeholder: "e.g., README.md, docs/deployment.md, or URL"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Content
+      description: What does the documentation currently say? (if applicable)
+      placeholder: Quote or describe the current content...
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected / Suggested Content
+      description: What should the documentation say instead?
+      placeholder: Describe the correct or improved content...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context or references that might help.

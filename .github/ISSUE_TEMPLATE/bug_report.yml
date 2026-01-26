@@ -1,0 +1,101 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in MomShell
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below to help us understand and fix the issue.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of MomShell is affected?
+      options:
+        - Soulful Companion (Chat)
+        - Recovery Coach (Exercise/Pose Detection)
+        - Community (Q&A/Posts)
+        - Frontend/UI
+        - Backend/API
+        - Database
+        - Deployment/Docker
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what you expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs / Screenshots
+      description: |
+        If applicable, add error logs or screenshots to help explain the problem.
+        - For backend errors: Check terminal/Docker logs
+        - For frontend errors: Check browser console (F12 → Console)
+      placeholder: Paste logs or drag-and-drop screenshots here...
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment Method
+      description: How is MomShell deployed?
+      options:
+        - Local Development (uvicorn + npm run dev)
+        - Docker Compose
+        - Single Container
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you running on?
+      placeholder: "e.g., Ubuntu 22.04, Windows 11, macOS 14"
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser (if frontend issue)
+      description: Which browser are you using?
+      placeholder: "e.g., Chrome 120, Firefox 121, Safari 17"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.

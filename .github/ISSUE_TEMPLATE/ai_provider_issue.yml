@@ -1,0 +1,86 @@
+name: AI Provider Issue
+description: Report issues with AI responses, ModelScope API, or LLM behavior
+title: "[AI]: "
+labels: ["ai", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for issues related to AI/LLM functionality, including the Soulful Companion chat and AI-powered coaching feedback.
+
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Affected AI Feature
+      description: Which AI-powered feature is affected?
+      options:
+        - Soulful Companion (Chat responses)
+        - Recovery Coach (Voice feedback)
+        - Content moderation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What type of AI issue are you experiencing?
+      options:
+        - API connection failed
+        - No response / timeout
+        - Incorrect/inappropriate response
+        - Response parsing error (malformed JSON)
+        - Conversation memory not working
+        - TTS (Text-to-Speech) not working
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the issue in detail.
+      placeholder: What happened? Include the conversation context if relevant...
+    validations:
+      required: true
+
+  - type: textarea
+    id: input
+    attributes:
+      label: Input / Prompt (if applicable)
+      description: What message or input triggered the issue?
+      placeholder: The message you sent that caused the issue...
+
+  - type: textarea
+    id: output
+    attributes:
+      label: AI Response (if any)
+      description: What did the AI respond with?
+      placeholder: The actual response received...
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: |
+        Please provide backend logs showing the API error.
+        Look for errors related to ModelScope, OpenAI client, or JSON parsing.
+      placeholder: Paste relevant logs here...
+
+  - type: checkboxes
+    id: api-config
+    attributes:
+      label: API Configuration Checklist
+      description: Please confirm the following
+      options:
+        - label: MODELSCOPE_SDK_TOKEN environment variable is set
+        - label: API endpoint is accessible from my network
+        - label: I have verified my API token is valid
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other information that might help diagnose the issue.
