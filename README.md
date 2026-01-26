@@ -109,7 +109,7 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/MomShell.git
+git clone https://github.com/koishi510/MomShell.git
 cd MomShell
 ```
 
