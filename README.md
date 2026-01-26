@@ -1,5 +1,11 @@
 # MomShell
 
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](LICENSE)
+[![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+
 A warm, AI-powered companion for postpartum recovery — offering emotional support, exercise coaching, and a caring community for new mothers.
 
 ## Features
@@ -235,6 +241,15 @@ See `.env.example` for all available configuration options.
 - Real-time bidirectional communication
 - Client sends video frames, server returns keypoints
 - Skeleton drawn on client side for smooth 20+ FPS experience
+
+## Contributing
+
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Development environment setup
+- Code standards and quality checks
+- Branch management and PR process
+- Commit message conventions
 
 ## License
 
