@@ -103,7 +103,25 @@ cd frontend && npm install && cd ..
 
 ### 4.2 Running the Project
 
-#### Local Development
+#### Using Make (Recommended)
+
+The project includes a Makefile for common tasks. Run `make help` to see all available commands.
+
+```bash
+# Start development servers
+make dev-backend   # Terminal 1: Backend on http://localhost:8000
+make dev-frontend  # Terminal 2: Frontend on http://localhost:3000
+
+# Or use tmux to start both in split panes
+make dev-tmux
+
+# Docker deployment
+make docker-up     # Build and start containers
+make docker-down   # Stop containers
+make docker-logs   # View logs
+```
+
+#### Manual Commands
 
 You need to run both the backend and frontend servers in separate terminals.
 
@@ -166,7 +184,18 @@ npm install -D @types/node
 
 ### 4.4 Code Quality Checks
 
-Before committing, run these checks locally:
+Before committing, run these checks locally.
+
+#### Using Make (Recommended)
+
+```bash
+make lint       # Run all linters (backend + frontend)
+make format     # Format all code
+make typecheck  # Run all type checkers
+make check      # Run lint + typecheck
+```
+
+#### Manual Commands
 
 **Backend**:
 ```bash

@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-01-26
+
+### Added
+
+#### Developer Experience
+
+- **Makefile**: Added unified command interface for common development tasks
+  - `make install` - Install all dependencies (backend + frontend)
+  - `make dev-backend` / `make dev-frontend` - Start development servers
+  - `make dev-tmux` - Start both servers in tmux split panes
+  - `make lint` / `make format` / `make typecheck` - Code quality tools
+  - `make docker-up` / `make docker-down` - Docker management
+  - `make clean` - Clean caches and temporary files
+  - Run `make help` for full command list
+
+- **GitHub Issue Templates**: Added structured issue templates
+  - Bug Report - General bug reporting with component selection
+  - Feature Request - Feature proposals with user perspective
+  - Recovery Coach Issue - Pose detection and exercise-specific issues
+  - AI Provider Issue - LLM and API-related issues
+  - Documentation Issue - Docs improvements and corrections
+
+- **Security Policy**: Added `SECURITY.md` with vulnerability reporting guidelines
+
+---
+
 ## [0.3.1] - 2026-01-26
 
 ### Changed

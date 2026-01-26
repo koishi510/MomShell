@@ -145,6 +145,19 @@ npm install
 
 You need to run both the backend and frontend servers.
 
+#### Using Make (Recommended)
+
+```bash
+# Start backend and frontend in separate terminals
+make dev-backend   # Terminal 1
+make dev-frontend  # Terminal 2
+
+# Or use tmux to start both
+make dev-tmux
+```
+
+#### Manual Commands
+
 **Terminal 1 - Backend (FastAPI)**
 
 ```bash
@@ -199,6 +212,11 @@ open http://localhost:7860
 docker compose down          # Stop
 docker compose up -d --build # Rebuild
 docker compose logs -f       # Logs
+
+# Or use Make
+make docker-up               # Build and start
+make docker-down             # Stop
+make docker-logs             # View logs
 ```
 
 ### Single Container (ModelScope)
