@@ -1,3 +1,6 @@
+# Docker Compose for multi-container deployment
+# Run from deploy/ directory: docker compose up -d
+
 services:
   nginx:
     image: nginx:alpine
@@ -12,7 +15,7 @@ services:
 
   backend:
     build:
-      context: .
+      context: ../backend
       dockerfile: Dockerfile
     expose:
       - "8000"
@@ -20,7 +23,7 @@ services:
       - PYTHONUNBUFFERED=1
       - PORT=8000
     env_file:
-      - .env
+      - ../.env
     volumes:
       - momshell_data:/app/data
     restart: unless-stopped
@@ -32,7 +35,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ../frontend
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=

@@ -27,17 +27,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Exit animation when closing (slide out to right)
   - Delete button moved from card to detail modal (shown for author only)
 
+### Changed
+
+- **Project Structure**: Reorganized backend code into `backend/` directory
+  - Moved `app/`, `models/`, `tests/`, `data/`, `tts_cache/` to `backend/`
+  - Moved Python config files (`pyproject.toml`, `uv.lock`, `requirements.txt`) to `backend/`
+  - Config now loads `.env` from project root
+  - Added standalone `backend/Dockerfile`
+
+- **Deployment Structure**: Created `deploy/` directory for deployment configs
+  - Moved `docker-compose.yml` to `deploy/`
+  - Moved combined Dockerfile to `deploy/Dockerfile.combined`
+  - Moved `nginx.conf` to `deploy/`
+  - Updated Makefile with new docker commands (`docker-build-backend`, `docker-build-frontend`)
+
+- **API Versioning**: All API routes now use `/api/v1/` prefix
+  - Renamed `app/api/routes/` to `app/api/v1/`
+  - Updated all router prefixes in main.py
+  - Updated frontend API calls to use `/api/v1/` paths
+
+- **UserMenu**: Replaced framer-motion entry animations with CSS transitions to prevent hydration flicker
+- **Comment Structure**: Flattened to max 1 level depth - all deeper replies use @mention format
+
 #### Bug Fixes
 
 - Fixed SQLAlchemy async lazy loading errors by eagerly loading `author.certification` relationships
 - Fixed hydration flickering in UserMenu by using CSS transitions triggered after mount
 - Fixed comment persistence - nested replies now properly load when reopening detail modal
 - Fixed like/collect state not showing correctly in My Posts page
-
-### Changed
-
-- **UserMenu**: Replaced framer-motion entry animations with CSS transitions to prevent hydration flicker
-- **Comment Structure**: Flattened to max 1 level depth - all deeper replies use @mention format
 
 ---
 

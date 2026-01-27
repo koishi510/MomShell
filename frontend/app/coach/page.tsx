@@ -170,7 +170,7 @@ export default function RehabPage() {
   const fetchExercises = useCallback(async () => {
     setIsLoadingExercises(true);
     try {
-      const response = await fetch(`${getApiBase()}/api/exercises`);
+      const response = await fetch(`${getApiBase()}/api/v1/exercises`);
       const data = await response.json();
       setExercises(data);
     } catch (error) {
@@ -183,7 +183,7 @@ export default function RehabPage() {
   // Fetch progress
   const fetchProgress = useCallback(async () => {
     try {
-      const response = await fetch(`${getApiBase()}/api/progress/${getUserId()}/summary`);
+      const response = await fetch(`${getApiBase()}/api/v1/progress/${getUserId()}/summary`);
       const data = await response.json();
       setProgressSummary(data);
     } catch (error) {
@@ -194,7 +194,7 @@ export default function RehabPage() {
   // Fetch achievements
   const fetchAchievements = useCallback(async () => {
     try {
-      const response = await fetch(`${getApiBase()}/api/progress/${getUserId()}/achievements`);
+      const response = await fetch(`${getApiBase()}/api/v1/progress/${getUserId()}/achievements`);
       const data = await response.json();
       setAchievements(data);
     } catch (error) {
@@ -449,7 +449,7 @@ export default function RehabPage() {
   // WebSocket connection
   const connectWebSocket = useCallback((exerciseId: string) => {
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const wsUrl = `${getWsBase()}/api/ws/coach/${sessionId}`;
+    const wsUrl = `${getWsBase()}/api/v1/ws/coach/${sessionId}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {

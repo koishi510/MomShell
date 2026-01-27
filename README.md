@@ -47,40 +47,61 @@ A warm, AI-powered companion for postpartum recovery — offering emotional supp
 
 ```
 MomShell/
-├── app/                        # FastAPI backend
-│   ├── api/routes/             # API routes (REST + WebSocket)
-│   ├── core/                   # Configuration and database
-│   ├── models/                 # Database models
-│   ├── schemas/                # Pydantic schemas
-│   ├── services/               # Business logic
-│   │   ├── chat/               # Soulful Companion service
-│   │   ├── community/          # Community service
-│   │   │   ├── moderation/     # Content moderation
-│   │   │   ├── router/         # Community API routes
-│   │   │   └── schemas/        # Community schemas
-│   │   └── coach/              # Recovery Coach service
-│   │       ├── pose/           # MediaPipe pose detection
-│   │       ├── exercises/      # Exercise library
-│   │       ├── analysis/       # Pose analysis & scoring
-│   │       ├── feedback/       # LLM feedback & TTS
-│   │       ├── progress/       # Progress tracking
-│   │       └── workflow/       # LangGraph workflow
-│   ├── static/                 # Static assets (CSS, JS)
-│   └── templates/              # HTML templates
-└── frontend/                   # Next.js frontend
-    ├── app/                    # App router pages
-    │   ├── chat/               # Soulful Companion page
-    │   ├── community/          # Community pages
-    │   │   └── collections/    # Shell Picks collections
-    │   └── coach/              # Recovery Coach page
-    ├── components/             # React components
-    │   ├── coach/              # Recovery Coach components
-    │   ├── community/          # Community components
-    │   └── home/               # Home page components
-    ├── hooks/                  # Custom hooks
-    ├── lib/                    # Utilities & design tokens
-    ├── public/                 # Public assets
-    └── types/                  # TypeScript type definitions
+├── backend/                    # FastAPI backend
+│   ├── app/                    # Application code
+│   │   ├── api/v1/             # API v1 routes (REST + WebSocket)
+│   │   ├── core/               # Configuration and database
+│   │   ├── models/             # Database models
+│   │   ├── schemas/            # Pydantic schemas
+│   │   ├── services/           # Business logic
+│   │   │   ├── chat/           # Soulful Companion service
+│   │   │   ├── community/      # Community service
+│   │   │   │   ├── moderation/ # Content moderation
+│   │   │   │   ├── router/     # Community API routes
+│   │   │   │   └── schemas/    # Community schemas
+│   │   │   └── coach/          # Recovery Coach service
+│   │   │       ├── pose/       # MediaPipe pose detection
+│   │   │       ├── exercises/  # Exercise library
+│   │   │       ├── analysis/   # Pose analysis & scoring
+│   │   │       ├── feedback/   # LLM feedback & TTS
+│   │   │       ├── progress/   # Progress tracking
+│   │   │       └── workflow/   # LangGraph workflow
+│   │   ├── static/             # Static assets (CSS, JS)
+│   │   └── templates/          # HTML templates
+│   ├── data/                   # Database storage
+│   ├── models/                 # ML models (MediaPipe)
+│   ├── tests/                  # Backend tests
+│   ├── Dockerfile              # Backend container
+│   ├── pyproject.toml          # Python dependencies
+│   └── requirements.txt        # Pip requirements
+│
+├── frontend/                   # Next.js frontend
+│   ├── app/                    # App router pages
+│   │   ├── chat/               # Soulful Companion page
+│   │   ├── community/          # Community pages
+│   │   │   ├── collections/    # Shell Picks collections
+│   │   │   ├── my-posts/       # My questions
+│   │   │   ├── my-replies/     # My answers
+│   │   │   └── profile/        # User profile
+│   │   └── coach/              # Recovery Coach page
+│   ├── components/             # React components
+│   │   ├── coach/              # Recovery Coach components
+│   │   ├── community/          # Community components
+│   │   └── home/               # Home page components
+│   ├── hooks/                  # Custom hooks
+│   ├── lib/                    # Utilities & design tokens
+│   ├── public/                 # Public assets
+│   ├── types/                  # TypeScript type definitions
+│   └── Dockerfile              # Frontend container
+│
+├── deploy/                     # Deployment configurations
+│   ├── docker-compose.yml      # Multi-container setup
+│   ├── Dockerfile.combined     # Single container (ModelScope)
+│   └── nginx.conf              # Nginx reverse proxy
+│
+├── .env                        # Environment variables
+├── Makefile                    # Build commands
+└── README.md
 ```
 
 ## Getting Started
@@ -129,7 +150,9 @@ cp .env.example .env
 3. Install backend dependencies
 
 ```bash
+cd backend
 uv sync
+cd ..
 ```
 
 4. Install frontend dependencies
@@ -139,6 +162,7 @@ cd frontend
 nvm install
 nvm use
 npm install
+cd ..
 ```
 
 ### Running the Application
@@ -161,6 +185,7 @@ make dev-tmux
 **Terminal 1 - Backend (FastAPI)**
 
 ```bash
+cd backend
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -199,7 +224,8 @@ sudo systemctl start docker
 cp .env.example .env
 # Edit .env, fill in MODELSCOPE_KEY
 
-# 2. Run
+# 2. Run (multi-container)
+cd deploy
 docker compose up -d --build
 
 # 3. Access
@@ -209,34 +235,41 @@ open http://localhost:7860
 ### Commands
 
 ```bash
+# From deploy/ directory
 docker compose down          # Stop
 docker compose up -d --build # Rebuild
 docker compose logs -f       # Logs
 
-# Or use Make
+# Or use Make (from project root)
 make docker-up               # Build and start
 make docker-down             # Stop
 make docker-logs             # View logs
+make docker-build-backend    # Build backend image only
+make docker-build-frontend   # Build frontend image only
 ```
 
 ### Single Container (ModelScope)
 
 ```bash
-docker build -t momshell .
+# Build combined image from project root
+docker build -f deploy/Dockerfile.combined -t momshell .
 docker run -d -p 7860:7860 --env-file .env momshell
+
+# Or use Make
+make docker-build            # Build combined image
 ```
 
 ## Environment Variables
 
-| Variable                  | Description                             | Required | Default                             |
-| ------------------------- | --------------------------------------- | -------- | ----------------------------------- |
-| `MODELSCOPE_KEY`          | ModelScope API key for AI services      | Yes      | -                                   |
-| `MODELSCOPE_MODEL`        | Model name for chat and feedback        | No       | `Qwen/Qwen2.5-72B-Instruct`         |
-| `DATABASE_URL`            | Database connection URL                 | No       | `sqlite+aiosqlite:///./momshell.db` |
-| `DEBUG`                   | Enable debug mode                       | No       | `false`                             |
-| `MEDIAPIPE_MODEL`         | Pose detection model (`lite` or `full`) | No       | `lite`                              |
-| `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence           | No       | `0.3`                               |
-| `TTS_VOICE`               | Microsoft Edge TTS voice                | No       | `zh-CN-XiaoxiaoNeural`              |
+| Variable                  | Description                             | Required | Default                                  |
+| ------------------------- | --------------------------------------- | -------- | ---------------------------------------- |
+| `MODELSCOPE_KEY`          | ModelScope API key for AI services      | Yes      | -                                        |
+| `MODELSCOPE_MODEL`        | Model name for chat and feedback        | No       | `Qwen/Qwen2.5-72B-Instruct`              |
+| `DATABASE_URL`            | Database connection URL                 | No       | `sqlite+aiosqlite:///./data/momshell.db` |
+| `DEBUG`                   | Enable debug mode                       | No       | `false`                                  |
+| `MEDIAPIPE_MODEL`         | Pose detection model (`lite` or `full`) | No       | `lite`                                   |
+| `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence           | No       | `0.3`                                    |
+| `TTS_VOICE`               | Microsoft Edge TTS voice                | No       | `zh-CN-XiaoxiaoNeural`                   |
 
 See `.env.example` for all available configuration options.
 
