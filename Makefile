@@ -107,7 +107,7 @@ docker-logs: ## Show Docker logs
 
 docker-build: ## Build combined Docker image (single container)
 	@echo "$(CYAN)Building combined Docker image...$(RESET)"
-	docker build -f deploy/Dockerfile.combined -t momshell .
+	docker build -t momshell .
 
 docker-build-backend: ## Build backend Docker image
 	@echo "$(CYAN)Building backend Docker image...$(RESET)"

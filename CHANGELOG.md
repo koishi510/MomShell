@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Deployment Structure**: Created `deploy/` directory for deployment configs
   - Moved `docker-compose.yml` to `deploy/`
-  - Moved combined Dockerfile to `deploy/Dockerfile.combined`
+  - Combined Dockerfile at project root for platform compatibility
   - Moved `nginx.conf` to `deploy/`
   - Updated Makefile with new docker commands (`docker-build-backend`, `docker-build-frontend`)
 

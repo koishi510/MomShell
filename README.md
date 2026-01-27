@@ -96,9 +96,9 @@ MomShell/
 │
 ├── deploy/                     # Deployment configurations
 │   ├── docker-compose.yml      # Multi-container setup
-│   ├── Dockerfile.combined     # Single container (ModelScope)
 │   └── nginx.conf              # Nginx reverse proxy
 │
+├── Dockerfile                  # Combined container (ModelScope)
 ├── .env                        # Environment variables
 ├── Makefile                    # Build commands
 └── README.md
@@ -252,7 +252,7 @@ make docker-build-frontend   # Build frontend image only
 
 ```bash
 # Build combined image from project root
-docker build -f deploy/Dockerfile.combined -t momshell .
+docker build -t momshell .
 docker run -d -p 7860:7860 --env-file .env momshell
 
 # Or use Make
