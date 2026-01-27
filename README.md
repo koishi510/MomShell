@@ -259,6 +259,8 @@ docker run -d -p 7860:7860 --env-file .env momshell
 make docker-build            # Build combined image
 ```
 
+**Note**: Ensure `PORT` is commented out in `.env` (or not set) so the Dockerfile's `PORT=7860` takes effect.
+
 ## Environment Variables
 
 | Variable                  | Description                             | Required | Default                                  |
@@ -266,10 +268,13 @@ make docker-build            # Build combined image
 | `MODELSCOPE_KEY`          | ModelScope API key for AI services      | Yes      | -                                        |
 | `MODELSCOPE_MODEL`        | Model name for chat and feedback        | No       | `Qwen/Qwen2.5-72B-Instruct`              |
 | `DATABASE_URL`            | Database connection URL                 | No       | `sqlite+aiosqlite:///./data/momshell.db` |
+| `PORT`                    | Server port (Docker sets 7860)          | No       | `8000` (local) / `7860` (Docker)         |
 | `DEBUG`                   | Enable debug mode                       | No       | `false`                                  |
 | `MEDIAPIPE_MODEL`         | Pose detection model (`lite` or `full`) | No       | `lite`                                   |
 | `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence           | No       | `0.3`                                    |
 | `TTS_VOICE`               | Microsoft Edge TTS voice                | No       | `zh-CN-XiaoxiaoNeural`                   |
+
+**Important**: Do not use quotes around values in `.env` - Docker `--env-file` includes quotes literally.
 
 See `.env.example` for all available configuration options.
 

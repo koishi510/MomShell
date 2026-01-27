@@ -5,15 +5,27 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# .env file is at the project root (parent of backend/)
-_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
+
+def _find_env_file() -> str | None:
+    """Find .env file, checking multiple locations for Docker compatibility."""
+    # In Docker: /app/app/core/config.py -> parents[3] = /
+    # In local dev: backend/app/core/config.py -> parents[3] = project root
+    config_path = Path(__file__).resolve()
+
+    # Try project root (local dev: backend/app/core/config.py)
+    project_root = config_path.parents[3] / ".env"
+    if project_root.exists():
+        return str(project_root)
+
+    # In Docker, env vars are passed via --env-file, no file needed
+    return None
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=str(_ENV_FILE),
+        env_file=_find_env_file(),
         env_file_encoding="utf-8",
         extra="ignore",
     )
