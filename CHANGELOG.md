@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-01-28
+
+### Added
+
+#### Community Module - Comment System
+
+- **Answer Comments**: Users can now reply to answers with nested comments
+  - Backend: `get_comments`, `create_comment`, `delete_comment` service methods
+  - API endpoints: `GET/POST /answers/{id}/comments`, `DELETE /comments/{id}`
+  - Max 1 level nesting - deeper replies shown flat with @mention
+  - Like/delete functionality for comments
+  - Content moderation for new comments
+
+- **PostCard Improvements**
+  - Added view count display (eye icon) to all post cards
+  - Unified PostCard template across Community Feed, Collections, and My Posts pages
+  - Consistent animation pattern using `AnimatePresence mode="popLayout"`
+
+- **QuestionDetailModal Improvements**
+  - Exit animation when closing (slide out to right)
+  - Delete button moved from card to detail modal (shown for author only)
+
+#### Bug Fixes
+
+- Fixed SQLAlchemy async lazy loading errors by eagerly loading `author.certification` relationships
+- Fixed hydration flickering in UserMenu by using CSS transitions triggered after mount
+- Fixed comment persistence - nested replies now properly load when reopening detail modal
+- Fixed like/collect state not showing correctly in My Posts page
+
+### Changed
+
+- **UserMenu**: Replaced framer-motion entry animations with CSS transitions to prevent hydration flicker
+- **Comment Structure**: Flattened to max 1 level depth - all deeper replies use @mention format
+
+---
+
 ## [0.3.2] - 2026-01-26
 
 ### Added

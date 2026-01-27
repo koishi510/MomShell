@@ -1,6 +1,6 @@
 """Comment routes for community module."""
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter
 
 from ..dependencies import (
     CommunityServiceDep,
@@ -19,12 +19,10 @@ async def list_comments(
     db: DbSession,
     service: CommunityServiceDep,
     current_user: OptionalUser,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
 ) -> list[CommentListItem]:
     """Get comments for an answer."""
-    # TODO: Implement list comments
-    raise HTTPException(status_code=501, detail="功能开发中")
+    user_id = current_user.id if current_user else None
+    return await service.get_comments(db, answer_id, user_id)
 
 
 @router.post(
@@ -39,9 +37,8 @@ async def create_comment(
     service: CommunityServiceDep,
     current_user: CurrentUser,
 ) -> CommentListItem:
-    """Create a new comment."""
-    # TODO: Implement create comment
-    raise HTTPException(status_code=501, detail="功能开发中")
+    """Create a new comment on an answer."""
+    return await service.create_comment(db, answer_id, current_user, comment_in)
 
 
 @router.delete("/comments/{comment_id}", status_code=204)
@@ -52,4 +49,4 @@ async def delete_comment(
     current_user: CurrentUser,
 ) -> None:
     """Delete a comment (author or admin only)."""
-    raise HTTPException(status_code=501, detail="功能开发中")
+    await service.delete_comment(db, comment_id, current_user)

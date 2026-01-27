@@ -3,108 +3,163 @@
 // frontend/components/community/QuestionDetailModal.tsx
 /**
  * 问题详情弹窗
- * 显示问题全文、回答列表、评论功能
+ * 显示问题全文和回答列表
  */
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Question, type Answer, ROLE_CONFIG } from '../../types/community';
+import { getQuestion, getAnswers, createAnswer, toggleLike, deleteQuestion, deleteAnswer, getComments, createComment, deleteComment, type Comment } from '../../lib/api/community';
+import { getUserId } from '../../lib/user';
+
+// 模块级别对象，同步标记正在处理的问题，防止重复调用
+const viewingInProgress: Record<string, boolean> = {};
 
 interface QuestionDetailModalProps {
   question: Question | null;
   onClose: () => void;
   onLike: (id: string) => void;
   onCollect: (id: string) => void;
+  onAnswerCreated?: (questionId: string) => void;
+  onQuestionDeleted?: (questionId: string) => void;
+  onViewCountUpdated?: (questionId: string, viewCount: number) => void;
 }
-
-// Mock 回答数据
-const mockAnswers: Answer[] = [
-  {
-    id: 'a1',
-    question_id: '1',
-    author: {
-      id: 'u3',
-      nickname: '张医生',
-      avatar_url: null,
-      role: 'certified_doctor',
-      is_certified: true,
-      certification_title: '北京协和医院 康复科 主任医师',
-    },
-    content:
-      '腹直肌分离两指宽属于中度分离，在产后6个月内通过正确的康复训练是可以恢复的。建议：\n\n1. 避免做仰卧起坐等传统腹肌训练\n2. 可以做腹式呼吸、骨盆倾斜等基础训练\n3. 建议在专业康复师指导下进行\n4. 如果半年后仍无改善，可考虑就医评估',
-    content_preview: '腹直肌分离两指宽属于中度分离，在产后6个月内通过正确的康复训练是可以恢复的...',
-    image_urls: [],
-    is_professional: true,
-    is_accepted: false,
-    like_count: 45,
-    comment_count: 3,
-    is_liked: false,
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: 'a2',
-    question_id: '1',
-    author: {
-      id: 'u7',
-      nickname: '二胎妈妈小美',
-      avatar_url: null,
-      role: 'mom',
-      is_certified: false,
-    },
-    content:
-      '我当时也是两指宽，坚持做了三个月的康复训练，现在已经恢复到一指以内了！主要是每天做腹式呼吸和凯格尔运动，一定要坚持！',
-    content_preview: '我当时也是两指宽，坚持做了三个月的康复训练，现在已经恢复到一指以内了...',
-    image_urls: [],
-    is_professional: false,
-    is_accepted: false,
-    like_count: 23,
-    comment_count: 5,
-    is_liked: true,
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-  },
-];
 
 export default function QuestionDetailModal({
   question,
   onClose,
   onLike,
   onCollect,
+  onAnswerCreated,
+  onQuestionDeleted,
+  onViewCountUpdated,
 }: QuestionDetailModalProps) {
-  const [newComment, setNewComment] = useState('');
-  const [answers, setAnswers] = useState<Answer[]>(mockAnswers);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [isLoadingAnswers, setIsLoadingAnswers] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [viewCount, setViewCount] = useState<number>(0);
 
-  if (!question) return null;
+  // 获取当前用户 ID
+  useEffect(() => {
+    setCurrentUserId(getUserId());
+  }, []);
 
-  const roleConfig = ROLE_CONFIG[question.author.role];
+  // 加载回答列表
+  const loadAnswers = useCallback(async (questionId: string) => {
+    setIsLoadingAnswers(true);
+    try {
+      const response = await getAnswers(questionId, {
+        page: 1,
+        page_size: 50,
+        sort_by: 'created_at',
+        order: 'desc',
+      });
+      setAnswers(response.items);
+    } catch (err) {
+      console.error('加载回答失败:', err);
+    } finally {
+      setIsLoadingAnswers(false);
+    }
+  }, []);
 
-  const handleSubmitAnswer = () => {
-    if (!newComment.trim()) return;
+  // 当问题变化时加载回答并增加浏览数
+  useEffect(() => {
+    if (question) {
+      loadAnswers(question.id);
+      setReplyContent('');
+      setViewCount(question.view_count);
 
-    const newAnswer: Answer = {
-      id: `new-${Date.now()}`,
-      question_id: question.id,
-      author: {
-        id: 'current-user',
-        nickname: '我',
-        avatar_url: null,
-        role: 'mom',
-        is_certified: false,
-      },
-      content: newComment,
-      content_preview: newComment.slice(0, 100) + '...',
-      image_urls: [],
-      is_professional: false,
-      is_accepted: false,
-      like_count: 0,
-      comment_count: 0,
-      is_liked: false,
-      created_at: new Date().toISOString(),
-    };
+      // 使用模块级对象同步标记，确保只调用一次 API
+      if (!viewingInProgress[question.id]) {
+        viewingInProgress[question.id] = true;
+        getQuestion(question.id).then((detail) => {
+          setViewCount(detail.view_count);
+          onViewCountUpdated?.(question.id, detail.view_count);
+        }).catch(console.error);
+      }
+    } else {
+      setAnswers([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question, loadAnswers]);
 
-    setAnswers((prev) => [...prev, newAnswer]);
-    setNewComment('');
+  // 提交回答
+  const handleSubmitReply = async () => {
+    if (!question || !replyContent.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const newAnswer = await createAnswer(question.id, {
+        content: replyContent.trim(),
+      });
+      setAnswers((prev) => [newAnswer, ...prev]);
+      setReplyContent('');
+      // 通知父组件更新回复数
+      onAnswerCreated?.(question.id);
+    } catch (err: any) {
+      console.error('回复失败:', err);
+      alert(err.message || '回复失败，请重试');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // 点赞回答
+  const handleLikeAnswer = async (answerId: string) => {
+    try {
+      const result = await toggleLike('answer', answerId);
+      setAnswers((prev) =>
+        prev.map((a) =>
+          a.id === answerId
+            ? { ...a, is_liked: result.is_liked, like_count: result.like_count }
+            : a
+        )
+      );
+    } catch (err) {
+      console.error('点赞失败:', err);
+    }
+  };
+
+  // 删除问题
+  const handleDeleteQuestion = async () => {
+    if (!question) return;
+    if (!confirm('确定要删除这个问题吗？删除后无法恢复。')) return;
+
+    try {
+      await deleteQuestion(question.id);
+      onQuestionDeleted?.(question.id);
+      onClose();
+    } catch (err: any) {
+      console.error('删除失败:', err);
+      alert(err.message || '删除失败');
+    }
+  };
+
+  // 删除回答
+  const handleDeleteAnswer = async (answerId: string) => {
+    if (!confirm('确定要删除这条回答吗？')) return;
+
+    try {
+      await deleteAnswer(answerId);
+      setAnswers((prev) => prev.filter((a) => a.id !== answerId));
+    } catch (err: any) {
+      console.error('删除失败:', err);
+      alert(err.message || '删除失败');
+    }
+  };
+
+  // 检查是否可以删除问题（作者本人）
+  const canDeleteQuestion = question && currentUserId === question.author.id;
+
+  // 检查是否可以删除回答（回答作者或问题作者）
+  const canDeleteAnswer = (answer: Answer) => {
+    if (!question) return false;
+    return currentUserId === answer.author?.id || currentUserId === question.author.id;
+  };
+
+  const roleConfig = question ? ROLE_CONFIG[question.author.role] : ROLE_CONFIG.mom;
 
   return (
     <AnimatePresence>
@@ -112,15 +167,18 @@ export default function QuestionDetailModal({
         <>
           {/* 背景遮罩 */}
           <motion.div
+            key="modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
           />
 
           {/* 弹窗内容 */}
           <motion.div
+            key="modal-content"
             initial={{ opacity: 0, x: '100%' }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
@@ -141,7 +199,7 @@ export default function QuestionDetailModal({
             {/* 内容区 */}
             <div className="flex-1 overflow-y-auto">
               {/* 问题区域 */}
-              <div className="p-5 border-b border-stone-100">
+              <div className="p-5">
                 {/* 作者信息 */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-medium">
@@ -171,26 +229,6 @@ export default function QuestionDetailModal({
                 <p className="text-stone-600 leading-relaxed whitespace-pre-wrap">
                   {question.content}
                 </p>
-
-                {/* 图片 */}
-                {question.image_urls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mt-4">
-                    {question.image_urls.map((url, index) => (
-                      <div
-                        key={index}
-                        className="aspect-square rounded-lg overflow-hidden bg-stone-100"
-                      >
-                        <Image
-                          src={url}
-                          alt={`图片 ${index + 1}`}
-                          width={200}
-                          height={200}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 {/* 标签 */}
                 {question.tags.length > 0 && (
@@ -231,206 +269,78 @@ export default function QuestionDetailModal({
                     <span className="text-sm">收藏</span>
                   </button>
                   <span className="text-sm text-stone-400">
-                    {question.view_count} 浏览
+                    {viewCount} 浏览
                   </span>
-                </div>
-              </div>
-
-              {/* 回答区域 */}
-              <div className="p-5">
-                <h2 className="text-stone-700 font-medium mb-4">
-                  {answers.length} 个回答
-                </h2>
-
-                <div className="space-y-4">
-                  {answers.map((answer) => (
-                    <AnswerCard key={answer.id} answer={answer} />
-                  ))}
+                  {canDeleteQuestion && (
+                    <button
+                      onClick={handleDeleteQuestion}
+                      className="ml-auto flex items-center gap-1.5 text-stone-400 hover:text-red-500 transition-colors"
+                    >
+                      <TrashIcon />
+                      <span className="text-sm">删除</span>
+                    </button>
+                  )}
                 </div>
 
-                {answers.length === 0 && (
-                  <div className="py-12 text-center">
-                    <p className="text-stone-400">暂无回答，来分享你的经验吧</p>
+                {/* 回答区域 */}
+                <div className="mt-6 pt-6 border-t border-stone-100">
+                  <h2 className="text-stone-700 font-medium mb-4">
+                    {answers.length} 个回答
+                  </h2>
+
+                  {/* 回复输入框 */}
+                  <div className="mb-6">
+                    <textarea
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      placeholder="分享你的经验或建议..."
+                      className="w-full p-3 border border-stone-200 rounded-xl resize-none focus:outline-none focus:border-stone-400 text-stone-700"
+                      rows={3}
+                    />
+                    <div className="flex justify-end mt-2">
+                      <button
+                        onClick={handleSubmitReply}
+                        disabled={!replyContent.trim() || isSubmitting}
+                        className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? '发送中...' : '发送回复'}
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* 底部输入区 */}
-            <div className="p-4 border-t border-stone-100 bg-white">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="写下你的回答..."
-                  className="flex-1 px-4 py-3 rounded-full border border-stone-200 bg-stone-50 text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 focus:bg-white transition-all"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmitAnswer();
-                    }
-                  }}
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSubmitAnswer}
-                  disabled={!newComment.trim()}
-                  className="px-6 py-3 rounded-full bg-stone-800 text-white font-medium hover:bg-stone-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
-                >
-                  发送
-                </motion.button>
+                  {/* 加载状态 */}
+                  {isLoadingAnswers && (
+                    <div className="py-8 text-center text-stone-400">
+                      加载中...
+                    </div>
+                  )}
+
+                  {/* 回答列表 */}
+                  {!isLoadingAnswers && answers.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <p className="text-stone-400">暂无回答，来分享你的经验吧</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {answers.map((answer) => (
+                        <AnswerCard
+                          key={answer.id}
+                          answer={answer}
+                          onLike={handleLikeAnswer}
+                          onDelete={handleDeleteAnswer}
+                          canDelete={canDeleteAnswer(answer)}
+                          currentUserId={currentUserId}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
         </>
       )}
     </AnimatePresence>
-  );
-}
-
-// 回答卡片
-function AnswerCard({ answer }: { answer: Answer }) {
-  const [isLiked, setIsLiked] = useState(answer.is_liked);
-  const [likeCount, setLikeCount] = useState(answer.like_count);
-  const [showComments, setShowComments] = useState(false);
-  const [newReply, setNewReply] = useState('');
-  const [replies, setReplies] = useState([
-    { id: 'r1', author: '小美妈妈', content: '谢谢分享，很有帮助！', time: '1小时前' },
-    { id: 'r2', author: '豆豆妈', content: '请问每天做多久呢？', time: '30分钟前' },
-  ]);
-  const roleConfig = ROLE_CONFIG[answer.author.role];
-
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-  };
-
-  const handleAddReply = () => {
-    if (!newReply.trim()) return;
-    setReplies((prev) => [
-      ...prev,
-      { id: `r-${Date.now()}`, author: '我', content: newReply, time: '刚刚' },
-    ]);
-    setNewReply('');
-  };
-
-  return (
-    <div className="bg-stone-50 rounded-xl p-4">
-      {/* 作者信息 */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="relative">
-          <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 text-sm font-medium">
-            {answer.author.nickname.charAt(0)}
-          </div>
-          {answer.author.is_certified && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="3">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-          )}
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-stone-700">
-              {answer.author.nickname}
-            </span>
-            <span
-              className={`px-1.5 py-0.5 rounded-full text-xs ${roleConfig.badgeColor}`}
-            >
-              {roleConfig.label}
-            </span>
-            {answer.is_professional && (
-              <span className="px-1.5 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">
-                专业回答
-              </span>
-            )}
-          </div>
-          {answer.author.certification_title && (
-            <p className="text-xs text-stone-400">{answer.author.certification_title}</p>
-          )}
-        </div>
-        <span className="text-xs text-stone-400">
-          {formatRelativeTime(answer.created_at)}
-        </span>
-      </div>
-
-      {/* 回答内容 */}
-      <p className="text-stone-600 text-sm leading-relaxed whitespace-pre-wrap">
-        {answer.content}
-      </p>
-
-      {/* 互动 */}
-      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-stone-200">
-        <button
-          onClick={handleLike}
-          className={`flex items-center gap-1 text-sm ${
-            isLiked ? 'text-rose-500' : 'text-stone-400 hover:text-stone-600'
-          }`}
-        >
-          <HeartIcon filled={isLiked} size={14} />
-          <span>{likeCount}</span>
-        </button>
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className={`flex items-center gap-1 text-sm ${
-            showComments ? 'text-stone-700' : 'text-stone-400 hover:text-stone-600'
-          }`}
-        >
-          <CommentIcon size={14} />
-          <span>{replies.length}</span>
-        </button>
-      </div>
-
-      {/* 评论区 */}
-      <AnimatePresence>
-        {showComments && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-3 pt-3 border-t border-stone-200 space-y-2">
-              {replies.map((reply) => (
-                <div key={reply.id} className="flex gap-2 text-sm">
-                  <span className="text-stone-700 font-medium shrink-0">{reply.author}:</span>
-                  <span className="text-stone-600 flex-1">{reply.content}</span>
-                  <span className="text-stone-400 text-xs shrink-0">{reply.time}</span>
-                </div>
-              ))}
-
-              {/* 回复输入 */}
-              <div className="flex gap-2 mt-2 pt-2">
-                <input
-                  type="text"
-                  value={newReply}
-                  onChange={(e) => setNewReply(e.target.value)}
-                  placeholder="写下你的评论..."
-                  className="flex-1 px-3 py-1.5 rounded-full border border-stone-200 bg-white text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-stone-300"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddReply();
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleAddReply}
-                  disabled={!newReply.trim()}
-                  className="px-3 py-1.5 rounded-full bg-stone-700 text-white text-sm hover:bg-stone-600 disabled:bg-stone-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  发送
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }
 
@@ -453,11 +363,11 @@ function ChevronLeftIcon() {
   );
 }
 
-function HeartIcon({ filled, size = 18 }: { filled: boolean; size?: number }) {
+function HeartIcon({ filled }: { filled: boolean }) {
   return (
     <svg
-      width={size}
-      height={size}
+      width="18"
+      height="18"
       viewBox="0 0 24 24"
       fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
@@ -487,11 +397,11 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
   );
 }
 
-function CommentIcon({ size = 18 }: { size?: number }) {
+function TrashIcon() {
   return (
     <svg
-      width={size}
-      height={size}
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -499,14 +409,16 @@ function CommentIcon({ size = 18 }: { size?: number }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
     </svg>
   );
 }
 
 // 相对时间格式化
 function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
+  const normalizedDateString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+  const date = new Date(normalizedDateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -518,4 +430,355 @@ function formatRelativeTime(dateString: string): string {
   if (diffHours < 24) return `${diffHours}小时前`;
   if (diffDays < 7) return `${diffDays}天前`;
   return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+}
+
+// 回答卡片组件
+function AnswerCard({
+  answer,
+  onLike,
+  onDelete,
+  canDelete,
+  currentUserId,
+}: {
+  answer: Answer;
+  onLike: (id: string) => void;
+  onDelete: (id: string) => void;
+  canDelete: boolean;
+  currentUserId: string;
+}) {
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentContent, setCommentContent] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string } | null>(null);
+
+  const authorName = answer.author?.nickname || '匿名用户';
+  const authorRole = answer.author?.role || 'mom';
+  const roleConfig = ROLE_CONFIG[authorRole] || ROLE_CONFIG.mom;
+
+  // 加载评论
+  const loadComments = async () => {
+    if (isLoadingComments) return;
+    setIsLoadingComments(true);
+    try {
+      const data = await getComments(answer.id);
+      setComments(data);
+    } catch (err) {
+      console.error('加载评论失败:', err);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  // 切换显示评论
+  const toggleComments = () => {
+    if (!showComments && comments.length === 0) {
+      loadComments();
+    }
+    setShowComments(!showComments);
+  };
+
+  // 提交评论
+  const handleSubmitComment = async () => {
+    if (!commentContent.trim() || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const newComment = await createComment(answer.id, {
+        content: commentContent.trim(),
+        parent_id: replyingTo?.id,
+      });
+
+      if (replyingTo) {
+        // Find the root comment that contains replyingTo (either itself or in its replies)
+        setComments((prev) =>
+          prev.map((c) => {
+            // If replying to root comment or a reply under this root
+            if (c.id === replyingTo.id || c.replies.some((r) => r.id === replyingTo.id)) {
+              return { ...c, replies: [...c.replies, newComment] };
+            }
+            return c;
+          })
+        );
+      } else {
+        setComments((prev) => [...prev, newComment]);
+      }
+
+      setCommentContent('');
+      setReplyingTo(null);
+    } catch (err: any) {
+      console.error('评论失败:', err);
+      alert(err.message || '评论失败');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  // 删除评论
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('确定要删除这条评论吗？')) return;
+
+    try {
+      await deleteComment(commentId);
+      // 从列表或嵌套 replies 中移除
+      setComments((prev) =>
+        prev
+          .filter((c) => c.id !== commentId)
+          .map((c) => ({
+            ...c,
+            replies: c.replies.filter((r) => r.id !== commentId),
+          }))
+      );
+    } catch (err: any) {
+      console.error('删除评论失败:', err);
+      alert(err.message || '删除失败');
+    }
+  };
+
+  // 点赞评论
+  const handleLikeComment = async (commentId: string) => {
+    try {
+      const result = await toggleLike('comment', commentId);
+      // 更新评论状态
+      const updateComment = (c: Comment): Comment =>
+        c.id === commentId
+          ? { ...c, is_liked: result.is_liked, like_count: result.like_count }
+          : { ...c, replies: c.replies.map(updateComment) };
+      setComments((prev) => prev.map(updateComment));
+    } catch (err) {
+      console.error('点赞失败:', err);
+    }
+  };
+
+  return (
+    <div className="p-4 bg-stone-50 rounded-xl">
+      {/* 作者信息 */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 text-sm font-medium">
+          {authorName.charAt(0)}
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-stone-700 text-sm">
+              {authorName}
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${roleConfig.badgeColor}`}
+            >
+              {roleConfig.label}
+            </span>
+          </div>
+          <p className="text-xs text-stone-400">
+            {formatRelativeTime(answer.created_at)}
+          </p>
+        </div>
+      </div>
+
+      {/* 回答内容 */}
+      <p className="text-stone-600 text-sm leading-relaxed whitespace-pre-wrap mb-3">
+        {answer.content}
+      </p>
+
+      {/* 互动栏 */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => onLike(answer.id)}
+          className={`flex items-center gap-1 text-sm ${
+            answer.is_liked
+              ? 'text-rose-500'
+              : 'text-stone-400 hover:text-stone-600'
+          }`}
+        >
+          <HeartIcon filled={answer.is_liked} />
+          <span>{answer.like_count || 0}</span>
+        </button>
+        <button
+          onClick={toggleComments}
+          className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-600"
+        >
+          <CommentIcon />
+          <span>{answer.comment_count || 0}</span>
+        </button>
+        <button
+          onClick={() => {
+            setShowComments(true);
+            if (comments.length === 0) loadComments();
+            setReplyingTo(null);
+          }}
+          className="text-sm text-stone-400 hover:text-stone-600"
+        >
+          回复
+        </button>
+        {canDelete && (
+          <button
+            onClick={() => onDelete(answer.id)}
+            className="ml-auto flex items-center gap-1 text-sm text-stone-400 hover:text-red-500 transition-colors"
+          >
+            <TrashIcon />
+            <span>删除</span>
+          </button>
+        )}
+      </div>
+
+      {/* 评论区 */}
+      {showComments && (
+        <div className="mt-4 pt-4 border-t border-stone-200">
+          {/* 评论输入 */}
+          <div className="mb-4">
+            {replyingTo && (
+              <div className="flex items-center gap-2 mb-2 text-xs text-stone-500">
+                <span>回复 @{replyingTo.nickname}</span>
+                <button
+                  onClick={() => setReplyingTo(null)}
+                  className="text-stone-400 hover:text-stone-600"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                placeholder={replyingTo ? `回复 @${replyingTo.nickname}...` : '写下你的评论...'}
+                className="flex-1 px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:border-stone-400"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmitComment();
+                  }
+                }}
+              />
+              <button
+                onClick={handleSubmitComment}
+                disabled={!commentContent.trim() || isSubmittingComment}
+                className="px-3 py-2 bg-[#e8a4b8] text-white text-sm rounded-lg hover:bg-[#d88a9f] disabled:opacity-50"
+              >
+                {isSubmittingComment ? '...' : '发送'}
+              </button>
+            </div>
+          </div>
+
+          {/* 评论列表 */}
+          {isLoadingComments ? (
+            <div className="text-center py-4 text-stone-400 text-sm">加载中...</div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-4 text-stone-400 text-sm">暂无评论</div>
+          ) : (
+            <div className="space-y-3">
+              {comments.map((comment) => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  currentUserId={currentUserId}
+                  onReply={(id, nickname) => setReplyingTo({ id, nickname })}
+                  onDelete={handleDeleteComment}
+                  onLike={handleLikeComment}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 评论项组件
+function CommentItem({
+  comment,
+  currentUserId,
+  onReply,
+  onDelete,
+  onLike,
+  isNested = false,
+}: {
+  comment: Comment;
+  currentUserId: string;
+  onReply: (parentId: string, nickname: string) => void;
+  onDelete: (id: string) => void;
+  onLike: (id: string) => void;
+  isNested?: boolean;
+}) {
+  const canDelete = currentUserId === comment.author.id;
+
+  return (
+    <div className={isNested ? 'ml-6 pl-3 border-l-2 border-stone-200' : ''}>
+      <div className="flex items-start gap-2">
+        <div className="w-6 h-6 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 text-xs font-medium shrink-0">
+          {comment.author.nickname.charAt(0)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-stone-700 text-xs">
+              {comment.author.nickname}
+            </span>
+            {comment.reply_to_user && (
+              <>
+                <span className="text-stone-400 text-xs">回复</span>
+                <span className="text-[#e8a4b8] text-xs">@{comment.reply_to_user.nickname}</span>
+              </>
+            )}
+            <span className="text-stone-400 text-xs">
+              {formatRelativeTime(comment.created_at)}
+            </span>
+          </div>
+          <p className="text-stone-600 text-sm mt-1">{comment.content}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <button
+              onClick={() => onLike(comment.id)}
+              className={`flex items-center gap-1 text-xs ${
+                comment.is_liked ? 'text-rose-500' : 'text-stone-400 hover:text-stone-600'
+              }`}
+            >
+              <HeartIcon filled={comment.is_liked} />
+              {comment.like_count > 0 && <span>{comment.like_count}</span>}
+            </button>
+            <button
+              onClick={() => onReply(comment.id, comment.author.nickname)}
+              className="text-xs text-stone-400 hover:text-stone-600"
+            >
+              回复
+            </button>
+            {canDelete && (
+              <button
+                onClick={() => onDelete(comment.id)}
+                className="text-xs text-stone-400 hover:text-red-500"
+              >
+                删除
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 回复列表 (只有1层) */}
+      {!isNested && comment.replies && comment.replies.length > 0 && (
+        <div className="mt-2 space-y-2">
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              onReply={onReply}
+              onDelete={onDelete}
+              onLike={onLike}
+              isNested
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 评论图标
+function CommentIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+    </svg>
+  );
 }

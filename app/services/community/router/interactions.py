@@ -156,7 +156,10 @@ async def list_my_collections(
     page_size: int = Query(20, ge=1, le=100),
 ) -> PaginatedResponse[CollectionItem]:
     """Get current user's collections."""
-    from fastapi import HTTPException
-
-    # TODO: Implement list collections
-    raise HTTPException(status_code=501, detail="功能开发中")
+    return await service.get_user_collections(
+        db=db,
+        user_id=current_user.id,
+        folder_name=folder_name,
+        page=page,
+        page_size=page_size,
+    )

@@ -148,8 +148,7 @@ async def delete_question(
     current_user: CurrentUser,
 ) -> None:
     """Delete a question (author or admin only)."""
-    # TODO: Implement delete logic
-    raise HTTPException(status_code=501, detail="功能开发中")
+    await service.delete_question(db, question_id, current_user)
 
 
 @router.post("/{question_id}/accept/{answer_id}", status_code=200)

@@ -1,18 +1,20 @@
 /**
- * MomShell Recovery Coach - Frontend Application
+ * MomShell - Frontend Application
  */
 
 // Configuration
 const CONFIG = {
     API_BASE: '/api',
+    COMPANION_API: '/api/v1/companion',
+    COMMUNITY_API: '/api/v1/community',
     WS_BASE: `ws://${window.location.host}/api/ws/coach`,
-    FRAME_RATE: 8, // Reduced from 15 to 8 FPS for better performance
+    FRAME_RATE: 8,
     USER_ID: 'default_user',
 };
 
 // Application State
 const state = {
-    currentView: 'exercises',
+    currentView: 'home',
     exercises: [],
     selectedExercise: null,
     sessionId: null,
@@ -20,21 +22,46 @@ const state = {
     videoStream: null,
     isSessionActive: false,
     frameInterval: null,
-    // Audio queue state
     audioQueue: [],
     isPlayingAudio: false,
     currentAudio: null,
+    // Chat state
+    chatHistory: [],
+    // Community state
+    communityPosts: [],
+    currentChannel: 'all',
 };
 
+// ============================================================================
 // DOM Elements
+// ============================================================================
+
 const elements = {
     // Views
+    homeView: document.getElementById('home-view'),
+    companionView: document.getElementById('companion-view'),
+    communityView: document.getElementById('community-view'),
     exercisesView: document.getElementById('exercises-view'),
     progressView: document.getElementById('progress-view'),
     sessionView: document.getElementById('session-view'),
 
     // Exercise list
     exerciseList: document.getElementById('exercise-list'),
+
+    // Chat elements
+    chatMessages: document.getElementById('chat-messages'),
+    chatInput: document.getElementById('chat-input'),
+    chatSendBtn: document.getElementById('chat-send-btn'),
+
+    // Community elements
+    communityPosts: document.getElementById('community-posts'),
+    postModal: document.getElementById('post-modal'),
+    postForm: document.getElementById('post-form'),
+    postTitle: document.getElementById('post-title'),
+    postContent: document.getElementById('post-content'),
+    postChannel: document.getElementById('post-channel'),
+    openPostModalBtn: document.getElementById('open-post-modal-btn'),
+    cancelPostBtn: document.getElementById('cancel-post-btn'),
 
     // Session elements
     sessionExerciseName: document.getElementById('session-exercise-name'),
@@ -55,7 +82,6 @@ const elements = {
     startBtn: document.getElementById('start-btn'),
     pauseBtn: document.getElementById('pause-btn'),
     resumeBtn: document.getElementById('resume-btn'),
-    restBtn: document.getElementById('rest-btn'),
     endSessionBtn: document.getElementById('end-session-btn'),
 
     // Modal
@@ -76,7 +102,7 @@ const elements = {
 };
 
 // ============================================================================
-// API Functions
+// API Functions - Exercises & Progress
 // ============================================================================
 
 async function fetchExercises() {
@@ -111,6 +137,185 @@ async function fetchAchievements() {
 }
 
 // ============================================================================
+// API Functions - Companion Chat
+// ============================================================================
+
+async function sendChatMessage(message) {
+    if (!message.trim()) return;
+
+    // Add user message to UI
+    addChatMessage(message, 'user');
+    elements.chatInput.value = '';
+
+    try {
+        const response = await fetch(`${CONFIG.COMPANION_API}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: message,
+                session_id: CONFIG.USER_ID,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            addChatMessage(data.text || '...', 'assistant');
+        } else {
+            addChatMessage('抱歉，暂时无法回复。请稍后再试。', 'assistant');
+        }
+    } catch (error) {
+        console.error('Chat error:', error);
+        addChatMessage('连接出现问题，请检查网络。', 'assistant');
+    }
+}
+
+function addChatMessage(text, role) {
+    const welcome = elements.chatMessages.querySelector('.chat-welcome');
+    if (welcome) welcome.remove();
+
+    const msgEl = document.createElement('div');
+    msgEl.className = `chat-message ${role}`;
+    msgEl.textContent = text;
+    elements.chatMessages.appendChild(msgEl);
+    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+
+    state.chatHistory.push({ role, text });
+}
+
+// ============================================================================
+// API Functions - Community
+// ============================================================================
+
+async function fetchCommunityPosts(channel = 'all') {
+    try {
+        let url = `${CONFIG.COMMUNITY_API}/questions/`;
+        if (channel !== 'all') {
+            url = `${CONFIG.COMMUNITY_API}/questions/channel/${channel}`;
+        }
+        const response = await fetch(url);
+        if (response.ok) {
+            const data = await response.json();
+            const posts = data.items || [];
+            state.communityPosts = posts;
+            renderCommunityPosts(posts);
+        } else {
+            renderEmptyCommunity();
+        }
+    } catch (error) {
+        console.error('Failed to fetch posts:', error);
+        renderEmptyCommunity();
+    }
+}
+
+function renderCommunityPosts(posts) {
+    if (!posts || posts.length === 0) {
+        renderEmptyCommunity();
+        return;
+    }
+
+    elements.communityPosts.innerHTML = posts.map(post => `
+        <div class="post-card">
+            <div class="post-author">
+                <span>${post.author?.display_name || '匿名用户'}</span>
+                ${post.author?.role ? `<span class="post-role">${getRoleName(post.author.role)}</span>` : ''}
+            </div>
+            <h4 class="post-title">${escapeHtml(post.title)}</h4>
+            <div class="post-content">${escapeHtml(post.content_preview)}</div>
+            <div class="post-meta">
+                <span>${post.answer_count || 0} 回答</span>
+                <span>${post.view_count || 0} 浏览</span>
+                <span>${formatTime(post.created_at)}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderEmptyCommunity() {
+    elements.communityPosts.innerHTML = `
+        <div class="empty-state">
+            <p>暂无帖子，来发布第一条吧</p>
+        </div>
+    `;
+}
+
+async function createQuestion(title, content, channel) {
+    try {
+        const response = await fetch(`${CONFIG.COMMUNITY_API}/questions/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': CONFIG.USER_ID,
+            },
+            body: JSON.stringify({
+                title: title,
+                content: content,
+                channel: channel,
+                tag_ids: [],
+                image_urls: [],
+            }),
+        });
+
+        if (response.ok || response.status === 201) {
+            return { success: true };
+        } else {
+            const error = await response.json();
+            return { success: false, error: error.detail || '发布失败' };
+        }
+    } catch (error) {
+        console.error('Create question error:', error);
+        return { success: false, error: '网络错误，请重试' };
+    }
+}
+
+function openPostModal() {
+    elements.postModal.classList.remove('hidden');
+    elements.postTitle.value = '';
+    elements.postContent.value = '';
+    elements.postChannel.value = 'experience';
+}
+
+function closePostModal() {
+    elements.postModal.classList.add('hidden');
+}
+
+async function handlePostSubmit(e) {
+    e.preventDefault();
+
+    const title = elements.postTitle.value.trim();
+    const content = elements.postContent.value.trim();
+    const channel = elements.postChannel.value;
+
+    if (title.length < 5) {
+        alert('标题至少需要5个字');
+        return;
+    }
+    if (content.length < 10) {
+        alert('内容至少需要10个字');
+        return;
+    }
+
+    const result = await createQuestion(title, content, channel);
+
+    if (result.success) {
+        closePostModal();
+        fetchCommunityPosts(state.currentChannel);
+        alert('发布成功！');
+    } else {
+        alert(result.error);
+    }
+}
+
+function getRoleName(role) {
+    const names = {
+        doctor: '医生',
+        nurse: '护士',
+        mom: '妈妈',
+        expert: '专家',
+    };
+    return names[role] || role;
+}
+
+// ============================================================================
 // WebSocket Functions
 // ============================================================================
 
@@ -122,7 +327,6 @@ function connectWebSocket(exerciseId) {
 
     state.ws.onopen = () => {
         console.log('WebSocket connected');
-        // Send start message
         state.ws.send(JSON.stringify({
             type: 'start',
             exercise_id: exerciseId,
@@ -141,7 +345,7 @@ function connectWebSocket(exerciseId) {
     };
 
     state.ws.onclose = (event) => {
-        console.log('WebSocket disconnected, code:', event.code, 'reason:', event.reason);
+        console.log('WebSocket disconnected');
         stopFrameSending();
         stopAllAudio();
     };
@@ -152,7 +356,6 @@ function connectWebSocket(exerciseId) {
 }
 
 function handleWebSocketMessage(data) {
-    console.log('Received message:', data.type);
     switch (data.type) {
         case 'ack':
             console.log('Server acknowledged:', data.message);
@@ -186,9 +389,6 @@ function handleWebSocketMessage(data) {
             console.error('Server error:', data.message);
             showFeedback(data.message, 'warning');
             break;
-
-        default:
-            console.log('Unknown message type:', data.type);
     }
 }
 
@@ -209,8 +409,8 @@ async function startCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                width: { ideal: 480 },  // Reduced from 640 for better performance
-                height: { ideal: 360 }, // Reduced from 480 for better performance
+                width: { ideal: 480 },
+                height: { ideal: 360 },
                 facingMode: 'user',
             },
             audio: false,
@@ -219,7 +419,6 @@ async function startCamera() {
         state.videoStream = stream;
         elements.localVideo.srcObject = stream;
 
-        // Wait for video to be ready
         await new Promise((resolve) => {
             elements.localVideo.onloadedmetadata = resolve;
         });
@@ -249,12 +448,10 @@ function startFrameSending() {
         if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
         if (!elements.localVideo.videoWidth) return;
 
-        // Capture frame
         canvas.width = elements.localVideo.videoWidth;
         canvas.height = elements.localVideo.videoHeight;
         ctx.drawImage(elements.localVideo, 0, 0);
 
-        // Convert to base64 and send (reduced quality for performance)
         const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
         const base64 = dataUrl.split(',')[1];
 
@@ -308,7 +505,6 @@ function renderExerciseList(exercises, category = 'all') {
         </div>
     `).join('');
 
-    // Add click handlers
     elements.exerciseList.querySelectorAll('.exercise-card').forEach(card => {
         card.addEventListener('click', () => {
             const exerciseId = card.dataset.id;
@@ -323,7 +519,6 @@ function renderProgressSummary(summary) {
     elements.currentStreak.textContent = summary.current_streak || 0;
     elements.totalMinutes.textContent = Math.round(summary.total_minutes || 0);
 
-    // Render strength metrics
     if (summary.strength_metrics) {
         elements.metricsContainer.innerHTML = Object.entries(summary.strength_metrics)
             .map(([name, data]) => `
@@ -341,22 +536,17 @@ function renderProgressSummary(summary) {
 }
 
 function renderAchievements(achievements) {
-    elements.achievementsContainer.innerHTML = `
-        <div class="achievements-grid">
-            ${achievements.map(a => `
-                <div class="achievement-badge ${a.is_earned ? 'earned' : ''}">
-                    <div class="achievement-icon">${getAchievementIcon(a.icon)}</div>
-                    <div class="achievement-name">${a.name}</div>
-                </div>
-            `).join('')}
+    elements.achievementsContainer.innerHTML = achievements.map(a => `
+        <div class="achievement-badge ${a.is_earned ? 'earned' : ''}">
+            <div class="achievement-icon">${getAchievementIcon(a.icon)}</div>
+            <div class="achievement-name">${a.name}</div>
         </div>
-    `;
+    `).join('');
 }
 
 function updateSessionState(data) {
     if (!data) return;
 
-    // Update progress
     if (data.progress) {
         const progress = data.progress;
         elements.sessionProgressBar.style.width = `${progress.progress}%`;
@@ -370,29 +560,18 @@ function updateSessionState(data) {
         }
     }
 
-    // Update analysis
     if (data.analysis) {
         const score = Math.round(data.analysis.score);
         elements.scoreDisplay.querySelector('.score-value').textContent = score;
-
-        // Update score color based on value
-        const scoreEl = elements.scoreDisplay;
-        scoreEl.classList.remove('good', 'ok', 'poor');
-        if (score >= 80) scoreEl.classList.add('good');
-        else if (score >= 60) scoreEl.classList.add('ok');
-        else scoreEl.classList.add('poor');
     }
 
-    // Update UI based on session state
-    const sessionState = data.session_state;
-    updateControlButtons(sessionState);
+    updateControlButtons(data.session_state);
 }
 
 function updateControlButtons(sessionState) {
     elements.startBtn.classList.toggle('hidden', sessionState !== 'preparing');
     elements.pauseBtn.classList.toggle('hidden', sessionState !== 'exercising');
     elements.resumeBtn.classList.toggle('hidden', sessionState !== 'paused');
-    elements.restBtn.classList.toggle('hidden', !['exercising', 'resting'].includes(sessionState));
 }
 
 function displayFeedback(feedback) {
@@ -410,21 +589,18 @@ function displayFeedback(feedback) {
 }
 
 function showFeedback(text, type = 'info') {
-    const el = elements.feedbackMessage;
-    el.textContent = text;
-    el.className = `feedback-message ${type}`;
+    elements.feedbackMessage.textContent = text;
+    elements.feedbackMessage.className = `feedback-message ${type}`;
 }
 
 function showSessionComplete(summary) {
     stopFrameSending();
     state.isSessionActive = false;
 
-    // Update summary
     elements.summaryScore.textContent = Math.round(summary.average_score || 0);
     elements.summaryReps.textContent = summary.completed_reps || 0;
     elements.summaryDuration.textContent = formatDuration(summary.session_duration || 0);
 
-    // Show new achievements
     if (summary.new_achievements && summary.new_achievements.length > 0) {
         elements.newAchievements.classList.remove('hidden');
         elements.achievementsEarned.innerHTML = summary.new_achievements
@@ -447,11 +623,9 @@ function showSessionComplete(summary) {
 async function startSession(exercise) {
     state.selectedExercise = exercise;
 
-    // Show session view
     showView('session');
     elements.sessionExerciseName.textContent = exercise.name;
 
-    // Update phase info
     if (exercise.phases && exercise.phases.length > 0) {
         const firstPhase = exercise.phases[0];
         elements.phaseDescription.textContent = firstPhase.description;
@@ -460,14 +634,12 @@ async function startSession(exercise) {
             .join('');
     }
 
-    // Start camera
     const cameraStarted = await startCamera();
     if (!cameraStarted) {
         showView('exercises');
         return;
     }
 
-    // Connect WebSocket
     connectWebSocket(exercise.id);
 }
 
@@ -511,11 +683,22 @@ function showView(viewName) {
     });
 
     // Load data for view
-    if (viewName === 'progress') {
-        fetchProgress();
-        fetchAchievements();
+    switch (viewName) {
+        case 'exercises':
+            if (state.exercises.length === 0) fetchExercises();
+            break;
+        case 'progress':
+            fetchProgress();
+            fetchAchievements();
+            break;
+        case 'community':
+            fetchCommunityPosts(state.currentChannel);
+            break;
     }
 }
+
+// Global function for onclick handlers in HTML
+window.showView = showView;
 
 // ============================================================================
 // Utility Functions
@@ -588,6 +771,30 @@ function formatDuration(seconds) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    // 后端返回的是 UTC 时间，需要添加 Z 标识
+    const normalizedTimestamp = timestamp.endsWith('Z') ? timestamp : timestamp + 'Z';
+    const date = new Date(normalizedTimestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return '刚刚';
+    if (diffMins < 60) return `${diffMins}分钟前`;
+    if (diffHours < 24) return `${diffHours}小时前`;
+    if (diffDays < 7) return `${diffDays}天前`;
+    return date.toLocaleDateString('zh-CN');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Audio queue management
 function queueAudio(base64Data) {
     if (!base64Data) return;
@@ -596,7 +803,6 @@ function queueAudio(base64Data) {
 }
 
 function processAudioQueue() {
-    // If already playing or queue is empty, do nothing
     if (state.isPlayingAudio || state.audioQueue.length === 0) {
         return;
     }
@@ -611,30 +817,21 @@ function processAudioQueue() {
         audio.onended = () => {
             state.isPlayingAudio = false;
             state.currentAudio = null;
-            // Wait a short interval before playing next audio
-            setTimeout(() => {
-                processAudioQueue();
-            }, 500); // 500ms interval between audio clips
+            setTimeout(() => processAudioQueue(), 500);
         };
 
-        audio.onerror = (e) => {
-            console.error('Audio playback error:', e);
+        audio.onerror = () => {
             state.isPlayingAudio = false;
             state.currentAudio = null;
-            // Try next audio
-            setTimeout(() => {
-                processAudioQueue();
-            }, 100);
+            setTimeout(() => processAudioQueue(), 100);
         };
 
-        audio.play().catch(e => {
-            console.log('Audio playback blocked:', e);
+        audio.play().catch(() => {
             state.isPlayingAudio = false;
             state.currentAudio = null;
             processAudioQueue();
         });
     } catch (error) {
-        console.error('Failed to create audio:', error);
         state.isPlayingAudio = false;
         processAudioQueue();
     }
@@ -645,9 +842,7 @@ function playAudio(base64Data) {
 }
 
 function stopAllAudio() {
-    // Clear queue
     state.audioQueue = [];
-    // Stop current audio
     if (state.currentAudio) {
         state.currentAudio.pause();
         state.currentAudio = null;
@@ -677,19 +872,62 @@ function initEventListeners() {
         });
     });
 
+    // Community channel filter
+    document.querySelectorAll('.channel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.currentChannel = btn.dataset.channel;
+            fetchCommunityPosts(btn.dataset.channel);
+        });
+    });
+
+    // Post modal
+    if (elements.openPostModalBtn) {
+        elements.openPostModalBtn.addEventListener('click', openPostModal);
+    }
+    if (elements.cancelPostBtn) {
+        elements.cancelPostBtn.addEventListener('click', closePostModal);
+    }
+    if (elements.postForm) {
+        elements.postForm.addEventListener('submit', handlePostSubmit);
+    }
+    if (elements.postModal) {
+        elements.postModal.addEventListener('click', (e) => {
+            if (e.target === elements.postModal) closePostModal();
+        });
+    }
+
+    // Chat
+    if (elements.chatSendBtn) {
+        elements.chatSendBtn.addEventListener('click', () => {
+            sendChatMessage(elements.chatInput.value);
+        });
+    }
+
+    if (elements.chatInput) {
+        elements.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage(elements.chatInput.value);
+            }
+        });
+    }
+
     // Session controls
-    elements.startBtn.addEventListener('click', beginExercise);
-    elements.pauseBtn.addEventListener('click', () => sendControl('pause'));
-    elements.resumeBtn.addEventListener('click', () => sendControl('resume'));
-    elements.restBtn.addEventListener('click', () => sendControl('rest'));
-    elements.endSessionBtn.addEventListener('click', endSession);
+    if (elements.startBtn) elements.startBtn.addEventListener('click', beginExercise);
+    if (elements.pauseBtn) elements.pauseBtn.addEventListener('click', () => sendControl('pause'));
+    if (elements.resumeBtn) elements.resumeBtn.addEventListener('click', () => sendControl('resume'));
+    if (elements.endSessionBtn) elements.endSessionBtn.addEventListener('click', endSession);
 
     // Modal
-    elements.closeModalBtn.addEventListener('click', () => {
-        elements.sessionCompleteModal.classList.add('hidden');
-        showView('exercises');
-        fetchProgress();
-    });
+    if (elements.closeModalBtn) {
+        elements.closeModalBtn.addEventListener('click', () => {
+            elements.sessionCompleteModal.classList.add('hidden');
+            showView('exercises');
+            fetchProgress();
+        });
+    }
 }
 
 // ============================================================================
@@ -698,5 +936,6 @@ function initEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
-    fetchExercises();
+    // Start on home view
+    showView('home');
 });

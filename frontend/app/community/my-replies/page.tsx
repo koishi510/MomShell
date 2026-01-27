@@ -1,96 +1,96 @@
 'use client';
 
-// frontend/app/community/collections/page.tsx
+// frontend/app/community/my-replies/page.tsx
 /**
- * 收藏页面 - 我的贝壳
- * 展示用户收藏的帖子
+ * 我的回答页面
+ * 展示用户发布的所有回答
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getMyCollections, toggleLike, toggleCollection, type CollectionItem } from '../../../lib/api/community';
+import { getMyAnswers, deleteAnswer, toggleLike, toggleCollection, type MyAnswerItem } from '../../../lib/api/community';
 import { type Question } from '../../../types/community';
 import CommunityBackground from '../../../components/community/CommunityBackground';
 import QuestionDetailModal from '../../../components/community/QuestionDetailModal';
-import PostCard from '../../../components/community/PostCard';
+import ReplyCard from '../../../components/community/ReplyCard';
 
-export default function CollectionsPage() {
-  const [collections, setCollections] = useState<CollectionItem[]>([]);
+export default function MyRepliesPage() {
+  const [answers, setAnswers] = useState<MyAnswerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const hasFetched = useRef(false);
 
+  // Load answers
+  const loadAnswers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await getMyAnswers({ page: 1, page_size: 50 });
+      setAnswers(response.items);
+    } catch (err) {
+      console.error('Failed to load answers:', err);
+      setError('加载失败，请刷新重试');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
+    loadAnswers();
+  }, [loadAnswers]);
 
-    async function loadCollections() {
-      try {
-        const response = await getMyCollections({ page: 1, page_size: 50 });
-        setCollections(response.items);
-      } catch (err) {
-        console.error('Failed to load collections:', err);
-        setError('加载失败，请刷新重试');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadCollections();
-  }, []);
-
-  // 将 CollectionItem.question 转换为完整的 Question 类型
-  const mapToQuestion = (item: CollectionItem['question']): Question => ({
-    id: item.id,
-    title: item.title,
-    content: item.content_preview,
-    content_preview: item.content_preview,
-    channel: item.channel,
-    status: 'published',
-    author: {
-      id: item.author?.id || 'unknown',
-      nickname: item.author?.nickname || '匿名用户',
-      avatar_url: item.author?.avatar_url || null,
-      role: item.author?.role || 'mom',
-      is_certified: item.author?.is_certified || false,
-      certification_title: item.author?.certification_title,
-    },
-    tags: item.tags || [],
-    image_urls: [],
-    view_count: item.view_count || 0,
-    answer_count: item.answer_count || 0,
-    like_count: item.like_count || 0,
-    collection_count: item.collection_count || 0,
-    is_liked: item.is_liked || false,
-    is_collected: true,
-    professional_answer_count: 0,
-    experience_answer_count: 0,
-    created_at: item.created_at,
-    has_accepted_answer: item.has_accepted_answer || false,
-  });
-
-  const handlePostClick = (question: Question) => {
+  const handleAnswerClick = (answer: MyAnswerItem) => {
+    // Construct minimal Question object, modal will fetch full details
+    const question: Question = {
+      id: answer.question.id,
+      title: answer.question.title,
+      content: '',
+      content_preview: '',
+      channel: answer.question.channel as any,
+      status: 'published',
+      author: {
+        id: 'unknown',
+        nickname: '匿名用户',
+        avatar_url: null,
+        role: 'mom',
+        is_certified: false,
+        certification_title: undefined,
+      },
+      tags: [],
+      image_urls: [],
+      view_count: 0,
+      answer_count: 0,
+      like_count: 0,
+      collection_count: 0,
+      is_liked: false,
+      is_collected: false,
+      professional_answer_count: 0,
+      experience_answer_count: 0,
+      created_at: '',
+      has_accepted_answer: false,
+    };
     setSelectedQuestion(question);
+  };
+
+  const handleDelete = async (answerId: string) => {
+    if (!confirm('确定要删除这条回答吗？')) return;
+
+    try {
+      await deleteAnswer(answerId);
+      setAnswers((prev) => prev.filter((a) => a.id !== answerId));
+    } catch (err) {
+      console.error('删除失败:', err);
+      alert('删除失败，请重试');
+    }
   };
 
   const handleLike = async (id: string) => {
     try {
       const result = await toggleLike('question', id);
-      setCollections((prev) =>
-        prev.map((c) =>
-          c.question.id === id
-            ? {
-                ...c,
-                question: {
-                  ...c.question,
-                  is_liked: result.is_liked,
-                  like_count: result.like_count,
-                },
-              }
-            : c
-        )
-      );
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
           prev ? { ...prev, is_liked: result.is_liked, like_count: result.like_count } : null
@@ -104,9 +104,10 @@ export default function CollectionsPage() {
   const handleCollect = async (id: string) => {
     try {
       const result = await toggleCollection(id);
-      if (!result.is_collected) {
-        setCollections((prev) => prev.filter((c) => c.question.id !== id));
-        setSelectedQuestion(null);
+      if (selectedQuestion?.id === id) {
+        setSelectedQuestion((prev) =>
+          prev ? { ...prev, is_collected: result.is_collected, collection_count: result.collection_count } : null
+        );
       }
     } catch (err) {
       console.error('收藏失败:', err);
@@ -114,21 +115,22 @@ export default function CollectionsPage() {
   };
 
   const handleQuestionDeleted = (questionId: string) => {
-    setCollections((prev) => prev.filter((c) => c.question.id !== questionId));
+    setAnswers((prev) => prev.filter((a) => a.question.id !== questionId));
     setSelectedQuestion(null);
   };
 
   const handleViewCountUpdated = (questionId: string, viewCount: number) => {
-    setCollections((prev) =>
-      prev.map((c) =>
-        c.question.id === questionId
-          ? { ...c, question: { ...c.question, view_count: viewCount } }
-          : c
-      )
-    );
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
         prev ? { ...prev, view_count: viewCount } : null
+      );
+    }
+  };
+
+  const handleAnswerCreated = (questionId: string) => {
+    if (selectedQuestion?.id === questionId) {
+      setSelectedQuestion((prev) =>
+        prev ? { ...prev, answer_count: prev.answer_count + 1 } : null
       );
     }
   };
@@ -152,8 +154,8 @@ export default function CollectionsPage() {
           >
             ← 社区
           </Link>
-          <span className="text-2xl">🐚</span>
-          <span className="text-lg font-medium text-stone-700">我的贝壳</span>
+          <span className="text-2xl">💬</span>
+          <span className="text-lg font-medium text-stone-700">我的回答</span>
         </div>
       </motion.header>
 
@@ -162,7 +164,7 @@ export default function CollectionsPage() {
         {/* 副标题 */}
         <div className="text-center mb-8">
           <p className="text-stone-500 text-sm">
-            收藏的温暖，随时回顾
+            你的每一份回答，都是爱的传递
           </p>
         </div>
 
@@ -178,7 +180,10 @@ export default function CollectionsPage() {
           <div className="flex flex-col items-center py-16">
             <div className="text-red-500 mb-4">{error}</div>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                hasFetched.current = false;
+                loadAnswers();
+              }}
               className="px-4 py-2 bg-stone-800 text-white text-sm rounded-full hover:bg-stone-700 transition-colors"
             >
               重试
@@ -186,46 +191,43 @@ export default function CollectionsPage() {
           </div>
         )}
 
-        {/* 收藏列表 */}
+        {/* 回答列表 */}
         {!isLoading && !error && (
-          <>
-            {collections.length > 0 ? (
-              <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                  {collections.map((collection) => (
-                    <PostCard
-                      key={collection.id}
-                      question={mapToQuestion(collection.question)}
-                      onLike={handleLike}
-                      onCollect={handleCollect}
-                      onClick={handlePostClick}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            ) : (
-              /* 空状态 */
+          <div className="space-y-4">
+            <AnimatePresence mode="popLayout">
+              {answers.map((answer) => (
+                <ReplyCard
+                  key={answer.id}
+                  answer={answer}
+                  onClick={() => handleAnswerClick(answer)}
+                  onDelete={() => handleDelete(answer.id)}
+                />
+              ))}
+            </AnimatePresence>
+
+            {/* 空状态 */}
+            {answers.length === 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-center py-16"
               >
-                <div className="text-5xl mb-4 opacity-50">🏖️</div>
+                <div className="text-5xl mb-4 opacity-50">💭</div>
                 <h3 className="text-stone-600 font-medium mb-2">
-                  还没有捡到贝壳
+                  还没有回答过问题
                 </h3>
                 <p className="text-stone-400 text-sm mb-6">
-                  在社区中发现喜欢的内容，点击收藏吧
+                  去帮助其他妈妈，分享你的经验吧
                 </p>
                 <Link
                   href="/community"
                   className="inline-block px-6 py-2.5 bg-[#e8a4b8] text-white rounded-full text-sm hover:bg-[#d88a9f] transition-colors"
                 >
-                  去逛逛社区
+                  去社区看看
                 </Link>
               </motion.div>
             )}
-          </>
+          </div>
         )}
       </main>
 
@@ -237,6 +239,7 @@ export default function CollectionsPage() {
         onCollect={handleCollect}
         onQuestionDeleted={handleQuestionDeleted}
         onViewCountUpdated={handleViewCountUpdated}
+        onAnswerCreated={handleAnswerCreated}
       />
     </div>
   );

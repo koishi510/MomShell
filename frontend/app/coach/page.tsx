@@ -26,6 +26,7 @@ import {
   type Feedback,
 } from '../../components/coach';
 import type { EnergyMetrics } from '../../types/coach';
+import { getUserId } from '../../lib/user';
 
 // 动态获取API和WebSocket基础URL（支持同域部署）
 const getApiBase = () => {
@@ -45,7 +46,6 @@ const getWsBase = () => {
 };
 
 const FRAME_RATE = 20;
-const USER_ID = 'default_user';
 
 // Phase names mapping
 const PHASE_NAMES: Record<string, string> = {
@@ -122,6 +122,7 @@ export default function RehabPage() {
 
   // Data state
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isLoadingExercises, setIsLoadingExercises] = useState(true);
   const [progressSummary, setProgressSummary] = useState<ProgressSummary | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
 
@@ -155,6 +156,7 @@ export default function RehabPage() {
   const isPlayingAudioRef = useRef(false);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const processAudioQueueRef = useRef<() => void>(() => {});
+  const hasFetchedExercisesRef = useRef(false);
 
   // Convert progress summary to EnergyMetrics
   const energyMetrics: EnergyMetrics = {
@@ -166,19 +168,22 @@ export default function RehabPage() {
 
   // Fetch exercises
   const fetchExercises = useCallback(async () => {
+    setIsLoadingExercises(true);
     try {
       const response = await fetch(`${getApiBase()}/api/exercises`);
       const data = await response.json();
       setExercises(data);
     } catch (error) {
       console.error('Failed to fetch exercises:', error);
+    } finally {
+      setIsLoadingExercises(false);
     }
   }, []);
 
   // Fetch progress
   const fetchProgress = useCallback(async () => {
     try {
-      const response = await fetch(`${getApiBase()}/api/progress/${USER_ID}/summary`);
+      const response = await fetch(`${getApiBase()}/api/progress/${getUserId()}/summary`);
       const data = await response.json();
       setProgressSummary(data);
     } catch (error) {
@@ -189,7 +194,7 @@ export default function RehabPage() {
   // Fetch achievements
   const fetchAchievements = useCallback(async () => {
     try {
-      const response = await fetch(`${getApiBase()}/api/progress/${USER_ID}/achievements`);
+      const response = await fetch(`${getApiBase()}/api/progress/${getUserId()}/achievements`);
       const data = await response.json();
       setAchievements(data);
     } catch (error) {
@@ -452,7 +457,7 @@ export default function RehabPage() {
       ws.send(JSON.stringify({
         type: 'start',
         exercise_id: exerciseId,
-        user_id: USER_ID,
+        user_id: getUserId(),
         use_llm: true,
       }));
     };
@@ -588,11 +593,10 @@ export default function RehabPage() {
 
   // Initialize
   useEffect(() => {
-    // 使用 setTimeout 避免同步调用 setState
-    const timer = setTimeout(() => {
-      fetchExercises();
-    }, 0);
-    return () => clearTimeout(timer);
+    // 防止 React Strict Mode 双重调用
+    if (hasFetchedExercisesRef.current) return;
+    hasFetchedExercisesRef.current = true;
+    fetchExercises();
   }, [fetchExercises]);
 
   // Cleanup
@@ -611,7 +615,12 @@ export default function RehabPage() {
       <CoachBackground />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-stone-200/50">
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-stone-200/50"
+      >
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
@@ -646,19 +655,13 @@ export default function RehabPage() {
             </button>
           </nav>
         </div>
-      </header>
+      </motion.header>
 
       <main className="relative z-10 max-w-5xl mx-auto px-4 py-6">
         {/* Exercise Selection View */}
         <AnimatePresence mode="wait">
           {currentView === 'exercises' && (
-            <motion.section
-              key="exercises"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
+            <section key="exercises">
               <h2 className="text-2xl font-medium text-stone-700 mb-6">康复动作</h2>
 
               {/* Category Filter */}
@@ -678,24 +681,44 @@ export default function RehabPage() {
                 ))}
               </div>
 
+              {/* 加载状态 */}
+              {isLoadingExercises && (
+                <div className="flex justify-center py-16">
+                  <div className="text-stone-500">加载中...</div>
+                </div>
+              )}
+
               {/* Exercise Cards */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredExercises.map((exercise, index) => (
-                  <ExerciseCard
-                    key={exercise.id}
-                    id={exercise.id}
-                    name={exercise.name}
-                    description={exercise.description}
-                    category={exercise.category}
-                    difficulty={exercise.difficulty}
-                    sets={exercise.sets}
-                    repetitions={exercise.repetitions}
-                    index={index}
-                    onClick={() => startSession(exercise)}
-                  />
-                ))}
-              </div>
-            </motion.section>
+              {!isLoadingExercises && (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <AnimatePresence>
+                    {filteredExercises.map((exercise, index) => (
+                      <motion.div
+                        key={`${selectedCategory}-${exercise.id}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          duration: 0.4,
+                          delay: index * 0.05,
+                          ease: 'easeOut',
+                        }}
+                      >
+                        <ExerciseCard
+                          id={exercise.id}
+                          name={exercise.name}
+                          description={exercise.description}
+                          category={exercise.category}
+                          difficulty={exercise.difficulty}
+                          sets={exercise.sets}
+                          repetitions={exercise.repetitions}
+                          onClick={() => startSession(exercise)}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </section>
           )}
 
           {/* Progress View */}

@@ -143,19 +143,13 @@ export default function QuestionModal({
             </div>
 
             {/* 底部按钮 */}
-            <div className="p-5 border-t border-stone-100 flex gap-3">
-              <button
-                onClick={handleClose}
-                className="flex-1 px-4 py-3 rounded-full bg-stone-100 text-stone-600 font-medium hover:bg-stone-200 transition-colors"
-              >
-                取消
-              </button>
+            <div className="p-5 border-t border-stone-100">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleSubmit}
                 disabled={!title.trim() || !content.trim()}
-                className="flex-1 px-4 py-3 rounded-full bg-stone-800 text-white font-medium hover:bg-stone-700 transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 rounded-full bg-[#e8a4b8] text-white font-medium hover:bg-[#d88a9f] transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed"
               >
                 发布问题
               </motion.button>
