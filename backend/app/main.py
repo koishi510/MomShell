@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.routes import exercises, progress, websocket
+from app.api.v1 import exercises, progress, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.services.chat import router as companion_router
@@ -86,9 +86,9 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Include API routers
-app.include_router(websocket.router, prefix="/api")
-app.include_router(exercises.router, prefix="/api")
-app.include_router(progress.router, prefix="/api")
+app.include_router(websocket.router, prefix="/api/v1")
+app.include_router(exercises.router, prefix="/api/v1")
+app.include_router(progress.router, prefix="/api/v1")
 app.include_router(companion_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
 

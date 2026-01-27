@@ -1,7 +1,8 @@
 .PHONY: install install-backend install-frontend dev dev-backend dev-frontend \
         lint lint-backend lint-frontend format format-backend format-frontend \
         typecheck typecheck-backend typecheck-frontend build build-frontend \
-        docker-up docker-down docker-logs docker-build clean help
+        docker-up docker-down docker-logs docker-build docker-build-backend docker-build-frontend \
+        db-reset deps-lock deps-update clean clean-all help
 
 # Colors for terminal output
 CYAN := \033[36m
@@ -16,7 +17,7 @@ install: install-backend install-frontend ## Install all dependencies
 
 install-backend: ## Install backend dependencies
 	@echo "$(CYAN)Installing backend dependencies...$(RESET)"
-	uv sync
+	cd backend && uv sync
 
 install-frontend: ## Install frontend dependencies
 	@echo "$(CYAN)Installing frontend dependencies...$(RESET)"
@@ -40,7 +41,7 @@ dev-tmux: ## Start both servers in tmux split panes
 
 dev-backend: ## Start backend development server
 	@echo "$(CYAN)Starting backend server on http://localhost:8000$(RESET)"
-	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-frontend: ## Start frontend development server
 	@echo "$(CYAN)Starting frontend server on http://localhost:3000$(RESET)"
@@ -53,7 +54,7 @@ lint: lint-backend lint-frontend ## Run all linters
 
 lint-backend: ## Run backend linter (ruff)
 	@echo "$(CYAN)Linting backend...$(RESET)"
-	uv run ruff check .
+	cd backend && uv run ruff check .
 
 lint-frontend: ## Run frontend linter (eslint)
 	@echo "$(CYAN)Linting frontend...$(RESET)"
@@ -64,8 +65,8 @@ format: format-backend format-frontend ## Format all code
 
 format-backend: ## Format backend code (ruff)
 	@echo "$(CYAN)Formatting backend...$(RESET)"
-	uv run ruff format .
-	uv run ruff check . --fix
+	cd backend && uv run ruff format .
+	cd backend && uv run ruff check . --fix
 
 format-frontend: ## Format frontend code (prettier)
 	@echo "$(CYAN)Formatting frontend...$(RESET)"
@@ -76,7 +77,7 @@ typecheck: typecheck-backend typecheck-frontend ## Run all type checkers
 
 typecheck-backend: ## Run backend type checker (mypy)
 	@echo "$(CYAN)Type checking backend...$(RESET)"
-	uv run mypy app/
+	cd backend && uv run mypy app/
 
 typecheck-frontend: ## Run frontend type checker (tsc)
 	@echo "$(CYAN)Type checking frontend...$(RESET)"
@@ -93,40 +94,48 @@ build-frontend: ## Build frontend for production
 
 ##@ Docker
 
-docker-up: ## Start Docker containers
+docker-up: ## Start Docker containers (multi-container)
 	@echo "$(CYAN)Starting Docker containers...$(RESET)"
-	docker compose up -d --build
+	cd deploy && docker compose up -d --build
 
 docker-down: ## Stop Docker containers
 	@echo "$(CYAN)Stopping Docker containers...$(RESET)"
-	docker compose down
+	cd deploy && docker compose down
 
 docker-logs: ## Show Docker logs
-	docker compose logs -f
+	cd deploy && docker compose logs -f
 
-docker-build: ## Build Docker image
-	@echo "$(CYAN)Building Docker image...$(RESET)"
-	docker build -t momshell .
+docker-build: ## Build combined Docker image (single container)
+	@echo "$(CYAN)Building combined Docker image...$(RESET)"
+	docker build -f deploy/Dockerfile.combined -t momshell .
+
+docker-build-backend: ## Build backend Docker image
+	@echo "$(CYAN)Building backend Docker image...$(RESET)"
+	docker build -t momshell-backend backend/
+
+docker-build-frontend: ## Build frontend Docker image
+	@echo "$(CYAN)Building frontend Docker image...$(RESET)"
+	docker build -t momshell-frontend frontend/
 
 ##@ Database
 
 db-reset: ## Reset database (delete and recreate)
 	@echo "$(YELLOW)Resetting database...$(RESET)"
-	rm -f momshell.db
+	rm -f backend/data/momshell.db
 	@echo "$(GREEN)Database reset. It will be recreated on next server start.$(RESET)"
 
 ##@ Dependencies
 
 deps-lock: ## Lock backend dependencies and export requirements.txt
 	@echo "$(CYAN)Locking dependencies...$(RESET)"
-	uv lock
-	uv export > requirements.txt
+	cd backend && uv lock
+	cd backend && uv export > requirements.txt
 	@echo "$(GREEN)Dependencies locked$(RESET)"
 
 deps-update: ## Update all dependencies
 	@echo "$(CYAN)Updating backend dependencies...$(RESET)"
-	uv lock --upgrade
-	uv export > requirements.txt
+	cd backend && uv lock --upgrade
+	cd backend && uv export > requirements.txt
 	@echo "$(CYAN)Updating frontend dependencies...$(RESET)"
 	cd frontend && npm update
 	@echo "$(GREEN)All dependencies updated$(RESET)"
@@ -135,7 +144,7 @@ deps-update: ## Update all dependencies
 
 clean: ## Clean all caches and temporary files
 	@echo "$(CYAN)Cleaning caches...$(RESET)"
-	rm -rf .mypy_cache .ruff_cache .pytest_cache __pycache__
+	rm -rf backend/.mypy_cache backend/.ruff_cache backend/.pytest_cache backend/__pycache__
 	rm -rf frontend/.next frontend/node_modules/.cache
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
@@ -143,7 +152,7 @@ clean: ## Clean all caches and temporary files
 
 clean-all: clean ## Clean everything including node_modules and .venv
 	@echo "$(YELLOW)Removing node_modules and .venv...$(RESET)"
-	rm -rf frontend/node_modules .venv
+	rm -rf frontend/node_modules backend/.venv
 	@echo "$(GREEN)All cleaned$(RESET)"
 
 ##@ Help
