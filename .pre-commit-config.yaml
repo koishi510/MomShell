@@ -33,7 +33,7 @@ repos:
 
       - id: uv-export
         name: Export requirements.txt
-        entry: bash -c 'cd backend && uv export --no-dev --output-file requirements.txt'
+        entry: bash -c 'cd backend && uv export --no-dev --no-emit-project --output-file requirements.txt'
         language: system
         files: ^backend/uv\.lock$
         pass_filenames: false
