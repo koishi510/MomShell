@@ -23,13 +23,17 @@ jobs:
        !contains(github.event.pull_request.title, 'chore:') &&
        !contains(github.event.pull_request.title, '[skip ci]'))
 
+    defaults:
+      run:
+        working-directory: backend
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: "backend/uv.lock"
 
       - run: uv python install 3.11.5
 
@@ -39,7 +43,7 @@ jobs:
 
       - run: uv run ruff check . --output-format=github
 
-      - run: uv run mypy .
+      - run: uv run mypy app/
 
   frontend-cq:
     name: Frontend Code Quality
