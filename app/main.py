@@ -18,6 +18,9 @@ from app.core.database import init_db
 from app.services.chat import router as companion_router
 from app.services.community import community_router
 
+# Import models to register them with SQLAlchemy Base
+from app.services.community import models as community_models  # noqa: F401
+
 settings = get_settings()
 
 # Paths

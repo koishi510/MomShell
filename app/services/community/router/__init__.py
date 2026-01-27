@@ -9,6 +9,7 @@ from .interactions import router as interactions_router
 from .moderation import router as moderation_router
 from .questions import router as questions_router
 from .tags import router as tags_router
+from .user import router as user_router
 
 # Create main community router
 router = APIRouter()
@@ -21,5 +22,6 @@ router.include_router(interactions_router)
 router.include_router(tags_router)
 router.include_router(certifications_router)
 router.include_router(moderation_router)
+router.include_router(user_router)
 
 __all__ = ["router"]

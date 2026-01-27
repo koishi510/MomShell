@@ -3,27 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MomShell - AI 康复教练</title>
+    <title>MomShell - 产后康复助手</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="app-container">
         <!-- Header -->
         <header class="header">
-            <div class="logo">
-                <span class="logo-icon">🌸</span>
+            <a href="#" class="logo" onclick="showView('home'); return false;">
                 <span class="logo-text">MomShell</span>
-            </div>
+            </a>
             <nav class="nav">
-                <button class="nav-btn active" data-view="exercises">动作库</button>
-                <button class="nav-btn" data-view="progress">我的进度</button>
+                <button class="nav-btn" data-view="home">首页</button>
+                <button class="nav-btn" data-view="companion">情感陪伴</button>
+                <button class="nav-btn" data-view="community">社区</button>
+                <button class="nav-btn" data-view="exercises">康复教练</button>
             </nav>
         </header>
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Home View -->
+            <section id="home-view" class="view active">
+                <div class="home-hero">
+                    <h1>MomShell</h1>
+                    <p class="home-subtitle">为新妈妈打造的温暖空间</p>
+                </div>
+                <div class="feature-grid">
+                    <a href="#" class="feature-card" onclick="showView('companion'); return false;">
+                        <div class="feature-icon">💝</div>
+                        <h3>情感陪伴</h3>
+                        <p>在这一刻，你并不孤单</p>
+                    </a>
+                    <a href="#" class="feature-card" onclick="showView('community'); return false;">
+                        <div class="feature-icon">👩‍👩‍👧</div>
+                        <h3>互助社区</h3>
+                        <p>分享经验，获取专业建议</p>
+                    </a>
+                    <a href="#" class="feature-card" onclick="showView('exercises'); return false;">
+                        <div class="feature-icon">🧘‍♀️</div>
+                        <h3>康复教练</h3>
+                        <p>专业指导，温柔陪伴恢复之旅</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Companion View -->
+            <section id="companion-view" class="view">
+                <h2>情感陪伴</h2>
+                <div class="chat-container">
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-welcome">
+                            <p>你好，我是你的情感陪伴助手。</p>
+                            <p>有什么想聊的吗？无论是开心还是烦恼，我都在这里。</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <textarea id="chat-input" placeholder="说点什么..." rows="2"></textarea>
+                        <button id="chat-send-btn" class="btn btn-primary">发送</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Community View -->
+            <section id="community-view" class="view">
+                <div class="community-header">
+                    <h2>互助社区</h2>
+                    <button id="open-post-modal-btn" class="btn btn-primary">发布问题</button>
+                </div>
+                <div class="community-channels">
+                    <button class="channel-btn active" data-channel="all">全部</button>
+                    <button class="channel-btn" data-channel="professional">专业建议</button>
+                    <button class="channel-btn" data-channel="experience">妈妈经验</button>
+                </div>
+                <div id="community-posts" class="community-posts">
+                    <div class="empty-state">
+                        <p>暂无帖子</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Post Question Modal -->
+            <div id="post-modal" class="modal hidden">
+                <div class="modal-content post-modal-content">
+                    <h2>发布问题</h2>
+                    <form id="post-form">
+                        <div class="form-group">
+                            <label for="post-channel">频道</label>
+                            <select id="post-channel" required>
+                                <option value="experience">妈妈经验</option>
+                                <option value="professional">专业建议</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="post-title">标题</label>
+                            <input type="text" id="post-title" placeholder="请输入标题（5-200字）" minlength="5" maxlength="200" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="post-content">内容</label>
+                            <textarea id="post-content" rows="6" placeholder="请详细描述你的问题（10字以上）" minlength="10" maxlength="10000" required></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="cancel-post-btn" class="btn btn-secondary">取消</button>
+                            <button type="submit" class="btn btn-primary">发布</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Exercise Selection View -->
-            <section id="exercises-view" class="view active">
+            <section id="exercises-view" class="view">
                 <h2>康复动作</h2>
                 <div class="exercise-categories">
                     <button class="category-btn active" data-category="all">全部</button>
@@ -57,15 +146,11 @@
                 </div>
                 <div class="strength-metrics">
                     <h3>力量恢复进度</h3>
-                    <div id="metrics-container">
-                        <!-- Populated dynamically -->
-                    </div>
+                    <div id="metrics-container"></div>
                 </div>
                 <div class="achievements">
                     <h3>成就勋章</h3>
-                    <div id="achievements-container">
-                        <!-- Populated dynamically -->
-                    </div>
+                    <div id="achievements-container" class="achievements-grid"></div>
                 </div>
             </section>
 
@@ -94,7 +179,6 @@
 
                     <!-- Info Panel -->
                     <div class="info-panel">
-                        <!-- Progress -->
                         <div class="session-progress">
                             <div class="progress-bar">
                                 <div class="progress-fill" id="session-progress-bar"></div>
@@ -105,28 +189,20 @@
                             </div>
                         </div>
 
-                        <!-- Current Phase -->
                         <div class="current-phase">
                             <h4>当前阶段</h4>
                             <p id="phase-description">准备开始</p>
-                            <ul id="phase-cues" class="phase-cues">
-                                <!-- Cues populated dynamically -->
-                            </ul>
+                            <ul id="phase-cues" class="phase-cues"></ul>
                         </div>
 
-                        <!-- Feedback Area -->
                         <div class="feedback-area">
-                            <div class="feedback-message" id="feedback-message">
-                                准备开始
-                            </div>
+                            <div class="feedback-message" id="feedback-message">准备开始</div>
                         </div>
 
-                        <!-- Control Buttons -->
                         <div class="session-controls">
                             <button id="start-btn" class="btn btn-primary btn-large">开始训练</button>
                             <button id="pause-btn" class="btn btn-secondary hidden">暂停</button>
                             <button id="resume-btn" class="btn btn-primary hidden">继续</button>
-                            <button id="rest-btn" class="btn btn-secondary hidden">休息一下</button>
                         </div>
                     </div>
                 </div>
@@ -135,7 +211,7 @@
             <!-- Session Complete Modal -->
             <div id="session-complete-modal" class="modal hidden">
                 <div class="modal-content">
-                    <h2>做得很棒！</h2>
+                    <h2>训练完成</h2>
                     <div class="session-summary">
                         <div class="summary-stat">
                             <span class="summary-value" id="summary-score">--</span>
@@ -151,10 +227,10 @@
                         </div>
                     </div>
                     <div id="new-achievements" class="new-achievements hidden">
-                        <h3>获得新成就！</h3>
+                        <h3>获得新成就</h3>
                         <div id="achievements-earned"></div>
                     </div>
-                    <button id="close-modal-btn" class="btn btn-primary">继续</button>
+                    <button id="close-modal-btn" class="btn btn-primary">确定</button>
                 </div>
             </div>
         </main>

@@ -170,5 +170,5 @@ async def delete_answer(
     service: CommunityServiceDep,
     current_user: CurrentUser,
 ) -> None:
-    """Delete an answer (author or admin only)."""
-    raise HTTPException(status_code=501, detail="功能开发中")
+    """Delete an answer (author, question author, or admin only)."""
+    await service.delete_answer(db, answer_id, current_user)

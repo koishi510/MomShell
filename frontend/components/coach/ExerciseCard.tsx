@@ -6,8 +6,6 @@
 
 'use client';
 
-import { motion } from 'framer-motion';
-
 // 类别图标映射
 const CATEGORY_ICONS: Record<string, string> = {
   breathing: '🌬️',
@@ -49,7 +47,6 @@ export interface ExerciseCardProps {
   sets: number;
   repetitions: number;
   onClick?: () => void;
-  index?: number;
 }
 
 export function ExerciseCard({
@@ -60,28 +57,20 @@ export function ExerciseCard({
   sets,
   repetitions,
   onClick,
-  index = 0,
 }: ExerciseCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
+    <div
       onClick={onClick}
-      className="group bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm
-                 hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer
+      className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm
+                 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer
                  border border-white/60 hover:border-[#e8a4b8]/30"
     >
       {/* 头部：图标 + 名称 + 难度 */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
-          <motion.span
-            className="text-2xl"
-            whileHover={{ scale: 1.2, rotate: 10 }}
-            transition={{ type: 'spring', stiffness: 400 }}
-          >
+          <span className="text-2xl">
             {CATEGORY_ICONS[category] || '🧘'}
-          </motion.span>
+          </span>
           <h3 className="text-lg font-medium text-stone-700 group-hover:text-[#e8a4b8] transition-colors">
             {name}
           </h3>
@@ -94,7 +83,7 @@ export function ExerciseCard({
       </div>
 
       {/* 描述 */}
-      <p className="text-stone-500 text-sm mb-4 line-clamp-2 leading-relaxed">
+      <p className="text-stone-500 text-sm mb-4 line-clamp-2 leading-relaxed min-h-[2.75rem]">
         {description?.substring(0, 80)}...
       </p>
 
@@ -109,13 +98,13 @@ export function ExerciseCard({
       </div>
 
       {/* 悬停时的渐变边框效果 */}
-      <motion.div
+      <div
         className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
         style={{
           background: 'linear-gradient(135deg, rgba(232,164,184,0.1) 0%, rgba(139,201,155,0.1) 100%)',
         }}
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -171,11 +160,10 @@ export function ExerciseCardGrid({ exercises, onExerciseClick, loading }: Exerci
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {exercises.map((exercise, index) => (
+      {exercises.map((exercise) => (
         <ExerciseCard
           key={exercise.id}
           {...exercise}
-          index={index}
           onClick={() => onExerciseClick?.(exercise)}
         />
       ))}

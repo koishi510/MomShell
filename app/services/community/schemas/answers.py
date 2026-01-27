@@ -11,7 +11,7 @@ from .base import AuthorInfo
 class AnswerCreate(BaseModel):
     """Request schema for creating an answer."""
 
-    content: str = Field(..., min_length=10, max_length=20000)
+    content: str = Field(..., min_length=1, max_length=20000)
     image_urls: list[str] = Field(default_factory=list, max_length=9)
 
 
@@ -27,11 +27,13 @@ class AnswerListItem(BaseModel):
     id: str
     question_id: str
     author: AuthorInfo
+    content: str = Field(description="Full content")
     content_preview: str = Field(description="Content preview (first 200 chars)")
     is_professional: bool
     is_accepted: bool
     like_count: int
     comment_count: int
+    is_liked: bool = False  # Current user has liked
     created_at: datetime
 
 

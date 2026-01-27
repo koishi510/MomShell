@@ -11,8 +11,8 @@ from .base import AuthorInfo, TagInfo
 class QuestionCreate(BaseModel):
     """Request schema for creating a question."""
 
-    title: str = Field(..., min_length=5, max_length=200)
-    content: str = Field(..., min_length=10, max_length=10000)
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1, max_length=10000)
     channel: ChannelType = ChannelType.EXPERIENCE
     tag_ids: list[str] = Field(default_factory=list, max_length=5)
     image_urls: list[str] = Field(default_factory=list, max_length=9)
@@ -38,9 +38,12 @@ class QuestionListItem(BaseModel):
     view_count: int
     answer_count: int
     like_count: int
+    collection_count: int = 0
     is_pinned: bool
     is_featured: bool
     has_accepted_answer: bool
+    is_liked: bool = False  # Current user has liked
+    is_collected: bool = False  # Current user has collected
     created_at: datetime
 
 

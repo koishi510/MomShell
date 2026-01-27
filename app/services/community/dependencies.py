@@ -30,7 +30,22 @@ async def get_current_user(
 
     user = await db.get(User, x_user_id)
     if not user:
-        raise HTTPException(status_code=401, detail="用户不存在")
+        # Auto-create user for development/demo purposes
+        from .enums import UserRole
+
+        user = User(
+            id=x_user_id,
+            username=f"user_{x_user_id[:8]}",
+            email=f"{x_user_id[:8]}@example.com",
+            password_hash="",
+            nickname="新用户",
+            role=UserRole.MOM,
+            is_active=True,
+            is_banned=False,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已禁用")
@@ -50,7 +65,25 @@ async def get_current_user_optional(
         return None
 
     user = await db.get(User, x_user_id)
-    if not user or not user.is_active or user.is_banned:
+    if not user:
+        # Auto-create user for development/demo purposes
+        from .enums import UserRole
+
+        user = User(
+            id=x_user_id,
+            username=f"user_{x_user_id[:8]}",
+            email=f"{x_user_id[:8]}@example.com",
+            password_hash="",
+            nickname="新用户",
+            role=UserRole.MOM,
+            is_active=True,
+            is_banned=False,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
+    if not user.is_active or user.is_banned:
         return None
 
     return user

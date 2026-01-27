@@ -19,6 +19,14 @@ from .interactions import (
 )
 from .questions import QuestionCreate, QuestionDetail, QuestionListItem, QuestionUpdate
 from .tags import TagCreate, TagDetail, TagListItem, TagUpdate
+from .user import (
+    MyAnswerListItem,
+    MyQuestionListItem,
+    QuestionBrief,
+    UserProfile,
+    UserProfileUpdate,
+    UserStats,
+)
 
 __all__ = [
     # Base
@@ -56,4 +64,11 @@ __all__ = [
     "CertificationReview",
     "CertificationStatus_",
     "CertificationListItem",
+    # User
+    "UserProfileUpdate",
+    "UserStats",
+    "UserProfile",
+    "MyQuestionListItem",
+    "QuestionBrief",
+    "MyAnswerListItem",
 ]
