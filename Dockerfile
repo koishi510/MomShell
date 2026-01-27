@@ -28,7 +28,8 @@ FROM python:3.11-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=7860 \
-    MPLCONFIGDIR=/tmp/matplotlib
+    MPLCONFIGDIR=/tmp/matplotlib \
+    DATABASE_URL=sqlite+aiosqlite:////app/data/momshell.db
 
 WORKDIR /app
 
