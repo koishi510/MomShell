@@ -11,7 +11,7 @@ from ..schemas import TagCreate, TagDetail, TagListItem, TagUpdate
 router = APIRouter(prefix="/tags", tags=["Community - Tags"])
 
 
-@router.get("/", response_model=list[TagListItem])
+@router.get("", response_model=list[TagListItem])
 async def list_tags(
     db: DbSession,
     is_featured: bool | None = None,
@@ -107,7 +107,7 @@ async def get_tag(
     )
 
 
-@router.post("/", response_model=TagDetail, status_code=201)
+@router.post("", response_model=TagDetail, status_code=201)
 async def create_tag(
     tag_in: TagCreate,
     db: DbSession,

@@ -22,7 +22,7 @@ from ..schemas import (
 router = APIRouter(prefix="/questions", tags=["Community - Questions"])
 
 
-@router.get("/", response_model=PaginatedResponse[QuestionListItem])
+@router.get("", response_model=PaginatedResponse[QuestionListItem])
 async def list_questions(
     db: DbSession,
     service: CommunityServiceDep,
@@ -105,7 +105,7 @@ async def get_question(
     return question
 
 
-@router.post("/", response_model=QuestionDetail, status_code=201)
+@router.post("", response_model=QuestionDetail, status_code=201)
 async def create_question(
     question_in: QuestionCreate,
     db: DbSession,

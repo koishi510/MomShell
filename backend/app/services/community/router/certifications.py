@@ -19,7 +19,7 @@ from ..schemas import (
 router = APIRouter(prefix="/certifications", tags=["Community - Certifications"])
 
 
-@router.post("/", response_model=CertificationStatus_, status_code=201)
+@router.post("", response_model=CertificationStatus_, status_code=201)
 async def create_certification(
     cert_in: CertificationCreate,
     db: DbSession,
@@ -115,7 +115,7 @@ async def get_my_certification(
     )
 
 
-@router.get("/", response_model=PaginatedResponse[CertificationListItem])
+@router.get("", response_model=PaginatedResponse[CertificationListItem])
 async def list_certifications(
     db: DbSession,
     admin: AdminUser,

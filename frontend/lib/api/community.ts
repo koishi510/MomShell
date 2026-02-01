@@ -57,7 +57,7 @@ export async function getQuestions(params?: {
   sort_by?: 'created_at' | 'view_count' | 'answer_count' | 'like_count';
   order?: 'asc' | 'desc';
 }): Promise<PaginatedResponse<Question>> {
-  const response = await apiClient.get(`${COMMUNITY_API}/questions/`, { params });
+  const response = await apiClient.get(`${COMMUNITY_API}/questions`, { params });
   return response.data;
 }
 
@@ -100,7 +100,7 @@ export async function getQuestion(questionId: string): Promise<Question> {
  * 创建问题
  */
 export async function createQuestion(params: QuestionCreateParams): Promise<Question> {
-  const response = await apiClient.post(`${COMMUNITY_API}/questions/`, {
+  const response = await apiClient.post(`${COMMUNITY_API}/questions`, {
     title: params.title,
     content: params.content,
     channel: params.channel,
@@ -199,7 +199,7 @@ export async function updateAnswer(answerId: string, params: AnswerUpdateParams)
  */
 export async function getTags(): Promise<Array<{ id: string; name: string; slug: string }>> {
   try {
-    const response = await apiClient.get(`${COMMUNITY_API}/tags/`);
+    const response = await apiClient.get(`${COMMUNITY_API}/tags`);
     const data = response.data;
     return data.items || data || [];
   } catch {
@@ -425,6 +425,6 @@ export async function getMyCertification(): Promise<CertificationStatus | null> 
  * 提交认证申请
  */
 export async function createCertification(data: CertificationCreate): Promise<CertificationStatus> {
-  const response = await apiClient.post(`${COMMUNITY_API}/certifications/`, data);
+  const response = await apiClient.post(`${COMMUNITY_API}/certifications`, data);
   return response.data;
 }

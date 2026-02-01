@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,11 +18,33 @@ from .service import CommunityService, get_community_service
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 CommunityServiceDep = Annotated[CommunityService, Depends(get_community_service)]
 
-# HTTP Bearer scheme (auto_error=False to allow fallback to X-User-ID)
+# HTTP Bearer scheme (auto_error=False to allow fallback to X-Access-Token)
 http_bearer = HTTPBearer(auto_error=False)
 
 
+def get_token_from_request(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = None,
+) -> str | None:
+    """
+    Extract token from multiple sources (fallback order):
+    1. Authorization: Bearer header
+    2. X-Access-Token custom header (for proxies that strip Authorization)
+    """
+    # 1. Try Authorization header
+    if credentials and credentials.credentials:
+        return credentials.credentials
+
+    # 2. Try custom header (some proxies like ModelScope strip Authorization)
+    custom_token = request.headers.get("X-Access-Token")
+    if custom_token:
+        return custom_token
+
+    return None
+
+
 async def get_current_user(
+    request: Request,
     db: DbSession,
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(http_bearer)
@@ -34,13 +56,15 @@ async def get_current_user(
 
     Priority:
     1. JWT Bearer token in Authorization header
-    2. X-User-ID header (for backward compatibility / development)
+    2. X-Access-Token custom header (for proxies that strip Authorization)
+    3. X-User-ID header (for backward compatibility / development)
     """
     user: User | None = None
 
-    # Try JWT first
-    if credentials:
-        payload = decode_token(credentials.credentials)
+    # Try JWT token (from Authorization header or X-Access-Token)
+    token = get_token_from_request(request, credentials)
+    if token:
+        payload = decode_token(token)
         if payload and payload.get("type") == "access":
             user_id = payload.get("sub")
             if user_id:
@@ -90,6 +114,7 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
+    request: Request,
     db: DbSession,
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(http_bearer)
@@ -101,13 +126,15 @@ async def get_current_user_optional(
 
     Priority:
     1. JWT Bearer token in Authorization header
-    2. X-User-ID header (for backward compatibility / development)
+    2. X-Access-Token custom header (for proxies that strip Authorization)
+    3. X-User-ID header (for backward compatibility / development)
     """
     user: User | None = None
 
-    # Try JWT first
-    if credentials:
-        payload = decode_token(credentials.credentials)
+    # Try JWT token (from Authorization header or X-Access-Token)
+    token = get_token_from_request(request, credentials)
+    if token:
+        payload = decode_token(token)
         if payload and payload.get("type") == "access":
             user_id = payload.get("sub")
             if user_id:
