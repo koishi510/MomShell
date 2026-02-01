@@ -202,6 +202,20 @@ npm run dev
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
+### Create Admin Account
+
+To create an admin account for managing certifications and other admin tasks:
+
+```bash
+cd backend
+uv run python -m scripts.create_admin <username> <email> <password> [nickname]
+
+# Example
+uv run python -m scripts.create_admin admin admin@example.com mypassword Admin
+```
+
+If the user already exists, it will be promoted to admin. Otherwise, a new admin account will be created.
+
 ## Docker Deployment
 
 ### Prerequisites
