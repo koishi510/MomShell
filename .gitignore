@@ -262,17 +262,20 @@ yarn-error.log*
 # =============================================================================
 
 # MediaPipe models (downloaded at runtime)
-backend/models/
-*.task
+backend/models/*
+!backend/models/.gitkeep
+backend/app/models/*
+!backend/app/models/.gitkeep
 
 # TTS cache (generated audio files)
-backend/tts_cache/
+backend/tts_cache/*
+!backend/tts_cache/.gitkeep
 
 # SQLite database
 *.db
 *.sqlite
 data.db
-backend/data/*.db
+backend/data/*
 !backend/data/.gitkeep
 
 # OS files
