@@ -51,25 +51,26 @@ MomShell/
 │   ├── app/                    # Application code
 │   │   ├── api/v1/             # API v1 routes (REST + WebSocket)
 │   │   ├── core/               # Configuration and database
-│   │   ├── models/             # Database models
-│   │   ├── schemas/            # Pydantic schemas
+│   │   ├── models/             # ML models (MediaPipe pose_landmarker.task)
+│   │   ├── schemas/            # Pydantic schemas (coach)
 │   │   ├── services/           # Business logic
+│   │   │   ├── auth/           # Authentication service (JWT, OAuth)
 │   │   │   ├── chat/           # Soulful Companion service
-│   │   │   ├── community/      # Community service
-│   │   │   │   ├── moderation/ # Content moderation
-│   │   │   │   ├── router/     # Community API routes
-│   │   │   │   └── schemas/    # Community schemas
-│   │   │   └── coach/          # Recovery Coach service
-│   │   │       ├── pose/       # MediaPipe pose detection
-│   │   │       ├── exercises/  # Exercise library
-│   │   │       ├── analysis/   # Pose analysis & scoring
-│   │   │       ├── feedback/   # LLM feedback & TTS
-│   │   │       ├── progress/   # Progress tracking
-│   │   │       └── workflow/   # LangGraph workflow
+│   │   │   ├── coach/          # Recovery Coach service
+│   │   │   │   ├── analysis/   # Pose analysis & scoring
+│   │   │   │   ├── exercises/  # Exercise library
+│   │   │   │   ├── feedback/   # LLM feedback & TTS
+│   │   │   │   ├── pose/       # MediaPipe pose detection
+│   │   │   │   ├── progress/   # Progress tracking
+│   │   │   │   └── workflow/   # LangGraph workflow
+│   │   │   └── community/      # Community service
+│   │   │       ├── moderation/ # Content moderation
+│   │   │       ├── router/     # Community API routes
+│   │   │       └── schemas/    # Community schemas
 │   │   ├── static/             # Static assets (CSS, JS)
 │   │   └── templates/          # HTML templates
 │   ├── data/                   # Database storage
-│   ├── models/                 # ML models (MediaPipe)
+│   ├── scripts/                # CLI scripts (create_admin, etc.)
 │   ├── tests/                  # Backend tests
 │   ├── Dockerfile              # Backend container
 │   ├── pyproject.toml          # Python dependencies
@@ -77,19 +78,25 @@ MomShell/
 │
 ├── frontend/                   # Next.js frontend
 │   ├── app/                    # App router pages
+│   │   ├── auth/               # Auth pages (login, register, etc.)
 │   │   ├── chat/               # Soulful Companion page
-│   │   ├── community/          # Community pages
-│   │   │   ├── collections/    # Shell Picks collections
-│   │   │   ├── my-posts/       # My questions
-│   │   │   ├── my-replies/     # My answers
-│   │   │   └── profile/        # User profile
-│   │   └── coach/              # Recovery Coach page
+│   │   ├── coach/              # Recovery Coach page
+│   │   └── community/          # Community pages
+│   │       ├── admin/          # Admin pages (certification review)
+│   │       ├── certification/  # Professional certification
+│   │       ├── collections/    # Shell Picks collections
+│   │       ├── my-posts/       # My questions
+│   │       ├── my-replies/     # My answers
+│   │       └── profile/        # User profile
 │   ├── components/             # React components
+│   │   ├── auth/               # Auth components
 │   │   ├── coach/              # Recovery Coach components
 │   │   ├── community/          # Community components
 │   │   └── home/               # Home page components
+│   ├── contexts/               # React contexts (AuthContext)
 │   ├── hooks/                  # Custom hooks
-│   ├── lib/                    # Utilities & design tokens
+│   ├── lib/                    # Utilities & API clients
+│   │   └── api/                # API client modules
 │   ├── public/                 # Public assets
 │   ├── types/                  # TypeScript type definitions
 │   └── Dockerfile              # Frontend container
