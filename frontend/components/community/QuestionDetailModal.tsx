@@ -9,8 +9,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Question, type Answer, ROLE_CONFIG } from '../../types/community';
-import { getQuestion, getAnswers, createAnswer, toggleLike, deleteQuestion, deleteAnswer, getComments, createComment, deleteComment, type Comment } from '../../lib/api/community';
-import { getUserId } from '../../lib/user';
+import { getQuestion, getAnswers, createAnswer, toggleLike, deleteQuestion, deleteAnswer, updateQuestion, updateAnswer, getComments, createComment, deleteComment, type Comment } from '../../lib/api/community';
+import { useAuth } from '../../contexts/AuthContext';
 
 // 模块级别对象，同步标记正在处理的问题，防止重复调用
 const viewingInProgress: Record<string, boolean> = {};
@@ -22,6 +22,7 @@ interface QuestionDetailModalProps {
   onCollect: (id: string) => void;
   onAnswerCreated?: (questionId: string) => void;
   onQuestionDeleted?: (questionId: string) => void;
+  onQuestionUpdated?: (questionId: string) => void;
   onViewCountUpdated?: (questionId: string, viewCount: number) => void;
 }
 
@@ -32,19 +33,28 @@ export default function QuestionDetailModal({
   onCollect,
   onAnswerCreated,
   onQuestionDeleted,
+  onQuestionUpdated,
   onViewCountUpdated,
 }: QuestionDetailModalProps) {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [isLoadingAnswers, setIsLoadingAnswers] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [viewCount, setViewCount] = useState<number>(0);
 
-  // 获取当前用户 ID
-  useEffect(() => {
-    setCurrentUserId(getUserId());
-  }, []);
+  // 编辑问题状态
+  const [isEditingQuestion, setIsEditingQuestion] = useState(false);
+  const [editQuestionTitle, setEditQuestionTitle] = useState('');
+  const [editQuestionContent, setEditQuestionContent] = useState('');
+  const [isSavingQuestion, setIsSavingQuestion] = useState(false);
+
+  // 本地问题状态（用于显示编辑后的内容）
+  const [localQuestion, setLocalQuestion] = useState<Question | null>(null);
+
+  // 从 AuthContext 获取当前用户
+  const { user } = useAuth();
+  const currentUserId = user?.id || '';
+  const isAdmin = user?.role === 'admin';
 
   // 加载回答列表
   const loadAnswers = useCallback(async (questionId: string) => {
@@ -67,20 +77,24 @@ export default function QuestionDetailModal({
   // 当问题变化时加载回答并增加浏览数
   useEffect(() => {
     if (question) {
+      setLocalQuestion(question);
       loadAnswers(question.id);
       setReplyContent('');
       setViewCount(question.view_count);
+      setIsEditingQuestion(false);
 
       // 使用模块级对象同步标记，确保只调用一次 API
       if (!viewingInProgress[question.id]) {
         viewingInProgress[question.id] = true;
         getQuestion(question.id).then((detail) => {
           setViewCount(detail.view_count);
+          setLocalQuestion(detail);
           onViewCountUpdated?.(question.id, detail.view_count);
         }).catch(console.error);
       }
     } else {
       setAnswers([]);
+      setLocalQuestion(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question, loadAnswers]);
@@ -150,16 +164,74 @@ export default function QuestionDetailModal({
     }
   };
 
-  // 检查是否可以删除问题（作者本人）
-  const canDeleteQuestion = question && currentUserId === question.author.id;
-
-  // 检查是否可以删除回答（回答作者或问题作者）
-  const canDeleteAnswer = (answer: Answer) => {
-    if (!question) return false;
-    return currentUserId === answer.author?.id || currentUserId === question.author.id;
+  // 开始编辑问题
+  const handleStartEditQuestion = () => {
+    if (!localQuestion) return;
+    setEditQuestionTitle(localQuestion.title);
+    setEditQuestionContent(localQuestion.content);
+    setIsEditingQuestion(true);
   };
 
-  const roleConfig = question ? ROLE_CONFIG[question.author.role] : ROLE_CONFIG.mom;
+  // 取消编辑问题
+  const handleCancelEditQuestion = () => {
+    setIsEditingQuestion(false);
+    setEditQuestionTitle('');
+    setEditQuestionContent('');
+  };
+
+  // 保存编辑的问题
+  const handleSaveQuestion = async () => {
+    if (!question || !editQuestionTitle.trim() || !editQuestionContent.trim()) return;
+    if (isSavingQuestion) return;
+
+    setIsSavingQuestion(true);
+    try {
+      const updated = await updateQuestion(question.id, {
+        title: editQuestionTitle.trim(),
+        content: editQuestionContent.trim(),
+      });
+      setLocalQuestion(updated);
+      setIsEditingQuestion(false);
+      onQuestionUpdated?.(question.id);
+    } catch (err: any) {
+      console.error('保存失败:', err);
+      alert(err.message || '保存失败');
+    } finally {
+      setIsSavingQuestion(false);
+    }
+  };
+
+  // 更新回答（由 AnswerCard 调用）
+  const handleUpdateAnswer = async (answerId: string, content: string): Promise<boolean> => {
+    try {
+      const updated = await updateAnswer(answerId, { content: content.trim() });
+      setAnswers((prev) =>
+        prev.map((a) => (a.id === answerId ? { ...a, content: updated.content } : a))
+      );
+      return true;
+    } catch (err: any) {
+      console.error('保存失败:', err);
+      alert(err.message || '保存失败');
+      return false;
+    }
+  };
+
+  // 检查是否可以删除/编辑问题（作者本人或管理员）
+  const canDeleteQuestion = question && (currentUserId === question.author.id || isAdmin);
+  const canEditQuestion = canDeleteQuestion;
+
+  // 检查是否可以删除/编辑回答（回答作者、问题作者或管理员）
+  const canDeleteAnswer = (answer: Answer) => {
+    if (!question) return false;
+    return currentUserId === answer.author?.id || currentUserId === question.author.id || isAdmin;
+  };
+  const canEditAnswer = (answer: Answer) => {
+    return currentUserId === answer.author?.id || isAdmin;
+  };
+
+  // 使用 localQuestion 显示内容
+  const displayQuestion = localQuestion || question;
+  const roleConfig = displayQuestion ? ROLE_CONFIG[displayQuestion.author.role] : ROLE_CONFIG.mom;
 
   return (
     <AnimatePresence>
@@ -203,12 +275,12 @@ export default function QuestionDetailModal({
                 {/* 作者信息 */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 font-medium">
-                    {question.author.nickname.charAt(0)}
+                    {displayQuestion!.author.nickname.charAt(0)}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-stone-700">
-                        {question.author.nickname}
+                        {displayQuestion!.author.nickname}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${roleConfig.badgeColor}`}
@@ -217,23 +289,60 @@ export default function QuestionDetailModal({
                       </span>
                     </div>
                     <p className="text-xs text-stone-400">
-                      {formatRelativeTime(question.created_at)}
+                      {formatRelativeTime(displayQuestion!.created_at)}
                     </p>
                   </div>
                 </div>
 
-                {/* 标题和内容 */}
-                <h1 className="text-xl font-medium text-stone-800 mb-3">
-                  {question.title}
-                </h1>
-                <p className="text-stone-600 leading-relaxed whitespace-pre-wrap">
-                  {question.content}
-                </p>
+                {/* 标题和内容 - 编辑模式 */}
+                {isEditingQuestion ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={editQuestionTitle}
+                      onChange={(e) => setEditQuestionTitle(e.target.value)}
+                      placeholder="标题"
+                      className="w-full px-3 py-2 text-lg font-medium border border-stone-200 rounded-xl focus:outline-none focus:border-[#e8a4b8] text-stone-800"
+                    />
+                    <textarea
+                      value={editQuestionContent}
+                      onChange={(e) => setEditQuestionContent(e.target.value)}
+                      placeholder="内容"
+                      rows={6}
+                      className="w-full px-3 py-2 border border-stone-200 rounded-xl resize-none focus:outline-none focus:border-[#e8a4b8] text-stone-600 leading-relaxed"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={handleCancelEditQuestion}
+                        className="px-4 py-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"
+                      >
+                        取消
+                      </button>
+                      <button
+                        onClick={handleSaveQuestion}
+                        disabled={!editQuestionTitle.trim() || !editQuestionContent.trim() || isSavingQuestion}
+                        className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSavingQuestion ? '保存中...' : '保存'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* 标题和内容 - 显示模式 */}
+                    <h1 className="text-xl font-medium text-stone-800 mb-3">
+                      {displayQuestion!.title}
+                    </h1>
+                    <p className="text-stone-600 leading-relaxed whitespace-pre-wrap">
+                      {displayQuestion!.content}
+                    </p>
+                  </>
+                )}
 
                 {/* 标签 */}
-                {question.tags.length > 0 && (
+                {displayQuestion!.tags.length > 0 && !isEditingQuestion && (
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {question.tags.map((tag) => (
+                    {displayQuestion!.tags.map((tag) => (
                       <span
                         key={tag.id}
                         className="px-2.5 py-1 bg-stone-100 text-stone-600 text-xs rounded-full"
@@ -245,42 +354,53 @@ export default function QuestionDetailModal({
                 )}
 
                 {/* 互动栏 */}
-                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-stone-100">
-                  <button
-                    onClick={() => onLike(question.id)}
-                    className={`flex items-center gap-1.5 ${
-                      question.is_liked
-                        ? 'text-rose-500'
-                        : 'text-stone-500 hover:text-stone-700'
-                    }`}
-                  >
-                    <HeartIcon filled={question.is_liked} />
-                    <span className="text-sm">{question.like_count}</span>
-                  </button>
-                  <button
-                    onClick={() => onCollect(question.id)}
-                    className={`flex items-center gap-1.5 ${
-                      question.is_collected
-                        ? 'text-amber-500'
-                        : 'text-stone-500 hover:text-stone-700'
-                    }`}
-                  >
-                    <BookmarkIcon filled={question.is_collected} />
-                    <span className="text-sm">收藏</span>
-                  </button>
-                  <span className="text-sm text-stone-400">
-                    {viewCount} 浏览
-                  </span>
-                  {canDeleteQuestion && (
+                {!isEditingQuestion && (
+                  <div className="flex items-center gap-6 mt-4 pt-4 border-t border-stone-100">
                     <button
-                      onClick={handleDeleteQuestion}
-                      className="ml-auto flex items-center gap-1.5 text-stone-400 hover:text-red-500 transition-colors"
+                      onClick={() => onLike(question.id)}
+                      className={`flex items-center gap-1.5 ${
+                        question.is_liked
+                          ? 'text-rose-500'
+                          : 'text-stone-500 hover:text-stone-700'
+                      }`}
                     >
-                      <TrashIcon />
-                      <span className="text-sm">删除</span>
+                      <HeartIcon filled={question.is_liked} />
+                      <span className="text-sm">{question.like_count}</span>
                     </button>
-                  )}
-                </div>
+                    <button
+                      onClick={() => onCollect(question.id)}
+                      className={`flex items-center gap-1.5 ${
+                        question.is_collected
+                          ? 'text-amber-500'
+                          : 'text-stone-500 hover:text-stone-700'
+                      }`}
+                    >
+                      <BookmarkIcon filled={question.is_collected} />
+                      <span className="text-sm">收藏</span>
+                    </button>
+                    <span className="text-sm text-stone-400">
+                      {viewCount} 浏览
+                    </span>
+                    {canEditQuestion && (
+                      <button
+                        onClick={handleStartEditQuestion}
+                        className="ml-auto flex items-center gap-1.5 text-stone-400 hover:text-blue-500 transition-colors"
+                      >
+                        <EditIcon />
+                        <span className="text-sm">编辑</span>
+                      </button>
+                    )}
+                    {canDeleteQuestion && (
+                      <button
+                        onClick={handleDeleteQuestion}
+                        className={`flex items-center gap-1.5 text-stone-400 hover:text-red-500 transition-colors ${!canEditQuestion ? 'ml-auto' : ''}`}
+                      >
+                        <TrashIcon />
+                        <span className="text-sm">删除</span>
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* 回答区域 */}
                 <div className="mt-6 pt-6 border-t border-stone-100">
@@ -328,8 +448,11 @@ export default function QuestionDetailModal({
                           answer={answer}
                           onLike={handleLikeAnswer}
                           onDelete={handleDeleteAnswer}
+                          onUpdate={handleUpdateAnswer}
                           canDelete={canDeleteAnswer(answer)}
+                          canEdit={canEditAnswer(answer)}
                           currentUserId={currentUserId}
+                          isAdmin={isAdmin}
                         />
                       ))}
                     </div>
@@ -415,6 +538,24 @@ function TrashIcon() {
   );
 }
 
+function EditIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
 // 相对时间格式化
 function formatRelativeTime(dateString: string): string {
   const normalizedDateString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
@@ -437,14 +578,20 @@ function AnswerCard({
   answer,
   onLike,
   onDelete,
+  onUpdate,
   canDelete,
+  canEdit,
   currentUserId,
+  isAdmin,
 }: {
   answer: Answer;
   onLike: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, content: string) => Promise<boolean>;
   canDelete: boolean;
+  canEdit: boolean;
   currentUserId: string;
+  isAdmin: boolean;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -452,6 +599,11 @@ function AnswerCard({
   const [commentContent, setCommentContent] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string } | null>(null);
+
+  // 编辑状态
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const authorName = answer.author?.nickname || '匿名用户';
   const authorRole = answer.author?.role || 'mom';
@@ -551,6 +703,29 @@ function AnswerCard({
     }
   };
 
+  // 开始编辑
+  const handleStartEdit = () => {
+    setEditContent(answer.content);
+    setIsEditing(true);
+  };
+
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent('');
+  };
+
+  // 保存编辑
+  const handleSaveEdit = async () => {
+    if (!editContent.trim() || isSaving) return;
+    setIsSaving(true);
+    const success = await onUpdate(answer.id, editContent);
+    setIsSaving(false);
+    if (success) {
+      setIsEditing(false);
+    }
+  };
+
   return (
     <div className="p-4 bg-stone-50 rounded-xl">
       {/* 作者信息 */}
@@ -576,50 +751,87 @@ function AnswerCard({
       </div>
 
       {/* 回答内容 */}
-      <p className="text-stone-600 text-sm leading-relaxed whitespace-pre-wrap mb-3">
-        {answer.content}
-      </p>
+      {isEditing ? (
+        <div className="mb-3 space-y-2">
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2 text-sm border border-stone-200 rounded-xl resize-none focus:outline-none focus:border-[#e8a4b8] text-stone-600 leading-relaxed"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={handleCancelEdit}
+              className="px-3 py-1.5 text-sm text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleSaveEdit}
+              disabled={!editContent.trim() || isSaving}
+              className="px-3 py-1.5 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? '保存中...' : '保存'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-stone-600 text-sm leading-relaxed whitespace-pre-wrap mb-3">
+          {answer.content}
+        </p>
+      )}
 
       {/* 互动栏 */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => onLike(answer.id)}
-          className={`flex items-center gap-1 text-sm ${
-            answer.is_liked
-              ? 'text-rose-500'
-              : 'text-stone-400 hover:text-stone-600'
-          }`}
-        >
-          <HeartIcon filled={answer.is_liked} />
-          <span>{answer.like_count || 0}</span>
-        </button>
-        <button
-          onClick={toggleComments}
-          className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-600"
-        >
-          <CommentIcon />
-          <span>{answer.comment_count || 0}</span>
-        </button>
-        <button
-          onClick={() => {
-            setShowComments(true);
-            if (comments.length === 0) loadComments();
-            setReplyingTo(null);
-          }}
-          className="text-sm text-stone-400 hover:text-stone-600"
-        >
-          回复
-        </button>
-        {canDelete && (
+      {!isEditing && (
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => onDelete(answer.id)}
-            className="ml-auto flex items-center gap-1 text-sm text-stone-400 hover:text-red-500 transition-colors"
+            onClick={() => onLike(answer.id)}
+            className={`flex items-center gap-1 text-sm ${
+              answer.is_liked
+                ? 'text-rose-500'
+                : 'text-stone-400 hover:text-stone-600'
+            }`}
           >
-            <TrashIcon />
+            <HeartIcon filled={answer.is_liked} />
+            <span>{answer.like_count || 0}</span>
+          </button>
+          <button
+            onClick={toggleComments}
+            className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-600"
+          >
+            <CommentIcon />
+            <span>{answer.comment_count || 0}</span>
+          </button>
+          <button
+            onClick={() => {
+              setShowComments(true);
+              if (comments.length === 0) loadComments();
+              setReplyingTo(null);
+            }}
+            className="text-sm text-stone-400 hover:text-stone-600"
+          >
+            回复
+          </button>
+          {canEdit && (
+            <button
+              onClick={handleStartEdit}
+              className="ml-auto flex items-center gap-1 text-sm text-stone-400 hover:text-blue-500 transition-colors"
+            >
+              <EditIcon />
+              <span>编辑</span>
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => onDelete(answer.id)}
+              className={`flex items-center gap-1 text-sm text-stone-400 hover:text-red-500 transition-colors ${!canEdit ? 'ml-auto' : ''}`}
+            >
+              <TrashIcon />
             <span>删除</span>
           </button>
         )}
-      </div>
+        </div>
+      )}
 
       {/* 评论区 */}
       {showComments && (
@@ -673,6 +885,7 @@ function AnswerCard({
                   key={comment.id}
                   comment={comment}
                   currentUserId={currentUserId}
+                  isAdmin={isAdmin}
                   onReply={(id, nickname) => setReplyingTo({ id, nickname })}
                   onDelete={handleDeleteComment}
                   onLike={handleLikeComment}
@@ -690,22 +903,22 @@ function AnswerCard({
 function CommentItem({
   comment,
   currentUserId,
+  isAdmin,
   onReply,
   onDelete,
   onLike,
-  isNested = false,
 }: {
   comment: Comment;
   currentUserId: string;
+  isAdmin: boolean;
   onReply: (parentId: string, nickname: string) => void;
   onDelete: (id: string) => void;
   onLike: (id: string) => void;
-  isNested?: boolean;
 }) {
-  const canDelete = currentUserId === comment.author.id;
+  const canDelete = currentUserId === comment.author.id || isAdmin;
 
   return (
-    <div className={isNested ? 'ml-6 pl-3 border-l-2 border-stone-200' : ''}>
+    <div>
       <div className="flex items-start gap-2">
         <div className="w-6 h-6 rounded-full bg-stone-200 flex items-center justify-center text-stone-500 text-xs font-medium shrink-0">
           {comment.author.nickname.charAt(0)}
@@ -754,18 +967,18 @@ function CommentItem({
         </div>
       </div>
 
-      {/* 回复列表 (只有1层) */}
-      {!isNested && comment.replies && comment.replies.length > 0 && (
+      {/* 回复列表 - 完全平铺显示，以 @用户名 形式区分 */}
+      {comment.replies && comment.replies.length > 0 && (
         <div className="mt-2 space-y-2">
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply.id}
               comment={reply}
               currentUserId={currentUserId}
+              isAdmin={isAdmin}
               onReply={onReply}
               onDelete={onDelete}
               onLike={onLike}
-              isNested
             />
           ))}
         </div>

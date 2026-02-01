@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-02-01
+
+### Added
+
+#### Community Module - User Role Selection & Professional Certification
+
+- **User Role Selection**: Users can freely switch between family roles (Mom, Dad, Family) in profile page
+  - Backend `UserProfileUpdate` schema accepts `role` field (restricted to `mom`, `dad`, `family`)
+  - Backend `update_user_profile` validates role change permissions (certified professionals and admins blocked)
+  - Frontend profile edit mode includes role selector button group
+
+- **Professional Certification Application** (`/community/certification`)
+  - Users can submit certification applications (Doctor, Therapist, Nurse)
+  - Form fields: real name, ID card number (optional), license number, hospital/institution, department (optional), title (optional)
+  - Page displays current certification status (none / pending / approved / rejected)
+  - Frontend validation matches backend constraints (min lengths, ID card format)
+
+- **Admin Certification Review** (`/community/admin/certifications`)
+  - Admin-only page for reviewing certification applications
+  - Filter by status (pending / approved / rejected / all)
+  - Review modal with applicant details, optional comment, approve/reject actions
+  - Approval automatically updates user role to corresponding professional identity
+
+- Frontend certification API client functions (`getMyCertification`, `createCertification`)
+- Profile quick links: "Professional Certification" for all users; "Certification Review" for admins
+
+### Changed
+
+- Updated `roleNames` mapping to cover all roles (mom, dad, family, certified_doctor, certified_therapist, certified_nurse, admin)
+- `UserProfileUpdateParams` now includes optional `role` field
+
+---
+
 ## [0.3.3] - 2026-01-28
 
 ### Added

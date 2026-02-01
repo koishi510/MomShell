@@ -135,9 +135,19 @@ async def update_question(
     service: CommunityServiceDep,
     current_user: CurrentUser,
 ) -> QuestionDetail:
-    """Update a question (author only)."""
-    # TODO: Implement update logic
-    raise HTTPException(status_code=501, detail="功能开发中")
+    """Update a question (author or admin only)."""
+    await service.update_question(db, question_id, question_in, current_user)
+
+    # Return full detail
+    detail = await service.get_question(
+        db=db,
+        question_id=question_id,
+        current_user_id=current_user.id,
+        increment_view=False,
+    )
+    if not detail:
+        raise HTTPException(status_code=500, detail="更新问题失败")
+    return detail
 
 
 @router.delete("/{question_id}", status_code=204)

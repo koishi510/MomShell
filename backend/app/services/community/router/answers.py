@@ -159,8 +159,36 @@ async def update_answer(
     service: CommunityServiceDep,
     current_user: CurrentUser,
 ) -> AnswerDetail:
-    """Update an answer (author only)."""
-    raise HTTPException(status_code=501, detail="功能开发中")
+    """Update an answer (author or admin only)."""
+    import json
+
+    from ..schemas import AuthorInfo
+
+    answer = await service.update_answer(db, answer_id, answer_in, current_user)
+
+    # Build response
+    return AnswerDetail(
+        id=answer.id,
+        question_id=answer.question_id,
+        author=AuthorInfo(
+            id=answer.author.id,
+            nickname=answer.author.nickname,
+            avatar_url=answer.author.avatar_url,
+            role=answer.author.role,
+            is_certified=service.is_certified_professional(answer.author),
+        ),
+        content=answer.content,
+        image_urls=json.loads(answer.image_urls) if answer.image_urls else [],
+        author_role=answer.author_role,
+        is_professional=answer.is_professional,
+        is_accepted=answer.is_accepted,
+        status=answer.status,
+        like_count=answer.like_count,
+        comment_count=answer.comment_count,
+        is_liked=False,
+        created_at=answer.created_at,
+        updated_at=answer.updated_at,
+    )
 
 
 @router.delete("/answers/{answer_id}", status_code=204)

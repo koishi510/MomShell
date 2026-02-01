@@ -15,6 +15,7 @@ from .enums import (
     ChannelType,
     ContentStatus,
     ModerationResult,
+    UserRole,
 )
 from .models import (
     Answer,
@@ -31,6 +32,7 @@ from .moderation import ModerationService, get_moderation_service
 from .schemas import (
     AnswerCreate,
     AnswerListItem,
+    AnswerUpdate,
     AuthorInfo,
     CollectionItem,
     CommentCreate,
@@ -42,6 +44,7 @@ from .schemas import (
     QuestionCreate,
     QuestionDetail,
     QuestionListItem,
+    QuestionUpdate,
     TagInfo,
     UserProfile,
     UserProfileUpdate,
@@ -467,7 +470,12 @@ class CommunityService:
 
         # Check permission for professional channel
         if question.channel == ChannelType.PROFESSIONAL:
-            if not self.is_certified_professional(author):
+            is_author = question.author_id == author.id
+            if (
+                not self.is_certified_professional(author)
+                and author.role != UserRole.ADMIN
+                and not is_author
+            ):
                 raise HTTPException(
                     status_code=403, detail="专业频道仅限认证专业人士回答"
                 )
@@ -958,6 +966,140 @@ class CommunityService:
 
     # ==================== Delete Operations ====================
 
+    async def update_question(
+        self,
+        db: AsyncSession,
+        question_id: str,
+        question_in: QuestionUpdate,
+        user: User,
+    ) -> Question:
+        """
+        Update a question.
+        - Author can update their own questions
+        - Admin can update any question
+        """
+        result = await db.execute(
+            select(Question)
+            .options(selectinload(Question.tags), selectinload(Question.author))
+            .where(Question.id == question_id)
+        )
+        question = result.scalar_one_or_none()
+
+        if not question:
+            raise HTTPException(status_code=404, detail="问题不存在")
+
+        # Check permission
+        is_author = question.author_id == user.id
+        is_admin = user.role == UserRole.ADMIN
+
+        if not is_author and not is_admin:
+            raise HTTPException(status_code=403, detail="无权修改此问题")
+
+        # Update fields if provided
+        if question_in.title is not None:
+            question.title = question_in.title
+        if question_in.content is not None:
+            # Content moderation for new content
+            decision = await self._moderation.moderate_text(
+                question_in.content, user.id
+            )
+            if decision.result == ModerationResult.REJECTED:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "message": f"内容审核未通过: {decision.reason}",
+                        "categories": [c.value for c in decision.categories],
+                    },
+                )
+            question.content = question_in.content
+            # If content changed, may need re-review
+            if decision.result == ModerationResult.NEED_MANUAL_REVIEW:
+                question.status = ContentStatus.PENDING_REVIEW
+
+        # Update tags if provided
+        if question_in.tag_ids is not None:
+            # Remove existing tags
+            await db.execute(
+                select(QuestionTag).where(QuestionTag.question_id == question_id)
+            )
+            existing_tags = (
+                (
+                    await db.execute(
+                        select(QuestionTag).where(
+                            QuestionTag.question_id == question_id
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            for qt in existing_tags:
+                await db.delete(qt)
+
+            # Add new tags
+            for tag_id in question_in.tag_ids:
+                tag = await db.get(Tag, tag_id)
+                if tag:
+                    question_tag = QuestionTag(question_id=question_id, tag_id=tag_id)
+                    db.add(question_tag)
+
+        question.updated_at = datetime.utcnow()
+        await db.commit()
+        await db.refresh(question)
+
+        return question
+
+    async def update_answer(
+        self,
+        db: AsyncSession,
+        answer_id: str,
+        answer_in: AnswerUpdate,
+        user: User,
+    ) -> Answer:
+        """
+        Update an answer.
+        - Author can update their own answers
+        - Admin can update any answer
+        """
+        result = await db.execute(
+            select(Answer)
+            .options(selectinload(Answer.author), selectinload(Answer.question))
+            .where(Answer.id == answer_id)
+        )
+        answer = result.scalar_one_or_none()
+
+        if not answer:
+            raise HTTPException(status_code=404, detail="回答不存在")
+
+        # Check permission
+        is_author = answer.author_id == user.id
+        is_admin = user.role == UserRole.ADMIN
+
+        if not is_author and not is_admin:
+            raise HTTPException(status_code=403, detail="无权修改此回答")
+
+        # Update content if provided
+        if answer_in.content is not None:
+            # Content moderation
+            decision = await self._moderation.moderate_text(answer_in.content, user.id)
+            if decision.result == ModerationResult.REJECTED:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "message": f"内容审核未通过: {decision.reason}",
+                        "categories": [c.value for c in decision.categories],
+                    },
+                )
+            answer.content = answer_in.content
+            if decision.result == ModerationResult.NEED_MANUAL_REVIEW:
+                answer.status = ContentStatus.PENDING_REVIEW
+
+        answer.updated_at = datetime.utcnow()
+        await db.commit()
+        await db.refresh(answer)
+
+        return answer
+
     async def delete_question(
         self,
         db: AsyncSession,
@@ -1189,12 +1331,45 @@ class CommunityService:
         user: User,
         profile_update: UserProfileUpdate,
     ) -> UserProfile:
-        """Update user profile (nickname/avatar)."""
+        """Update user profile (nickname/avatar/role)."""
+        from .enums import FAMILY_ROLES, PROFESSIONAL_ROLES
+
         if profile_update.nickname is not None:
             user.nickname = profile_update.nickname
 
         if profile_update.avatar_url is not None:
             user.avatar_url = profile_update.avatar_url
+
+        if profile_update.role is not None:
+            # Map string to UserRole enum
+            role_map = {
+                "mom": UserRole.MOM,
+                "dad": UserRole.DAD,
+                "family": UserRole.FAMILY,
+            }
+            new_role = role_map.get(profile_update.role)
+
+            if new_role is None or new_role not in FAMILY_ROLES:
+                raise HTTPException(
+                    status_code=400,
+                    detail="角色只能是: mom, dad, family",
+                )
+
+            # Certified professionals cannot change their role
+            if user.role in PROFESSIONAL_ROLES:
+                raise HTTPException(
+                    status_code=403,
+                    detail="认证专业人员不能修改角色",
+                )
+
+            # Admin cannot change their role this way
+            if user.role == UserRole.ADMIN:
+                raise HTTPException(
+                    status_code=403,
+                    detail="管理员不能通过此接口修改角色",
+                )
+
+            user.role = new_role
 
         await db.commit()
         await db.refresh(user)

@@ -18,7 +18,7 @@ class AnswerCreate(BaseModel):
 class AnswerUpdate(BaseModel):
     """Request schema for updating an answer."""
 
-    content: str | None = Field(None, min_length=10, max_length=20000)
+    content: str | None = Field(None, min_length=1, max_length=20000)
 
 
 class AnswerListItem(BaseModel):

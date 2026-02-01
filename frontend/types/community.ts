@@ -6,12 +6,14 @@
 export type ChannelType = 'professional' | 'experience';
 
 export type UserRole =
+  | 'guest'
   | 'mom'
   | 'dad'
   | 'family'
   | 'certified_doctor'
   | 'certified_therapist'
-  | 'certified_nurse';
+  | 'certified_nurse'
+  | 'admin';
 
 export type ContentStatus =
   | 'draft'
@@ -93,6 +95,7 @@ export interface HotTopic {
 
 // 角色配置
 export const ROLE_CONFIG: Record<UserRole, { label: string; badgeColor: string; icon?: string }> = {
+  guest: { label: '游客', badgeColor: 'bg-gray-100 text-gray-600' },
   mom: { label: '妈妈', badgeColor: 'bg-pink-100 text-pink-700' },
   dad: { label: '爸爸', badgeColor: 'bg-blue-100 text-blue-700' },
   family: { label: '家属', badgeColor: 'bg-stone-100 text-stone-600' },
@@ -111,6 +114,7 @@ export const ROLE_CONFIG: Record<UserRole, { label: string; badgeColor: string; 
     badgeColor: 'bg-cyan-100 text-cyan-700',
     icon: '✓'
   },
+  admin: { label: '管理员', badgeColor: 'bg-purple-100 text-purple-700', icon: '★' },
 };
 
 // 频道配置
