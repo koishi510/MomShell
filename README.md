@@ -51,7 +51,7 @@ MomShell/
 │   ├── app/                    # Application code
 │   │   ├── api/v1/             # API v1 routes (REST + WebSocket)
 │   │   ├── core/               # Configuration and database
-│   │   ├── models/             # ML models (MediaPipe pose_landmarker.task)
+│   │   ├── models/             # ML models dir (MediaPipe, gitignored)
 │   │   ├── schemas/            # Pydantic schemas (coach)
 │   │   ├── services/           # Business logic
 │   │   │   ├── auth/           # Authentication service (JWT, OAuth)
@@ -68,8 +68,10 @@ MomShell/
 │   │   │       ├── router/     # Community API routes
 │   │   │       └── schemas/    # Community schemas
 │   │   ├── static/             # Static assets (CSS, JS)
-│   │   └── templates/          # HTML templates
-│   ├── data/                   # Database storage
+│   │   ├── templates/          # HTML templates
+│   │   └── tts_cache/          # TTS audio cache (gitignored)
+│   ├── data/                   # Database storage (gitignored)
+│   ├── models/                 # ML models (MediaPipe, gitignored)
 │   ├── scripts/                # CLI scripts (create_admin, etc.)
 │   ├── tests/                  # Backend tests
 │   ├── Dockerfile              # Backend container
