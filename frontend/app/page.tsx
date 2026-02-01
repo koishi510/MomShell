@@ -6,11 +6,13 @@
 
 'use client';
 
+import Link from 'next/link';
 import MeshGradientBackground from '../components/home/MeshGradientBackground';
 import MoodBall from '../components/home/MoodBall';
 import { SerifTitle, Subtitle } from '../components/home/AnimatedText';
 import FloatingCard from '../components/home/FloatingCard';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 
 const features = [
   {
@@ -43,6 +45,8 @@ const features = [
 ];
 
 export default function HomePage() {
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* 动态弥散渐变背景 */}
@@ -56,6 +60,39 @@ export default function HomePage() {
         transition={{ delay: 2, duration: 0.8, ease: 'backOut' }}
       >
         <MoodBall />
+      </motion.div>
+
+      {/* 用户按钮 - 右上角 */}
+      <motion.div
+        className="fixed top-8 right-8 z-20"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.5, duration: 0.5 }}
+      >
+        {isLoading ? (
+          <div className="w-10 h-10 rounded-full bg-white/50 animate-pulse" />
+        ) : isAuthenticated && user ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-stone-600 bg-white/70 px-3 py-1.5 rounded-full backdrop-blur-sm">
+              {user.nickname}
+            </span>
+            <button
+              onClick={logout}
+              className="text-sm text-stone-500 hover:text-stone-700 bg-white/70 px-3 py-1.5 rounded-full backdrop-blur-sm transition-colors"
+            >
+              退出
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/auth/login"
+            className="flex items-center gap-2 bg-white/70 hover:bg-white/90 px-4 py-2 rounded-full backdrop-blur-sm shadow-sm transition-all hover:shadow-md"
+          >
+            <span className="text-sm text-stone-600">登录</span>
+            <span className="text-stone-400">/</span>
+            <span className="text-sm text-stone-600">注册</span>
+          </Link>
+        )}
       </motion.div>
 
       {/* 主内容 */}

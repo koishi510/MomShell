@@ -32,6 +32,11 @@ dependencies = [
     # OpenAI SDK (for ModelScope API)
     "openai>=1.0.0",
     "httpx[socks]>=0.28.1",
+    # Authentication
+    "python-jose[cryptography]>=3.3.0",
+    "passlib>=1.7.4",
+    "bcrypt>=4.0.0,<4.1.0",
+    "email-validator>=2.0.0",
 ]
 
 [build-system]

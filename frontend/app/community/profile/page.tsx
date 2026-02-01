@@ -15,12 +15,23 @@ import CommunityBackground from '../../../components/community/CommunityBackgrou
 // Role display names
 const roleNames: Record<string, string> = {
   mom: '妈妈',
-  doctor: '医生',
-  nutritionist: '营养师',
-  psychologist: '心理咨询师',
-  lactation_consultant: '哺乳顾问',
+  dad: '爸爸',
+  family: '家属',
+  certified_doctor: '认证医生',
+  certified_therapist: '认证康复师',
+  certified_nurse: '认证护士',
   admin: '管理员',
 };
+
+// Family roles that users can select
+const familyRoles = [
+  { value: 'mom', label: '妈妈' },
+  { value: 'dad', label: '爸爸' },
+  { value: 'family', label: '家属' },
+] as const;
+
+// Professional roles (cannot be changed by user)
+const professionalRoles = ['certified_doctor', 'certified_therapist', 'certified_nurse', 'admin'];
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -28,6 +39,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editNickname, setEditNickname] = useState('');
+  const [editRole, setEditRole] = useState<'mom' | 'dad' | 'family'>('mom');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ show: boolean; success: boolean; text: string }>({
     show: false,
@@ -35,6 +47,9 @@ export default function ProfilePage() {
     text: '',
   });
   const hasFetched = useRef(false);
+
+  // Check if user has a professional role (cannot change)
+  const isProfessional = profile ? professionalRoles.includes(profile.role) : false;
 
   useEffect(() => {
     if (hasFetched.current) return;
@@ -45,6 +60,10 @@ export default function ProfilePage() {
         const data = await getMyProfile();
         setProfile(data);
         setEditNickname(data.nickname);
+        // Set editRole only if it's a family role
+        if (['mom', 'dad', 'family'].includes(data.role)) {
+          setEditRole(data.role as 'mom' | 'dad' | 'family');
+        }
       } catch (err) {
         console.error('Failed to load profile:', err);
         setError('加载失败，请刷新重试');
@@ -70,7 +89,14 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
-      const updatedProfile = await updateMyProfile({ nickname: editNickname.trim() });
+      const updateParams: { nickname: string; role?: 'mom' | 'dad' | 'family' } = {
+        nickname: editNickname.trim(),
+      };
+      // Only include role if user is not a professional
+      if (!isProfessional) {
+        updateParams.role = editRole;
+      }
+      const updatedProfile = await updateMyProfile(updateParams);
       setProfile(updatedProfile);
       setIsEditing(false);
       setSaveMessage({ show: true, success: true, text: '保存成功' });
@@ -86,6 +112,9 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setEditNickname(profile?.nickname || '');
+    if (profile && ['mom', 'dad', 'family'].includes(profile.role)) {
+      setEditRole(profile.role as 'mom' | 'dad' | 'family');
+    }
     setIsEditing(false);
   };
 
@@ -197,7 +226,7 @@ export default function ProfilePage() {
                 {/* 昵称和角色 */}
                 <div className="flex-1">
                   {isEditing ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <input
                         type="text"
                         value={editNickname}
@@ -207,6 +236,28 @@ export default function ProfilePage() {
                         maxLength={50}
                         autoFocus
                       />
+                      {/* Role selector - only for non-professional users */}
+                      {!isProfessional && (
+                        <div className="space-y-2">
+                          <label className="text-sm text-stone-500">选择身份</label>
+                          <div className="flex gap-2">
+                            {familyRoles.map((role) => (
+                              <button
+                                key={role.value}
+                                type="button"
+                                onClick={() => setEditRole(role.value)}
+                                className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                                  editRole === role.value
+                                    ? 'bg-[#e8a4b8] text-white'
+                                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                }`}
+                              >
+                                {role.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <button
                           onClick={handleSave}
@@ -301,6 +352,10 @@ export default function ProfilePage() {
                 <QuickLink href="/community/my-posts" icon="📝" label="我的提问" />
                 <QuickLink href="/community/my-replies" icon="💬" label="我的回答" />
                 <QuickLink href="/community/collections" icon="🐚" label="我的收藏" />
+                <QuickLink href="/community/certification" icon="🏥" label="专业认证" />
+                {profile.role === 'admin' && (
+                  <QuickLink href="/community/admin/certifications" icon="🛡️" label="认证审核" />
+                )}
               </div>
             </div>
           </motion.div>

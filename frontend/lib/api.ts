@@ -4,18 +4,8 @@
  * 处理与后端的通信
  */
 
-import axios from 'axios';
 import type { UserMessage, VisualResponse } from '../types/companion';
-
-// API 基础 URL - 使用相对路径（前后端同域部署）
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
-
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import apiClient from './apiClient';
 
 /**
  * 发送消息到 Soulful Companion

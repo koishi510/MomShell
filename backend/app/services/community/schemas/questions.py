@@ -21,8 +21,8 @@ class QuestionCreate(BaseModel):
 class QuestionUpdate(BaseModel):
     """Request schema for updating a question."""
 
-    title: str | None = Field(None, min_length=5, max_length=200)
-    content: str | None = Field(None, min_length=10, max_length=10000)
+    title: str | None = Field(None, min_length=1, max_length=200)
+    content: str | None = Field(None, min_length=1, max_length=10000)
     tag_ids: list[str] | None = Field(None, max_length=5)
 
 

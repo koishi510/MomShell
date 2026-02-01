@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from app.api.v1 import exercises, progress, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
+from app.services.auth import auth_router
 from app.services.chat import router as companion_router
 from app.services.community import community_router
 
@@ -90,6 +91,7 @@ app.include_router(websocket.router, prefix="/api/v1")
 app.include_router(exercises.router, prefix="/api/v1")
 app.include_router(progress.router, prefix="/api/v1")
 app.include_router(companion_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
 
 

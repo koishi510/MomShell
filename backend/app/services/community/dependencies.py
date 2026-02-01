@@ -3,9 +3,13 @@
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
+from app.services.auth.security import decode_token
 
 from .models import User
 from .service import CommunityService, get_community_service
@@ -14,38 +18,67 @@ from .service import CommunityService, get_community_service
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 CommunityServiceDep = Annotated[CommunityService, Depends(get_community_service)]
 
+# HTTP Bearer scheme (auto_error=False to allow fallback to X-User-ID)
+http_bearer = HTTPBearer(auto_error=False)
+
 
 async def get_current_user(
     db: DbSession,
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(http_bearer)
+    ] = None,
     x_user_id: str | None = Header(None, alias="X-User-ID"),
 ) -> User:
     """
-    Get current user from request header.
+    Get current user from JWT token or X-User-ID header (fallback for dev).
 
-    Note: This is a simplified implementation. In production,
-    implement proper JWT/OAuth2 authentication.
+    Priority:
+    1. JWT Bearer token in Authorization header
+    2. X-User-ID header (for backward compatibility / development)
     """
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="未登录")
+    user: User | None = None
 
-    user = await db.get(User, x_user_id)
-    if not user:
-        # Auto-create user for development/demo purposes
-        from .enums import UserRole
+    # Try JWT first
+    if credentials:
+        payload = decode_token(credentials.credentials)
+        if payload and payload.get("type") == "access":
+            user_id = payload.get("sub")
+            if user_id:
+                result = await db.execute(
+                    select(User)
+                    .options(selectinload(User.certification))
+                    .where(User.id == user_id)
+                )
+                user = result.scalar_one_or_none()
 
-        user = User(
-            id=x_user_id,
-            username=f"user_{x_user_id[:8]}",
-            email=f"{x_user_id[:8]}@example.com",
-            password_hash="",
-            nickname="新用户",
-            role=UserRole.MOM,
-            is_active=True,
-            is_banned=False,
+    # Fallback to X-User-ID for development compatibility
+    if not user and x_user_id:
+        result = await db.execute(
+            select(User)
+            .options(selectinload(User.certification))
+            .where(User.id == x_user_id)
         )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        user = result.scalar_one_or_none()
+        if not user:
+            # Auto-create user for development/demo purposes
+            from .enums import UserRole
+
+            user = User(
+                id=x_user_id,
+                username=f"user_{x_user_id[:8]}",
+                email=f"{x_user_id[:8]}@example.com",
+                password_hash="",
+                nickname="新用户",
+                role=UserRole.MOM,
+                is_active=True,
+                is_banned=False,
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="未登录")
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已禁用")
@@ -58,32 +91,60 @@ async def get_current_user(
 
 async def get_current_user_optional(
     db: DbSession,
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(http_bearer)
+    ] = None,
     x_user_id: str | None = Header(None, alias="X-User-ID"),
 ) -> User | None:
-    """Get current user if authenticated, None otherwise."""
-    if not x_user_id:
-        return None
+    """
+    Get current user if authenticated, None otherwise.
 
-    user = await db.get(User, x_user_id)
-    if not user:
-        # Auto-create user for development/demo purposes
-        from .enums import UserRole
+    Priority:
+    1. JWT Bearer token in Authorization header
+    2. X-User-ID header (for backward compatibility / development)
+    """
+    user: User | None = None
 
-        user = User(
-            id=x_user_id,
-            username=f"user_{x_user_id[:8]}",
-            email=f"{x_user_id[:8]}@example.com",
-            password_hash="",
-            nickname="新用户",
-            role=UserRole.MOM,
-            is_active=True,
-            is_banned=False,
+    # Try JWT first
+    if credentials:
+        payload = decode_token(credentials.credentials)
+        if payload and payload.get("type") == "access":
+            user_id = payload.get("sub")
+            if user_id:
+                result = await db.execute(
+                    select(User)
+                    .options(selectinload(User.certification))
+                    .where(User.id == user_id)
+                )
+                user = result.scalar_one_or_none()
+
+    # Fallback to X-User-ID for development compatibility
+    if not user and x_user_id:
+        result = await db.execute(
+            select(User)
+            .options(selectinload(User.certification))
+            .where(User.id == x_user_id)
         )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        user = result.scalar_one_or_none()
+        if not user:
+            # Auto-create user for development/demo purposes
+            from .enums import UserRole
 
-    if not user.is_active or user.is_banned:
+            user = User(
+                id=x_user_id,
+                username=f"user_{x_user_id[:8]}",
+                email=f"{x_user_id[:8]}@example.com",
+                password_hash="",
+                nickname="新用户",
+                role=UserRole.MOM,
+                is_active=True,
+                is_banned=False,
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+
+    if user and (not user.is_active or user.is_banned):
         return None
 
     return user

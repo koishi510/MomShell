@@ -1,11 +1,15 @@
 """User schemas for community module."""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from ..enums import UserRole
 from .base import TagInfo
+
+# Family roles that users can freely switch between
+FamilyRoleType = Literal["mom", "dad", "family"]
 
 
 class UserProfileUpdate(BaseModel):
@@ -13,6 +17,9 @@ class UserProfileUpdate(BaseModel):
 
     nickname: str | None = Field(None, min_length=1, max_length=50)
     avatar_url: str | None = Field(None, max_length=500)
+    role: FamilyRoleType | None = Field(
+        None, description="Only family roles allowed: mom, dad, family"
+    )
 
 
 class UserStats(BaseModel):

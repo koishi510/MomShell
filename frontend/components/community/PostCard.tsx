@@ -20,12 +20,14 @@ interface PostCardProps {
 
 // 角色配置
 const ROLE_CONFIG: Record<UserRole, { label: string; badgeClass: string; icon?: string }> = {
+  guest: { label: '游客', badgeClass: 'bg-gray-100 text-gray-600' },
   mom: { label: '妈妈', badgeClass: 'bg-pink-100 text-pink-700' },
   dad: { label: '爸爸', badgeClass: 'bg-blue-100 text-blue-700' },
   family: { label: '家属', badgeClass: 'bg-stone-100 text-stone-600' },
   certified_doctor: { label: '认证医生', badgeClass: 'bg-emerald-100 text-emerald-700', icon: '✓' },
   certified_therapist: { label: '认证康复师', badgeClass: 'bg-teal-100 text-teal-700', icon: '✓' },
   certified_nurse: { label: '认证护士', badgeClass: 'bg-cyan-100 text-cyan-700', icon: '✓' },
+  admin: { label: '管理员', badgeClass: 'bg-purple-100 text-purple-700', icon: '★' },
 };
 
 export default function PostCard({
@@ -40,7 +42,7 @@ export default function PostCard({
   const isCollected = question.is_collected;
 
   const isPending = question.status === 'pending_review';
-  const roleConfig = ROLE_CONFIG[question.author.role];
+  const roleConfig = ROLE_CONFIG[question.author.role] || { label: '用户', badgeClass: 'bg-gray-100 text-gray-600' };
   const isCertified = question.author.is_certified;
   const channelColors = CHANNEL_COLORS[question.channel];
 
