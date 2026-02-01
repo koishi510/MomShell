@@ -3,7 +3,38 @@
  * Authentication API functions
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+/**
+ * Detect API base URL at runtime.
+ * Handles ModelScope/HuggingFace Spaces where app is hosted under a subpath.
+ */
+function getApiBaseUrl(): string {
+  // If explicitly set via env var, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // In browser, detect base path from URL
+  if (typeof window !== 'undefined') {
+    const pathname = window.location.pathname;
+
+    // ModelScope pattern: /studios/{user}/{app}/...
+    const modelScopeMatch = pathname.match(/^(\/studios\/[^/]+\/[^/]+)/);
+    if (modelScopeMatch) {
+      return modelScopeMatch[1];
+    }
+
+    // HuggingFace Spaces pattern: /spaces/{user}/{app}/...
+    const hfMatch = pathname.match(/^(\/spaces\/[^/]+\/[^/]+)/);
+    if (hfMatch) {
+      return hfMatch[1];
+    }
+  }
+
+  // Default: relative to root (local development / direct Docker access)
+  return '';
+}
+
+const API_BASE = getApiBaseUrl();
 const AUTH_API = `${API_BASE}/api/v1/auth`;
 
 export interface User {
@@ -105,6 +136,7 @@ export async function getCurrentUser(accessToken: string): Promise<User> {
   const response = await fetch(`${AUTH_API}/me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
+      'X-Access-Token': accessToken,  // Fallback for proxies that strip Authorization
     },
   });
 

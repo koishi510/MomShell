@@ -7,7 +7,38 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens, refreshToken } from './auth';
 import { getUserId } from './user';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+/**
+ * Detect API base URL at runtime.
+ * Handles ModelScope/HuggingFace Spaces where app is hosted under a subpath.
+ */
+function getApiBaseUrl(): string {
+  // If explicitly set via env var, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // In browser, detect base path from URL
+  if (typeof window !== 'undefined') {
+    const pathname = window.location.pathname;
+
+    // ModelScope pattern: /studios/{user}/{app}/...
+    const modelScopeMatch = pathname.match(/^(\/studios\/[^/]+\/[^/]+)/);
+    if (modelScopeMatch) {
+      return modelScopeMatch[1];
+    }
+
+    // HuggingFace Spaces pattern: /spaces/{user}/{app}/...
+    const hfMatch = pathname.match(/^(\/spaces\/[^/]+\/[^/]+)/);
+    if (hfMatch) {
+      return hfMatch[1];
+    }
+  }
+
+  // Default: relative to root (local development / direct Docker access)
+  return '';
+}
+
+const API_BASE = getApiBaseUrl();
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -40,7 +71,10 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
     if (token && config.headers) {
+      // Send token via both Authorization header and X-Access-Token
+      // Some proxies (like ModelScope) strip Authorization header
       config.headers.Authorization = `Bearer ${token}`;
+      config.headers['X-Access-Token'] = token;
     } else if (config.headers) {
       // Fallback to X-User-ID for backward compatibility (development mode)
       config.headers['X-User-ID'] = getUserId();

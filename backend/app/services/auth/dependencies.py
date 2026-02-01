@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException
+from fastapi import Cookie, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,20 +17,51 @@ from .security import decode_token
 http_bearer = HTTPBearer(auto_error=False)
 
 
+def get_token_from_request(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = None,
+    access_token: str | None = Cookie(None, alias="momshell_access_token"),
+) -> str | None:
+    """
+    Extract token from multiple sources (fallback order):
+    1. Authorization: Bearer header
+    2. X-Access-Token custom header (for proxies that strip Authorization)
+    3. Cookie (momshell_access_token)
+    """
+    # 1. Try Authorization header
+    if credentials and credentials.credentials:
+        return credentials.credentials
+
+    # 2. Try custom header (some proxies strip Authorization but not custom headers)
+    custom_token = request.headers.get("X-Access-Token")
+    if custom_token:
+        return custom_token
+
+    # 3. Try cookie
+    if access_token:
+        return access_token
+
+    return None
+
+
 async def get_current_user_jwt(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(http_bearer)
     ] = None,
+    access_token: str | None = Cookie(None, alias="momshell_access_token"),
 ) -> User:
     """
-    Get current user from JWT token in Authorization header.
+    Get current user from JWT token.
+    Supports multiple token sources for proxy compatibility.
     Raises HTTPException if not authenticated.
     """
-    if not credentials:
+    token = get_token_from_request(request, credentials, access_token)
+    if not token:
         raise HTTPException(status_code=401, detail="未登录")
 
-    payload = decode_token(credentials.credentials)
+    payload = decode_token(token)
     if payload is None:
         raise HTTPException(status_code=401, detail="无效的令牌")
 
@@ -60,19 +91,23 @@ async def get_current_user_jwt(
 
 
 async def get_current_user_jwt_optional(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(http_bearer)
     ] = None,
+    access_token: str | None = Cookie(None, alias="momshell_access_token"),
 ) -> User | None:
     """
     Get current user from JWT token if present.
+    Supports multiple token sources for proxy compatibility.
     Returns None if not authenticated (no exception).
     """
-    if not credentials:
+    token = get_token_from_request(request, credentials, access_token)
+    if not token:
         return None
 
-    payload = decode_token(credentials.credentials)
+    payload = decode_token(token)
     if payload is None:
         return None
 

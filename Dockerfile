@@ -20,7 +20,19 @@ COPY frontend/ ./
 RUN npm run build
 
 # ==========================================
-# Stage 2: 后端运行 (Backend Runtime)
+# Stage 2: 系统库安装 (避免构建环境磁盘空间限制)
+# ==========================================
+FROM python:3.11-slim-bookworm AS lib-builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libglib2.0-0 \
+    libgomp1 \
+    libxcb1 \
+    libxau6 \
+    libxdmcp6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ==========================================
+# Stage 3: 后端运行 (Backend Runtime)
 # ==========================================
 FROM python:3.11-slim-bookworm
 
@@ -33,25 +45,28 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# 安装系统依赖 (MediaPipe/OpenCV 在无头服务器需要)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 \
-    libgl1-mesa-glx \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    libgomp1 \
-    libgcc-s1 \
-    libstdc++6 \
-    libx11-6 \
-    libxcb1 \
-    libxau6 \
-    libxdmcp6 \
-    && rm -rf /var/lib/apt/lists/*
+# 从 lib-builder 复制系统库
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libglib* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libgthread* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libgobject* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libgio* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libgmodule* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libgomp* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libxcb* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libXau* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libXdmcp* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libbsd* /usr/lib/x86_64-linux-gnu/
+COPY --from=lib-builder /usr/lib/x86_64-linux-gnu/libmd* /usr/lib/x86_64-linux-gnu/
 
 # 安装 Python 依赖
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+
+# 替换 OpenCV 为 headless 版本（不需要 libGL/X11 系统库，节省 200MB+）
+RUN pip install --no-cache-dir --force-reinstall \
+    opencv-python-headless==4.13.0.90 \
+    opencv-contrib-python-headless==4.13.0.90 \
+    -i https://mirrors.aliyun.com/pypi/simple/
 
 # 复制后端代码
 COPY backend/app/ /app/app/
