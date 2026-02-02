@@ -10,22 +10,29 @@ A warm, AI-powered companion for postpartum recovery — offering emotional supp
 
 ## Features
 
-- **Soulful Companion**: Emotional support chat companion powered by ModelScope Qwen
+- **心灵港湾 (Soul Companion)**: Emotional support chat companion powered by ModelScope Qwen
   - Warm, validating, non-judgmental conversation style
   - Designed specifically for postpartum emotional support
   - Visual ambient effects with healing UI design
   - Conversation memory for personalized interactions
-- **Community**: Mutual support community for postpartum mothers to share experiences and get professional advice
+- **经验连接 (Sisterhood Bond)**: Mutual support community for postpartum mothers
   - Dual-channel system: Professional Channel (doctors' advice) & Experience Channel (moms' stories)
   - Verified healthcare professionals: doctors, therapists, nurses
   - Q&A with likes, collections, and content moderation
   - Daily Resonance topics and Shell Picks (collections)
-- **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection and voice feedback
+- **身体重塑 (Recovery Coach)**: AI-powered postpartum exercise coaching with real-time pose detection
   - Real-time pose detection with MediaPipe (33 body landmarks)
   - 9 postpartum-specific exercises across 5 categories (breathing, pelvic floor, diastasis recti, posture, strength)
   - LLM-powered voice feedback with Edge TTS in gentle, encouraging tone
   - Progress tracking with achievements, streaks, and strength metrics
   - Safety monitoring with fatigue detection and automatic rest prompts
+- **伴侣守护 (Guardian Partner)**: Gamified system to engage partners in postpartum recovery
+  - Partner binding via invite codes
+  - Daily status recording (mood, energy, health conditions, feeding, sleep)
+  - Smart suggestions pushed to partner based on mom's status
+  - Task system with 3 difficulty levels and point rewards
+  - Level progression: Intern → Trainee → Regular → Gold
+  - Time recorder for baby milestone photos
 
 ## Tech Stack
 
@@ -63,10 +70,11 @@ MomShell/
 │   │   │   │   ├── pose/       # MediaPipe pose detection
 │   │   │   │   ├── progress/   # Progress tracking
 │   │   │   │   └── workflow/   # LangGraph workflow
-│   │   │   └── community/      # Community service
-│   │   │       ├── moderation/ # Content moderation
-│   │   │       ├── router/     # Community API routes
-│   │   │       └── schemas/    # Community schemas
+│   │   │   ├── community/      # Community service
+│   │   │   │   ├── moderation/ # Content moderation
+│   │   │   │   ├── router/     # Community API routes
+│   │   │   │   └── schemas/    # Community schemas
+│   │   │   └── guardian/       # Guardian Partner service
 │   │   ├── static/             # Static assets (CSS, JS)
 │   │   ├── templates/          # HTML templates
 │   │   └── tts_cache/          # TTS audio cache (gitignored)
@@ -83,17 +91,19 @@ MomShell/
 │   │   ├── auth/               # Auth pages (login, register, etc.)
 │   │   ├── chat/               # Soulful Companion page
 │   │   ├── coach/              # Recovery Coach page
-│   │   └── community/          # Community pages
-│   │       ├── admin/          # Admin pages (certification review)
-│   │       ├── certification/  # Professional certification
-│   │       ├── collections/    # Shell Picks collections
-│   │       ├── my-posts/       # My questions
-│   │       ├── my-replies/     # My answers
-│   │       └── profile/        # User profile
+│   │   ├── community/          # Community pages
+│   │   │   ├── admin/          # Admin pages (certification review)
+│   │   │   ├── certification/  # Professional certification
+│   │   │   ├── collections/    # Shell Picks collections
+│   │   │   ├── my-posts/       # My questions
+│   │   │   ├── my-replies/     # My answers
+│   │   │   └── profile/        # User profile
+│   │   └── guardian/           # Guardian Partner page
 │   ├── components/             # React components
 │   │   ├── auth/               # Auth components
 │   │   ├── coach/              # Recovery Coach components
 │   │   ├── community/          # Community components
+│   │   ├── guardian/           # Guardian Partner components
 │   │   └── home/               # Home page components
 │   ├── contexts/               # React contexts (AuthContext)
 │   ├── hooks/                  # Custom hooks
