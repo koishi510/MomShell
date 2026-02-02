@@ -16,31 +16,40 @@ import { useAuth } from '../contexts/AuthContext';
 
 const features = [
   {
-    title: '情感陪伴',
-    subtitle: 'Soulful Companion',
-    description: '在这一刻，你并不孤单',
+    title: '心灵港湾',
+    subtitle: 'Soul Companion',
+    description: '每一个瞬间，你都不再孤单',
     href: '/chat',
     icon: '💝',
     gradient: '#FFE4EC, #FFF0F5',
     shadowColor: '#FFB6C1',
   },
   {
-    title: '互助社区',
-    subtitle: 'Community',
-    description: '分享经验，获取专业建议',
+    title: '经验连接',
+    subtitle: 'Sisterhood Bond',
+    description: '每一次交流，你都能获得力量',
     href: '/community',
     icon: '👩‍👩‍👧',
     gradient: '#FFF3E0, #FFE4B5',
     shadowColor: '#FFB347',
   },
   {
-    title: 'AI 康复教练',
+    title: '身体重塑',
     subtitle: 'Recovery Coach',
-    description: '专业指导，温柔陪伴你的恢复之旅',
+    description: '每一项训练，你都在重塑自我',
     href: '/coach',
     icon: '🧘‍♀️',
     gradient: '#E0F7FA, #B2EBF2',
     shadowColor: '#4DD0E1',
+  },
+  {
+    title: '伴侣守护',
+    subtitle: 'Guardian Partner',
+    description: '每一份坚持，你都有贴心守护',
+    href: '/guardian',
+    icon: '🤝',
+    gradient: '#E8F5E9, #C8E6C9',
+    shadowColor: '#81C784',
   },
 ];
 
@@ -123,7 +132,7 @@ export default function HomePage() {
 
         {/* 模块入口 */}
         <main className="flex-1 flex items-center justify-center px-6 pb-20">
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl w-full">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl w-full">
             {features.map((feature, index) => (
               <FloatingCard
                 key={feature.href}
