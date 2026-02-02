@@ -418,7 +418,7 @@ function EmptyState({ channel, onAsk }: { channel: ChannelType; onAsk: () => voi
       </p>
       <button
         onClick={onAsk}
-        className="px-4 py-2 bg-stone-800 text-white text-sm rounded-full hover:bg-stone-700 transition-colors"
+        className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors"
       >
         立即提问
       </button>

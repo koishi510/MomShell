@@ -32,6 +32,7 @@ export default function FloatingCard({
 }: FloatingCardProps) {
   return (
     <motion.div
+      className="h-full"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
@@ -40,10 +41,10 @@ export default function FloatingCard({
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
     >
-      <Link href={href}>
+      <Link href={href} className="block h-full">
         <motion.div
           className={`
-            relative p-8 rounded-3xl
+            relative p-8 rounded-3xl h-full
             bg-white/70 backdrop-blur-md
             border border-white/50
             cursor-pointer overflow-hidden
@@ -121,17 +122,17 @@ export default function FloatingCard({
             <p className="text-stone-600 leading-relaxed">
               {description}
             </p>
-
-            {/* 箭头指示 */}
-            <motion.div
-              className="absolute bottom-6 right-6 text-stone-300"
-              whileHover={{ x: 5, color: '#78716c' }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </motion.div>
           </div>
+
+          {/* 箭头指示 */}
+          <motion.div
+            className="absolute bottom-6 right-6 text-stone-300 z-10"
+            whileHover={{ x: 5, color: '#78716c' }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </motion.div>
         </motion.div>
       </Link>
     </motion.div>
