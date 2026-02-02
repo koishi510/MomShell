@@ -66,7 +66,7 @@ export default function HomePage() {
         className="fixed top-8 left-8 z-20"
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 2, duration: 0.8, ease: 'backOut' }}
+        transition={{ delay: 0.8, duration: 0.5, ease: 'backOut' }}
       >
         <MoodBall />
       </motion.div>
@@ -76,7 +76,7 @@ export default function HomePage() {
         className="fixed top-8 right-8 z-20"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5, duration: 0.5 }}
+        transition={{ delay: 0.6, duration: 0.3 }}
       >
         {isLoading ? (
           <div className="w-10 h-10 rounded-full bg-white/50 animate-pulse" />
@@ -126,7 +126,7 @@ export default function HomePage() {
             }}
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ delay: 1.5, duration: 0.8 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
           />
         </header>
 
@@ -148,7 +148,7 @@ export default function HomePage() {
           className="py-8 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 2, duration: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
         >
           <p className="text-stone-400 text-sm font-light tracking-wide">
             用心陪伴每一位妈妈的恢复之旅
@@ -159,7 +159,7 @@ export default function HomePage() {
             className="flex justify-center gap-2 mt-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 2.5 }}
+            transition={{ delay: 1 }}
           >
             {['🌸', '🌿', '🦋'].map((emoji, i) => (
               <motion.span
