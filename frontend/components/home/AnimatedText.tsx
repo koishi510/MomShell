@@ -23,7 +23,7 @@ export default function AnimatedText({ text, className = '', delay = 0 }: Animat
       opacity: 1,
       transition: {
         delayChildren: delay,
-        staggerChildren: 0.05,
+        staggerChildren: 0.03,
       },
     },
   };
@@ -72,7 +72,7 @@ export function SerifTitle({ children, className = '' }: { children: string; cla
     <AnimatedText
       text={children}
       className={`font-serif tracking-widest ${className}`}
-      delay={0.3}
+      delay={0.1}
     />
   );
 }
@@ -83,7 +83,7 @@ export function Subtitle({ children, className = '' }: { children: string; class
     <AnimatedText
       text={children}
       className={`tracking-wide ${className}`}
-      delay={0.8}
+      delay={0.3}
     />
   );
 }

@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChannelSwitcher from './ChannelSwitcher';
 import PostCard from './PostCard';
@@ -19,8 +20,11 @@ import UserMenu from './UserMenu';
 import { type ChannelType, type Question } from '../../types/community';
 import { SPRING_CONFIGS } from '../../lib/design-tokens';
 import { getQuestions, createQuestion as apiCreateQuestion, toggleLike, toggleCollection } from '../../lib/api/community';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function CommunityFeed() {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const [activeChannel, setActiveChannel] = useState<ChannelType>('experience');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -228,6 +232,14 @@ export default function CommunityFeed() {
     }
   };
 
+  const handleAskClick = () => {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+    setIsQuestionModalOpen(true);
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* 动态弥散渐变背景（低透明度） */}
@@ -297,7 +309,7 @@ export default function CommunityFeed() {
 
           {/* 发帖按钮 */}
           <button
-            onClick={() => setIsQuestionModalOpen(true)}
+            onClick={handleAskClick}
             disabled={isSubmitting}
             className="px-5 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-50 bg-[#e8a4b8] text-white hover:bg-[#d88a9f]"
           >
@@ -359,7 +371,7 @@ export default function CommunityFeed() {
 
                 {/* 空状态 */}
                 {filteredQuestions.length === 0 && (
-                  <EmptyState channel={activeChannel} onAsk={() => setIsQuestionModalOpen(true)} />
+                  <EmptyState channel={activeChannel} onAsk={handleAskClick} />
                 )}
               </div>
             )}
