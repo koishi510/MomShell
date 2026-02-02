@@ -5,7 +5,7 @@
  * 发布问题弹窗
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type ChannelType, CHANNEL_CONFIG } from '../../types/community';
 
@@ -25,6 +25,11 @@ export default function QuestionModal({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [channel, setChannel] = useState<ChannelType>(defaultChannel);
+
+  // 同步 defaultChannel 变化
+  useEffect(() => {
+    setChannel(defaultChannel);
+  }, [defaultChannel]);
 
   const handleSubmit = () => {
     if (!title.trim() || !content.trim()) return;
