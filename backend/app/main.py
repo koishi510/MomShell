@@ -21,6 +21,8 @@ from app.services.community import community_router
 
 # Import models to register them with SQLAlchemy Base
 from app.services.community import models as community_models  # noqa: F401
+from app.services.guardian import guardian_router
+from app.services.guardian import models as guardian_models  # noqa: F401
 
 settings = get_settings()
 
@@ -57,6 +59,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
     # Startup
     await init_db()
+    # Seed guardian task templates
+    from app.core.database import async_session_maker
+    from app.services.guardian.seed_data import seed_task_templates
+
+    async with async_session_maker() as session:
+        await seed_task_templates(session)
     # Start MediaPipe preloading in background (non-blocking)
     asyncio.create_task(preload_mediapipe_background())
     yield
@@ -93,6 +101,7 @@ app.include_router(progress.router, prefix="/api/v1")
 app.include_router(companion_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
+app.include_router(guardian_router, prefix="/api/v1")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])
