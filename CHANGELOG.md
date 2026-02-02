@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-02
+
+### Added
+
+#### Guardian Partner Module (伴侣守护)
+
+- **New Feature**: Guardian Partner - A gamified system to help partners participate in postpartum recovery
+  - Invite & Bind: Mom generates invite code, partner scans/enters to bind
+  - Daily Status Recording: Mom records mood, energy, health conditions, feeding count, sleep hours
+  - Smart Notifications: System generates personalized suggestions for partner based on mom's status
+  - Task System: Daily tasks with 3 difficulty levels (Easy 10pts, Medium 30pts, Hard 50pts)
+  - Partner Levels: Intern → Trainee → Regular → Gold based on points
+  - Time Recorder: Photo memories with milestone tracking (满月, 百天)
+
+- **Backend**:
+  - New `guardian` service module (`backend/app/services/guardian/`)
+  - Models: `PartnerBinding`, `MomDailyStatus`, `TaskTemplate`, `PartnerDailyTask`, `PartnerProgress`, `PartnerBadge`, `Memory`
+  - API endpoints: `/api/v1/guardian/*` (14 endpoints for binding, status, tasks, progress, memories)
+  - Task templates seed data with 14 predefined tasks across 4 categories
+
+- **Frontend**:
+  - New Guardian dashboard component with role-based UI (Mom/Partner views)
+  - Mom view: Partner stats, daily status form, task confirmation
+  - Partner view: Progress card, mom's status alert with suggestions, daily tasks
+  - Types and API client for Guardian feature
+
+### Changed
+
+- **Homepage**: Updated feature cards with new Chinese names and added Guardian Partner
+  - 心灵港湾 (Soul Companion)
+  - 经验连接 (Sisterhood Bond)
+  - 身体重塑 (Recovery Coach)
+  - 伴侣守护 (Guardian Partner)
+- Grid layout changed from 3 columns to 2x2 / 4 columns responsive
+
+---
+
 ## [0.3.4] - 2026-02-01
 
 ### Added
