@@ -10,23 +10,23 @@ A warm, AI-powered companion for postpartum recovery — offering emotional supp
 
 ## Features
 
-- **心灵港湾 (Soul Companion)**: Emotional support chat companion powered by ModelScope Qwen
+- **Soul Companion**: Emotional support chat companion powered by ModelScope Qwen
   - Warm, validating, non-judgmental conversation style
   - Designed specifically for postpartum emotional support
   - Visual ambient effects with healing UI design
   - Conversation memory for personalized interactions
-- **经验连接 (Sisterhood Bond)**: Mutual support community for postpartum mothers
+- **Sisterhood Bond**: Mutual support community for postpartum mothers
   - Dual-channel system: Professional Channel (doctors' advice) & Experience Channel (moms' stories)
   - Verified healthcare professionals: doctors, therapists, nurses
   - Q&A with likes, collections, and content moderation
   - Daily Resonance topics and Shell Picks (collections)
-- **身体重塑 (Recovery Coach)**: AI-powered postpartum exercise coaching with real-time pose detection
+- **Recovery Coach**: AI-powered postpartum exercise coaching with real-time pose detection
   - Real-time pose detection with MediaPipe (33 body landmarks)
   - 9 postpartum-specific exercises across 5 categories (breathing, pelvic floor, diastasis recti, posture, strength)
   - LLM-powered voice feedback with Edge TTS in gentle, encouraging tone
   - Progress tracking with achievements, streaks, and strength metrics
   - Safety monitoring with fatigue detection and automatic rest prompts
-- **伴侣守护 (Guardian Partner)**: Gamified system to engage partners in postpartum recovery
+- **Guardian Partner**: Gamified system to engage partners in postpartum recovery
   - Partner binding via invite codes
   - Daily status recording (mood, energy, health conditions, feeding, sleep)
   - Smart suggestions pushed to partner based on mom's status
