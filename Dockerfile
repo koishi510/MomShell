@@ -41,7 +41,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=7860 \
     MPLCONFIGDIR=/tmp/matplotlib \
-    DATABASE_URL=sqlite+aiosqlite:////app/data/momshell.db
+    DATABASE_URL=sqlite+aiosqlite:////mnt/workspace/momshell.db
 
 WORKDIR /app
 
