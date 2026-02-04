@@ -33,7 +33,7 @@ from .schemas import (
 )
 
 # Soulful Companion 人设 System Prompt
-COMPANION_SYSTEM_PROMPT = """你是一位「曾走过这段路的朋友」，一位专为产后恢复期女性设计的情感陪伴者。
+COMPANION_SYSTEM_PROMPT = """你是「贝壳姐姐」，一位「曾走过这段路的朋友」，专为产后恢复期女性设计的情感陪伴者。
 
 ## 角色定位：Independent Woman Supporter
 
@@ -60,15 +60,25 @@ COMPANION_SYSTEM_PROMPT = """你是一位「曾走过这段路的朋友」，一
 
 ## 记忆上下文
 
-你记得关于她的重要信息：
+### 用户基本信息
+{user_basic_info}
 
+### 你记得关于她的重要信息
 {user_profile}
 
-她和你之间有过以下对话片段：
+### 她的康复训练进度
+{coach_progress}
 
+### 她与伴侣的互动数据
+{partner_data}
+
+### 她和你之间有过以下对话片段
 {past_conversations}
 
-在回应时，自然地融入这些记忆——比如她提到过喜欢猫，你可以在合适的时刻轻轻提起；她之前分享过某个担忧，你可以关心地问起后续。
+### 她在社区的互动记录
+{community_interactions}
+
+在回应时，自然地融入这些记忆——比如她提到过喜欢猫，你可以在合适的时刻轻轻提起；她之前分享过某个担忧，你可以关心地问起后续；她在社区分享过的内容，你也可以自然地引用；她的康复训练进度，你可以适时鼓励。
 
 ## 响应格式
 
@@ -193,6 +203,7 @@ class CompanionService:
                 concerns=profile_data.get("concerns", []),
                 important_dates=profile_data.get("important_dates", []),
                 baby_age_weeks=profile_data.get("baby_age_weeks"),
+                community_interactions=profile_data.get("community_interactions", []),
             )
             memory = ConversationMemory(
                 session_id=user_id,
@@ -235,6 +246,7 @@ class CompanionService:
                 "concerns": profile.concerns,
                 "important_dates": profile.important_dates,
                 "baby_age_weeks": profile.baby_age_weeks,
+                "community_interactions": profile.community_interactions,
             }
         )
 
@@ -265,6 +277,249 @@ class CompanionService:
             parts.append(f"- 宝宝年龄：{profile.baby_age_weeks} 周")
         return "\n".join(parts) if parts else "（暂无记录）"
 
+    def _format_community_interactions(self, profile: UserProfile) -> str:
+        """格式化社区互动记录为文本"""
+        if not profile.community_interactions:
+            return "（暂无社区互动记录）"
+        # 只取最近 10 条
+        recent = profile.community_interactions[-10:]
+        return "\n".join(f"- {item}" for item in recent)
+
+    def _format_user_basic_info(self, user_info: dict[str, Any] | None) -> str:
+        """格式化用户基本信息"""
+        if not user_info:
+            return "（未登录用户）"
+        parts = []
+        role_names = {
+            "mom": "妈妈",
+            "dad": "爸爸",
+            "family": "家属",
+            "certified_doctor": "认证医生",
+            "certified_therapist": "认证康复师",
+            "certified_nurse": "认证护士",
+            "admin": "管理员",
+        }
+        if user_info.get("nickname"):
+            parts.append(f"- 昵称：{user_info['nickname']}")
+        if user_info.get("role"):
+            role_display = role_names.get(user_info["role"], user_info["role"])
+            parts.append(f"- 身份标签：{role_display}")
+        if user_info.get("baby_birth_date"):
+            parts.append(f"- 宝宝出生日期：{user_info['baby_birth_date']}")
+        if user_info.get("postpartum_weeks") is not None:
+            parts.append(f"- 产后周数：{user_info['postpartum_weeks']} 周")
+        return "\n".join(parts) if parts else "（暂无基本信息）"
+
+    def _format_coach_progress(self, progress: dict[str, Any] | None) -> str:
+        """格式化康复训练进度"""
+        if not progress:
+            return "（暂无训练记录）"
+        parts = []
+        if progress.get("completed_sessions"):
+            parts.append(f"- 已完成训练次数：{progress['completed_sessions']}")
+        if progress.get("total_duration"):
+            parts.append(f"- 累计训练时长：{progress['total_duration']} 分钟")
+        if progress.get("current_plan"):
+            parts.append(f"- 当前训练计划：{progress['current_plan']}")
+        if progress.get("last_session_date"):
+            parts.append(f"- 上次训练日期：{progress['last_session_date']}")
+        if progress.get("streak"):
+            parts.append(f"- 连续训练天数：{progress['streak']} 天")
+        # 如果有具体练习记录
+        if progress.get("exercises"):
+            exercises = progress["exercises"]
+            if isinstance(exercises, list):
+                recent = exercises[-3:] if len(exercises) > 3 else exercises
+                for ex in recent:
+                    if isinstance(ex, dict):
+                        name = ex.get("name", "未知")
+                        status = ex.get("status", "")
+                        parts.append(f"- 练习：{name}（{status}）")
+        return "\n".join(parts) if parts else "（暂无训练记录）"
+
+    def _format_partner_data(self, partner_data: dict[str, Any] | None) -> str:
+        """格式化伴侣互动数据"""
+        if not partner_data:
+            return "（暂无伴侣互动数据）"
+        parts = []
+        mood_names = {
+            "very_low": "非常低落",
+            "low": "低落",
+            "neutral": "一般",
+            "good": "不错",
+            "great": "很好",
+        }
+        level_names = {
+            "intern": "实习爸爸",
+            "trainee": "见习守护者",
+            "regular": "正式守护者",
+            "gold": "金牌守护者",
+        }
+        if partner_data.get("has_partner"):
+            parts.append("- 已绑定伴侣")
+        if partner_data.get("partner_level"):
+            level_display = level_names.get(
+                partner_data["partner_level"], partner_data["partner_level"]
+            )
+            parts.append(f"- 伴侣等级：{level_display}")
+        if partner_data.get("partner_points") is not None:
+            parts.append(f"- 伴侣积分：{partner_data['partner_points']}")
+        if partner_data.get("partner_tasks_completed") is not None:
+            parts.append(
+                f"- 伴侣已完成任务数：{partner_data['partner_tasks_completed']}"
+            )
+        if (
+            partner_data.get("partner_streak") is not None
+            and partner_data["partner_streak"] > 0
+        ):
+            parts.append(f"- 伴侣连续打卡：{partner_data['partner_streak']} 天")
+        if partner_data.get("recent_mood"):
+            mood_display = mood_names.get(
+                partner_data["recent_mood"], partner_data["recent_mood"]
+            )
+            parts.append(f"- 最近心情：{mood_display}")
+        if partner_data.get("recent_energy") is not None:
+            parts.append(f"- 最近精力值：{partner_data['recent_energy']}/100")
+        if partner_data.get("recent_sleep") is not None:
+            parts.append(f"- 最近睡眠：{partner_data['recent_sleep']} 小时")
+        if partner_data.get("health_conditions"):
+            conditions_names = {
+                "wound_pain": "伤口疼痛",
+                "hair_loss": "脱发",
+                "insomnia": "失眠",
+                "breast_pain": "涨奶/乳房疼痛",
+                "back_pain": "腰背痛",
+                "fatigue": "疲惫",
+                "emotional": "情绪波动",
+                "constipation": "便秘",
+                "sweating": "盗汗",
+            }
+            conditions = partner_data["health_conditions"]
+            if isinstance(conditions, list):
+                display: list[str] = [
+                    conditions_names.get(str(c), str(c)) for c in conditions if c
+                ]
+                parts.append(f"- 近期身体状况：{', '.join(display)}")
+        return "\n".join(parts) if parts else "（暂无伴侣互动数据）"
+
+    async def _load_user_extended_context(
+        self, db: AsyncSession, user_id: str
+    ) -> dict[str, Any]:
+        """加载用户的扩展上下文（基本信息、训练进度、伴侣数据）"""
+        context: dict[str, Any] = {
+            "user_basic_info": None,
+            "coach_progress": None,
+            "partner_data": None,
+        }
+
+        try:
+            # 1. Load user basic info
+            from app.services.community.models import User
+
+            user = await db.get(User, user_id)
+            if user:
+                context["user_basic_info"] = {
+                    "nickname": user.nickname,
+                    "role": user.role.value if user.role else None,
+                    "baby_birth_date": (
+                        user.baby_birth_date.strftime("%Y-%m-%d")
+                        if user.baby_birth_date
+                        else None
+                    ),
+                    "postpartum_weeks": user.postpartum_weeks,
+                }
+
+            # 2. Load coach progress
+            from app.services.coach.models import CoachProgress
+
+            result = await db.execute(
+                select(CoachProgress).where(CoachProgress.user_id == user_id)
+            )
+            coach_record = result.scalar_one_or_none()
+            if coach_record:
+                context["coach_progress"] = coach_record.get_progress()
+
+            # 3. Load partner data
+            from app.services.guardian.enums import BindingStatus
+            from app.services.guardian.models import (
+                MomDailyStatus,
+                PartnerBinding,
+                PartnerProgress,
+            )
+
+            partner_info: dict[str, Any] = {}
+
+            # Check if user is a mom with active binding
+            binding_result = await db.execute(
+                select(PartnerBinding).where(
+                    PartnerBinding.mom_id == user_id,
+                    PartnerBinding.status == BindingStatus.ACTIVE,
+                )
+            )
+            binding = binding_result.scalar_one_or_none()
+
+            if not binding:
+                # Check if user is a partner with active binding
+                binding_result = await db.execute(
+                    select(PartnerBinding).where(
+                        PartnerBinding.partner_id == user_id,
+                        PartnerBinding.status == BindingStatus.ACTIVE,
+                    )
+                )
+                binding = binding_result.scalar_one_or_none()
+
+            if binding:
+                partner_info["has_partner"] = True
+
+                # Load partner progress
+                progress_result = await db.execute(
+                    select(PartnerProgress).where(
+                        PartnerProgress.binding_id == binding.id
+                    )
+                )
+                partner_progress = progress_result.scalar_one_or_none()
+                if partner_progress:
+                    partner_info["partner_level"] = partner_progress.current_level.value
+                    partner_info["partner_points"] = partner_progress.total_points
+                    partner_info["partner_tasks_completed"] = (
+                        partner_progress.tasks_completed
+                    )
+                    partner_info["partner_streak"] = partner_progress.current_streak
+
+                # Load recent mom daily status
+                mom_id = binding.mom_id
+                status_result = await db.execute(
+                    select(MomDailyStatus)
+                    .where(MomDailyStatus.mom_id == mom_id)
+                    .order_by(MomDailyStatus.date.desc())
+                    .limit(1)
+                )
+                recent_status = status_result.scalar_one_or_none()
+                if recent_status:
+                    partner_info["recent_mood"] = recent_status.mood.value
+                    partner_info["recent_energy"] = recent_status.energy_level
+                    partner_info["recent_sleep"] = recent_status.sleep_hours
+                    if recent_status.health_conditions:
+                        import json as _json
+
+                        try:
+                            partner_info["health_conditions"] = _json.loads(
+                                recent_status.health_conditions
+                            )
+                        except (ValueError, TypeError):
+                            pass
+
+            if partner_info:
+                context["partner_data"] = partner_info
+
+        except Exception as e:
+            print(
+                f"[Service] _load_user_extended_context error: {e}",
+                file=sys.stderr,
+            )
+
+        return context
+
     def _format_past_conversations(self, memory: ConversationMemory) -> str:
         """格式化历史对话为文本"""
         if not memory.turns:
@@ -276,12 +531,26 @@ class CompanionService:
         return "\n".join(formatted)
 
     def _build_system_prompt_from_data(
-        self, profile: UserProfile, memory: ConversationMemory
+        self,
+        profile: UserProfile,
+        memory: ConversationMemory,
+        extended_context: dict[str, Any] | None = None,
     ) -> str:
         """构建包含记忆上下文的 System Prompt"""
+        extended_context = extended_context or {}
         return COMPANION_SYSTEM_PROMPT.format(
+            user_basic_info=self._format_user_basic_info(
+                extended_context.get("user_basic_info")
+            ),
             user_profile=self._format_user_profile(profile),
+            coach_progress=self._format_coach_progress(
+                extended_context.get("coach_progress")
+            ),
+            partner_data=self._format_partner_data(
+                extended_context.get("partner_data")
+            ),
             past_conversations=self._format_past_conversations(memory),
+            community_interactions=self._format_community_interactions(profile),
         )
 
     def _build_system_prompt(self, session_id: str) -> str:
@@ -387,7 +656,13 @@ class CompanionService:
 
         # Load memory from database
         profile, memory = await self._load_user_memory(db, user_id)
-        system_prompt = self._build_system_prompt_from_data(profile, memory)
+
+        # Load extended context (user info, coach progress, partner data)
+        extended_context = await self._load_user_extended_context(db, user_id)
+
+        system_prompt = self._build_system_prompt_from_data(
+            profile, memory, extended_context
+        )
 
         print(
             "[Service] chat_authenticated: calling ModelScope API...", file=sys.stderr
@@ -564,8 +839,32 @@ class CompanionService:
                 concerns=profile_data.get("concerns", []),
                 important_dates=profile_data.get("important_dates", []),
                 baby_age_weeks=profile_data.get("baby_age_weeks"),
+                community_interactions=profile_data.get("community_interactions", []),
             )
         return None
+
+    async def add_community_interaction(
+        self, db: AsyncSession, user_id: str, interaction: str
+    ) -> None:
+        """将社区互动记录添加到用户记忆中"""
+        result = await db.execute(
+            select(ChatMemory).where(ChatMemory.user_id == user_id)
+        )
+        memory_record = result.scalar_one_or_none()
+
+        if not memory_record:
+            memory_record = ChatMemory(user_id=user_id)
+            db.add(memory_record)
+
+        profile_data = memory_record.get_profile() if memory_record.profile_data else {}
+        interactions = profile_data.get("community_interactions", [])
+        interactions.append(interaction)
+        # Keep last 20 interactions
+        if len(interactions) > 20:
+            interactions = interactions[-20:]
+        profile_data["community_interactions"] = interactions
+        memory_record.set_profile(profile_data)
+        await db.commit()
 
 
 # 全局服务实例（单例模式）
@@ -578,3 +877,18 @@ def get_companion_service() -> CompanionService:
     if _companion_service is None:
         _companion_service = CompanionService()
     return _companion_service
+
+
+async def save_community_interaction(user_id: str, interaction: str) -> None:
+    """
+    保存用户社区互动到聊天记忆（供社区模块调用）
+
+    Args:
+        user_id: 用户 ID
+        interaction: 互动内容摘要，例如 "发帖：《关于产后恢复的问题》"
+    """
+    from app.core.database import async_session_maker
+
+    async with async_session_maker() as db:
+        service = get_companion_service()
+        await service.add_community_interaction(db, user_id, interaction)
