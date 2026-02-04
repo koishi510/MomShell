@@ -4,7 +4,7 @@ Soulful Companion 情感交互服务层
 
 实现 AI 交互逻辑，包括：
 - ModelScope API 调用 (OpenAI 兼容)
-- 用户记忆管理
+- 用户记忆管理（支持数据库持久化）
 - 视觉元数据生成
 """
 
@@ -16,9 +16,12 @@ import uuid
 from typing import Any
 
 from openai import OpenAI
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 
+from .models import ChatMemory
 from .schemas import (
     ColorTone,
     ConversationMemory,
@@ -125,6 +128,7 @@ class CompanionService:
                 file=sys.stderr,
             )
         self._client: OpenAI | None = None
+        # In-memory storage for guests (session-based)
         self._memory_store: dict[str, ConversationMemory] = {}
         self._profile_store: dict[str, UserProfile] = {}
 
@@ -161,13 +165,88 @@ class CompanionService:
         return self._client
 
     def _get_or_create_session(self, session_id: str | None) -> str:
-        """获取或创建会话 ID"""
+        """获取或创建会话 ID（仅用于游客）"""
         if session_id and session_id in self._memory_store:
             return session_id
         new_id = session_id or str(uuid.uuid4())
         self._memory_store[new_id] = ConversationMemory(session_id=new_id)
         self._profile_store[new_id] = UserProfile()
         return new_id
+
+    async def _load_user_memory(
+        self, db: AsyncSession, user_id: str
+    ) -> tuple[UserProfile, ConversationMemory]:
+        """从数据库加载用户记忆"""
+        result = await db.execute(
+            select(ChatMemory).where(ChatMemory.user_id == user_id)
+        )
+        memory_record = result.scalar_one_or_none()
+
+        if memory_record:
+            # Load from database
+            profile_data = memory_record.get_profile()
+            profile = UserProfile(
+                preferred_name=profile_data.get("preferred_name"),
+                has_pets=profile_data.get("has_pets", False),
+                pet_details=profile_data.get("pet_details"),
+                interests=profile_data.get("interests", []),
+                concerns=profile_data.get("concerns", []),
+                important_dates=profile_data.get("important_dates", []),
+                baby_age_weeks=profile_data.get("baby_age_weeks"),
+            )
+            memory = ConversationMemory(
+                session_id=user_id,
+                turns=memory_record.get_turns(),
+            )
+        else:
+            # Create new record
+            profile = UserProfile()
+            memory = ConversationMemory(session_id=user_id)
+            memory_record = ChatMemory(user_id=user_id)
+            db.add(memory_record)
+            await db.flush()
+
+        return profile, memory
+
+    async def _save_user_memory(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        profile: UserProfile,
+        memory: ConversationMemory,
+    ) -> None:
+        """保存用户记忆到数据库"""
+        result = await db.execute(
+            select(ChatMemory).where(ChatMemory.user_id == user_id)
+        )
+        memory_record = result.scalar_one_or_none()
+
+        if not memory_record:
+            memory_record = ChatMemory(user_id=user_id)
+            db.add(memory_record)
+
+        # Save profile
+        memory_record.set_profile(
+            {
+                "preferred_name": profile.preferred_name,
+                "has_pets": profile.has_pets,
+                "pet_details": profile.pet_details,
+                "interests": profile.interests,
+                "concerns": profile.concerns,
+                "important_dates": profile.important_dates,
+                "baby_age_weeks": profile.baby_age_weeks,
+            }
+        )
+
+        # Save turns (keep last max_turns)
+        turns = (
+            memory.turns[-memory.max_turns :]
+            if len(memory.turns) > memory.max_turns
+            else memory.turns
+        )
+        memory_record.set_turns(turns)
+
+        await db.commit()
 
     def _format_user_profile(self, profile: UserProfile) -> str:
         """格式化用户画像为文本"""
@@ -196,14 +275,20 @@ class CompanionService:
             formatted.append(f"你回复：{turn.get('assistant_response', '')}")
         return "\n".join(formatted)
 
-    def _build_system_prompt(self, session_id: str) -> str:
+    def _build_system_prompt_from_data(
+        self, profile: UserProfile, memory: ConversationMemory
+    ) -> str:
         """构建包含记忆上下文的 System Prompt"""
-        profile = self._profile_store.get(session_id, UserProfile())
-        memory = self._memory_store.get(session_id, ConversationMemory(session_id=""))
         return COMPANION_SYSTEM_PROMPT.format(
             user_profile=self._format_user_profile(profile),
             past_conversations=self._format_past_conversations(memory),
         )
+
+    def _build_system_prompt(self, session_id: str) -> str:
+        """构建包含记忆上下文的 System Prompt（游客模式）"""
+        profile = self._profile_store.get(session_id, UserProfile())
+        memory = self._memory_store.get(session_id, ConversationMemory(session_id=""))
+        return self._build_system_prompt_from_data(profile, memory)
 
     def _parse_llm_response(self, content: str) -> dict[str, Any]:
         """解析 LLM 返回的 JSON 响应"""
@@ -236,13 +321,12 @@ class CompanionService:
             }
 
     def _update_profile_from_extract(
-        self, session_id: str, memory_extract: dict[str, Any] | None
+        self, profile: UserProfile, memory_extract: dict[str, Any] | None
     ) -> bool:
         """根据 LLM 提取的记忆更新用户画像"""
         if not memory_extract:
             return False
 
-        profile = self._profile_store.get(session_id, UserProfile())
         updated = False
 
         if "preferred_name" in memory_extract and memory_extract["preferred_name"]:
@@ -266,13 +350,113 @@ class CompanionService:
             profile.baby_age_weeks = memory_extract["baby_age_weeks"]
             updated = True
 
+        return updated
+
+    def _update_profile_from_extract_guest(
+        self, session_id: str, memory_extract: dict[str, Any] | None
+    ) -> bool:
+        """根据 LLM 提取的记忆更新用户画像（游客模式）"""
+        if not memory_extract:
+            return False
+
+        profile = self._profile_store.get(session_id, UserProfile())
+        updated = self._update_profile_from_extract(profile, memory_extract)
+
         if updated:
             self._profile_store[session_id] = profile
         return updated
 
+    async def chat_authenticated(
+        self, message: UserMessage, user_id: str, db: AsyncSession
+    ) -> VisualResponse:
+        """
+        处理已登录用户的消息（记忆持久化到数据库）
+
+        Args:
+            message: 用户消息
+            user_id: 用户 ID
+            db: 数据库会话
+
+        Returns:
+            包含文字和视觉元数据的响应
+        """
+        print(
+            f"[Service] chat_authenticated: user_id={user_id}, content={message.content[:50]!r}",
+            file=sys.stderr,
+        )
+
+        # Load memory from database
+        profile, memory = await self._load_user_memory(db, user_id)
+        system_prompt = self._build_system_prompt_from_data(profile, memory)
+
+        print(
+            "[Service] chat_authenticated: calling ModelScope API...", file=sys.stderr
+        )
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message.content},
+                ],
+                temperature=0.7,
+                max_tokens=1024,
+            )
+            print(
+                "[Service] chat_authenticated: ModelScope response received",
+                file=sys.stderr,
+            )
+        except Exception as e:
+            print(
+                f"[Service] chat_authenticated: ModelScope API error: {type(e).__name__}: {e}",
+                file=sys.stderr,
+            )
+            traceback.print_exc(file=sys.stderr)
+            raise ValueError(f"AI 服务调用失败: {e}") from e
+
+        # 解析响应
+        raw_content = response.choices[0].message.content or ""
+        parsed = self._parse_llm_response(raw_content)
+
+        # 更新记忆
+        memory_updated = self._update_profile_from_extract(
+            profile, parsed.get("memory_extract")
+        )
+
+        # 保存对话历史
+        memory.turns.append(
+            {
+                "user_input": message.content,
+                "assistant_response": parsed.get("text", ""),
+            }
+        )
+
+        # 保存到数据库
+        await self._save_user_memory(db, user_id, profile, memory)
+
+        # 构建视觉元数据
+        visual_data = parsed.get("visual_metadata", {})
+        visual_metadata = VisualMetadata(
+            effect_type=EffectType(
+                visual_data.get("effect_type", EffectType.CALM.value)
+            ),
+            intensity=float(visual_data.get("intensity", 0.5)),
+            color_tone=ColorTone(
+                visual_data.get("color_tone", ColorTone.GENTLE_BLUE.value)
+            ),
+        )
+
+        print("[Service] chat_authenticated: returning response", file=sys.stderr)
+        return VisualResponse(
+            text=parsed.get("text", "我在这里陪着你。"),
+            visual_metadata=visual_metadata,
+            memory_updated=memory_updated,
+        )
+
     async def chat(self, message: UserMessage) -> VisualResponse:
         """
-        处理用户消息并返回情感响应
+        处理用户消息并返回情感响应（游客模式，内存存储）
 
         Args:
             message: 用户消息
@@ -288,7 +472,7 @@ class CompanionService:
         session_id = self._get_or_create_session(message.session_id)
         system_prompt = self._build_system_prompt(session_id)
 
-        print("[Service] chat: calling ZhipuAI API...", file=sys.stderr)
+        print("[Service] chat: calling ModelScope API...", file=sys.stderr)
 
         try:
             # 调用 ModelScope API (OpenAI 兼容)
@@ -318,7 +502,7 @@ class CompanionService:
         parsed = self._parse_llm_response(raw_content)
 
         # 更新记忆
-        memory_updated = self._update_profile_from_extract(
+        memory_updated = self._update_profile_from_extract_guest(
             session_id, parsed.get("memory_extract")
         )
 
@@ -354,12 +538,34 @@ class CompanionService:
         )
 
     def get_session_profile(self, session_id: str) -> UserProfile | None:
-        """获取会话的用户画像"""
+        """获取会话的用户画像（游客模式）"""
         return self._profile_store.get(session_id)
 
     def get_session_memory(self, session_id: str) -> ConversationMemory | None:
-        """获取会话的对话记忆"""
+        """获取会话的对话记忆（游客模式）"""
         return self._memory_store.get(session_id)
+
+    async def get_user_profile(
+        self, db: AsyncSession, user_id: str
+    ) -> UserProfile | None:
+        """获取用户画像（已登录用户）"""
+        result = await db.execute(
+            select(ChatMemory).where(ChatMemory.user_id == user_id)
+        )
+        memory_record = result.scalar_one_or_none()
+
+        if memory_record:
+            profile_data = memory_record.get_profile()
+            return UserProfile(
+                preferred_name=profile_data.get("preferred_name"),
+                has_pets=profile_data.get("has_pets", False),
+                pet_details=profile_data.get("pet_details"),
+                interests=profile_data.get("interests", []),
+                concerns=profile_data.get("concerns", []),
+                important_dates=profile_data.get("important_dates", []),
+                baby_age_weeks=profile_data.get("baby_age_weeks"),
+            )
+        return None
 
 
 # 全局服务实例（单例模式）

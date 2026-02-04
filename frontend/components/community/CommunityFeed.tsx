@@ -304,7 +304,7 @@ export default function CommunityFeed() {
               ← 首页
             </Link>
             <span className="text-2xl">👩‍👩‍👧</span>
-            <span className="text-lg font-medium text-stone-700">互助社区</span>
+            <span className="text-lg font-medium text-stone-700">经验连接</span>
           </div>
 
           {/* 发帖按钮 */}

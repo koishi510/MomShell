@@ -187,6 +187,31 @@ export async function resetPassword(token: string, newPassword: string): Promise
   return response.json();
 }
 
+/**
+ * Change password (for logged-in user)
+ */
+export async function changePassword(
+  accessToken: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<{ message: string }> {
+  const response = await fetch(`${AUTH_API}/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: '密码修改失败' }));
+    throw new Error(error.detail || '密码修改失败');
+  }
+
+  return response.json();
+}
+
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'momshell_access_token';
 const REFRESH_TOKEN_KEY = 'momshell_refresh_token';

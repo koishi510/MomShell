@@ -27,6 +27,8 @@ import {
 } from '../../components/coach';
 import type { EnergyMetrics } from '../../types/coach';
 import { getUserId } from '../../lib/user';
+import { useAuth } from '../../contexts/AuthContext';
+import { getAccessToken } from '../../lib/auth';
 
 // 动态获取API和WebSocket基础URL（支持同域部署）
 const getApiBase = () => {
@@ -116,6 +118,10 @@ const achievementIcons: Record<string, string> = {
 };
 
 export default function RehabPage() {
+  // Auth state - use authenticated user ID when available
+  const { user, isAuthenticated } = useAuth();
+  const effectiveUserId = isAuthenticated && user ? user.id : getUserId();
+
   // View state
   const [currentView, setCurrentView] = useState<ViewType>('exercises');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -183,24 +189,51 @@ export default function RehabPage() {
   // Fetch progress
   const fetchProgress = useCallback(async () => {
     try {
-      const response = await fetch(`${getApiBase()}/api/v1/progress/${getUserId()}/summary`);
+      const headers: Record<string, string> = {};
+      const token = getAccessToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${getApiBase()}/api/v1/progress/${effectiveUserId}/summary`, { headers });
       const data = await response.json();
       setProgressSummary(data);
     } catch (error) {
       console.error('Failed to fetch progress:', error);
     }
-  }, []);
+  }, [effectiveUserId]);
 
   // Fetch achievements
   const fetchAchievements = useCallback(async () => {
     try {
-      const response = await fetch(`${getApiBase()}/api/v1/progress/${getUserId()}/achievements`);
+      const headers: Record<string, string> = {};
+      const token = getAccessToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${getApiBase()}/api/v1/progress/${effectiveUserId}/achievements`, { headers });
       const data = await response.json();
       setAchievements(data);
     } catch (error) {
       console.error('Failed to fetch achievements:', error);
     }
-  }, []);
+  }, [effectiveUserId]);
+
+  // Save progress to database (for authenticated users)
+  const saveProgress = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const token = getAccessToken();
+      if (!token) return;
+      await fetch(`${getApiBase()}/api/v1/progress/${effectiveUserId}/save`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  }, [effectiveUserId, isAuthenticated]);
 
   // Audio queue management
   const processAudioQueue = useCallback(() => {
@@ -438,13 +471,15 @@ export default function RehabPage() {
         setShowModal(true);
         stopFrameSending();
         poseOverlayRef.current?.clear();
+        // Save progress to database for authenticated users
+        saveProgress();
         break;
       case 'error':
         console.error('Server error:', data.message);
         setFeedback({ text: data.message, type: 'info' });
         break;
     }
-  }, [playAudio, stopFrameSending]);
+  }, [playAudio, stopFrameSending, saveProgress]);
 
   // WebSocket connection
   const connectWebSocket = useCallback((exerciseId: string) => {
@@ -457,7 +492,7 @@ export default function RehabPage() {
       ws.send(JSON.stringify({
         type: 'start',
         exercise_id: exerciseId,
-        user_id: getUserId(),
+        user_id: effectiveUserId,
         use_llm: true,
       }));
     };
@@ -482,7 +517,7 @@ export default function RehabPage() {
     };
 
     wsRef.current = ws;
-  }, [handleWebSocketMessage, stopFrameSending, stopAllAudio]);
+  }, [handleWebSocketMessage, stopFrameSending, stopAllAudio, effectiveUserId]);
 
   // Control functions
   const sendControl = useCallback((action: string) => {
@@ -630,7 +665,7 @@ export default function RehabPage() {
               ← 首页
             </Link>
             <span className="text-2xl">🧘‍♀️</span>
-            <span className="text-lg font-medium text-stone-700">AI 康复教练</span>
+            <span className="text-lg font-medium text-stone-700">身体重塑</span>
           </div>
           <nav className="flex gap-2">
             <button

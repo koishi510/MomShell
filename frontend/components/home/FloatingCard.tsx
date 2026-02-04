@@ -8,6 +8,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface FloatingCardProps {
   title: string;
@@ -18,6 +19,8 @@ interface FloatingCardProps {
   gradient: string;
   shadowColor: string;
   index: number;
+  requiresAuth?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export default function FloatingCard({
@@ -29,7 +32,18 @@ export default function FloatingCard({
   gradient,
   shadowColor,
   index,
+  requiresAuth = false,
+  isAuthenticated = false,
 }: FloatingCardProps) {
+  const router = useRouter();
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (requiresAuth && !isAuthenticated) {
+      e.preventDefault();
+      router.push('/auth/login');
+    }
+  };
+
   return (
     <motion.div
       className="h-full"
@@ -41,7 +55,7 @@ export default function FloatingCard({
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
     >
-      <Link href={href} className="block h-full">
+      <Link href={href} className="block h-full" onClick={handleClick}>
         <motion.div
           className={`
             relative p-8 rounded-3xl h-full

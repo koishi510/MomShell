@@ -9,6 +9,7 @@ from app.core.database import get_db
 
 from .dependencies import CurrentUserJWT
 from .schemas import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
     MessageResponse,
@@ -18,7 +19,11 @@ from .schemas import (
     TokenResponse,
     UserResponse,
 )
-from .security import create_password_reset_token, verify_password_reset_token
+from .security import (
+    create_password_reset_token,
+    verify_password,
+    verify_password_reset_token,
+)
 from .service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -112,6 +117,26 @@ async def reset_password(
         raise HTTPException(status_code=400, detail="密码重置失败")
 
     return MessageResponse(message="密码已重置，请使用新密码登录")
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> MessageResponse:
+    """Change password for authenticated user."""
+    # Verify old password
+    if not verify_password(request.old_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="当前密码错误")
+
+    service = AuthService(db)
+    success = await service.update_password(current_user.id, request.new_password)
+
+    if not success:
+        raise HTTPException(status_code=400, detail="密码修改失败")
+
+    return MessageResponse(message="密码修改成功")
 
 
 @router.get("/me", response_model=UserResponse)
