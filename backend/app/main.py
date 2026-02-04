@@ -54,10 +54,25 @@ async def preload_mediapipe_background() -> None:
     await loop.run_in_executor(None, preload_mediapipe)
 
 
+def ensure_db_directory() -> None:
+    """Ensure database directory exists (for SQLite on /mnt/workspace)."""
+    db_url = settings.database_url
+    if db_url.startswith("sqlite"):
+        # Extract path from sqlite URL: sqlite+aiosqlite:////mnt/workspace/momshell.db
+        # The path starts after the driver specification
+        path_part = db_url.split("///")[-1]
+        db_path = Path(path_part)
+        db_dir = db_path.parent
+        if not db_dir.exists():
+            db_dir.mkdir(parents=True, exist_ok=True)
+            print(f"[Startup] Created database directory: {db_dir}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
     # Startup
+    ensure_db_directory()
     await init_db()
     # Seed guardian task templates
     from app.core.database import async_session_maker
