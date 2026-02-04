@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-#### Guardian Partner Module (伴侣守护)
+#### Guardian Partner Module
 
 - **New Feature**: Guardian Partner - A gamified system to help partners participate in postpartum recovery
   - Invite & Bind: Mom generates invite code, partner scans/enters to bind
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Smart Notifications: System generates personalized suggestions for partner based on mom's status
   - Task System: Daily tasks with 3 difficulty levels (Easy 10pts, Medium 30pts, Hard 50pts)
   - Partner Levels: Intern → Trainee → Regular → Gold based on points
-  - Time Recorder: Photo memories with milestone tracking (满月, 百天)
+  - Time Recorder: Photo memories with milestone tracking
 
 - **Backend**:
   - New `guardian` service module (`backend/app/services/guardian/`)
@@ -34,10 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Homepage**: Updated feature cards with new Chinese names and added Guardian Partner
-  - 心灵港湾 (Soul Companion)
-  - 经验连接 (Sisterhood Bond)
-  - 身体重塑 (Recovery Coach)
-  - 伴侣守护 (Guardian Partner)
+  - Soul Companion
+  - Sisterhood Bond
+  - Recovery Coach
+  - Guardian Partner
 - Grid layout changed from 3 columns to 2x2 / 4 columns responsive
 
 ---
@@ -297,12 +297,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Technical Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| Background LLM generation | LLM API calls take 1-2 seconds; running in background prevents frame blocking |
-| VIDEO mode over LIVE_STREAM | LIVE_STREAM has 1-frame delay; VIDEO mode is synchronous and more responsive |
-| LITE model by default | Better performance on low-end servers; FULL available via env var |
-| Keypoint smoothing (EMA) | Reduces jitter in skeleton rendering, factor of 0.25 for responsiveness |
+| Decision                    | Rationale                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| Background LLM generation   | LLM API calls take 1-2 seconds; running in background prevents frame blocking |
+| VIDEO mode over LIVE_STREAM | LIVE_STREAM has 1-frame delay; VIDEO mode is synchronous and more responsive  |
+| LITE model by default       | Better performance on low-end servers; FULL available via env var             |
+| Keypoint smoothing (EMA)    | Reduces jitter in skeleton rendering, factor of 0.25 for responsiveness       |
 
 #### Performance Impact
 
@@ -348,12 +348,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Technical Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| Client-side skeleton rendering | Eliminates ~15KB/frame return transfer, removes encoding latency |
-| Thread pool for pose detection | MediaPipe is CPU-bound, thread pool prevents blocking async event loop |
-| 0.5x detection scale default | MediaPipe landmarks are normalized, half resolution sufficient for accuracy |
-| Return keypoints as JSON | ~1KB vs ~15KB per frame, 90%+ bandwidth reduction |
+| Decision                       | Rationale                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| Client-side skeleton rendering | Eliminates ~15KB/frame return transfer, removes encoding latency            |
+| Thread pool for pose detection | MediaPipe is CPU-bound, thread pool prevents blocking async event loop      |
+| 0.5x detection scale default   | MediaPipe landmarks are normalized, half resolution sufficient for accuracy |
+| Return keypoints as JSON       | ~1KB vs ~15KB per frame, 90%+ bandwidth reduction                           |
 
 #### Performance Impact
 
