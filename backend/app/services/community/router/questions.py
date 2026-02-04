@@ -1,5 +1,6 @@
 """Question routes for community module."""
 
+import asyncio
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
@@ -11,7 +12,7 @@ from ..dependencies import (
     DbSession,
     OptionalUser,
 )
-from ..enums import ChannelType
+from ..enums import ChannelType, UserRole
 from ..schemas import (
     PaginatedResponse,
     QuestionCreate,
@@ -118,6 +119,18 @@ async def create_question(
 
     # Trigger AI auto-reply in background
     await trigger_ai_reply_to_question(question.id)
+
+    # Save to user's chat memory (for non-AI users)
+    if current_user.role != UserRole.AI_ASSISTANT:
+        from app.services.chat.service import save_community_interaction
+
+        content_preview = (
+            question_in.content[:50] + "..."
+            if len(question_in.content) > 50
+            else question_in.content
+        )
+        interaction = f"发帖：《{question_in.title}》- {content_preview}"
+        asyncio.create_task(save_community_interaction(current_user.id, interaction))
 
     # Return full detail
     detail = await service.get_question(

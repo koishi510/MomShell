@@ -105,6 +105,15 @@ class AIReplyService:
         logger.info(f"Created AI assistant account: {AI_NICKNAME}")
         return ai_user
 
+    async def _save_ai_reply_to_memory(self, user_id: str, interaction: str) -> None:
+        """Save an AI community reply to the user's chat memory."""
+        try:
+            from app.services.chat.service import save_community_interaction
+
+            await save_community_interaction(user_id, interaction)
+        except Exception as e:
+            logger.warning(f"Failed to save AI reply to memory for {user_id}: {e}")
+
     def _generate_reply(
         self,
         question_title: str,
@@ -238,6 +247,17 @@ class AIReplyService:
                 await db.commit()
                 logger.info(f"AI replied to question {question_id}")
 
+                # Save to user's chat memory
+                reply_preview = (
+                    reply_content[:50] + "..."
+                    if len(reply_content) > 50
+                    else reply_content
+                )
+                await self._save_ai_reply_to_memory(
+                    author.id,
+                    f"贝壳姐姐回复了你的帖子《{question.title}》：{reply_preview}",
+                )
+
             except Exception as e:
                 logger.error(f"Failed to reply to question {question_id}: {e}")
                 await db.rollback()
@@ -344,8 +364,260 @@ class AIReplyService:
                 await db.commit()
                 logger.info(f"AI replied to comment {comment_id}")
 
+                # Save to user's chat memory
+                await self._save_ai_reply_to_memory(
+                    commenter.id,
+                    f"贝壳姐姐回复了你的评论：{reply_content[:50]}..."
+                    if len(reply_content) > 50
+                    else f"贝壳姐姐回复了你的评论：{reply_content}",
+                )
+
             except Exception as e:
                 logger.error(f"Failed to reply to comment {comment_id}: {e}")
+                await db.rollback()
+
+    async def reply_to_comment_on_ai_answer(
+        self, comment_id: str, answer_id: str
+    ) -> None:
+        """Auto-reply when someone comments on AI's answer."""
+        async with async_session_maker() as db:
+            try:
+                # Get AI user
+                ai_user = await self.get_or_create_ai_user(db)
+                if not ai_user:
+                    return
+
+                # Get the trigger comment
+                result = await db.execute(
+                    select(Comment).where(Comment.id == comment_id)
+                )
+                trigger_comment = result.scalar_one_or_none()
+                if not trigger_comment:
+                    return
+
+                # Get commenter
+                commenter = await db.get(User, trigger_comment.author_id)
+                if not commenter or commenter.role == UserRole.AI_ASSISTANT:
+                    return
+
+                # Get the answer (should belong to AI)
+                answer = await db.get(Answer, answer_id)
+                if not answer or answer.author_id != ai_user.id:
+                    return
+
+                # Get the question for context
+                question = await db.get(Question, answer.question_id)
+                if not question:
+                    return
+
+                # Generate reply
+                reply_content = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    self._generate_reply_to_comment,
+                    question.title,
+                    answer.content,
+                    trigger_comment.content,
+                    commenter.nickname,
+                    commenter.role.value,
+                )
+
+                # Create comment reply (nested under the trigger comment)
+                ai_comment = Comment(
+                    answer_id=answer_id,
+                    author_id=ai_user.id,
+                    parent_id=trigger_comment.id,
+                    reply_to_user_id=commenter.id,
+                    content=reply_content,
+                    status=ContentStatus.PUBLISHED,
+                )
+                db.add(ai_comment)
+
+                # Update answer's comment count
+                await db.execute(
+                    update(Answer)
+                    .where(Answer.id == answer_id)
+                    .values(comment_count=Answer.comment_count + 1)
+                )
+
+                await db.commit()
+                logger.info(f"AI replied to comment {comment_id} on AI's answer")
+
+                # Save to user's chat memory
+                reply_preview = (
+                    reply_content[:50] + "..."
+                    if len(reply_content) > 50
+                    else reply_content
+                )
+                await self._save_ai_reply_to_memory(
+                    commenter.id,
+                    f"贝壳姐姐回复了你的评论：{reply_preview}",
+                )
+
+            except Exception as e:
+                logger.error(
+                    f"Failed to reply to comment {comment_id} on AI answer: {e}"
+                )
+                await db.rollback()
+
+    async def reply_to_reply_on_ai_comment(
+        self, comment_id: str, answer_id: str, parent_comment_id: str
+    ) -> None:
+        """Auto-reply when someone replies to AI's comment."""
+        async with async_session_maker() as db:
+            try:
+                # Get AI user
+                ai_user = await self.get_or_create_ai_user(db)
+                if not ai_user:
+                    return
+
+                # Get the trigger comment
+                result = await db.execute(
+                    select(Comment).where(Comment.id == comment_id)
+                )
+                trigger_comment = result.scalar_one_or_none()
+                if not trigger_comment:
+                    return
+
+                # Get the parent comment (should belong to AI)
+                parent_comment = await db.get(Comment, parent_comment_id)
+                if not parent_comment or parent_comment.author_id != ai_user.id:
+                    return
+
+                # Get commenter
+                commenter = await db.get(User, trigger_comment.author_id)
+                if not commenter or commenter.role == UserRole.AI_ASSISTANT:
+                    return
+
+                # Get the answer
+                answer = await db.get(Answer, answer_id)
+                if not answer:
+                    return
+
+                # Get the question for context
+                question = await db.get(Question, answer.question_id)
+                if not question:
+                    return
+
+                # Generate reply
+                reply_content = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    self._generate_reply_to_comment,
+                    question.title,
+                    answer.content,
+                    trigger_comment.content,
+                    commenter.nickname,
+                    commenter.role.value,
+                )
+
+                # Create comment reply (nested under the trigger comment)
+                ai_comment = Comment(
+                    answer_id=answer_id,
+                    author_id=ai_user.id,
+                    parent_id=trigger_comment.id,
+                    reply_to_user_id=commenter.id,
+                    content=reply_content,
+                    status=ContentStatus.PUBLISHED,
+                )
+                db.add(ai_comment)
+
+                # Update answer's comment count
+                await db.execute(
+                    update(Answer)
+                    .where(Answer.id == answer_id)
+                    .values(comment_count=Answer.comment_count + 1)
+                )
+
+                await db.commit()
+                logger.info(f"AI replied to reply {comment_id} on AI's comment")
+
+                # Save to user's chat memory
+                reply_preview = (
+                    reply_content[:50] + "..."
+                    if len(reply_content) > 50
+                    else reply_content
+                )
+                await self._save_ai_reply_to_memory(
+                    commenter.id,
+                    f"贝壳姐姐回复了你的评论：{reply_preview}",
+                )
+
+            except Exception as e:
+                logger.error(
+                    f"Failed to reply to reply {comment_id} on AI comment: {e}"
+                )
+                await db.rollback()
+
+    async def reply_as_comment_to_answer(
+        self, answer_id: str, question_id: str
+    ) -> None:
+        """Reply as a comment under someone's answer (when they @贝壳姐姐 in their answer)."""
+        async with async_session_maker() as db:
+            try:
+                # Get AI user
+                ai_user = await self.get_or_create_ai_user(db)
+                if not ai_user:
+                    return
+
+                # Get the answer
+                answer = await db.get(Answer, answer_id)
+                if not answer:
+                    return
+
+                # Get the answer author
+                author = await db.get(User, answer.author_id)
+                if not author or author.role == UserRole.AI_ASSISTANT:
+                    return
+
+                # Get the question for context
+                question = await db.get(Question, question_id)
+                if not question:
+                    return
+
+                # Generate reply
+                reply_content = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    self._generate_reply_to_comment,
+                    question.title,
+                    answer.content,
+                    answer.content,
+                    author.nickname,
+                    author.role.value,
+                )
+
+                # Create comment under the answer (inside the person's floor)
+                ai_comment = Comment(
+                    answer_id=answer_id,
+                    author_id=ai_user.id,
+                    parent_id=None,  # Root-level comment under this answer
+                    reply_to_user_id=author.id,
+                    content=reply_content,
+                    status=ContentStatus.PUBLISHED,
+                )
+                db.add(ai_comment)
+
+                # Update answer's comment count
+                await db.execute(
+                    update(Answer)
+                    .where(Answer.id == answer_id)
+                    .values(comment_count=Answer.comment_count + 1)
+                )
+
+                await db.commit()
+                logger.info(f"AI replied as comment to answer {answer_id} (@ mention)")
+
+                # Save to user's chat memory
+                reply_preview = (
+                    reply_content[:50] + "..."
+                    if len(reply_content) > 50
+                    else reply_content
+                )
+                await self._save_ai_reply_to_memory(
+                    author.id,
+                    f"贝壳姐姐回复了你的回答：{reply_preview}",
+                )
+
+            except Exception as e:
+                logger.error(f"Failed to reply as comment to answer {answer_id}: {e}")
                 await db.rollback()
 
     async def reply_to_answer(self, answer_id: str, question_id: str) -> None:
@@ -421,6 +693,17 @@ class AIReplyService:
                 await db.commit()
                 logger.info(f"AI replied to answer {answer_id}")
 
+                # Save to user's chat memory
+                reply_preview = (
+                    reply_content[:50] + "..."
+                    if len(reply_content) > 50
+                    else reply_content
+                )
+                await self._save_ai_reply_to_memory(
+                    replier.id,
+                    f"贝壳姐姐回复了你在《{question.title}》的回答：{reply_preview}",
+                )
+
             except Exception as e:
                 logger.error(f"Failed to reply to answer {answer_id}: {e}")
                 await db.rollback()
@@ -452,7 +735,30 @@ async def trigger_ai_reply_to_answer(answer_id: str, question_id: str) -> None:
     asyncio.create_task(service.reply_to_answer(answer_id, question_id))
 
 
+async def trigger_ai_comment_on_answer(answer_id: str, question_id: str) -> None:
+    """Trigger AI to reply as a comment under an answer (when @贝壳姐姐 is mentioned)."""
+    service = get_ai_reply_service()
+    asyncio.create_task(service.reply_as_comment_to_answer(answer_id, question_id))
+
+
 async def trigger_ai_reply_to_comment(comment_id: str, answer_id: str) -> None:
     """Trigger AI reply when someone mentions @贝壳姐姐 in a comment."""
     service = get_ai_reply_service()
     asyncio.create_task(service.reply_to_comment(comment_id, answer_id))
+
+
+async def trigger_ai_reply_to_ai_content(
+    comment_id: str, answer_id: str, parent_id: str | None
+) -> None:
+    """Trigger AI reply when someone comments on AI's answer or replies to AI's comment."""
+    service = get_ai_reply_service()
+    if parent_id:
+        # Reply to AI's comment
+        asyncio.create_task(
+            service.reply_to_reply_on_ai_comment(comment_id, answer_id, parent_id)
+        )
+    else:
+        # Comment on AI's answer
+        asyncio.create_task(
+            service.reply_to_comment_on_ai_answer(comment_id, answer_id)
+        )
