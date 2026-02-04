@@ -68,6 +68,50 @@ def ensure_db_directory() -> None:
             print(f"[Startup] Created database directory: {db_dir}")
 
 
+async def ensure_admin() -> None:
+    """Create initial admin account if configured via environment variables."""
+    if not (
+        settings.admin_username and settings.admin_email and settings.admin_password
+    ):
+        return
+
+    from sqlalchemy import select
+
+    from app.core.database import async_session_maker
+    from app.services.auth.security import get_password_hash
+    from app.services.community.enums import UserRole
+    from app.services.community.models import User
+
+    async with async_session_maker() as db:
+        # Check if admin already exists
+        result = await db.execute(
+            select(User).where(
+                (User.username == settings.admin_username)
+                | (User.email == settings.admin_email)
+            )
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            if existing.role != UserRole.ADMIN:
+                existing.role = UserRole.ADMIN
+                await db.commit()
+                print(f"[Startup] User '{existing.username}' promoted to admin")
+        else:
+            admin = User(
+                username=settings.admin_username,
+                email=settings.admin_email,
+                password_hash=get_password_hash(settings.admin_password),
+                nickname="管理员",
+                role=UserRole.ADMIN,
+                is_active=True,
+                is_banned=False,
+            )
+            db.add(admin)
+            await db.commit()
+            print(f"[Startup] Admin account '{settings.admin_username}' created")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
@@ -80,6 +124,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     async with async_session_maker() as session:
         await seed_task_templates(session)
+    # Create initial admin if configured
+    await ensure_admin()
     # Start MediaPipe preloading in background (non-blocking)
     asyncio.create_task(preload_mediapipe_background())
     yield
