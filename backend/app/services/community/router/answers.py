@@ -1,10 +1,11 @@
 """Answer routes for community module."""
 
+import asyncio
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
-from ..ai_reply import trigger_ai_reply_to_answer
+from ..ai_reply import trigger_ai_comment_on_answer, trigger_ai_reply_to_answer
 from ..dependencies import (
     CommunityServiceDep,
     CurrentUser,
@@ -12,6 +13,7 @@ from ..dependencies import (
     OptionalUser,
 )
 from ..enums import UserRole
+from ..models import Question
 from ..schemas import (
     AnswerCreate,
     AnswerDetail,
@@ -112,9 +114,26 @@ async def create_answer(
     """Create a new answer."""
     answer = await service.create_answer(db, question_id, answer_in, current_user)
 
-    # Trigger AI reply if user is not AI (to reply to users who reply to AI)
+    # Trigger AI reply if user is not AI
     if current_user.role != UserRole.AI_ASSISTANT:
-        await trigger_ai_reply_to_answer(answer.id, question_id)
+        if "@贝壳姐姐" in answer_in.content:
+            # Reply as a comment inside this person's answer floor
+            await trigger_ai_comment_on_answer(answer.id, question_id)
+        else:
+            await trigger_ai_reply_to_answer(answer.id, question_id)
+
+        # Save to user's chat memory
+        from app.services.chat.service import save_community_interaction
+
+        question = await db.get(Question, question_id)
+        question_title = question.title if question else "未知问题"
+        content_preview = (
+            answer_in.content[:50] + "..."
+            if len(answer_in.content) > 50
+            else answer_in.content
+        )
+        interaction = f"回复问题《{question_title}》：{content_preview}"
+        asyncio.create_task(save_community_interaction(current_user.id, interaction))
 
     # Build response
     import json

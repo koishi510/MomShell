@@ -117,6 +117,10 @@ class UserProfile(BaseModel):
         default=None,
         description="宝宝年龄（周）",
     )
+    community_interactions: list[str] = Field(
+        default_factory=list,
+        description="用户在社区的互动记录（发帖、评论等）",
+    )
 
 
 class ConversationMemory(BaseModel):
