@@ -6,7 +6,7 @@
  * 显示问题全文和回答列表
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Question, type Answer, ROLE_CONFIG } from '../../types/community';
 import { getQuestion, getAnswers, createAnswer, toggleLike, deleteQuestion, deleteAnswer, updateQuestion, updateAnswer, getComments, createComment, deleteComment, type Comment } from '../../lib/api/community';
@@ -48,6 +48,9 @@ export default function QuestionDetailModal({
   // 本地问题状态（用于显示编辑后的内容）
   const [localQuestion, setLocalQuestion] = useState<Question | null>(null);
 
+  // 跟踪已获取详情的问题ID，防止重复获取
+  const fetchedQuestionIdRef = useRef<string | null>(null);
+
   // 从 AuthContext 获取当前用户
   const { user } = useAuth();
   const currentUserId = user?.id || '';
@@ -75,23 +78,29 @@ export default function QuestionDetailModal({
   useEffect(() => {
     if (question) {
       setLocalQuestion(question);
-      loadAnswers(question.id);
       setReplyContent('');
       setViewCount(question.view_count);
       setIsEditingQuestion(false);
 
-      // 总是获取完整的问题详情（包含content），同时增加浏览数
-      getQuestion(question.id).then((detail) => {
-        setViewCount(detail.view_count);
-        setLocalQuestion(detail);
-        onViewCountUpdated?.(question.id, detail.view_count);
-      }).catch(console.error);
+      // 只在问题ID变化时获取详情（防止因对象引用变化导致重复请求）
+      if (fetchedQuestionIdRef.current !== question.id) {
+        fetchedQuestionIdRef.current = question.id;
+        loadAnswers(question.id);
+
+        // 获取完整的问题详情（包含content），同时增加浏览数
+        getQuestion(question.id).then((detail) => {
+          setViewCount(detail.view_count);
+          setLocalQuestion(detail);
+          onViewCountUpdated?.(question.id, detail.view_count);
+        }).catch(console.error);
+      }
     } else {
       setAnswers([]);
       setLocalQuestion(null);
+      fetchedQuestionIdRef.current = null;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [question, loadAnswers]);
+  }, [question?.id, loadAnswers]);
 
   // 提交回答
   const handleSubmitReply = async () => {
