@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
+    # Initial Admin Account (created on first startup if set)
+    admin_username: str = ""
+    admin_email: str = ""
+    admin_password: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
