@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-05
+
+### Added
+
+#### AI Auto-Reply Feature
+
+- **Community AI Assistant**: New AI role "Shell Sister" that automatically replies to posts and comments
+  - Auto-replies to new questions with warm, empathetic responses
+  - Responds when users reply to AI's answers
+  - `@贝壳姐姐` mention in comments triggers AI reply
+  - Uses ModelScope Qwen LLM for generating contextual responses
+  - New `AI_ASSISTANT` user role with solid heart (❤) badge icon
+
+- **Backend**:
+  - New `ai_reply.py` service with `AIReplyService` class
+  - Background task execution for non-blocking AI responses
+  - Auto-creates AI user account on first use
+
+#### User Data Persistence
+
+- **Chat Memory Persistence**: Chat history and profile saved to database for logged-in users
+  - New `ChatMemory` model stores conversation turns and user profile
+  - Guests use in-memory storage; authenticated users persist to database
+  - Seamless experience across sessions for logged-in users
+
+- **Coach Progress Persistence**: Exercise progress saved to database for authenticated users
+  - New `CoachProgress` model stores all progress data as JSON
+  - Progress automatically saved after each training session
+  - Uses authenticated user ID when logged in, falls back to local ID for guests
+
+#### Account Security
+
+- **Password Change**: Users can change password in profile page
+  - New `/auth/change-password` endpoint with old password verification
+  - Profile page account security section with password change form
+  - Frontend validation for password requirements
+
+#### Admin Features
+
+- **Certification Revocation**: Admins can revoke approved professional certifications
+  - New `REVOKED` status in `CertificationStatus` enum
+  - New `/certifications/{id}/revoke` endpoint
+  - Revoke button and confirmation modal in admin certification review page
+  - Revoked users' role reset to default (mom)
+
+### Changed
+
+- **Login Requirements**: Chat, Community, and Coach features now require login from homepage
+  - FloatingCard component supports `requiresAuth` prop
+  - Redirects to login page if not authenticated
+
+- **Page Title Consistency**: Homepage button titles now match page headers
+  - Chat: "Soul Harbor" (was "Soul Companion")
+  - Community: "Experience Connect" (was "Mutual Help Community")
+  - Coach: "Body Rebuild" (was "AI Recovery Coach")
+
+### Fixed
+
+- **Post Content Display**: Question detail modal now always fetches full content
+  - Removed `viewingInProgress` guard that prevented content reload
+  - Content now properly displays when reopening the same question
+
+- **Admin Role Preservation**: Admin users no longer lose admin role when approving their own certification
+  - Added check `user.role != UserRole.ADMIN` before changing role on certification approval/revocation
+
+---
+
 ## [0.4.0] - 2026-02-02
 
 ### Added
