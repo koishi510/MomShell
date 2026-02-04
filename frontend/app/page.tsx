@@ -23,6 +23,7 @@ const features = [
     icon: '💝',
     gradient: '#FFE4EC, #FFF0F5',
     shadowColor: '#FFB6C1',
+    requiresAuth: true,
   },
   {
     title: '经验连接',
@@ -32,6 +33,7 @@ const features = [
     icon: '👩‍👩‍👧',
     gradient: '#FFF3E0, #FFE4B5',
     shadowColor: '#FFB347',
+    requiresAuth: true,
   },
   {
     title: '身体重塑',
@@ -41,6 +43,7 @@ const features = [
     icon: '🧘‍♀️',
     gradient: '#E0F7FA, #B2EBF2',
     shadowColor: '#4DD0E1',
+    requiresAuth: true,
   },
   {
     title: '伴侣守护',
@@ -138,6 +141,7 @@ export default function HomePage() {
                 key={feature.href}
                 {...feature}
                 index={index}
+                isAuthenticated={isAuthenticated}
               />
             ))}
           </div>

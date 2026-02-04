@@ -13,7 +13,8 @@ export type UserRole =
   | 'certified_doctor'
   | 'certified_therapist'
   | 'certified_nurse'
-  | 'admin';
+  | 'admin'
+  | 'ai_assistant';
 
 export type ContentStatus =
   | 'draft'
@@ -115,6 +116,7 @@ export const ROLE_CONFIG: Record<UserRole, { label: string; badgeColor: string; 
     icon: '✓'
   },
   admin: { label: '管理员', badgeColor: 'bg-purple-100 text-purple-700', icon: '★' },
+  ai_assistant: { label: 'AI 助手', badgeColor: 'bg-amber-100 text-amber-700', icon: '❤' },
 };
 
 // 频道配置

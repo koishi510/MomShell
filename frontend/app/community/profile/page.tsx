@@ -8,9 +8,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getMyProfile, updateMyProfile, type UserProfile } from '../../../lib/api/community';
+import { changePassword, getAccessToken } from '../../../lib/auth';
 import CommunityBackground from '../../../components/community/CommunityBackground';
+import { useAuth } from '../../../contexts/AuthContext';
 
 // Role display names
 const roleNames: Record<string, string> = {
@@ -21,6 +24,7 @@ const roleNames: Record<string, string> = {
   certified_therapist: '认证康复师',
   certified_nurse: '认证护士',
   admin: '管理员',
+  ai_assistant: 'AI 助手',
 };
 
 // Family roles that users can select
@@ -34,6 +38,8 @@ const familyRoles = [
 const professionalRoles = ['certified_doctor', 'certified_therapist', 'certified_nurse', 'admin'];
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,11 +54,27 @@ export default function ProfilePage() {
   });
   const hasFetched = useRef(false);
 
+  // Password change state
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
   // Check if user has a professional role (cannot change)
   const isProfessional = profile ? professionalRoles.includes(profile.role) : false;
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
   useEffect(() => {
     if (hasFetched.current) return;
+    // Only fetch profile if authenticated
+    if (authLoading || !isAuthenticated) return;
     hasFetched.current = true;
 
     async function loadProfile() {
@@ -72,7 +94,7 @@ export default function ProfilePage() {
       }
     }
     loadProfile();
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   const handleSave = async () => {
     if (!editNickname.trim()) {
@@ -116,6 +138,45 @@ export default function ProfilePage() {
       setEditRole(profile.role as 'mom' | 'dad' | 'family');
     }
     setIsEditing(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setSaveMessage({ show: true, success: false, text: '请填写所有密码字段' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setSaveMessage({ show: true, success: false, text: '新密码至少6位' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setSaveMessage({ show: true, success: false, text: '两次输入的新密码不一致' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const token = getAccessToken();
+      if (!token) throw new Error('未登录');
+      await changePassword(token, oldPassword, newPassword);
+      setSaveMessage({ show: true, success: true, text: '密码修改成功' });
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsChangingPassword(false);
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+    } catch (err: any) {
+      console.error('Failed to change password:', err);
+      setSaveMessage({ show: true, success: false, text: err.message || '密码修改失败' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   return (
@@ -181,14 +242,14 @@ export default function ProfilePage() {
       {/* 主内容 */}
       <main className="max-w-2xl mx-auto px-4 py-8">
         {/* 加载状态 */}
-        {isLoading && (
+        {(authLoading || isLoading) && (
           <div className="flex justify-center py-16">
             <div className="text-stone-500">加载中...</div>
           </div>
         )}
 
         {/* 错误状态 */}
-        {error && !isLoading && (
+        {error && !isLoading && !authLoading && (
           <div className="flex flex-col items-center py-16">
             <div className="text-red-500 mb-4">{error}</div>
             <button
@@ -201,7 +262,7 @@ export default function ProfilePage() {
         )}
 
         {/* 个人资料卡片 */}
-        {!isLoading && !error && profile && (
+        {!isLoading && !authLoading && !error && profile && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -357,6 +418,79 @@ export default function ProfilePage() {
                   <QuickLink href="/community/admin/certifications" icon="🛡️" label="认证审核" />
                 )}
               </div>
+            </div>
+
+            {/* 修改密码 */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-100/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-stone-700 font-medium">账号安全</h3>
+                {!isChangingPassword && (
+                  <button
+                    onClick={() => setIsChangingPassword(true)}
+                    className="text-sm text-[#e8a4b8] hover:text-[#d88a9f] transition-colors"
+                  >
+                    修改密码
+                  </button>
+                )}
+              </div>
+
+              {isChangingPassword ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm text-stone-500 block mb-1">当前密码</label>
+                    <input
+                      type="password"
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:border-[#e8a4b8] focus:outline-none focus:ring-2 focus:ring-[#e8a4b8]/20 text-stone-700"
+                      placeholder="输入当前密码"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-stone-500 block mb-1">新密码</label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:border-[#e8a4b8] focus:outline-none focus:ring-2 focus:ring-[#e8a4b8]/20 text-stone-700"
+                      placeholder="输入新密码（至少6位）"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-stone-500 block mb-1">确认新密码</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:border-[#e8a4b8] focus:outline-none focus:ring-2 focus:ring-[#e8a4b8]/20 text-stone-700"
+                      placeholder="再次输入新密码"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={isUpdatingPassword}
+                      className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50"
+                    >
+                      {isUpdatingPassword ? '修改中...' : '确认修改'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsChangingPassword(false);
+                        setOldPassword('');
+                        setNewPassword('');
+                        setConfirmPassword('');
+                      }}
+                      disabled={isUpdatingPassword}
+                      className="px-4 py-2 bg-stone-100 text-stone-600 text-sm rounded-full hover:bg-stone-200 transition-colors disabled:opacity-50"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-stone-500 text-sm">定期修改密码有助于账号安全</p>
+              )}
             </div>
           </motion.div>
         )}

@@ -28,6 +28,7 @@ const ROLE_CONFIG: Record<UserRole, { label: string; badgeClass: string; icon?: 
   certified_therapist: { label: '认证康复师', badgeClass: 'bg-teal-100 text-teal-700', icon: '✓' },
   certified_nurse: { label: '认证护士', badgeClass: 'bg-cyan-100 text-cyan-700', icon: '✓' },
   admin: { label: '管理员', badgeClass: 'bg-purple-100 text-purple-700', icon: '★' },
+  ai_assistant: { label: 'AI 助手', badgeClass: 'bg-amber-100 text-amber-700', icon: '❤' },
 };
 
 export default function PostCard({

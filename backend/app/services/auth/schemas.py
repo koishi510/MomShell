@@ -49,6 +49,13 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=6, max_length=100)
 
 
+class ChangePasswordRequest(BaseModel):
+    """Request body for changing password (logged-in user)."""
+
+    old_password: str
+    new_password: str = Field(..., min_length=6, max_length=100)
+
+
 class UserResponse(BaseModel):
     """Response containing user information."""
 

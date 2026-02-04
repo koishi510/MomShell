@@ -27,6 +27,7 @@ const statusConfig: Record<string, { label: string; color: string; bgColor: stri
   approved: { label: '已通过', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
   rejected: { label: '已拒绝', color: 'text-red-700', bgColor: 'bg-red-100' },
   expired: { label: '已过期', color: 'text-stone-700', bgColor: 'bg-stone-100' },
+  revoked: { label: '已撤销', color: 'text-orange-700', bgColor: 'bg-orange-100' },
 };
 
 interface CertificationItem {
@@ -59,6 +60,8 @@ export default function AdminCertificationsPage() {
   const [selectedCert, setSelectedCert] = useState<CertificationItem | null>(null);
   const [reviewComment, setReviewComment] = useState('');
   const [isReviewing, setIsReviewing] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<CertificationItem | null>(null);
+  const [revokeReason, setRevokeReason] = useState('');
   const [message, setMessage] = useState<{ show: boolean; success: boolean; text: string }>({
     show: false,
     success: true,
@@ -121,11 +124,35 @@ export default function AdminCertificationsPage() {
       showMessage(true, status === 'approved' ? '已通过认证' : '已拒绝认证');
       setSelectedCert(null);
       setReviewComment('');
-      // Refresh list
       await fetchCertifications();
     } catch (err: unknown) {
       console.error('Failed to review certification:', err);
       let errorMessage = '审核失败，请重试';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { detail?: string } } };
+        if (axiosErr.response?.data?.detail) {
+          errorMessage = axiosErr.response.data.detail;
+        }
+      }
+      showMessage(false, errorMessage);
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
+  const handleRevoke = async (certId: string) => {
+    setIsReviewing(true);
+    try {
+      await apiClient.put(`${COMMUNITY_API}/certifications/${certId}/revoke`, null, {
+        params: { reason: revokeReason.trim() || null },
+      });
+      showMessage(true, '已撤销认证');
+      setRevokeTarget(null);
+      setRevokeReason('');
+      await fetchCertifications();
+    } catch (err: unknown) {
+      console.error('Failed to revoke certification:', err);
+      let errorMessage = '撤销失败，请重试';
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosErr = err as { response?: { data?: { detail?: string } } };
         if (axiosErr.response?.data?.detail) {
@@ -240,6 +267,64 @@ export default function AdminCertificationsPage() {
         )}
       </AnimatePresence>
 
+      {/* Revoke Modal */}
+      <AnimatePresence>
+        {revokeTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setRevokeTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-medium text-stone-800 mb-4">撤销认证</h3>
+
+              <div className="mb-4 p-4 bg-orange-50 rounded-xl text-orange-700 text-sm">
+                确定要撤销 <strong>{revokeTarget.user_nickname}</strong> 的
+                <strong>{certificationTypeNames[revokeTarget.certification_type]}</strong>认证吗？
+                撤销后该用户将失去专业认证身份。
+              </div>
+
+              <div className="mb-6">
+                <label className="text-sm text-stone-600 mb-2 block">撤销原因（可选）</label>
+                <textarea
+                  value={revokeReason}
+                  onChange={(e) => setRevokeReason(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-stone-200 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200 text-stone-700 resize-none"
+                  rows={3}
+                  placeholder="输入撤销原因..."
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleRevoke(revokeTarget.id)}
+                  disabled={isReviewing}
+                  className="flex-1 py-2.5 bg-orange-500 text-white font-medium rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50"
+                >
+                  {isReviewing ? '处理中...' : '确认撤销'}
+                </button>
+                <button
+                  onClick={() => setRevokeTarget(null)}
+                  disabled={isReviewing}
+                  className="flex-1 py-2.5 bg-stone-100 text-stone-600 font-medium rounded-full hover:bg-stone-200 transition-colors disabled:opacity-50"
+                >
+                  取消
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -267,6 +352,7 @@ export default function AdminCertificationsPage() {
             { value: 'pending', label: '待审核' },
             { value: 'approved', label: '已通过' },
             { value: 'rejected', label: '已拒绝' },
+            { value: 'revoked', label: '已撤销' },
             { value: '', label: '全部' },
           ].map((filter) => (
             <button
@@ -343,6 +429,14 @@ export default function AdminCertificationsPage() {
                       className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors"
                     >
                       审核
+                    </button>
+                  )}
+                  {cert.status === 'approved' && (
+                    <button
+                      onClick={() => setRevokeTarget(cert)}
+                      className="px-4 py-2 bg-orange-500 text-white text-sm rounded-full hover:bg-orange-600 transition-colors"
+                    >
+                      撤销
                     </button>
                   )}
                 </div>

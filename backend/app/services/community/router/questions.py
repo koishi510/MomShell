@@ -4,6 +4,7 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
+from ..ai_reply import trigger_ai_reply_to_question
 from ..dependencies import (
     CommunityServiceDep,
     CurrentUser,
@@ -114,6 +115,9 @@ async def create_question(
 ) -> QuestionDetail:
     """Create a new question."""
     question = await service.create_question(db, question_in, current_user)
+
+    # Trigger AI auto-reply in background
+    await trigger_ai_reply_to_question(question.id)
 
     # Return full detail
     detail = await service.get_question(
