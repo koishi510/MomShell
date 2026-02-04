@@ -4,12 +4,14 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
+from ..ai_reply import trigger_ai_reply_to_answer
 from ..dependencies import (
     CommunityServiceDep,
     CurrentUser,
     DbSession,
     OptionalUser,
 )
+from ..enums import UserRole
 from ..schemas import (
     AnswerCreate,
     AnswerDetail,
@@ -109,6 +111,10 @@ async def create_answer(
 ) -> AnswerDetail:
     """Create a new answer."""
     answer = await service.create_answer(db, question_id, answer_in, current_user)
+
+    # Trigger AI reply if user is not AI (to reply to users who reply to AI)
+    if current_user.role != UserRole.AI_ASSISTANT:
+        await trigger_ai_reply_to_answer(answer.id, question_id)
 
     # Build response
     import json

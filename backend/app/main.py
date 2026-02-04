@@ -16,10 +16,12 @@ from app.api.v1 import exercises, progress, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.services.auth import auth_router
-from app.services.chat import router as companion_router
-from app.services.community import community_router
 
 # Import models to register them with SQLAlchemy Base
+from app.services.chat import models as chat_models  # noqa: F401
+from app.services.chat import router as companion_router
+from app.services.coach import models as coach_models  # noqa: F401
+from app.services.community import community_router
 from app.services.community import models as community_models  # noqa: F401
 from app.services.guardian import guardian_router
 from app.services.guardian import models as guardian_models  # noqa: F401

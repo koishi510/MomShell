@@ -2,12 +2,14 @@
 
 from fastapi import APIRouter
 
+from ..ai_reply import trigger_ai_reply_to_comment
 from ..dependencies import (
     CommunityServiceDep,
     CurrentUser,
     DbSession,
     OptionalUser,
 )
+from ..enums import UserRole
 from ..schemas import CommentCreate, CommentListItem
 
 router = APIRouter(tags=["Community - Comments"])
@@ -38,7 +40,13 @@ async def create_comment(
     current_user: CurrentUser,
 ) -> CommentListItem:
     """Create a new comment on an answer."""
-    return await service.create_comment(db, answer_id, current_user, comment_in)
+    result = await service.create_comment(db, answer_id, current_user, comment_in)
+
+    # Trigger AI reply if comment mentions @贝壳姐姐
+    if "@贝壳姐姐" in comment_in.content and current_user.role != UserRole.AI_ASSISTANT:
+        await trigger_ai_reply_to_comment(result.id, answer_id)
+
+    return result
 
 
 @router.delete("/comments/{comment_id}", status_code=204)

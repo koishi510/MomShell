@@ -7,7 +7,7 @@ from ..dependencies import (
     CurrentUser,
     DbSession,
 )
-from ..enums import PROFESSIONAL_ROLES, CertificationStatus
+from ..enums import PROFESSIONAL_ROLES, CertificationStatus, UserRole
 from ..schemas import (
     CertificationCreate,
     CertificationListItem,
@@ -206,10 +206,62 @@ async def review_certification(
         cert.valid_from = review_in.valid_from or datetime.utcnow()
         cert.valid_until = review_in.valid_until
 
-        # Update user role
+        # Update user role (but keep admin role if user is admin)
         user = await db.get(User, cert.user_id)
-        if user:
+        if user and user.role != UserRole.ADMIN:
             user.role = cert.certification_type
+
+    await db.commit()
+    await db.refresh(cert)
+
+    return CertificationStatus_(
+        id=cert.id,
+        user_id=cert.user_id,
+        certification_type=cert.certification_type,
+        real_name=cert.real_name,
+        license_number=cert.license_number,
+        hospital_or_institution=cert.hospital_or_institution,
+        department=cert.department,
+        title=cert.title,
+        status=cert.status,
+        review_comment=cert.review_comment,
+        reviewed_at=cert.reviewed_at,
+        valid_from=cert.valid_from,
+        valid_until=cert.valid_until,
+        created_at=cert.created_at,
+        updated_at=cert.updated_at,
+    )
+
+
+@router.put("/{cert_id}/revoke", response_model=CertificationStatus_)
+async def revoke_certification(
+    cert_id: str,
+    db: DbSession,
+    admin: AdminUser,
+    reason: str | None = None,
+) -> CertificationStatus_:
+    """Revoke an approved certification (admin only)."""
+    from datetime import datetime
+
+    from ..models import User, UserCertification
+
+    cert = await db.get(UserCertification, cert_id)
+    if not cert:
+        raise HTTPException(status_code=404, detail="认证申请不存在")
+
+    if cert.status != CertificationStatus.APPROVED:
+        raise HTTPException(status_code=400, detail="只能撤销已通过的认证")
+
+    # Update certification status
+    cert.status = CertificationStatus.REVOKED
+    cert.review_comment = reason or "认证已被管理员撤销"
+    cert.reviewer_id = admin.id
+    cert.reviewed_at = datetime.utcnow()
+
+    # Reset user role to MOM (default) if not admin
+    user = await db.get(User, cert.user_id)
+    if user and user.role != UserRole.ADMIN:
+        user.role = UserRole.MOM
 
     await db.commit()
     await db.refresh(cert)

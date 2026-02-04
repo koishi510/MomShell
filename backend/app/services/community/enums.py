@@ -14,6 +14,7 @@ class UserRole(str, Enum):
     CERTIFIED_THERAPIST = "certified_therapist"  # Certified therapist
     CERTIFIED_NURSE = "certified_nurse"  # Certified nurse
     ADMIN = "admin"  # Administrator
+    AI_ASSISTANT = "ai_assistant"  # AI Assistant (auto-reply bot)
 
 
 class ChannelType(str, Enum):
@@ -30,6 +31,7 @@ class CertificationStatus(str, Enum):
     APPROVED = "approved"  # Approved
     REJECTED = "rejected"  # Rejected
     EXPIRED = "expired"  # Expired
+    REVOKED = "revoked"  # Revoked by admin
 
 
 class ContentStatus(str, Enum):

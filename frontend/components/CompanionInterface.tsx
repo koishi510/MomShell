@@ -43,7 +43,7 @@ export function CompanionInterface() {
             ← 首页
           </Link>
           <span className="text-2xl">💝</span>
-          <span className="text-lg font-medium text-stone-700">心灵陪伴</span>
+          <span className="text-lg font-medium text-stone-700">心灵港湾</span>
         </div>
       </motion.header>
 

@@ -12,9 +12,6 @@ import { type Question, type Answer, ROLE_CONFIG } from '../../types/community';
 import { getQuestion, getAnswers, createAnswer, toggleLike, deleteQuestion, deleteAnswer, updateQuestion, updateAnswer, getComments, createComment, deleteComment, type Comment } from '../../lib/api/community';
 import { useAuth } from '../../contexts/AuthContext';
 
-// 模块级别对象，同步标记正在处理的问题，防止重复调用
-const viewingInProgress: Record<string, boolean> = {};
-
 interface QuestionDetailModalProps {
   question: Question | null;
   onClose: () => void;
@@ -74,7 +71,7 @@ export default function QuestionDetailModal({
     }
   }, []);
 
-  // 当问题变化时加载回答并增加浏览数
+  // 当问题变化时加载回答并获取完整详情
   useEffect(() => {
     if (question) {
       setLocalQuestion(question);
@@ -83,15 +80,12 @@ export default function QuestionDetailModal({
       setViewCount(question.view_count);
       setIsEditingQuestion(false);
 
-      // 使用模块级对象同步标记，确保只调用一次 API
-      if (!viewingInProgress[question.id]) {
-        viewingInProgress[question.id] = true;
-        getQuestion(question.id).then((detail) => {
-          setViewCount(detail.view_count);
-          setLocalQuestion(detail);
-          onViewCountUpdated?.(question.id, detail.view_count);
-        }).catch(console.error);
-      }
+      // 总是获取完整的问题详情（包含content），同时增加浏览数
+      getQuestion(question.id).then((detail) => {
+        setViewCount(detail.view_count);
+        setLocalQuestion(detail);
+        onViewCountUpdated?.(question.id, detail.view_count);
+      }).catch(console.error);
     } else {
       setAnswers([]);
       setLocalQuestion(null);
