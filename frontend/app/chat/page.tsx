@@ -1,10 +1,17 @@
 // frontend/app/chat/page.tsx
 /**
- * 情感陪伴页面
+ * Soul Companion chat page (requires authentication)
  */
 
+'use client';
+
+import { AuthGuard } from '../../components/AuthGuard';
 import { CompanionInterface } from '../../components/CompanionInterface';
 
 export default function ChatPage() {
-  return <CompanionInterface />;
+  return (
+    <AuthGuard>
+      <CompanionInterface />
+    </AuthGuard>
+  );
 }
