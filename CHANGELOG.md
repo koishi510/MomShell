@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Developer Setup Script
+
+- **One-command setup for new contributors**: `./scripts/dev-setup.sh`
+  - Checks system prerequisites (uv, nvm, git, git-lfs) with install hints
+  - Creates `.env` from `.env.example`
+  - Initializes Git LFS
+  - Installs backend Python dependencies via `uv sync`
+  - Installs pre-commit hooks
+  - Installs frontend Node.js (via nvm) and npm dependencies
+  - Verifies setup and prints next-step instructions
+
 #### Web Search Integration (Reduce AI Hallucinations)
 
 - **Firecrawl API Integration**: New web search service for grounding AI responses
