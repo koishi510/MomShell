@@ -14,6 +14,7 @@ import { getMyProfile, updateMyProfile, type UserProfile } from '../../../lib/ap
 import { changePassword, getAccessToken } from '../../../lib/auth';
 import CommunityBackground from '../../../components/community/CommunityBackground';
 import { useAuth } from '../../../contexts/AuthContext';
+import { AuthGuard } from '../../../components/AuthGuard';
 
 // Role display names
 const roleNames: Record<string, string> = {
@@ -63,13 +64,6 @@ export default function ProfilePage() {
 
   // Check if user has a professional role (cannot change)
   const isProfessional = profile ? professionalRoles.includes(profile.role) : false;
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login');
-    }
-  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
     if (hasFetched.current) return;
@@ -180,6 +174,7 @@ export default function ProfilePage() {
   };
 
   return (
+    <AuthGuard>
     <div className="relative min-h-screen overflow-hidden">
       {/* 背景 */}
       <CommunityBackground />
@@ -496,6 +491,7 @@ export default function ProfilePage() {
         )}
       </main>
     </div>
+    </AuthGuard>
   );
 }
 

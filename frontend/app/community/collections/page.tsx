@@ -14,8 +14,9 @@ import { type Question } from '../../../types/community';
 import CommunityBackground from '../../../components/community/CommunityBackground';
 import QuestionDetailModal from '../../../components/community/QuestionDetailModal';
 import PostCard from '../../../components/community/PostCard';
+import { AuthGuard } from '../../../components/AuthGuard';
 
-export default function CollectionsPage() {
+function CollectionsContent() {
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +134,21 @@ export default function CollectionsPage() {
     }
   };
 
+  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+    setCollections((prev) =>
+      prev.map((c) =>
+        c.question.id === questionId
+          ? { ...c, question: { ...c.question, answer_count: answerCount } }
+          : c
+      )
+    );
+    if (selectedQuestion?.id === questionId) {
+      setSelectedQuestion((prev) =>
+        prev ? { ...prev, answer_count: answerCount } : null
+      );
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* 背景 */}
@@ -237,7 +253,16 @@ export default function CollectionsPage() {
         onCollect={handleCollect}
         onQuestionDeleted={handleQuestionDeleted}
         onViewCountUpdated={handleViewCountUpdated}
+        onAnswerCountUpdated={handleAnswerCountUpdated}
       />
     </div>
+  );
+}
+
+export default function CollectionsPage() {
+  return (
+    <AuthGuard>
+      <CollectionsContent />
+    </AuthGuard>
   );
 }

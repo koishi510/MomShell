@@ -15,8 +15,9 @@ import { type Question } from '../../../types/community';
 import CommunityBackground from '../../../components/community/CommunityBackground';
 import QuestionDetailModal from '../../../components/community/QuestionDetailModal';
 import PostCard from '../../../components/community/PostCard';
+import { AuthGuard } from '../../../components/AuthGuard';
 
-export default function MyPostsPage() {
+function MyPostsContent() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,6 +150,19 @@ export default function MyPostsPage() {
     }
   };
 
+  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === questionId ? { ...q, answer_count: answerCount } : q
+      )
+    );
+    if (selectedQuestion?.id === questionId) {
+      setSelectedQuestion((prev) =>
+        prev ? { ...prev, answer_count: answerCount } : null
+      );
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* 背景 */}
@@ -255,7 +269,16 @@ export default function MyPostsPage() {
         onQuestionDeleted={handleQuestionDeleted}
         onViewCountUpdated={handleViewCountUpdated}
         onAnswerCreated={handleAnswerCreated}
+        onAnswerCountUpdated={handleAnswerCountUpdated}
       />
     </div>
+  );
+}
+
+export default function MyPostsPage() {
+  return (
+    <AuthGuard>
+      <MyPostsContent />
+    </AuthGuard>
   );
 }

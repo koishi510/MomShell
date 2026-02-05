@@ -3,13 +3,15 @@
  * 伴侣守护页面
  */
 
-import GuardianDashboard from '../../components/guardian/GuardianDashboard';
+'use client';
 
-export const metadata = {
-  title: '伴侣守护 - MomShell',
-  description: '让伴侣成为你的贴心守护者',
-};
+import GuardianDashboard from '../../components/guardian/GuardianDashboard';
+import { AuthGuard } from '../../components/AuthGuard';
 
 export default function GuardianPage() {
-  return <GuardianDashboard />;
+  return (
+    <AuthGuard>
+      <GuardianDashboard />
+    </AuthGuard>
+  );
 }

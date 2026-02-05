@@ -56,8 +56,8 @@ export default function CommunityFeed() {
       const mappedQuestions: Question[] = response.items.map((item: any) => ({
         id: item.id,
         title: item.title,
-        content: item.content || '',
-        content_preview: item.content_preview,
+        content: item.content || item.content_preview || '',
+        content_preview: item.content_preview || '',
         channel: item.channel,
         status: 'published',
         author: {
@@ -195,6 +195,21 @@ export default function CommunityFeed() {
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
         prev ? { ...prev, view_count: viewCount } : null
+      );
+    }
+  };
+
+  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+    // 更新问题列表中的回复数（修复 AI 回复计数不同步问题）
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === questionId ? { ...q, answer_count: answerCount } : q
+      )
+    );
+    // 同步更新详情弹窗中的状态
+    if (selectedQuestion?.id === questionId) {
+      setSelectedQuestion((prev) =>
+        prev ? { ...prev, answer_count: answerCount } : null
       );
     }
   };
@@ -402,6 +417,7 @@ export default function CommunityFeed() {
         onLike={handleLike}
         onCollect={handleCollect}
         onAnswerCreated={handleAnswerCreated}
+        onAnswerCountUpdated={handleAnswerCountUpdated}
         onQuestionDeleted={handleQuestionDeleted}
         onViewCountUpdated={handleViewCountUpdated}
       />
