@@ -1,20 +1,16 @@
 # MomShell
 
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg?logo=gnu&logoColor=white)](LICENSE)
-[![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![MediaPipe](https://img.shields.io/badge/MediaPipe-4285F4?logo=google&logoColor=white)](https://mediapipe.dev/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Ruff](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
-[![mypy](https://img.shields.io/badge/mypy-1674B1?logo=python&logoColor=white)](https://mypy-lang.org/)
-[![Qwen](https://img.shields.io/badge/Qwen-6F42C1?logo=alibabacloud&logoColor=white)](https://www.alibabacloud.com/solutions/generative-ai/qwen)
-[![Firecrawl](https://img.shields.io/badge/Firecrawl-FF6B35?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0iTTEzLjUuNjdzLjc0IDIuNjUuNzQgNC44YzAgMi4wNi0xLjM1IDMuNzMtMy40MSAzLjczLTIuMDcgMC0zLjYzLTEuNjctMy42My0zLjczbC4wMy0uMzZDNS4yMSA3LjUxIDQgMTAuNjIgNCAxNGMwIDQuNDIgMy41OCA4IDggOHM4LTMuNTggOC04QzIwIDguNjEgMTcuNDEgMy44IDEzLjUuNjd6TTExLjcxIDE5Yy0xLjc4IDAtMy4yMi0xLjQtMy4yMi0zLjE0IDAtMS42MiAxLjA1LTIuNzYgMi44MS0zLjEyIDEuNzctLjM2IDMuNi0xLjIxIDQuNjItMi41OC4zOSAxLjI5LjU5IDIuNjUuNTkgNC4wNCAwIDIuNjUtMi4xNSA0LjgtNC44IDQuOHoiLz48L3N2Zz4K&logoColor=white)](https://www.firecrawl.dev/)
-[![Edge TTS](https://img.shields.io/badge/Edge%20TTS-0078D4?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0iTTIxLjg2IDE3Ljg2cS4xNCAwIC4yNS4xMi4xLjEzLjEuMjV0LS4xMS4zM2wtLjMyLjQ2LS40My41My0uNDQuNXEtLjIxLjI1LS4zOC40MmwtLjIyLjIzcS0uNTguNTMtMS4zNCAxLjA0LS43Ni41MS0xLjYuOTEtLjg2LjQtMS43NC42NHQtMS42Ny4yNHEtLjkgMC0xLjY5LS4yOC0uOC0uMjgtMS40OC0uNzgtLjY4LS41LTEuMjItMS4xNy0uNTMtLjY2LS45Mi0xLjQ0LS4zOC0uNzctLjU4LTEuNi0uMi0uODMtLjItMS42NyAwLTEgLjMyLTEuOTYuMzMtLjk3Ljg3LTEuOC4xNC45NS41NSAxLjc3LjQxLjgxIDEuMDIgMS40OS42LjY4IDEuMzggMS4yMS43OC41NCAxLjY0LjkuODYuMzYgMS43Ny41Ni45Mi4yIDEuOC4yIDEuMTIgMCAyLjE4LS4yNCAxLjA2LS4yMyAyLjA2LS43MmwuMi0uMS4yLS4wNXptLTE1LjUtMS4yN3EwIDEuMS4yNyAyLjE1LjI3IDEuMDYuNzggMi4wMy41MS45NiAxLjI0IDEuNzcuNzQuODIgMS42NiAxLjQtMS40Ny0uMi0yLjgtLjc0LTEuMzMtLjU1LTIuNDgtMS4zNy0xLjE1LS44My0yLjA4LTEuOS0uOTItMS4wNy0xLjU4LTIuMzNULjM2IDE0Ljk0UTAgMTMuNTQgMCAxMi4wNnEwLS44MS4zMi0xLjQ5LjMxLS42OC44My0xLjIzLjUzLS41NSAxLjItLjk2LjY2LS40IDEuMzUtLjY2LjY4LS4yNyAxLjM1LS4zOC42Ni0uMTIgMS4yLS4xMi43MyAwIDEuNDQuMTYuNy4xNyAxLjM0LjUuNjQuMzIgMS4xNy43OS41Mi40OC44OCAxLjA4LTIuMDkuMzUtMy41NiAxLjc3LTEuNDYgMS40My0xLjg2IDMuMzUtLjA0LjItLjA2LjQyLS4wMi4yLS4wNC40NHptOC4zNi05LjM5cTAtLjkzLjM1LTEuNzMuMzUtLjguOTYtMS40LjYtLjYyIDEuNDItLjk3LjgtLjM1IDEuNzQtLjM1IDEuMzcgMCAyLjYuNiAxLjI0LjYgMi4yMiAxLjU2IDEgLjk2IDEuNzggMi4xOC43OSAxLjIgMS4zMSAyLjUuNTIgMS4yOC44IDIuNTYuMjggMS4yNy4yOCAyLjMxIDAgLjY3LS4wOSAxLjM0LS4wOC42OC0uMjUgMS4zMy0uNDMtLjc0LTEuMS0xLjM2LS42Ni0uNjItMS40Ny0xLjA5LS44LS40Ny0xLjcxLS43OS0uOS0uMzEtMS44NC0uNDktLjk0LS4xNy0xLjg3LS4xN2gtLjU2cS0uNy0uNjktMS4xOC0xLjU2LS40Ny0uODctLjcyLTEuODItLjI1LS45NS0uMjUtMS45LS4wMS0uNzYuMTMtMS40OC4xMy0uNzEuMzUtMS4yNC0uNTcuMi0uOTguNjItLjQuNC0uNTUuOTktLjAzLjE0LS4wNC4yOHYuMjlxMCAuNC4xLjc3LjEuMzcuMjYuNzNsLjIxLjQ1LS43Ny4yNXEtLjcuMjQtMS4yOC42Ni0uNTguNDMtMS4wMi45OS0uNDMuNTYtLjY4IDEuMjMtLjI2LjY2LS4yNiAxLjR2LjVsLS40NC0uMTdxLS41OS0uMjItMS4xMS0uNTYtLjUyLS4zNS0uOTMtLjgtLjQtLjQ3LS42OC0xLjAzLS4yNy0uNTUtLjM4LTEuMTYtLjEtLjYtLjA1LTEuMjQuMDQtLjYzLjI3LTEuMjUuMjItLjYyLjYzLTEuMi40LS41Ny45Ni0xLjA0LjU2LS40NyAxLjI4LS44LjcxLS4zNCAxLjU3LS40Ny0uMy0uNDMtLjMtMXoiLz48L3N2Zz4K&logoColor=white)](https://github.com/rany2/edge-tts)
-[![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+<!-- Badges: 构建状态 → 协议 → 语言/平台 → 框架 → 部署 → 代码质量 → AI -->
+[![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue?style=flat-square&logo=gnu&logoColor=white)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Ruff](https://img.shields.io/badge/code%20style-Ruff-D7FF64?style=flat-square&logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
+[![Qwen](https://img.shields.io/badge/AI-Qwen-6F42C1?style=flat-square&logo=alibabacloud&logoColor=white)](https://www.alibabacloud.com/solutions/generative-ai/qwen)
 
 A warm, AI-powered companion for postpartum recovery — offering emotional support, exercise coaching, and a caring community for new mothers.
 
