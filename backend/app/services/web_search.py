@@ -1,0 +1,289 @@
+"""Web search service for grounding AI responses with real information.
+
+This service integrates with Firecrawl API to provide web search capabilities
+for reducing AI hallucinations in medical/factual questions.
+"""
+
+import logging
+import re
+from typing import Any
+
+import httpx
+
+from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
+
+# Keywords that suggest a factual/medical question needing web search
+FACTUAL_KEYWORDS = [
+    # Medical terms (Chinese)
+    "产后",
+    "恢复",
+    "母乳",
+    "喂养",
+    "婴儿",
+    "宝宝",
+    "症状",
+    "治疗",
+    "药物",
+    "医生",
+    "医院",
+    "感染",
+    "发烧",
+    "疼痛",
+    "出血",
+    "伤口",
+    "抑郁",
+    "焦虑",
+    "睡眠",
+    "失眠",
+    "盆底",
+    "腹直肌",
+    "分离",
+    "运动",
+    "营养",
+    "饮食",
+    "食物",
+    "维生素",
+    # Medical terms (English)
+    "postpartum",
+    "recovery",
+    "breastfeeding",
+    "baby",
+    "symptom",
+    "treatment",
+    "medicine",
+    "doctor",
+    "infection",
+    "fever",
+    "pain",
+    "bleeding",
+    "depression",
+    "anxiety",
+    "sleep",
+    "insomnia",
+    "pelvic floor",
+    "diastasis recti",
+    "exercise",
+    "nutrition",
+    "diet",
+    "vitamin",
+    # Question indicators
+    "怎么",
+    "如何",
+    "为什么",
+    "是什么",
+    "什么是",
+    "应该",
+    "需要",
+    "可以吗",
+    "正常吗",
+    "有什么",
+    "哪些",
+    "推荐",
+    "建议",
+    "how",
+    "what",
+    "why",
+    "should",
+    "can",
+    "need",
+    "recommend",
+    "suggest",
+]
+
+# Keywords that suggest emotional support (no search needed)
+EMOTIONAL_KEYWORDS = [
+    "累了",
+    "难过",
+    "伤心",
+    "哭",
+    "崩溃",
+    "孤独",
+    "害怕",
+    "担心",
+    "烦躁",
+    "开心",
+    "高兴",
+    "感谢",
+    "谢谢",
+    "tired",
+    "sad",
+    "cry",
+    "lonely",
+    "scared",
+    "worried",
+    "happy",
+    "thankful",
+]
+
+
+def should_search(text: str) -> bool:
+    """
+    Determine if a text query should trigger web search.
+
+    Returns True for factual/medical questions, False for emotional support.
+    """
+    text_lower = text.lower()
+
+    # Check for emotional content first (no search needed)
+    emotional_score = sum(1 for kw in EMOTIONAL_KEYWORDS if kw in text_lower)
+    if emotional_score >= 2:
+        return False
+
+    # Check for factual/medical content
+    factual_score = sum(1 for kw in FACTUAL_KEYWORDS if kw in text_lower)
+
+    # Check for question patterns
+    question_patterns = [
+        r"怎么[办回]",
+        r"如何",
+        r"为什么",
+        r"是什么",
+        r"有什么",
+        r"推荐",
+        r"正常吗",
+        r"可以吗",
+        r"需要.+吗",
+        r"\?$",
+        r"？$",
+    ]
+    has_question_pattern = any(re.search(p, text) for p in question_patterns)
+
+    # Trigger search if factual keywords found AND question pattern present
+    return factual_score >= 1 and has_question_pattern
+
+
+class WebSearchService:
+    """Service for performing web searches using Firecrawl API."""
+
+    def __init__(self) -> None:
+        settings = get_settings()
+        self._api_key = settings.firecrawl_api_key
+        self._base_url = "https://api.firecrawl.dev/v1"
+        self._client: httpx.AsyncClient | None = None
+
+    @property
+    def is_configured(self) -> bool:
+        """Check if Firecrawl API is configured."""
+        return bool(self._api_key)
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Get or create HTTP client."""
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=30.0)
+        return self._client
+
+    async def search(
+        self,
+        query: str,
+        max_results: int = 3,
+    ) -> dict[str, Any]:
+        """
+        Perform a web search using Firecrawl API.
+
+        Args:
+            query: Search query string
+            max_results: Maximum number of results (1-10)
+
+        Returns:
+            dict with 'results' key containing search results
+        """
+        if not self.is_configured:
+            logger.warning("Firecrawl API not configured, skipping web search")
+            return {"results": []}
+
+        client = await self._get_client()
+
+        try:
+            response = await client.post(
+                f"{self._base_url}/search",
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "query": query,
+                    "limit": max_results,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if not data.get("success"):
+                logger.error(f"Firecrawl search failed: {data}")
+                return {"results": []}
+
+            return {
+                "results": [
+                    {
+                        "title": r.get("title", ""),
+                        "url": r.get("url", ""),
+                        "content": (r.get("description") or r.get("markdown", ""))[
+                            :500
+                        ],
+                    }
+                    for r in data.get("data", [])[:max_results]
+                ],
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                f"Firecrawl API error: {e.response.status_code} - {e.response.text}"
+            )
+            return {"results": []}
+        except Exception as e:
+            logger.error(f"Web search failed: {e}")
+            return {"results": []}
+
+    async def search_for_context(self, question: str) -> str | None:
+        """
+        Search web and format results as context for LLM.
+
+        Returns a formatted string with search results, or None if no results.
+        """
+        if not self.is_configured:
+            return None
+
+        if not should_search(question):
+            logger.debug(
+                f"Skipping search for non-factual question: {question[:50]}..."
+            )
+            return None
+
+        # Create a search-optimized query
+        search_query = f"产后恢复 {question}"  # Add context for better results
+
+        results = await self.search(search_query, max_results=3)
+
+        if not results["results"]:
+            return None
+
+        # Format context for LLM
+        context_parts = ["【参考来源（来自网络搜索）】"]
+        for i, r in enumerate(results["results"], 1):
+            context_parts.append(f"{i}. {r['title']}")
+            if r["content"]:
+                content_preview = r["content"][:200].strip()
+                if len(r["content"]) > 200:
+                    content_preview += "..."
+                context_parts.append(f"   {content_preview}")
+
+        return "\n".join(context_parts)
+
+    async def close(self) -> None:
+        """Close the HTTP client."""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+
+
+# Global service instance
+_web_search_service: WebSearchService | None = None
+
+
+def get_web_search_service() -> WebSearchService:
+    """Get the web search service singleton."""
+    global _web_search_service
+    if _web_search_service is None:
+        _web_search_service = WebSearchService()
+    return _web_search_service

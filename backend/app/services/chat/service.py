@@ -78,7 +78,12 @@ COMPANION_SYSTEM_PROMPT = """你是「贝壳姐姐」，一位「曾走过这段
 ### 她在社区的互动记录
 {community_interactions}
 
+### 相关参考信息（来自网络搜索，仅在涉及事实性问题时提供）
+{web_search_context}
+
 在回应时，自然地融入这些记忆——比如她提到过喜欢猫，你可以在合适的时刻轻轻提起；她之前分享过某个担忧，你可以关心地问起后续；她在社区分享过的内容，你也可以自然地引用；她的康复训练进度，你可以适时鼓励。
+
+**重要**：如果提供了网络搜索结果，请基于这些可靠信息回答事实性问题，但保持温暖自然的语气。不要编造医学数据或具体建议。
 
 ## 响应格式
 
@@ -535,6 +540,7 @@ class CompanionService:
         profile: UserProfile,
         memory: ConversationMemory,
         extended_context: dict[str, Any] | None = None,
+        web_search_context: str | None = None,
     ) -> str:
         """构建包含记忆上下文的 System Prompt"""
         extended_context = extended_context or {}
@@ -551,13 +557,18 @@ class CompanionService:
             ),
             past_conversations=self._format_past_conversations(memory),
             community_interactions=self._format_community_interactions(profile),
+            web_search_context=web_search_context or "（无）",
         )
 
-    def _build_system_prompt(self, session_id: str) -> str:
+    def _build_system_prompt(
+        self, session_id: str, web_search_context: str | None = None
+    ) -> str:
         """构建包含记忆上下文的 System Prompt（游客模式）"""
         profile = self._profile_store.get(session_id, UserProfile())
         memory = self._memory_store.get(session_id, ConversationMemory(session_id=""))
-        return self._build_system_prompt_from_data(profile, memory)
+        return self._build_system_prompt_from_data(
+            profile, memory, web_search_context=web_search_context
+        )
 
     def _parse_llm_response(self, content: str) -> dict[str, Any]:
         """解析 LLM 返回的 JSON 响应"""
@@ -660,8 +671,28 @@ class CompanionService:
         # Load extended context (user info, coach progress, partner data)
         extended_context = await self._load_user_extended_context(db, user_id)
 
+        # Perform web search for factual questions
+        web_search_context = None
+        try:
+            from app.services.web_search import get_web_search_service
+
+            search_service = get_web_search_service()
+            web_search_context = await search_service.search_for_context(
+                message.content
+            )
+            if web_search_context:
+                print(
+                    "[Service] chat_authenticated: web search context found",
+                    file=sys.stderr,
+                )
+        except Exception as e:
+            print(
+                f"[Service] chat_authenticated: web search failed: {e}",
+                file=sys.stderr,
+            )
+
         system_prompt = self._build_system_prompt_from_data(
-            profile, memory, extended_context
+            profile, memory, extended_context, web_search_context
         )
 
         print(
@@ -745,7 +776,28 @@ class CompanionService:
         )
 
         session_id = self._get_or_create_session(message.session_id)
-        system_prompt = self._build_system_prompt(session_id)
+
+        # Perform web search for factual questions
+        web_search_context = None
+        try:
+            from app.services.web_search import get_web_search_service
+
+            search_service = get_web_search_service()
+            web_search_context = await search_service.search_for_context(
+                message.content
+            )
+            if web_search_context:
+                print(
+                    "[Service] chat: web search context found",
+                    file=sys.stderr,
+                )
+        except Exception as e:
+            print(
+                f"[Service] chat: web search failed: {e}",
+                file=sys.stderr,
+            )
+
+        system_prompt = self._build_system_prompt(session_id, web_search_context)
 
         print("[Service] chat: calling ModelScope API...", file=sys.stderr)
 

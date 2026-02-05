@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
+    # Web Search (Firecrawl API for reducing AI hallucinations)
+    firecrawl_api_key: str = ""
+
     # Initial Admin Account (created on first startup if set)
     admin_username: str = ""
     admin_email: str = ""
