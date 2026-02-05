@@ -36,6 +36,7 @@ COMMUNITY_SYSTEM_PROMPT = """你是「贝壳姐姐」，MomShell 社区的 AI �
 4. 如果涉及严重健康问题，建议寻求专业医疗帮助
 5. 语气要像朋友聊天，不要像机器人
 6. 适当使用表情符号增加亲切感（但不要过多）
+7. **重要**：如果提供了网络搜索结果，请基于这些信息回答，不要编造内容
 
 ## 回复格式
 直接回复内容，不需要任何前缀或格式标记。"""
@@ -120,11 +121,31 @@ class AIReplyService:
         question_content: str,
         author_nickname: str,
         author_role: str,
+        web_search_context: str | None = None,
     ) -> str:
-        """Generate AI reply using LLM."""
+        """Generate AI reply using LLM.
+
+        Args:
+            question_title: Title of the question
+            question_content: Content of the question
+            author_nickname: Nickname of the question author
+            author_role: Role of the question author
+            web_search_context: Optional web search results for grounding
+        """
         role_display = _get_role_display(author_role)
 
-        user_prompt = f"""请回复以下社区提问：
+        # Build user prompt with optional web search context
+        context_section = ""
+        if web_search_context:
+            context_section = f"""
+## 参考信息（来自网络搜索）
+{web_search_context}
+
+请基于上述参考信息回答问题，但用温暖自然的语气表达。如果参考信息不足以回答，可以结合你的知识，但避免编造具体的医学数据或建议。
+
+"""
+
+        user_prompt = f"""{context_section}请回复以下社区提问：
 
 提问者：{author_nickname}（{role_display}）
 标题：{question_title}
@@ -190,6 +211,8 @@ class AIReplyService:
 
     async def reply_to_question(self, question_id: str) -> None:
         """Auto-reply to a new question."""
+        from app.services.web_search import get_web_search_service
+
         async with async_session_maker() as db:
             try:
                 # Get AI user
@@ -216,7 +239,22 @@ class AIReplyService:
                 if author.role == UserRole.AI_ASSISTANT:
                     return
 
-                # Generate reply
+                # Perform web search for factual/medical questions
+                web_search_context = None
+                try:
+                    search_service = get_web_search_service()
+                    search_query = f"{question.title} {question.content}"
+                    web_search_context = await search_service.search_for_context(
+                        search_query
+                    )
+                    if web_search_context:
+                        logger.info(
+                            f"Web search context found for question {question_id}"
+                        )
+                except Exception as e:
+                    logger.warning(f"Web search failed for question {question_id}: {e}")
+
+                # Generate reply with optional web search context
                 reply_content = await asyncio.get_event_loop().run_in_executor(
                     None,
                     self._generate_reply,
@@ -224,6 +262,7 @@ class AIReplyService:
                     question.content,
                     author.nickname,
                     author.role.value,
+                    web_search_context,
                 )
 
                 # Create answer
