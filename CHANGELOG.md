@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-02-05
+
+### Added
+
+#### Web Search Integration (Reduce AI Hallucinations)
+
+- **Firecrawl API Integration**: New web search service for grounding AI responses
+  - New `web_search.py` service with `WebSearchService` class
+  - Auto-detects factual/medical questions using keyword analysis
+  - Searches are triggered for questions containing medical terms + question patterns
+  - Emotional support queries are skipped (no search needed)
+
+- **AI Reply Improvements**:
+  - Community AI (`ai_reply.py`) now uses web search for factual questions
+  - Chat Companion (`chat/service.py`) now uses web search for factual questions
+  - Search results are formatted as context for LLM to ground responses
+  - System prompts updated to instruct AI to use search results when available
+
+- **New Environment Variable**: `FIRECRAWL_API_KEY` for web search configuration
+
+### Changed
+
+- **Documentation Standards**: CLAUDE.md now specifies English-only rule for documentation
+  - Exception: Chinese text allowed for code identifiers and UI references (e.g., `@贝壳姐姐`)
+
+### Fixed
+
+- **Chat Route Authentication**: Direct URL access to `/chat` now requires login
+  - Added `AuthGuard` component that redirects unauthenticated users
+  - Previously users could bypass homepage auth check by navigating directly
+
+---
+
 ## [0.5.0] - 2026-02-05
 
 ### Added
@@ -309,7 +342,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `QuestionModal`: Full-screen question composer
   - `QuestionDetailModal`: Detailed question view with answers
   - `DailyResonance`: Trending topics with staggered card layout
-  - `ShellPicks`: Collections entry point ("拾贝")
+  - `ShellPicks`: Collections entry point
   - `CommunityBackground`: Animated gradient background
 
 ### Changed
