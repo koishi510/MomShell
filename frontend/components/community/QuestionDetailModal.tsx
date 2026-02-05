@@ -18,6 +18,7 @@ interface QuestionDetailModalProps {
   onLike: (id: string) => void;
   onCollect: (id: string) => void;
   onAnswerCreated?: (questionId: string) => void;
+  onAnswerCountUpdated?: (questionId: string, answerCount: number) => void;
   onQuestionDeleted?: (questionId: string) => void;
   onQuestionUpdated?: (questionId: string) => void;
   onViewCountUpdated?: (questionId: string, viewCount: number) => void;
@@ -29,6 +30,7 @@ export default function QuestionDetailModal({
   onLike,
   onCollect,
   onAnswerCreated,
+  onAnswerCountUpdated,
   onQuestionDeleted,
   onQuestionUpdated,
   onViewCountUpdated,
@@ -67,12 +69,14 @@ export default function QuestionDetailModal({
         order: 'desc',
       });
       setAnswers(response.items);
+      // Sync actual answer count to parent (fixes AI reply count mismatch)
+      onAnswerCountUpdated?.(questionId, response.total);
     } catch (err) {
       console.error('加载回答失败:', err);
     } finally {
       setIsLoadingAnswers(false);
     }
-  }, []);
+  }, [onAnswerCountUpdated]);
 
   // 当问题变化时加载回答并获取完整详情
   useEffect(() => {
@@ -88,11 +92,18 @@ export default function QuestionDetailModal({
         loadAnswers(question.id);
 
         // 获取完整的问题详情（包含content），同时增加浏览数
-        getQuestion(question.id).then((detail) => {
-          setViewCount(detail.view_count);
-          setLocalQuestion(detail);
-          onViewCountUpdated?.(question.id, detail.view_count);
-        }).catch(console.error);
+        getQuestion(question.id)
+          .then((detail) => {
+            if (detail) {
+              setViewCount(detail.view_count);
+              setLocalQuestion(detail);
+              onViewCountUpdated?.(question.id, detail.view_count);
+            }
+          })
+          .catch((err) => {
+            console.error('获取问题详情失败:', err);
+            // 保持使用初始 question 数据（可能只有 content_preview）
+          });
       }
     } else {
       setAnswers([]);
@@ -337,7 +348,7 @@ export default function QuestionDetailModal({
                       {displayQuestion!.title}
                     </h1>
                     <p className="text-stone-600 leading-relaxed whitespace-pre-wrap">
-                      {displayQuestion!.content}
+                      {displayQuestion!.content || displayQuestion!.content_preview || '加载中...'}
                     </p>
                   </>
                 )}
@@ -370,6 +381,10 @@ export default function QuestionDetailModal({
                       <HeartIcon filled={question.is_liked} />
                       <span className="text-sm">{question.like_count}</span>
                     </button>
+                    <span className="flex items-center gap-1 text-sm text-stone-400">
+                      <EyeIcon />
+                      <span>{viewCount}</span>
+                    </span>
                     <button
                       onClick={() => onCollect(question.id)}
                       className={`flex items-center gap-1.5 ${
@@ -381,9 +396,6 @@ export default function QuestionDetailModal({
                       <BookmarkIcon filled={question.is_collected} />
                       <span className="text-sm">收藏</span>
                     </button>
-                    <span className="text-sm text-stone-400">
-                      {viewCount} 浏览
-                    </span>
                     {canEditQuestion && (
                       <button
                         onClick={handleStartEditQuestion}
@@ -555,6 +567,15 @@ function EditIcon() {
     >
       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
@@ -799,21 +820,15 @@ function AnswerCard({
             <span>{answer.like_count || 0}</span>
           </button>
           <button
-            onClick={toggleComments}
-            className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-600"
-          >
-            <CommentIcon />
-            <span>{answer.comment_count || 0}</span>
-          </button>
-          <button
             onClick={() => {
               setShowComments(true);
               if (comments.length === 0) loadComments();
               setReplyingTo(null);
             }}
-            className="text-sm text-stone-400 hover:text-stone-600"
+            className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-600"
           >
-            回复
+            <CommentIcon />
+            <span>{answer.comment_count || 0}</span>
           </button>
           {canEdit && (
             <button

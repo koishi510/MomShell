@@ -14,8 +14,9 @@ import { type Question } from '../../../types/community';
 import CommunityBackground from '../../../components/community/CommunityBackground';
 import QuestionDetailModal from '../../../components/community/QuestionDetailModal';
 import ReplyCard from '../../../components/community/ReplyCard';
+import { AuthGuard } from '../../../components/AuthGuard';
 
-export default function MyRepliesPage() {
+function MyRepliesContent() {
   const [answers, setAnswers] = useState<MyAnswerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,6 +136,14 @@ export default function MyRepliesPage() {
     }
   };
 
+  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+    if (selectedQuestion?.id === questionId) {
+      setSelectedQuestion((prev) =>
+        prev ? { ...prev, answer_count: answerCount } : null
+      );
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* 背景 */}
@@ -240,7 +249,16 @@ export default function MyRepliesPage() {
         onQuestionDeleted={handleQuestionDeleted}
         onViewCountUpdated={handleViewCountUpdated}
         onAnswerCreated={handleAnswerCreated}
+        onAnswerCountUpdated={handleAnswerCountUpdated}
       />
     </div>
+  );
+}
+
+export default function MyRepliesPage() {
+  return (
+    <AuthGuard>
+      <MyRepliesContent />
+    </AuthGuard>
   );
 }

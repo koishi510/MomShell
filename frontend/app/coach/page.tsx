@@ -29,6 +29,7 @@ import type { EnergyMetrics } from '../../types/coach';
 import { getUserId } from '../../lib/user';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAccessToken } from '../../lib/auth';
+import { AuthGuard } from '../../components/AuthGuard';
 
 // 动态获取API和WebSocket基础URL（支持同域部署）
 const getApiBase = () => {
@@ -645,6 +646,7 @@ export default function RehabPage() {
   }, [stopCamera, stopFrameSending, stopAllAudio]);
 
   return (
+    <AuthGuard>
     <div className="min-h-screen relative">
       {/* 背景层 */}
       <CoachBackground />
@@ -999,5 +1001,6 @@ export default function RehabPage() {
         )}
       </AnimatePresence>
     </div>
+    </AuthGuard>
   );
 }

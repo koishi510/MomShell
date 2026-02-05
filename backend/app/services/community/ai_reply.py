@@ -40,8 +40,11 @@ COMMUNITY_SYSTEM_PROMPT = """你是「贝壳姐姐」，MomShell 社区的 AI �
 7. 语气要像朋友聊天，不要像机器人
 8. 适当使用表情符号增加亲切感（但不要过多）
 
-## 回复格式
-直接回复内容，不需要任何前缀或格式标记。"""
+## 回复格式（非常重要）
+- 直接输出纯文本，禁止使用任何 Markdown 格式
+- 禁止使用：**粗体**、*斜体*、`代码`、# 标题、- 列表、> 引用、[链接](url) 等
+- 不要使用编号列表（1. 2. 3.），如需列举请用逗号或顿号分隔
+- 只输出自然的中文段落，像微信聊天一样"""
 
 
 def _get_role_display(role: str) -> str:
@@ -289,6 +292,7 @@ class AIReplyService:
                     status=ContentStatus.PUBLISHED,
                 )
                 db.add(answer)
+                await db.flush()  # Ensure answer is persisted before updating count
 
                 # Update question answer count
                 await db.execute(
@@ -298,7 +302,9 @@ class AIReplyService:
                 )
 
                 await db.commit()
-                logger.info(f"AI replied to question {question_id}")
+                logger.info(
+                    f"AI replied to question {question_id}, answer_count incremented"
+                )
 
                 # Save to user's chat memory
                 reply_preview = (
@@ -835,6 +841,7 @@ class AIReplyService:
                     status=ContentStatus.PUBLISHED,
                 )
                 db.add(answer)
+                await db.flush()  # Ensure answer is persisted before updating count
 
                 # Update question answer count
                 await db.execute(
@@ -844,7 +851,9 @@ class AIReplyService:
                 )
 
                 await db.commit()
-                logger.info(f"AI replied to answer {answer_id}")
+                logger.info(
+                    f"AI replied to answer {answer_id}, answer_count incremented"
+                )
 
                 # Save to user's chat memory
                 reply_preview = (

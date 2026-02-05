@@ -118,6 +118,61 @@ EMOTIONAL_KEYWORDS = [
 ]
 
 
+def strip_markdown(text: str) -> str:
+    """
+    Remove markdown formatting from text to prevent AI from mimicking markdown style.
+
+    Strips: headers, bold, italic, links, images, code blocks, lists, etc.
+    """
+    if not text:
+        return text
+
+    # Remove code blocks (```...```)
+    text = re.sub(r"```[\s\S]*?```", "", text)
+
+    # Remove inline code (`...`)
+    text = re.sub(r"`[^`]+`", "", text)
+
+    # Remove images ![alt](url)
+    text = re.sub(r"!\[[^\]]*\]\([^)]+\)", "", text)
+
+    # Remove links [text](url) -> keep text
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+
+    # Remove headers (# ## ### etc)
+    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
+
+    # Remove bold **text** or __text__
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"__([^_]+)__", r"\1", text)
+
+    # Remove italic *text* or _text_
+    text = re.sub(r"\*([^*]+)\*", r"\1", text)
+    text = re.sub(r"_([^_]+)_", r"\1", text)
+
+    # Remove strikethrough ~~text~~
+    text = re.sub(r"~~([^~]+)~~", r"\1", text)
+
+    # Remove blockquotes (> at start of line)
+    text = re.sub(r"^>\s*", "", text, flags=re.MULTILINE)
+
+    # Remove horizontal rules (---, ***, ___)
+    text = re.sub(r"^[-*_]{3,}\s*$", "", text, flags=re.MULTILINE)
+
+    # Remove list markers (- * + and numbered lists)
+    text = re.sub(r"^\s*[-*+]\s+", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^\s*\d+\.\s+", "", text, flags=re.MULTILINE)
+
+    # Remove HTML tags
+    text = re.sub(r"<[^>]+>", "", text)
+
+    # Clean up extra whitespace
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = text.strip()
+
+    return text
+
+
 def should_search(text: str) -> bool:
     """
     Determine if a text query should trigger web search.
@@ -219,9 +274,9 @@ class WebSearchService:
                     {
                         "title": r.get("title", ""),
                         "url": r.get("url", ""),
-                        "content": (r.get("description") or r.get("markdown", ""))[
-                            :500
-                        ],
+                        "content": strip_markdown(
+                            (r.get("description") or r.get("markdown", ""))[:500]
+                        ),
                     }
                     for r in data.get("data", [])[:max_results]
                 ],

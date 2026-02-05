@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../../../lib/apiClient';
 import CommunityBackground from '../../../../components/community/CommunityBackground';
+import { AuthGuard } from '../../../../components/AuthGuard';
 
 const COMMUNITY_API = '/api/v1/community';
 
@@ -50,7 +51,7 @@ interface PaginatedResponse {
   total_pages: number;
 }
 
-export default function AdminCertificationsPage() {
+function AdminCertificationsContent() {
   const [certifications, setCertifications] = useState<CertificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -469,5 +470,14 @@ export default function AdminCertificationsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+
+export default function AdminCertificationsPage() {
+  return (
+    <AuthGuard>
+      <AdminCertificationsContent />
+    </AuthGuard>
   );
 }

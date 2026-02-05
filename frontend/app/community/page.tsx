@@ -3,13 +3,15 @@
  * 互助社区页面
  */
 
-import CommunityFeed from '../../components/community/CommunityFeed';
+'use client';
 
-export const metadata = {
-  title: '互助社区 - MomShell',
-  description: '产后妈妈互助社区，分享经验，获取专业建议',
-};
+import CommunityFeed from '../../components/community/CommunityFeed';
+import { AuthGuard } from '../../components/AuthGuard';
 
 export default function CommunityPage() {
-  return <CommunityFeed />;
+  return (
+    <AuthGuard>
+      <CommunityFeed />
+    </AuthGuard>
+  );
 }
