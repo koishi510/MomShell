@@ -253,7 +253,7 @@ class WebSearchService:
         # Create a search-optimized query
         search_query = f"产后恢复 {question}"  # Add context for better results
 
-        results = await self.search(search_query, max_results=3)
+        results = await self.search(search_query, max_results=10)
 
         if not results["results"]:
             return None
@@ -263,8 +263,8 @@ class WebSearchService:
         for i, r in enumerate(results["results"], 1):
             context_parts.append(f"{i}. {r['title']}")
             if r["content"]:
-                content_preview = r["content"][:200].strip()
-                if len(r["content"]) > 200:
+                content_preview = r["content"][:500].strip()
+                if len(r["content"]) > 500:
                     content_preview += "..."
                 context_parts.append(f"   {content_preview}")
 
