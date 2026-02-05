@@ -3,8 +3,18 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](LICENSE)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![MediaPipe](https://img.shields.io/badge/MediaPipe-4285F4?logo=google&logoColor=white)](https://mediapipe.dev/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Ruff](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
+[![mypy](https://img.shields.io/badge/mypy-1674B1?logo=python&logoColor=white)](https://mypy-lang.org/)
+[![Qwen](https://img.shields.io/badge/Qwen-6F42C1?logo=alibabacloud&logoColor=white)](https://www.alibabacloud.com/solutions/generative-ai/qwen)
+[![Firecrawl](https://img.shields.io/badge/Firecrawl-FF6B35?logo=fire&logoColor=white)](https://www.firecrawl.dev/)
+[![Edge TTS](https://img.shields.io/badge/Edge%20TTS-0078D4?logo=microsoft&logoColor=white)](https://github.com/rany2/edge-tts)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
 A warm, AI-powered companion for postpartum recovery — offering emotional support, exercise coaching, and a caring community for new mothers.
 
@@ -161,14 +171,25 @@ git clone https://github.com/koishi510/MomShell.git
 cd MomShell
 ```
 
-2. Set up environment variables
+2. Run the setup script (recommended)
+
+```bash
+./scripts/dev-setup.sh
+```
+
+This script automatically checks prerequisites, creates `.env`, installs backend/frontend dependencies, and sets up Git hooks. See [Contributing Guide](CONTRIBUTING.md) for details.
+
+<details>
+<summary>Or install manually</summary>
+
+1. Set up environment variables
 
 ```bash
 cp .env.example .env
 # Edit .env and fill in your API keys
 ```
 
-3. Install backend dependencies
+2. Install backend dependencies
 
 ```bash
 cd backend
@@ -176,7 +197,7 @@ uv sync
 cd ..
 ```
 
-4. Install frontend dependencies
+3. Install frontend dependencies
 
 ```bash
 cd frontend
@@ -185,6 +206,8 @@ nvm use
 npm install
 cd ..
 ```
+
+</details>
 
 ### Running the Application
 

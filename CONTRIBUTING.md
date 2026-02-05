@@ -49,7 +49,17 @@ git lfs install
 
 ## 2. Project Initialization
 
-After cloning the repository, run the following commands in order from the project root directory.
+After cloning the repository, you can either use the automated setup script or run commands manually.
+
+### 2.0 Quick Setup (Recommended)
+
+Run the setup script from the project root. It checks prerequisites, creates `.env`, installs all dependencies, and configures Git hooks in one step:
+
+```bash
+./scripts/dev-setup.sh
+```
+
+If the script completes successfully, skip to [Section 3: IDE Configuration](#3-ide-configuration).
 
 ### 2.1 Sync Development Environment
 
