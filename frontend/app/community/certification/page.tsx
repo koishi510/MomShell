@@ -16,6 +16,7 @@ import {
   type CertificationType,
 } from '../../../lib/api/community';
 import CommunityBackground from '../../../components/community/CommunityBackground';
+import { AuthGuard } from '../../../components/AuthGuard';
 
 // Certification type options
 const certificationTypes = [
@@ -32,7 +33,7 @@ const statusConfig: Record<string, { label: string; color: string; bgColor: stri
   expired: { label: '已过期', color: 'text-stone-700', bgColor: 'bg-stone-100' },
 };
 
-export default function CertificationPage() {
+function CertificationContent() {
   const [certification, setCertification] = useState<CertificationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -438,5 +439,14 @@ export default function CertificationPage() {
         )}
       </main>
     </div>
+  );
+}
+
+
+export default function CertificationPage() {
+  return (
+    <AuthGuard>
+      <CertificationContent />
+    </AuthGuard>
   );
 }

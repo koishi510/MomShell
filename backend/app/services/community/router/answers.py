@@ -5,7 +5,7 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
-from ..ai_reply import trigger_ai_comment_on_answer, trigger_ai_reply_to_answer
+from ..ai_reply import trigger_ai_comment_on_answer
 from ..dependencies import (
     CommunityServiceDep,
     CurrentUser,
@@ -114,13 +114,12 @@ async def create_answer(
     """Create a new answer."""
     answer = await service.create_answer(db, question_id, answer_in, current_user)
 
-    # Trigger AI reply if user is not AI
+    # Only trigger AI reply if @贝壳姐姐 is mentioned
+    # Regular answers to posts do NOT trigger AI reply
     if current_user.role != UserRole.AI_ASSISTANT:
         if "@贝壳姐姐" in answer_in.content:
             # Reply as a comment inside this person's answer floor
             await trigger_ai_comment_on_answer(answer.id, question_id)
-        else:
-            await trigger_ai_reply_to_answer(answer.id, question_id)
 
         # Save to user's chat memory
         from app.services.chat.service import save_community_interaction
