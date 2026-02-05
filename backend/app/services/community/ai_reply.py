@@ -28,15 +28,17 @@ COMMUNITY_SYSTEM_PROMPT = """你是「贝壳姐姐」，MomShell 社区的 AI �
 - 你是社区里一位热心、有经验的"过来人"
 - 你的回复风格：温暖、真诚、有同理心，像朋友聊天一样自然
 - 你会根据提问者的身份调整称呼和语气
+- 你能够通过firecrawl来获取网络内容以了解最新的、可靠的信息，但不会编造内容
 
 ## 回复规则
 1. 回复要简短精炼（100-200字为宜），不要太长
 2. 先表达理解和共情，再给建议
-3. 不要使用医学专业术语，用通俗易懂的话
-4. 如果涉及严重健康问题，建议寻求专业医疗帮助
-5. 语气要像朋友聊天，不要像机器人
-6. 适当使用表情符号增加亲切感（但不要过多）
-7. **重要**：如果提供了网络搜索结果，请基于这些信息回答，不要编造内容
+3. **重要**：如果提供了网络搜索结果，请基于这些信息回答，不要编造内容。如果信息不足则陈述信息不足，并鼓励提问者寻求专业帮助。
+4. **重要**：请核查网络搜索结果中的地点、时间、人名等信息，确保符合提问者的需求（如地址是否与要求相同等）。
+5. 不要使用医学专业术语，用通俗易懂的话
+6. 如果涉及严重健康问题，建议寻求专业医疗帮助
+7. 语气要像朋友聊天，不要像机器人
+8. 适当使用表情符号增加亲切感（但不要过多）
 
 ## 回复格式
 直接回复内容，不需要任何前缀或格式标记。"""
@@ -177,11 +179,23 @@ class AIReplyService:
         answer_content: str,
         replier_nickname: str,
         replier_role: str,
+        web_search_context: str | None = None,
     ) -> str:
         """Generate AI reply to someone who replied to AI."""
         role_display = _get_role_display(replier_role)
 
-        user_prompt = f"""有人回复了你在社区的回答，请继续对话：
+        # Build context section if web search results available
+        context_section = ""
+        if web_search_context:
+            context_section = f"""
+## 参考信息（来自网络搜索）
+{web_search_context}
+
+请基于上述参考信息回答问题，但用温暖自然的语气表达。
+
+"""
+
+        user_prompt = f"""{context_section}有人回复了你在社区的回答，请继续对话：
 
 原帖标题：{question_title}
 原帖内容：{question_content}
@@ -308,11 +322,23 @@ class AIReplyService:
         comment_content: str,
         commenter_nickname: str,
         commenter_role: str,
+        web_search_context: str | None = None,
     ) -> str:
         """Generate AI reply to a comment mentioning @贝壳姐姐."""
         role_display = _get_role_display(commenter_role)
 
-        user_prompt = f"""有人在评论区@了你，请回复：
+        # Build context section if web search results available
+        context_section = ""
+        if web_search_context:
+            context_section = f"""
+## 参考信息（来自网络搜索）
+{web_search_context}
+
+请基于上述参考信息回答问题，但用温暖自然的语气表达。
+
+"""
+
+        user_prompt = f"""{context_section}有人在评论区@了你，请回复：
 
 原帖标题：{question_title}
 回答内容：{answer_content}
@@ -341,6 +367,8 @@ class AIReplyService:
 
     async def reply_to_comment(self, comment_id: str, answer_id: str) -> None:
         """Auto-reply when someone mentions @贝壳姐姐 in a comment."""
+        from app.services.web_search import get_web_search_service
+
         async with async_session_maker() as db:
             try:
                 # Get AI user
@@ -371,6 +399,21 @@ class AIReplyService:
                 if not question:
                     return
 
+                # Perform web search for factual questions
+                web_search_context = None
+                try:
+                    search_service = get_web_search_service()
+                    search_query = f"{question.title} {trigger_comment.content}"
+                    web_search_context = await search_service.search_for_context(
+                        search_query
+                    )
+                    if web_search_context:
+                        logger.info(
+                            f"Web search context found for comment {comment_id}"
+                        )
+                except Exception as e:
+                    logger.warning(f"Web search failed for comment {comment_id}: {e}")
+
                 # Generate reply
                 reply_content = await asyncio.get_event_loop().run_in_executor(
                     None,
@@ -380,6 +423,7 @@ class AIReplyService:
                     trigger_comment.content,
                     commenter.nickname,
                     commenter.role.value,
+                    web_search_context,
                 )
 
                 # Create comment reply (nested under the trigger comment)
@@ -419,6 +463,8 @@ class AIReplyService:
         self, comment_id: str, answer_id: str
     ) -> None:
         """Auto-reply when someone comments on AI's answer."""
+        from app.services.web_search import get_web_search_service
+
         async with async_session_maker() as db:
             try:
                 # Get AI user
@@ -449,6 +495,21 @@ class AIReplyService:
                 if not question:
                     return
 
+                # Perform web search for factual questions
+                web_search_context = None
+                try:
+                    search_service = get_web_search_service()
+                    search_query = f"{question.title} {trigger_comment.content}"
+                    web_search_context = await search_service.search_for_context(
+                        search_query
+                    )
+                    if web_search_context:
+                        logger.info(
+                            f"Web search context found for comment on AI answer {comment_id}"
+                        )
+                except Exception as e:
+                    logger.warning(f"Web search failed for comment {comment_id}: {e}")
+
                 # Generate reply
                 reply_content = await asyncio.get_event_loop().run_in_executor(
                     None,
@@ -458,6 +519,7 @@ class AIReplyService:
                     trigger_comment.content,
                     commenter.nickname,
                     commenter.role.value,
+                    web_search_context,
                 )
 
                 # Create comment reply (nested under the trigger comment)
@@ -502,6 +564,8 @@ class AIReplyService:
         self, comment_id: str, answer_id: str, parent_comment_id: str
     ) -> None:
         """Auto-reply when someone replies to AI's comment."""
+        from app.services.web_search import get_web_search_service
+
         async with async_session_maker() as db:
             try:
                 # Get AI user
@@ -537,6 +601,21 @@ class AIReplyService:
                 if not question:
                     return
 
+                # Perform web search for factual questions
+                web_search_context = None
+                try:
+                    search_service = get_web_search_service()
+                    search_query = f"{question.title} {trigger_comment.content}"
+                    web_search_context = await search_service.search_for_context(
+                        search_query
+                    )
+                    if web_search_context:
+                        logger.info(
+                            f"Web search context found for reply on AI comment {comment_id}"
+                        )
+                except Exception as e:
+                    logger.warning(f"Web search failed for comment {comment_id}: {e}")
+
                 # Generate reply
                 reply_content = await asyncio.get_event_loop().run_in_executor(
                     None,
@@ -546,6 +625,7 @@ class AIReplyService:
                     trigger_comment.content,
                     commenter.nickname,
                     commenter.role.value,
+                    web_search_context,
                 )
 
                 # Create comment reply (nested under the trigger comment)
@@ -590,6 +670,8 @@ class AIReplyService:
         self, answer_id: str, question_id: str
     ) -> None:
         """Reply as a comment under someone's answer (when they @贝壳姐姐 in their answer)."""
+        from app.services.web_search import get_web_search_service
+
         async with async_session_maker() as db:
             try:
                 # Get AI user
@@ -612,6 +694,21 @@ class AIReplyService:
                 if not question:
                     return
 
+                # Perform web search for factual questions
+                web_search_context = None
+                try:
+                    search_service = get_web_search_service()
+                    search_query = f"{question.title} {answer.content}"
+                    web_search_context = await search_service.search_for_context(
+                        search_query
+                    )
+                    if web_search_context:
+                        logger.info(
+                            f"Web search context found for answer comment {answer_id}"
+                        )
+                except Exception as e:
+                    logger.warning(f"Web search failed for answer {answer_id}: {e}")
+
                 # Generate reply
                 reply_content = await asyncio.get_event_loop().run_in_executor(
                     None,
@@ -621,6 +718,7 @@ class AIReplyService:
                     answer.content,
                     author.nickname,
                     author.role.value,
+                    web_search_context,
                 )
 
                 # Create comment under the answer (inside the person's floor)
@@ -661,6 +759,8 @@ class AIReplyService:
 
     async def reply_to_answer(self, answer_id: str, question_id: str) -> None:
         """Auto-reply when someone replies to AI's answer."""
+        from app.services.web_search import get_web_search_service
+
         async with async_session_maker() as db:
             try:
                 # Get AI user
@@ -700,6 +800,19 @@ class AIReplyService:
                     # AI hasn't answered this question, no need to reply
                     return
 
+                # Perform web search for factual questions
+                web_search_context = None
+                try:
+                    search_service = get_web_search_service()
+                    search_query = f"{question.title} {trigger_answer.content}"
+                    web_search_context = await search_service.search_for_context(
+                        search_query
+                    )
+                    if web_search_context:
+                        logger.info(f"Web search context found for answer {answer_id}")
+                except Exception as e:
+                    logger.warning(f"Web search failed for answer {answer_id}: {e}")
+
                 # Generate reply
                 reply_content = await asyncio.get_event_loop().run_in_executor(
                     None,
@@ -709,6 +822,7 @@ class AIReplyService:
                     trigger_answer.content,
                     replier.nickname,
                     replier.role.value,
+                    web_search_context,
                 )
 
                 # Create answer
