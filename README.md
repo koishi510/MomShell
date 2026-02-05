@@ -12,8 +12,8 @@
 [![Ruff](https://img.shields.io/badge/Ruff-D7FF64?logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
 [![mypy](https://img.shields.io/badge/mypy-1674B1?logo=python&logoColor=white)](https://mypy-lang.org/)
 [![Qwen](https://img.shields.io/badge/Qwen-6F42C1?logo=alibabacloud&logoColor=white)](https://www.alibabacloud.com/solutions/generative-ai/qwen)
-[![Firecrawl](https://img.shields.io/badge/Firecrawl-FF6B35?logo=fire&logoColor=white)](https://www.firecrawl.dev/)
-[![Edge TTS](https://img.shields.io/badge/Edge%20TTS-0078D4?logo=microsoft&logoColor=white)](https://github.com/rany2/edge-tts)
+[![Firecrawl](https://img.shields.io/badge/Firecrawl-FF6B35?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0iTTEzLjUuNjdzLjc0IDIuNjUuNzQgNC44YzAgMi4wNi0xLjM1IDMuNzMtMy40MSAzLjczLTIuMDcgMC0zLjYzLTEuNjctMy42My0zLjczbC4wMy0uMzZDNS4yMSA3LjUxIDQgMTAuNjIgNCAxNGMwIDQuNDIgMy41OCA4IDggOHM4LTMuNTggOC04QzIwIDguNjEgMTcuNDEgMy44IDEzLjUuNjd6TTExLjcxIDE5Yy0xLjc4IDAtMy4yMi0xLjQtMy4yMi0zLjE0IDAtMS42MiAxLjA1LTIuNzYgMi44MS0zLjEyIDEuNzctLjM2IDMuNi0xLjIxIDQuNjItMi41OC4zOSAxLjI5LjU5IDIuNjUuNTkgNC4wNCAwIDIuNjUtMi4xNSA0LjgtNC44IDQuOHoiLz48L3N2Zz4K&logoColor=white)](https://www.firecrawl.dev/)
+[![Edge TTS](https://img.shields.io/badge/Edge%20TTS-0078D4?logo=microsoftedge&logoColor=white)](https://github.com/rany2/edge-tts)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
 A warm, AI-powered companion for postpartum recovery — offering emotional support, exercise coaching, and a caring community for new mothers.
