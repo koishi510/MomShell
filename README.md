@@ -15,6 +15,7 @@ A warm, AI-powered companion for postpartum recovery — offering emotional supp
   - Designed specifically for postpartum emotional support
   - Visual ambient effects with healing UI design
   - Conversation memory for personalized interactions
+  - Web search integration (Firecrawl) for factual/medical questions to reduce hallucinations
 - **Sisterhood Bond**: Mutual support community for postpartum mothers
   - Dual-channel system: Professional Channel (doctors' advice) & Experience Channel (moms' stories)
   - Verified healthcare professionals: doctors, therapists, nurses
@@ -74,7 +75,8 @@ MomShell/
 │   │   │   │   ├── moderation/ # Content moderation
 │   │   │   │   ├── router/     # Community API routes
 │   │   │   │   └── schemas/    # Community schemas
-│   │   │   └── guardian/       # Guardian Partner service
+│   │   │   ├── guardian/       # Guardian Partner service
+│   │   │   └── web_search.py   # Firecrawl web search service
 │   │   ├── static/             # Static assets (CSS, JS)
 │   │   ├── templates/          # HTML templates
 │   │   └── tts_cache/          # TTS audio cache (gitignored)
@@ -306,6 +308,7 @@ make docker-build            # Build combined image
 | `MEDIAPIPE_MODEL`         | Pose detection model (`lite` or `full`) | No       | `lite`                                   |
 | `MIN_TRACKING_CONFIDENCE` | MediaPipe tracking confidence           | No       | `0.3`                                    |
 | `TTS_VOICE`               | Microsoft Edge TTS voice                | No       | `zh-CN-XiaoxiaoNeural`                   |
+| `FIRECRAWL_API_KEY`       | Firecrawl API key for web search        | No       | -                                        |
 
 **Important**: Do not use quotes around values in `.env` - Docker `--env-file` includes quotes literally.
 
