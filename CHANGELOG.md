@@ -18,10 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Emotional support queries are skipped (no search needed)
 
 - **AI Reply Improvements**:
-  - Community AI (`ai_reply.py`) now uses web search for factual questions
-  - Chat Companion (`chat/service.py`) now uses web search for factual questions
-  - Search results are formatted as context for LLM to ground responses
+  - All 8 LLM call sites now use web search for factual questions:
+    - Community: `reply_to_question`, `reply_to_answer`, `reply_to_comment`, `reply_to_comment_on_ai_answer`, `reply_to_reply_on_ai_comment`, `reply_as_comment_to_answer`
+    - Chat: `chat_authenticated`, `chat` (guest mode)
+  - Search results formatted as context for LLM to ground responses
   - System prompts updated to instruct AI to use search results when available
+  - Search returns up to 10 results with 500-char content preview each
 
 - **New Environment Variable**: `FIRECRAWL_API_KEY` for web search configuration
 
