@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **License**: Changed from GPL-3.0 to AGPL-3.0 to prevent closed-source SaaS forks
+  - AGPL-3.0 requires network service operators to share modified source code
+  - Better suited for a web application that could be deployed as a service
+
 - **Documentation Standards**: CLAUDE.md now specifies English-only rule for documentation
   - Exception: Chinese text allowed for code identifiers and UI references (e.g., `@贝壳姐姐`)
 
