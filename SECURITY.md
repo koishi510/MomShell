@@ -27,7 +27,7 @@ Instead, please report them via one of the following methods:
 Please include the following information in your report:
 
 - Type of vulnerability (e.g., SQL injection, XSS, authentication bypass)
-- Affected component (Soulful Companion, Recovery Coach, Community, API, etc.)
+- Affected component (Soul Companion, Recovery Coach, Community, Guardian Partner, API, etc.)
 - Step-by-step instructions to reproduce the issue
 - Proof-of-concept or exploit code (if possible)
 - Potential impact of the vulnerability
@@ -47,7 +47,8 @@ When deploying MomShell, please ensure:
 
 1. **Environment Variables**
    - Never commit `.env` files or API keys to version control
-   - Use secure secret management for `MODELSCOPE_SDK_TOKEN`
+   - Use secure secret management for `MODELSCOPE_KEY`
+   - Change `JWT_SECRET_KEY` to a secure random value in production
    - Rotate API keys periodically
 
 2. **Network Security**

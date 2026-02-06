@@ -29,6 +29,12 @@ Welcome to the MomShell documentation. This index will help you find the informa
 1. **[Deployment](deployment.md)** - Deploy with Docker
 2. **[Configuration](configuration.md)** - Configure environment variables
 
+## Project
+
+- **[Changelog](../CHANGELOG.md)** - Version history
+- **[Code of Conduct](../CODE_OF_CONDUCT.md)** - Community guidelines
+- **[Security](../SECURITY.md)** - Security policy
+
 ---
 
 [Back to main README](../README.md)

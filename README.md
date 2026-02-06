@@ -65,6 +65,9 @@ docker compose up -d --build
 | [Configuration](docs/configuration.md) | Environment variables |
 | [Architecture](docs/architecture.md) | Technical overview |
 | [Contributing](CONTRIBUTING.md) | Contribution guidelines |
+| [Changelog](CHANGELOG.md) | Version history |
+| [Code of Conduct](CODE_OF_CONDUCT.md) | Community guidelines |
+| [Security](SECURITY.md) | Security policy |
 
 ## License
 
