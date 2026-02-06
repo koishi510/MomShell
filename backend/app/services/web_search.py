@@ -15,142 +15,85 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 
 
-def extract_location(text: str) -> str | None:
+def analyze_search_intent(text: str) -> dict[str, Any]:
     """
-    Extract location names from Chinese text using jieba POS tagging,
-    then translate to English using LLM.
+    Use AI to analyze user message and extract search parameters in ONE call.
 
-    Returns location in Firecrawl format like "Shanghai,China".
+    Returns dict with:
+    - needs_search: bool - whether web search is needed
+    - location: str | None - English location for Firecrawl
+    - time_filter: str | None - tbs parameter value
     """
-    import jieba
-    import jieba.posseg as pseg
     from openai import OpenAI
 
     from app.core.config import get_settings
 
-    # Add common location names to jieba dictionary with correct POS
-    location_words = [
-        "杨浦",
-        "宝山",
-        "浦东",
-        "静安",
-        "黄浦",
-        "徐汇",
-        "长宁",
-        "虹口",
-        "普陀",
-        "闵行",
-        "嘉定",
-        "松江",
-        "青浦",
-        "奉贤",
-        "金山",
-        "崇明",
-        "朝阳",
-        "海淀",
-        "东城",
-        "西城",
-        "丰台",
-        "通州",
-        "大兴",
-        "顺义",
-        "昌平",
-        "天河",
-        "越秀",
-        "荔湾",
-        "福田",
-        "南山",
-        "罗湖",
-    ]
-    for word in location_words:
-        jieba.add_word(word, tag="ns")
-
-    # POS tags: ns (地名), nr (人名 - some districts are tagged as person names)
-    chinese_locations = []
-    words = pseg.cut(text)
-    for word, flag in words:
-        if flag in ("ns", "nr"):  # Include both place names and ambiguous names
-            chinese_locations.append(word)
-
-    if not chinese_locations:
-        return None
-
-    # Use LLM to translate Chinese location to English
     try:
         settings = get_settings()
         if not settings.modelscope_key:
-            return None
+            return {"needs_search": False, "location": None, "time_filter": None}
 
         client = OpenAI(
             api_key=settings.modelscope_key,
             base_url=settings.modelscope_base_url,
         )
 
-        location_text = " ".join(chinese_locations)
         response = client.chat.completions.create(
             model=settings.modelscope_model,
             messages=[
                 {
                     "role": "user",
-                    "content": f"""判断以下词语是否为中国地名（城市、区县、街道等），如果是则翻译成英文。
+                    "content": f"""分析用户消息，返回JSON格式结果。
 
-格式要求：区名,城市名,China（如 Yangpu,Shanghai,China）或 城市名,China（如 Shanghai,China）
-如果不是地名（如"康复"、"月子"等普通词汇），返回 NONE
-只返回一行结果，不要其他内容。
+## 判断规则
 
-词语：{location_text}""",
+needs_search = true 的情况：
+- 询问具体地点、机构、服务（如月子中心、医院）
+- 询问最新信息、新闻、活动
+- 询问医学知识、症状、治疗方法
+- 询问"怎么办"、"如何"等需要专业知识的问题
+
+needs_search = false 的情况：
+- 情感倾诉（如"我好累"）
+- 日常闲聊、打招呼
+
+location：如果提到中国地名，翻译成英文格式如 "Yangpu,Shanghai,China"，否则为 null
+
+time_filter：
+- 提到"今天" → "qdr:d"
+- 提到"本周/最近几天" → "qdr:w"
+- 提到"最近/近期/本月" → "qdr:m"
+- 提到"最新" → "qdr:w"
+- 否则为 null
+
+## 返回格式（只返回JSON，不要其他内容）
+{{"needs_search": true/false, "location": "..." or null, "time_filter": "..." or null}}
+
+用户消息：{text}""",
                 }
             ],
             temperature=0,
-            max_tokens=50,
+            max_tokens=100,
         )
-        result = response.choices[0].message.content or ""
-        result = result.strip().split("\n")[0]  # Take only first line
+        result = response.choices[0].message.content or "{}"
 
-        # If empty, NONE, or looks like an error, return None
-        if not result or result.upper() == "NONE" or len(result) < 3:
-            return None
+        # Parse JSON response
+        import json
 
-        # Ensure it ends with ,China
-        if not result.endswith(",China"):
-            result = f"{result},China"
-
-        return result
+        try:
+            parsed = json.loads(result.strip())
+            return {
+                "needs_search": parsed.get("needs_search", False),
+                "location": parsed.get("location"),
+                "time_filter": parsed.get("time_filter"),
+            }
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to parse search intent JSON: {result}")
+            return {"needs_search": False, "location": None, "time_filter": None}
 
     except Exception as e:
-        logger.warning(f"Failed to translate location: {e}")
-        return None
-
-
-def extract_time_filter(text: str) -> str | None:
-    """
-    Extract time-based filter from Chinese text.
-
-    Returns Firecrawl tbs parameter value like "qdr:d", "qdr:w", etc.
-    """
-    # Time patterns mapping to tbs values
-    time_patterns = [
-        # Past hour
-        (r"(刚才|刚刚|一小时内|一个小时)", "qdr:h"),
-        # Past day
-        (r"(今天|今日|24小时|二十四小时)", "qdr:d"),
-        # Past week
-        (r"(本周|这周|这个星期|一周内|最近几天|近几天)", "qdr:w"),
-        # Past month
-        (r"(本月|这个月|最近|近期|一个月内)", "qdr:m"),
-        # Past year
-        (r"(今年|一年内|近一年)", "qdr:y"),
-    ]
-
-    for pattern, tbs in time_patterns:
-        if re.search(pattern, text):
-            return tbs
-
-    # Check for "最新" which implies recent
-    if re.search(r"最新", text):
-        return "qdr:w"
-
-    return None
+        logger.warning(f"AI analyze_search_intent failed: {e}")
+        return {"needs_search": False, "location": None, "time_filter": None}
 
 
 def strip_markdown(text: str) -> str:
@@ -206,63 +149,6 @@ def strip_markdown(text: str) -> str:
     text = text.strip()
 
     return text
-
-
-def should_search(text: str) -> bool:
-    """
-    Use AI to determine if a text query should trigger web search.
-
-    Returns True for factual questions needing external info,
-    False for emotional support or general chat.
-    """
-    from openai import OpenAI
-
-    from app.core.config import get_settings
-
-    try:
-        settings = get_settings()
-        if not settings.modelscope_key:
-            return False
-
-        client = OpenAI(
-            api_key=settings.modelscope_key,
-            base_url=settings.modelscope_base_url,
-        )
-
-        response = client.chat.completions.create(
-            model=settings.modelscope_model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""判断以下用户消息是否需要联网搜索来获取准确信息。
-
-需要搜索的情况（回答YES）：
-- 询问具体地点、机构、服务（如月子中心、医院、康复机构）
-- 询问最新信息、新闻、活动
-- 询问医学知识、症状、治疗方法（如产后抑郁、盆底肌恢复）
-- 询问产品推荐、价格、评价
-- 询问"怎么办"、"如何"等需要专业知识的问题
-
-不需要搜索的情况（回答NO）：
-- 纯粹的情感倾诉（如"我好累"、"我很难过"）
-- 日常闲聊、打招呼（如"你好"、"谢谢"）
-- 不需要外部信息的简单对话
-
-只回答 YES 或 NO，不要其他内容。
-
-用户消息：{text}""",
-                }
-            ],
-            temperature=0,
-            max_tokens=10,
-        )
-        result = response.choices[0].message.content or ""
-        return result.strip().upper() == "YES"
-
-    except Exception as e:
-        logger.warning(f"AI should_search failed: {e}")
-        # Fallback to False on error
-        return False
 
 
 class WebSearchService:
@@ -385,15 +271,17 @@ class WebSearchService:
         if not self.is_configured:
             return None
 
-        if not should_search(question):
+        # Use ONE LLM call to analyze search intent, location, and time
+        intent = analyze_search_intent(question)
+
+        if not intent["needs_search"]:
             logger.debug(
                 f"Skipping search for non-factual question: {question[:50]}..."
             )
             return None
 
-        # Extract location and time filters from the question
-        location = extract_location(question)
-        tbs = extract_time_filter(question)
+        location = intent["location"]
+        tbs = intent["time_filter"]
 
         if location:
             logger.info(f"Extracted location from query: {location}")
