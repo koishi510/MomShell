@@ -14,6 +14,145 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+
+def extract_location(text: str) -> str | None:
+    """
+    Extract location names from Chinese text using jieba POS tagging,
+    then translate to English using LLM.
+
+    Returns location in Firecrawl format like "Shanghai,China".
+    """
+    import jieba
+    import jieba.posseg as pseg
+    from openai import OpenAI
+
+    from app.core.config import get_settings
+
+    # Add common location names to jieba dictionary with correct POS
+    location_words = [
+        "杨浦",
+        "宝山",
+        "浦东",
+        "静安",
+        "黄浦",
+        "徐汇",
+        "长宁",
+        "虹口",
+        "普陀",
+        "闵行",
+        "嘉定",
+        "松江",
+        "青浦",
+        "奉贤",
+        "金山",
+        "崇明",
+        "朝阳",
+        "海淀",
+        "东城",
+        "西城",
+        "丰台",
+        "通州",
+        "大兴",
+        "顺义",
+        "昌平",
+        "天河",
+        "越秀",
+        "荔湾",
+        "福田",
+        "南山",
+        "罗湖",
+    ]
+    for word in location_words:
+        jieba.add_word(word, tag="ns")
+
+    # POS tags: ns (地名), nr (人名 - some districts are tagged as person names)
+    chinese_locations = []
+    words = pseg.cut(text)
+    for word, flag in words:
+        if flag in ("ns", "nr"):  # Include both place names and ambiguous names
+            chinese_locations.append(word)
+
+    if not chinese_locations:
+        return None
+
+    # Use LLM to translate Chinese location to English
+    try:
+        settings = get_settings()
+        if not settings.modelscope_key:
+            return None
+
+        client = OpenAI(
+            api_key=settings.modelscope_key,
+            base_url=settings.modelscope_base_url,
+        )
+
+        location_text = " ".join(chinese_locations)
+        response = client.chat.completions.create(
+            model=settings.modelscope_model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""判断以下词语是否为中国地名（城市、区县、街道等），如果是则翻译成英文。
+
+格式要求：区名,城市名,China（如 Yangpu,Shanghai,China）或 城市名,China（如 Shanghai,China）
+如果不是地名（如"康复"、"月子"等普通词汇），返回 NONE
+只返回一行结果，不要其他内容。
+
+词语：{location_text}""",
+                }
+            ],
+            temperature=0,
+            max_tokens=50,
+        )
+        result = response.choices[0].message.content or ""
+        result = result.strip().split("\n")[0]  # Take only first line
+
+        # If empty, NONE, or looks like an error, return None
+        if not result or result.upper() == "NONE" or len(result) < 3:
+            return None
+
+        # Ensure it ends with ,China
+        if not result.endswith(",China"):
+            result = f"{result},China"
+
+        return result
+
+    except Exception as e:
+        logger.warning(f"Failed to translate location: {e}")
+        return None
+
+
+def extract_time_filter(text: str) -> str | None:
+    """
+    Extract time-based filter from Chinese text.
+
+    Returns Firecrawl tbs parameter value like "qdr:d", "qdr:w", etc.
+    """
+    # Time patterns mapping to tbs values
+    time_patterns = [
+        # Past hour
+        (r"(刚才|刚刚|一小时内|一个小时)", "qdr:h"),
+        # Past day
+        (r"(今天|今日|24小时|二十四小时)", "qdr:d"),
+        # Past week
+        (r"(本周|这周|这个星期|一周内|最近几天|近几天)", "qdr:w"),
+        # Past month
+        (r"(本月|这个月|最近|近期|一个月内)", "qdr:m"),
+        # Past year
+        (r"(今年|一年内|近一年)", "qdr:y"),
+    ]
+
+    for pattern, tbs in time_patterns:
+        if re.search(pattern, text):
+            return tbs
+
+    # Check for "最新" which implies recent
+    if re.search(r"最新", text):
+        return "qdr:w"
+
+    return None
+
+
 # Keywords that suggest a factual/medical question needing web search
 FACTUAL_KEYWORDS = [
     # Medical terms (Chinese)
@@ -209,51 +348,6 @@ def should_search(text: str) -> bool:
     return factual_score >= 1 and has_question_pattern
 
 
-def extract_keywords(text: str, max_keywords: int = 5) -> str:
-    """
-    Extract keywords from text for optimized search query.
-
-    Instead of using the full sentence, extract relevant keywords
-    to improve search quality.
-
-    Args:
-        text: The input text (question/comment)
-        max_keywords: Maximum number of keywords to extract
-
-    Returns:
-        A space-separated string of keywords for search
-    """
-    text_lower = text.lower()
-
-    # Extract matching factual keywords from the text
-    found_keywords = []
-    for kw in FACTUAL_KEYWORDS:
-        if kw in text_lower and kw not in found_keywords:
-            found_keywords.append(kw)
-
-    # Also extract Chinese noun phrases (simple heuristic)
-    # Look for 2-4 character Chinese word patterns that might be nouns
-    chinese_pattern = re.findall(r"[\u4e00-\u9fff]{2,4}", text)
-    for phrase in chinese_pattern:
-        # Skip if it's a question word or emotional keyword
-        if phrase in ["怎么", "如何", "为什么", "是什么", "什么", "有什么", "哪些"]:
-            continue
-        if phrase in EMOTIONAL_KEYWORDS:
-            continue
-        if phrase not in found_keywords:
-            found_keywords.append(phrase)
-
-    # Limit to max_keywords
-    keywords = found_keywords[:max_keywords]
-
-    # If we found keywords, return them; otherwise return original text trimmed
-    if keywords:
-        return " ".join(keywords)
-    else:
-        # Fallback: return first 50 chars of original text
-        return text[:50].strip()
-
-
 class WebSearchService:
     """Service for performing web searches using Firecrawl API."""
 
@@ -278,6 +372,8 @@ class WebSearchService:
         self,
         query: str,
         max_results: int = 3,
+        location: str | None = None,
+        tbs: str | None = None,
     ) -> dict[str, Any]:
         """
         Perform a web search using Firecrawl API.
@@ -285,6 +381,8 @@ class WebSearchService:
         Args:
             query: Search query string
             max_results: Maximum number of results (1-10)
+            location: Geographic location for search (e.g., "Shanghai,China")
+            tbs: Time-based filter (e.g., "qdr:d" for past day)
 
         Returns:
             dict with 'results' key containing search results
@@ -295,6 +393,24 @@ class WebSearchService:
 
         client = await self._get_client()
 
+        # Build request payload
+        payload: dict[str, Any] = {
+            "query": query,
+            "limit": max_results,
+            "scrapeOptions": {"formats": ["markdown"]},
+            "country": "CN",  # Default to China for Chinese queries
+        }
+
+        # Add optional location parameter
+        if location:
+            payload["location"] = location
+            logger.debug(f"Using location filter: {location}")
+
+        # Add optional time-based filter
+        if tbs:
+            payload["tbs"] = tbs
+            logger.debug(f"Using time filter: {tbs}")
+
         try:
             response = await client.post(
                 f"{self._base_url}/search",
@@ -302,11 +418,7 @@ class WebSearchService:
                     "Authorization": f"Bearer {self._api_key}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "query": query,
-                    "limit": max_results,
-                    "scrapeOptions": {"formats": ["markdown"]},
-                },
+                json=payload,
             )
             response.raise_for_status()
             data = response.json()
@@ -351,11 +463,21 @@ class WebSearchService:
             )
             return None
 
-        # Extract keywords for optimized search query
-        search_query = extract_keywords(question)
-        logger.debug(f"Extracted search keywords: {search_query}")
+        # Extract location and time filters from the question
+        location = extract_location(question)
+        tbs = extract_time_filter(question)
 
-        results = await self.search(search_query, max_results=10)
+        if location:
+            logger.info(f"Extracted location from query: {location}")
+        if tbs:
+            logger.info(f"Extracted time filter from query: {tbs}")
+
+        # Use original question as search query (trimmed to reasonable length)
+        search_query = question[:100].strip()
+
+        results = await self.search(
+            search_query, max_results=10, location=location, tbs=tbs
+        )
 
         if not results["results"]:
             return None
