@@ -153,110 +153,6 @@ def extract_time_filter(text: str) -> str | None:
     return None
 
 
-# Keywords that suggest a factual/medical question needing web search
-FACTUAL_KEYWORDS = [
-    # Medical terms (Chinese)
-    "产后",
-    "恢复",
-    "母乳",
-    "喂养",
-    "婴儿",
-    "宝宝",
-    "症状",
-    "治疗",
-    "药物",
-    "医生",
-    "医院",
-    "感染",
-    "发烧",
-    "疼痛",
-    "出血",
-    "伤口",
-    "抑郁",
-    "焦虑",
-    "睡眠",
-    "失眠",
-    "盆底",
-    "腹直肌",
-    "分离",
-    "运动",
-    "营养",
-    "饮食",
-    "食物",
-    "维生素",
-    # Medical terms (English)
-    "postpartum",
-    "recovery",
-    "breastfeeding",
-    "baby",
-    "symptom",
-    "treatment",
-    "medicine",
-    "doctor",
-    "infection",
-    "fever",
-    "pain",
-    "bleeding",
-    "depression",
-    "anxiety",
-    "sleep",
-    "insomnia",
-    "pelvic floor",
-    "diastasis recti",
-    "exercise",
-    "nutrition",
-    "diet",
-    "vitamin",
-    # Question indicators
-    "怎么",
-    "如何",
-    "为什么",
-    "是什么",
-    "什么是",
-    "应该",
-    "需要",
-    "可以吗",
-    "正常吗",
-    "有什么",
-    "哪些",
-    "推荐",
-    "建议",
-    "how",
-    "what",
-    "why",
-    "should",
-    "can",
-    "need",
-    "recommend",
-    "suggest",
-]
-
-# Keywords that suggest emotional support (no search needed)
-EMOTIONAL_KEYWORDS = [
-    "累了",
-    "难过",
-    "伤心",
-    "哭",
-    "崩溃",
-    "孤独",
-    "害怕",
-    "担心",
-    "烦躁",
-    "开心",
-    "高兴",
-    "感谢",
-    "谢谢",
-    "tired",
-    "sad",
-    "cry",
-    "lonely",
-    "scared",
-    "worried",
-    "happy",
-    "thankful",
-]
-
-
 def strip_markdown(text: str) -> str:
     """
     Remove markdown formatting from text to prevent AI from mimicking markdown style.
@@ -314,38 +210,59 @@ def strip_markdown(text: str) -> str:
 
 def should_search(text: str) -> bool:
     """
-    Determine if a text query should trigger web search.
+    Use AI to determine if a text query should trigger web search.
 
-    Returns True for factual/medical questions, False for emotional support.
+    Returns True for factual questions needing external info,
+    False for emotional support or general chat.
     """
-    text_lower = text.lower()
+    from openai import OpenAI
 
-    # Check for emotional content first (no search needed)
-    emotional_score = sum(1 for kw in EMOTIONAL_KEYWORDS if kw in text_lower)
-    if emotional_score >= 2:
+    from app.core.config import get_settings
+
+    try:
+        settings = get_settings()
+        if not settings.modelscope_key:
+            return False
+
+        client = OpenAI(
+            api_key=settings.modelscope_key,
+            base_url=settings.modelscope_base_url,
+        )
+
+        response = client.chat.completions.create(
+            model=settings.modelscope_model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""判断以下用户消息是否需要联网搜索来获取准确信息。
+
+需要搜索的情况（回答YES）：
+- 询问具体地点、机构、服务（如月子中心、医院、康复机构）
+- 询问最新信息、新闻、活动
+- 询问医学知识、症状、治疗方法（如产后抑郁、盆底肌恢复）
+- 询问产品推荐、价格、评价
+- 询问"怎么办"、"如何"等需要专业知识的问题
+
+不需要搜索的情况（回答NO）：
+- 纯粹的情感倾诉（如"我好累"、"我很难过"）
+- 日常闲聊、打招呼（如"你好"、"谢谢"）
+- 不需要外部信息的简单对话
+
+只回答 YES 或 NO，不要其他内容。
+
+用户消息：{text}""",
+                }
+            ],
+            temperature=0,
+            max_tokens=10,
+        )
+        result = response.choices[0].message.content or ""
+        return result.strip().upper() == "YES"
+
+    except Exception as e:
+        logger.warning(f"AI should_search failed: {e}")
+        # Fallback to False on error
         return False
-
-    # Check for factual/medical content
-    factual_score = sum(1 for kw in FACTUAL_KEYWORDS if kw in text_lower)
-
-    # Check for question patterns
-    question_patterns = [
-        r"怎么[办回]",
-        r"如何",
-        r"为什么",
-        r"是什么",
-        r"有什么",
-        r"推荐",
-        r"正常吗",
-        r"可以吗",
-        r"需要.+吗",
-        r"\?$",
-        r"？$",
-    ]
-    has_question_pattern = any(re.search(p, text) for p in question_patterns)
-
-    # Trigger search if factual keywords found AND question pattern present
-    return factual_score >= 1 and has_question_pattern
 
 
 class WebSearchService:
