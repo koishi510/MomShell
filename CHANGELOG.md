@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-02-06
+
+### Added
+
+#### Chain-of-Verification (CoVe) for Hallucination Reduction
+
+- **CoVe Service**: New verification service to reduce AI hallucinations
+  - New `verification.py` with `ChainOfVerification` class
+  - Implements the CoVe approach from https://arxiv.org/abs/2309.11495
+  - Three-step verification: extract claims, verify against search context, correct if needed
+
+- **Integrated into All AI Response Paths**:
+  - Community: All 6 reply methods now apply CoVe after generating responses
+  - Chat: Both `chat_authenticated` and `chat` (guest) apply CoVe
+  - Only triggers when web search context is available
+  - Logs when corrections are made for observability
+
+### Changed
+
+- **AI Response Flow**: Now two-stage hallucination reduction
+  1. Stage 1 (RAG): Web search provides grounding context
+  2. Stage 2 (CoVe): Response verification and correction
+
+---
+
 ## [0.5.1] - 2026-02-05
 
 ### Added
