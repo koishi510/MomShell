@@ -147,33 +147,23 @@ flowchart TD
 ### Data Flow
 
 ```mermaid
-flowchart LR
-    subgraph FE[Frontend]
-        UI[Next.js + React]
+flowchart TD
+    UI[Frontend] <-->|REST / WS| API[Backend API]
+
+    API --> Services
+
+    subgraph Services[Services]
+        Auth
+        Chat
+        Community
+        Coach
+        Guardian
     end
 
-    subgraph BE[Backend]
-        API[FastAPI]
-        Auth[Auth]
-        Chat[Chat AI]
-        Community[Community]
-        Coach[Coach]
-        Guardian[Guardian]
-    end
-
-    UI <-->|REST / WS| API
-    API --- Auth & Chat & Community & Coach & Guardian
-
-    %% All modules store user data
-    Auth & Chat & Community & Coach & Guardian --> DB[(SQLite)]
-
-    %% Chat AI connections
+    Services --> DB[(SQLite)]
     Chat --> LLM[ModelScope]
     Chat --> Search[Firecrawl]
-    Chat -.->|read user data| DB
-
-    %% Community uses Chat AI
-    Community -.->|AI reply| Chat
+    Community -.-> Chat
 ```
 
 ---
