@@ -37,7 +37,6 @@ dependencies = [
     "passlib>=1.7.4",
     "bcrypt>=4.0.0,<4.1.0",
     "email-validator>=2.0.0",
-    "jieba>=0.42.1",
 ]
 
 [build-system]
