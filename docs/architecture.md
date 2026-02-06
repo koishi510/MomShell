@@ -155,7 +155,7 @@ flowchart LR
     subgraph BE[Backend]
         API[FastAPI]
         Auth[Auth]
-        Chat[Chat]
+        Chat[Chat AI]
         Community[Community]
         Coach[Coach]
         Guardian[Guardian]
@@ -164,10 +164,16 @@ flowchart LR
     UI <-->|REST / WS| API
     API --- Auth & Chat & Community & Coach & Guardian
 
-    Auth --> DB[(SQLite)]
+    %% All modules store user data
+    Auth & Chat & Community & Coach & Guardian --> DB[(SQLite)]
+
+    %% Chat AI connections
     Chat --> LLM[ModelScope]
-    Coach --> LLM
-    Community --> Search[Firecrawl]
+    Chat --> Search[Firecrawl]
+    Chat -.->|read user data| DB
+
+    %% Community uses Chat AI
+    Community -.->|AI reply| Chat
 ```
 
 ---
