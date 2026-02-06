@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from typing import Any
 
 from openai import OpenAI
 from sqlalchemy import select, update
@@ -9,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import async_session_maker
+from app.services.verification import get_cove_service
 
 from .enums import ContentStatus, UserRole
 from .models import Answer, Comment, Question, User
@@ -119,6 +121,25 @@ class AIReplyService:
             await save_community_interaction(user_id, interaction)
         except Exception as e:
             logger.warning(f"Failed to save AI reply to memory for {user_id}: {e}")
+
+    def _verify_and_correct(
+        self, response: str, search_context: str | None
+    ) -> tuple[str, dict[str, Any]]:
+        """Apply Chain-of-Verification to reduce hallucinations.
+
+        Args:
+            response: The generated LLM response
+            search_context: The web search context used for generation
+
+        Returns:
+            Tuple of (verified_response, verification_metadata)
+        """
+        try:
+            cove_service = get_cove_service()
+            return cove_service.verify_and_correct(response, search_context)
+        except Exception as e:
+            logger.warning(f"CoVe verification failed: {e}")
+            return response, {"error": str(e)}
 
     def _generate_reply(
         self,
@@ -282,6 +303,22 @@ class AIReplyService:
                     web_search_context,
                 )
 
+                # Apply Chain-of-Verification to reduce hallucinations
+                if web_search_context:
+                    (
+                        reply_content,
+                        cove_metadata,
+                    ) = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        self._verify_and_correct,
+                        reply_content,
+                        web_search_context,
+                    )
+                    if cove_metadata.get("corrected"):
+                        logger.info(
+                            f"CoVe corrected response for question {question_id}"
+                        )
+
                 # Create answer
                 answer = Answer(
                     question_id=question_id,
@@ -432,6 +469,20 @@ class AIReplyService:
                     web_search_context,
                 )
 
+                # Apply Chain-of-Verification to reduce hallucinations
+                if web_search_context:
+                    (
+                        reply_content,
+                        cove_metadata,
+                    ) = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        self._verify_and_correct,
+                        reply_content,
+                        web_search_context,
+                    )
+                    if cove_metadata.get("corrected"):
+                        logger.info(f"CoVe corrected response for comment {comment_id}")
+
                 # Create comment reply (nested under the trigger comment)
                 ai_comment = Comment(
                     answer_id=answer_id,
@@ -527,6 +578,22 @@ class AIReplyService:
                     commenter.role.value,
                     web_search_context,
                 )
+
+                # Apply Chain-of-Verification to reduce hallucinations
+                if web_search_context:
+                    (
+                        reply_content,
+                        cove_metadata,
+                    ) = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        self._verify_and_correct,
+                        reply_content,
+                        web_search_context,
+                    )
+                    if cove_metadata.get("corrected"):
+                        logger.info(
+                            f"CoVe corrected response for comment on AI answer {comment_id}"
+                        )
 
                 # Create comment reply (nested under the trigger comment)
                 ai_comment = Comment(
@@ -634,6 +701,22 @@ class AIReplyService:
                     web_search_context,
                 )
 
+                # Apply Chain-of-Verification to reduce hallucinations
+                if web_search_context:
+                    (
+                        reply_content,
+                        cove_metadata,
+                    ) = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        self._verify_and_correct,
+                        reply_content,
+                        web_search_context,
+                    )
+                    if cove_metadata.get("corrected"):
+                        logger.info(
+                            f"CoVe corrected response for reply on AI comment {comment_id}"
+                        )
+
                 # Create comment reply (nested under the trigger comment)
                 ai_comment = Comment(
                     answer_id=answer_id,
@@ -726,6 +809,22 @@ class AIReplyService:
                     author.role.value,
                     web_search_context,
                 )
+
+                # Apply Chain-of-Verification to reduce hallucinations
+                if web_search_context:
+                    (
+                        reply_content,
+                        cove_metadata,
+                    ) = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        self._verify_and_correct,
+                        reply_content,
+                        web_search_context,
+                    )
+                    if cove_metadata.get("corrected"):
+                        logger.info(
+                            f"CoVe corrected response for answer comment {answer_id}"
+                        )
 
                 # Create comment under the answer (inside the person's floor)
                 ai_comment = Comment(
@@ -830,6 +929,20 @@ class AIReplyService:
                     replier.role.value,
                     web_search_context,
                 )
+
+                # Apply Chain-of-Verification to reduce hallucinations
+                if web_search_context:
+                    (
+                        reply_content,
+                        cove_metadata,
+                    ) = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        self._verify_and_correct,
+                        reply_content,
+                        web_search_context,
+                    )
+                    if cove_metadata.get("corrected"):
+                        logger.info(f"CoVe corrected response for answer {answer_id}")
 
                 # Create answer
                 answer = Answer(
