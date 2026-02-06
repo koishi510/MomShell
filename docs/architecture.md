@@ -124,16 +124,13 @@ MomShell/
 
 ### Non-blocking Feedback Pipeline
 
-```
-Video Frame → Pose Detection → Analysis
-                                   ↓
-                            [Background]
-                                   ↓
-                         LLM Feedback Generation
-                                   ↓
-                            TTS Synthesis
-                                   ↓
-                           Audio Response
+```mermaid
+flowchart LR
+    A[Video Frame] --> B[Pose Detection] --> C[Analysis]
+    C --> D[Background]
+    D --> E[LLM Feedback Generation]
+    E --> F[TTS Synthesis]
+    F --> G[Audio Response]
 ```
 
 - LLM feedback generation runs in background
@@ -148,32 +145,30 @@ Video Frame → Pose Detection → Analysis
 
 ### Data Flow
 
-```
-┌─────────────────────────────────────────────────┐
-│                    Frontend                     │
-│  (Next.js + React + TypeScript + Tailwind)      │
-└─────────────────────┬───────────────────────────┘
-                      │ REST / WebSocket
-                      ▼
-┌─────────────────────────────────────────────────┐
-│                    Backend                      │
-│              (FastAPI + Python)                 │
-├─────────────────────────────────────────────────┤
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
-│  │   Auth   │ │   Chat   │ │    Community     │ │
-│  └──────────┘ └──────────┘ └──────────────────┘ │
-│  ┌──────────────────────┐ ┌───────────────────┐ │
-│  │   Recovery Coach     │ │ Guardian Partner  │ │
-│  │  (MediaPipe + LLM)   │ │   (Task System)   │ │
-│  └──────────────────────┘ └───────────────────┘ │
-└─────────────────────┬───────────────────────────┘
-                      │
-        ┌─────────────┼─────────────┐
-        ▼             ▼             ▼
-    ┌────────┐  ┌────────────┐  ┌───────────┐
-    │ SQLite │  │ ModelScope │  │ Firecrawl │
-    │  (DB)  │  │   (LLM)    │  │  (Search) │
-    └────────┘  └────────────┘  └───────────┘
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (Next.js + React + TypeScript + Tailwind)"]
+        FE[Web App]
+    end
+
+    subgraph Backend["Backend (FastAPI + Python)"]
+        Auth[Auth]
+        Chat[Chat]
+        Community[Community]
+        Coach[Recovery Coach<br/>MediaPipe + LLM]
+        Guardian[Guardian Partner<br/>Task System]
+    end
+
+    subgraph External["External Services"]
+        DB[(SQLite)]
+        LLM[ModelScope<br/>LLM]
+        Search[Firecrawl<br/>Search]
+    end
+
+    FE <-->|REST / WebSocket| Backend
+    Backend --> DB
+    Backend --> LLM
+    Backend --> Search
 ```
 
 ---
