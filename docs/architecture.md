@@ -6,21 +6,21 @@ Technical architecture overview of MomShell.
 
 ### Backend
 
-| Technology | Purpose |
-|------------|---------|
-| **FastAPI** | High-performance async web framework |
-| **MediaPipe** | Real-time pose detection (33 landmarks) |
-| **LangGraph** | Workflow orchestration for coaching logic |
-| **Edge TTS** | Microsoft neural voice synthesis |
-| **SQLite + SQLAlchemy** | Lightweight async database |
+| Technology              | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| **FastAPI**             | High-performance async web framework      |
+| **MediaPipe**           | Real-time pose detection (33 landmarks)   |
+| **LangGraph**           | Workflow orchestration for coaching logic |
+| **Edge TTS**            | Microsoft neural voice synthesis          |
+| **SQLite + SQLAlchemy** | Lightweight async database                |
 
 ### Frontend
 
-| Technology | Purpose |
-|------------|---------|
-| **Next.js 14** | React framework with App Router |
-| **TypeScript** | Type-safe development |
-| **Tailwind CSS** | Utility-first styling |
+| Technology       | Purpose                         |
+| ---------------- | ------------------------------- |
+| **Next.js 14**   | React framework with App Router |
+| **TypeScript**   | Type-safe development           |
+| **Tailwind CSS** | Utility-first styling           |
 
 ## Project Structure
 
@@ -31,41 +31,86 @@ MomShell/
 │   │   ├── api/v1/             # REST + WebSocket routes
 │   │   ├── core/               # Configuration and database
 │   │   ├── models/             # ML models dir (gitignored)
-│   │   ├── schemas/            # Pydantic schemas
-│   │   └── services/           # Business logic
-│   │       ├── auth/           # JWT, OAuth authentication
-│   │       ├── chat/           # Soul Companion service
-│   │       ├── coach/          # Recovery Coach service
-│   │       │   ├── analysis/   # Pose analysis & scoring
-│   │       │   ├── exercises/  # Exercise library
-│   │       │   ├── feedback/   # LLM feedback & TTS
-│   │       │   ├── pose/       # MediaPipe detection
-│   │       │   ├── progress/   # Progress tracking
-│   │       │   └── workflow/   # LangGraph workflow
-│   │       ├── community/      # Sisterhood Bond service
-│   │       ├── guardian/       # Guardian Partner service
-│   │       └── web_search.py   # Firecrawl integration
-│   ├── scripts/                # CLI scripts
+│   │   ├── schemas/            # Pydantic schemas (coach)
+│   │   ├── services/           # Business logic
+│   │   │   ├── auth/           # JWT, OAuth authentication
+│   │   │   ├── chat/           # Soul Companion service
+│   │   │   ├── coach/          # Recovery Coach service
+│   │   │   │   ├── analysis/   # Pose analysis & scoring
+│   │   │   │   ├── exercises/  # Exercise library
+│   │   │   │   ├── feedback/   # LLM feedback & TTS
+│   │   │   │   ├── pose/       # MediaPipe detection
+│   │   │   │   ├── progress/   # Progress tracking
+│   │   │   │   └── workflow/   # LangGraph workflow
+│   │   │   ├── community/      # Sisterhood Bond service
+│   │   │   │   ├── moderation/ # Content moderation
+│   │   │   │   ├── router/     # Community API routes
+│   │   │   │   └── schemas/    # Community schemas
+│   │   │   └── guardian/       # Guardian Partner service
+│   │   ├── static/             # Static assets
+│   │   │   ├── css/
+│   │   │   └── js/
+│   │   └── templates/          # HTML templates
+│   ├── data/                   # Database storage (gitignored)
+│   ├── models/                 # ML models (gitignored)
+│   ├── scripts/                # CLI scripts (create_admin, etc.)
 │   └── tests/                  # Backend tests
 │
 ├── frontend/                   # Next.js frontend
 │   ├── app/                    # App router pages
-│   │   ├── auth/               # Login, register, etc.
+│   │   ├── auth/               # Auth pages
+│   │   │   ├── login/
+│   │   │   ├── register/
+│   │   │   ├── forgot-password/
+│   │   │   └── reset-password/
 │   │   ├── chat/               # Soul Companion
 │   │   ├── coach/              # Recovery Coach
 │   │   ├── community/          # Sisterhood Bond
+│   │   │   ├── admin/          # Admin pages (certification review)
+│   │   │   ├── certification/  # Professional certification
+│   │   │   ├── collections/    # Shell Picks
+│   │   │   ├── my-posts/       # My questions
+│   │   │   ├── my-replies/     # My answers
+│   │   │   └── profile/        # User profile
 │   │   └── guardian/           # Guardian Partner
 │   ├── components/             # React components
-│   ├── contexts/               # React contexts
+│   │   ├── auth/
+│   │   ├── coach/
+│   │   ├── community/
+│   │   ├── guardian/
+│   │   └── home/
+│   ├── contexts/               # React contexts (AuthContext)
 │   ├── hooks/                  # Custom hooks
 │   ├── lib/                    # Utilities & API clients
+│   │   └── api/                # API client modules
+│   ├── public/                 # Public assets
 │   └── types/                  # TypeScript definitions
 │
 ├── deploy/                     # Deployment configs
 │   ├── docker-compose.yml
 │   └── nginx.conf
 │
-└── Dockerfile                  # Combined container
+├── docs/                       # Documentation
+│   ├── README.md               # Documentation index
+│   ├── features.md             # Feature descriptions
+│   ├── getting-started.md      # Quick start guide
+│   ├── development.md          # Development guide
+│   ├── deployment.md           # Docker deployment
+│   ├── configuration.md        # Environment variables
+│   └── architecture.md         # This file
+│
+├── scripts/                    # Project-level scripts
+│   └── dev-setup.sh            # Development setup script
+│
+├── .github/                    # GitHub configs
+│   ├── ISSUE_TEMPLATE/         # Issue templates
+│   └── workflows/              # CI/CD workflows
+│
+├── .env.example                # Environment template
+├── Dockerfile                  # Combined container (ModelScope)
+├── Makefile                    # Build commands
+├── CONTRIBUTING.md             # Contribution guidelines
+└── README.md                   # Project README
 ```
 
 ## Architecture Highlights
@@ -105,13 +150,13 @@ Video Frame → Pose Detection → Analysis
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                    Frontend                      │
+│                    Frontend                     │
 │  (Next.js + React + TypeScript + Tailwind)      │
 └─────────────────────┬───────────────────────────┘
                       │ REST / WebSocket
                       ▼
 ┌─────────────────────────────────────────────────┐
-│                    Backend                       │
+│                    Backend                      │
 │              (FastAPI + Python)                 │
 ├─────────────────────────────────────────────────┤
 │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
@@ -125,10 +170,10 @@ Video Frame → Pose Detection → Analysis
                       │
         ┌─────────────┼─────────────┐
         ▼             ▼             ▼
-   ┌─────────┐  ┌──────────┐  ┌──────────┐
-   │ SQLite  │  │ ModelScope│  │ Firecrawl │
-   │   DB    │  │   (LLM)  │  │  (Search) │
-   └─────────┘  └──────────┘  └──────────┘
+    ┌────────┐  ┌────────────┐  ┌───────────┐
+    │ SQLite │  │ ModelScope │  │ Firecrawl │
+    │  (DB)  │  │   (LLM)    │  │  (Search) │
+    └────────┘  └────────────┘  └───────────┘
 ```
 
 ---
