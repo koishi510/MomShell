@@ -12,7 +12,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-A warm, AI-powered companion for postpartum recovery — offering emotional support, exercise coaching, and a caring community for new mothers.
+An AI-powered postpartum recovery platform with emotional support, exercise coaching, community connection, and partner engagement for new mothers.
 
 ## Features
 
