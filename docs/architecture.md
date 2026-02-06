@@ -148,11 +148,11 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Frontend
+    subgraph Frontend[Frontend - Next.js]
         UI[Web App]
     end
 
-    subgraph Backend
+    subgraph Backend[Backend - FastAPI]
         Auth
         Chat
         Community
@@ -160,14 +160,14 @@ flowchart LR
         Guardian
     end
 
-    subgraph External
+    subgraph External[External Services]
         DB[(SQLite)]
         LLM[ModelScope]
         Search[Firecrawl]
     end
 
-    Frontend <--> Backend
-    Backend <--> External
+    Frontend <-->|REST / WebSocket| Backend
+    Backend <-->|SQL / HTTP API| External
 ```
 
 ---
