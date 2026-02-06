@@ -3,6 +3,7 @@
 <!-- Badges -->
 
 [![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/github/v/release/koishi510/MomShell?style=flat&logo=github&label=version)](https://github.com/koishi510/MomShell/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue?style=flat&logo=gnu&logoColor=white)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
