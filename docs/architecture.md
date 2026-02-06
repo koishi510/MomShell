@@ -147,12 +147,12 @@ flowchart TD
 ### Data Flow
 
 ```mermaid
-flowchart TD
-    UI[Frontend] <-->|REST / WS| API[Backend API]
+flowchart LR
+    subgraph Frontend
+        UI[Web App]
+    end
 
-    API --> Services
-
-    subgraph Services[Services]
+    subgraph Backend
         Auth
         Chat
         Community
@@ -160,10 +160,14 @@ flowchart TD
         Guardian
     end
 
-    Services --> DB[(SQLite)]
-    Chat --> LLM[ModelScope]
-    Chat --> Search[Firecrawl]
-    Community -.-> Chat
+    subgraph External
+        DB[(SQLite)]
+        LLM[ModelScope]
+        Search[Firecrawl]
+    end
+
+    Frontend <--> Backend
+    Backend <--> External
 ```
 
 ---
