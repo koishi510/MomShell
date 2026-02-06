@@ -125,10 +125,11 @@ MomShell/
 ### Non-blocking Feedback Pipeline
 
 ```mermaid
-flowchart LR
-    A[Video Frame] --> B[Pose Detection] --> C[Analysis]
-    C --> D[Background]
-    D --> E[LLM Feedback Generation]
+flowchart TD
+    A[Video Frame] --> B[Pose Detection]
+    B --> C[Analysis]
+    C -.-> D[Background Process]
+    D --> E[LLM Feedback]
     E --> F[TTS Synthesis]
     F --> G[Audio Response]
 ```
@@ -146,29 +147,31 @@ flowchart LR
 ### Data Flow
 
 ```mermaid
-flowchart TB
-    subgraph Frontend["Frontend (Next.js + React + TypeScript + Tailwind)"]
-        FE[Web App]
+flowchart TD
+    subgraph FE[Frontend]
+        UI[Next.js + React]
     end
 
-    subgraph Backend["Backend (FastAPI + Python)"]
+    subgraph BE[Backend]
+        API[FastAPI]
         Auth[Auth]
         Chat[Chat]
         Community[Community]
-        Coach[Recovery Coach<br/>MediaPipe + LLM]
-        Guardian[Guardian Partner<br/>Task System]
+        Coach[Coach]
+        Guardian[Guardian]
     end
 
-    subgraph External["External Services"]
+    subgraph EXT[External]
         DB[(SQLite)]
-        LLM[ModelScope<br/>LLM]
-        Search[Firecrawl<br/>Search]
+        LLM[ModelScope]
+        Search[Firecrawl]
     end
 
-    FE <-->|REST / WebSocket| Backend
-    Backend --> DB
-    Backend --> LLM
-    Backend --> Search
+    UI <-->|REST / WS| API
+    API --- Auth & Chat & Community & Coach & Guardian
+    BE --> DB
+    BE --> LLM
+    BE --> Search
 ```
 
 ---
