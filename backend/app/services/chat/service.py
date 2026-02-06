@@ -700,10 +700,9 @@ class CompanionService:
             from app.services.web_search import get_web_search_service
 
             search_service = get_web_search_service()
-            web_search_context = await search_service.search_for_context(
-                message.content
-            )
-            if web_search_context:
+            search_result = await search_service.search_for_context(message.content)
+            if search_result:
+                web_search_context, _ = search_result  # Unpack tuple, ignore sources
                 print(
                     "[Service] chat_authenticated: web search context found",
                     file=sys.stderr,
@@ -818,10 +817,9 @@ class CompanionService:
             from app.services.web_search import get_web_search_service
 
             search_service = get_web_search_service()
-            web_search_context = await search_service.search_for_context(
-                message.content
-            )
-            if web_search_context:
+            search_result = await search_service.search_for_context(message.content)
+            if search_result:
+                web_search_context, _ = search_result  # Unpack tuple, ignore sources
                 print(
                     "[Service] chat: web search context found",
                     file=sys.stderr,

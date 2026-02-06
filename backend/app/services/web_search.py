@@ -262,11 +262,15 @@ class WebSearchService:
             logger.error(f"Web search failed: {e}")
             return {"results": []}
 
-    async def search_for_context(self, question: str) -> str | None:
+    async def search_for_context(
+        self, question: str
+    ) -> tuple[str, list[dict[str, str]]] | None:
         """
         Search web and format results as context for LLM.
 
-        Returns a formatted string with search results, or None if no results.
+        Returns:
+            Tuple of (context_string, source_list) or None if no results.
+            source_list contains dicts with 'title' and 'url' keys.
         """
         if not self.is_configured:
             return None
@@ -300,6 +304,7 @@ class WebSearchService:
 
         # Format context for LLM
         context_parts = ["【参考来源（来自网络搜索）】"]
+        sources = []
         for i, r in enumerate(results["results"], 1):
             context_parts.append(f"{i}. {r['title']}")
             if r["content"]:
@@ -307,8 +312,10 @@ class WebSearchService:
                 if len(r["content"]) > 500:
                     content_preview += "..."
                 context_parts.append(f"   {content_preview}")
+            # Collect sources
+            sources.append({"title": r["title"], "url": r["url"]})
 
-        return "\n".join(context_parts)
+        return "\n".join(context_parts), sources
 
     async def close(self) -> None:
         """Close the HTTP client."""

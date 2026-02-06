@@ -23,6 +23,89 @@ AI_EMAIL = "ai@momshell.local"
 AI_NICKNAME = "贝壳姐姐"
 AI_AVATAR = None  # Can set a URL later
 
+
+def format_source_links(sources: list[dict[str, str]], max_sources: int = 3) -> str:
+    """Format source links for appending to AI reply.
+
+    Args:
+        sources: List of dicts with 'title' and 'url' keys
+        max_sources: Maximum number of sources to include
+
+    Returns:
+        Formatted string with source links, or empty string if no sources
+    """
+    if not sources:
+        return ""
+
+    # Take only top sources
+    top_sources = sources[:max_sources]
+
+    lines = ["\n\n📚 参考来源："]
+    for s in top_sources:
+        title = s.get("title", "")[:40]  # Truncate long titles
+        if len(s.get("title", "")) > 40:
+            title += "..."
+        url = s.get("url", "")
+        lines.append(f"• {title}\n  {url}")
+
+    return "\n".join(lines)
+
+
+def extract_used_sources(
+    response: str, sources: list[dict[str, str]]
+) -> list[dict[str, str]]:
+    """Extract which sources were actually used based on source indices in response.
+
+    The AI response may contain source references like [1], [2], etc.
+    This function extracts which sources were referenced.
+
+    Args:
+        response: The AI response that may contain [1], [2], etc.
+        sources: List of available sources
+
+    Returns:
+        List of sources that were referenced in the response
+    """
+    import re
+
+    if not sources:
+        return []
+
+    # Find all [N] references in the response
+    matches = re.findall(r"\[(\d+)\]", response)
+    if not matches:
+        # If no explicit references, return top 2 sources as fallback
+        return sources[:2] if len(sources) >= 2 else sources
+
+    # Get unique indices (1-based in the response, convert to 0-based)
+    used_indices = set()
+    for m in matches:
+        idx = int(m) - 1  # Convert to 0-based
+        if 0 <= idx < len(sources):
+            used_indices.add(idx)
+
+    # Return sources in order
+    return [sources[i] for i in sorted(used_indices)]
+
+
+def strip_citation_markers(text: str) -> str:
+    """Remove [1], [2], etc. citation markers from text.
+
+    Args:
+        text: Text that may contain citation markers like [1], [2]
+
+    Returns:
+        Text with citation markers removed
+    """
+    import re
+
+    # Remove [N] patterns and clean up extra spaces
+    text = re.sub(r"\s*\[\d+\]", "", text)
+    # Clean up multiple spaces
+    text = re.sub(r"  +", " ", text)
+    return text.strip()
+
+
 # System prompt for community replies
 COMMUNITY_SYSTEM_PROMPT = """你是「贝壳姐姐」，MomShell 社区的 AI 助手。你是一位温暖、有同理心的朋友，专门为产后恢复期的妈妈们提供支持和建议。
 
@@ -35,7 +118,7 @@ COMMUNITY_SYSTEM_PROMPT = """你是「贝壳姐姐」，MomShell 社区的 AI �
 ## 回复规则
 1. 回复要简短精炼（100-200字为宜），不要太长
 2. 先表达理解和共情，再给建议
-3. **重要**：如果提供了网络搜索结果，请基于这些信息回答，不要编造内容。如果信息不足则陈述信息不足，并鼓励提问者寻求专业帮助。
+3. **重要**：如果提供了网络搜索结果，请基于这些信息回答，并在使用某条信息时用 [编号] 标注来源（如"根据了解[1]..."）。不要编造内容。
 4. **重要**：请核查网络搜索结果中的地点、时间、人名等信息，确保符合提问者的需求（如地址是否与要求相同等）。
 5. 不要使用医学专业术语，用通俗易懂的话
 6. 如果涉及严重健康问题，建议寻求专业医疗帮助
@@ -279,13 +362,15 @@ class AIReplyService:
 
                 # Perform web search for factual/medical questions
                 web_search_context = None
+                web_search_sources: list[dict[str, str]] = []
                 try:
                     search_service = get_web_search_service()
                     search_query = f"{question.title} {question.content}"
-                    web_search_context = await search_service.search_for_context(
+                    search_result = await search_service.search_for_context(
                         search_query
                     )
-                    if web_search_context:
+                    if search_result:
+                        web_search_context, web_search_sources = search_result
                         logger.info(
                             f"Web search context found for question {question_id}"
                         )
@@ -318,6 +403,16 @@ class AIReplyService:
                         logger.info(
                             f"CoVe corrected response for question {question_id}"
                         )
+
+                # Append source links if web search was used
+                if web_search_sources:
+                    used_sources = extract_used_sources(
+                        reply_content, web_search_sources
+                    )
+                    if used_sources:
+                        # Remove [1], [2] markers from text, keep only source links
+                        reply_content = strip_citation_markers(reply_content)
+                        reply_content += format_source_links(used_sources)
 
                 # Create answer
                 answer = Answer(
@@ -444,13 +539,15 @@ class AIReplyService:
 
                 # Perform web search for factual questions
                 web_search_context = None
+                web_search_sources: list[dict[str, str]] = []
                 try:
                     search_service = get_web_search_service()
                     search_query = f"{question.title} {trigger_comment.content}"
-                    web_search_context = await search_service.search_for_context(
+                    search_result = await search_service.search_for_context(
                         search_query
                     )
-                    if web_search_context:
+                    if search_result:
+                        web_search_context, web_search_sources = search_result
                         logger.info(
                             f"Web search context found for comment {comment_id}"
                         )
@@ -482,6 +579,16 @@ class AIReplyService:
                     )
                     if cove_metadata.get("corrected"):
                         logger.info(f"CoVe corrected response for comment {comment_id}")
+
+                # Append source links if web search was used
+                if web_search_sources:
+                    used_sources = extract_used_sources(
+                        reply_content, web_search_sources
+                    )
+                    if used_sources:
+                        # Remove [1], [2] markers from text, keep only source links
+                        reply_content = strip_citation_markers(reply_content)
+                        reply_content += format_source_links(used_sources)
 
                 # Create comment reply (nested under the trigger comment)
                 ai_comment = Comment(
@@ -554,13 +661,15 @@ class AIReplyService:
 
                 # Perform web search for factual questions
                 web_search_context = None
+                web_search_sources: list[dict[str, str]] = []
                 try:
                     search_service = get_web_search_service()
                     search_query = f"{question.title} {trigger_comment.content}"
-                    web_search_context = await search_service.search_for_context(
+                    search_result = await search_service.search_for_context(
                         search_query
                     )
-                    if web_search_context:
+                    if search_result:
+                        web_search_context, web_search_sources = search_result
                         logger.info(
                             f"Web search context found for comment on AI answer {comment_id}"
                         )
@@ -594,6 +703,16 @@ class AIReplyService:
                         logger.info(
                             f"CoVe corrected response for comment on AI answer {comment_id}"
                         )
+
+                # Append source links if web search was used
+                if web_search_sources:
+                    used_sources = extract_used_sources(
+                        reply_content, web_search_sources
+                    )
+                    if used_sources:
+                        # Remove [1], [2] markers from text, keep only source links
+                        reply_content = strip_citation_markers(reply_content)
+                        reply_content += format_source_links(used_sources)
 
                 # Create comment reply (nested under the trigger comment)
                 ai_comment = Comment(
@@ -676,13 +795,15 @@ class AIReplyService:
 
                 # Perform web search for factual questions
                 web_search_context = None
+                web_search_sources: list[dict[str, str]] = []
                 try:
                     search_service = get_web_search_service()
                     search_query = f"{question.title} {trigger_comment.content}"
-                    web_search_context = await search_service.search_for_context(
+                    search_result = await search_service.search_for_context(
                         search_query
                     )
-                    if web_search_context:
+                    if search_result:
+                        web_search_context, web_search_sources = search_result
                         logger.info(
                             f"Web search context found for reply on AI comment {comment_id}"
                         )
@@ -716,6 +837,16 @@ class AIReplyService:
                         logger.info(
                             f"CoVe corrected response for reply on AI comment {comment_id}"
                         )
+
+                # Append source links if web search was used
+                if web_search_sources:
+                    used_sources = extract_used_sources(
+                        reply_content, web_search_sources
+                    )
+                    if used_sources:
+                        # Remove [1], [2] markers from text, keep only source links
+                        reply_content = strip_citation_markers(reply_content)
+                        reply_content += format_source_links(used_sources)
 
                 # Create comment reply (nested under the trigger comment)
                 ai_comment = Comment(
@@ -785,13 +916,15 @@ class AIReplyService:
 
                 # Perform web search for factual questions
                 web_search_context = None
+                web_search_sources: list[dict[str, str]] = []
                 try:
                     search_service = get_web_search_service()
                     search_query = f"{question.title} {answer.content}"
-                    web_search_context = await search_service.search_for_context(
+                    search_result = await search_service.search_for_context(
                         search_query
                     )
-                    if web_search_context:
+                    if search_result:
+                        web_search_context, web_search_sources = search_result
                         logger.info(
                             f"Web search context found for answer comment {answer_id}"
                         )
@@ -825,6 +958,16 @@ class AIReplyService:
                         logger.info(
                             f"CoVe corrected response for answer comment {answer_id}"
                         )
+
+                # Append source links if web search was used
+                if web_search_sources:
+                    used_sources = extract_used_sources(
+                        reply_content, web_search_sources
+                    )
+                    if used_sources:
+                        # Remove [1], [2] markers from text, keep only source links
+                        reply_content = strip_citation_markers(reply_content)
+                        reply_content += format_source_links(used_sources)
 
                 # Create comment under the answer (inside the person's floor)
                 ai_comment = Comment(
@@ -907,13 +1050,15 @@ class AIReplyService:
 
                 # Perform web search for factual questions
                 web_search_context = None
+                web_search_sources: list[dict[str, str]] = []
                 try:
                     search_service = get_web_search_service()
                     search_query = f"{question.title} {trigger_answer.content}"
-                    web_search_context = await search_service.search_for_context(
+                    search_result = await search_service.search_for_context(
                         search_query
                     )
-                    if web_search_context:
+                    if search_result:
+                        web_search_context, web_search_sources = search_result
                         logger.info(f"Web search context found for answer {answer_id}")
                 except Exception as e:
                     logger.warning(f"Web search failed for answer {answer_id}: {e}")
@@ -943,6 +1088,16 @@ class AIReplyService:
                     )
                     if cove_metadata.get("corrected"):
                         logger.info(f"CoVe corrected response for answer {answer_id}")
+
+                # Append source links if web search was used
+                if web_search_sources:
+                    used_sources = extract_used_sources(
+                        reply_content, web_search_sources
+                    )
+                    if used_sources:
+                        # Remove [1], [2] markers from text, keep only source links
+                        reply_content = strip_citation_markers(reply_content)
+                        reply_content += format_source_links(used_sources)
 
                 # Create answer
                 answer = Answer(
