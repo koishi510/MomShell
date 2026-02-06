@@ -149,10 +149,12 @@ flowchart TD
 ```mermaid
 flowchart LR
     subgraph Frontend[Frontend - Next.js]
+        direction TB
         UI[Web App]
     end
 
     subgraph Backend[Backend - FastAPI]
+        direction TB
         Auth
         Chat
         Community
@@ -161,6 +163,7 @@ flowchart LR
     end
 
     subgraph External[External Services]
+        direction TB
         DB[(SQLite)]
         LLM[ModelScope]
         Search[Firecrawl]
