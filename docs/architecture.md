@@ -147,7 +147,7 @@ flowchart TD
 ### Data Flow
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph FE[Frontend]
         UI[Next.js + React]
     end
@@ -161,17 +161,13 @@ flowchart TD
         Guardian[Guardian]
     end
 
-    subgraph EXT[External]
-        DB[(SQLite)]
-        LLM[ModelScope]
-        Search[Firecrawl]
-    end
-
     UI <-->|REST / WS| API
     API --- Auth & Chat & Community & Coach & Guardian
-    BE --> DB
-    BE --> LLM
-    BE --> Search
+
+    Auth --> DB[(SQLite)]
+    Chat --> LLM[ModelScope]
+    Coach --> LLM
+    Community --> Search[Firecrawl]
 ```
 
 ---
