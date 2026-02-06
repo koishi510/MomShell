@@ -397,7 +397,10 @@ class WebSearchService:
         payload: dict[str, Any] = {
             "query": query,
             "limit": max_results,
-            "scrapeOptions": {"formats": ["markdown"]},
+            "scrapeOptions": {
+                "formats": ["markdown"],
+                "onlyMainContent": True,  # Exclude nav, footer, etc.
+            },
             "country": "CN",  # Default to China for Chinese queries
         }
 
@@ -427,18 +430,26 @@ class WebSearchService:
                 logger.error(f"Firecrawl search failed: {data}")
                 return {"results": []}
 
-            return {
-                "results": [
+            # Filter out PDFs and extract only needed fields
+            results = []
+            for r in data.get("data", []):
+                url = r.get("url", "")
+                # Skip PDF files
+                if url.lower().endswith(".pdf"):
+                    continue
+                results.append(
                     {
                         "title": r.get("title", ""),
-                        "url": r.get("url", ""),
+                        "url": url,
                         "content": strip_markdown(
                             (r.get("description") or r.get("markdown", ""))[:500]
                         ),
                     }
-                    for r in data.get("data", [])[:max_results]
-                ],
-            }
+                )
+                if len(results) >= max_results:
+                    break
+
+            return {"results": results}
         except httpx.HTTPStatusError as e:
             logger.error(
                 f"Firecrawl API error: {e.response.status_code} - {e.response.text}"
