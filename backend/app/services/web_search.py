@@ -209,6 +209,51 @@ def should_search(text: str) -> bool:
     return factual_score >= 1 and has_question_pattern
 
 
+def extract_keywords(text: str, max_keywords: int = 5) -> str:
+    """
+    Extract keywords from text for optimized search query.
+
+    Instead of using the full sentence, extract relevant keywords
+    to improve search quality.
+
+    Args:
+        text: The input text (question/comment)
+        max_keywords: Maximum number of keywords to extract
+
+    Returns:
+        A space-separated string of keywords for search
+    """
+    text_lower = text.lower()
+
+    # Extract matching factual keywords from the text
+    found_keywords = []
+    for kw in FACTUAL_KEYWORDS:
+        if kw in text_lower and kw not in found_keywords:
+            found_keywords.append(kw)
+
+    # Also extract Chinese noun phrases (simple heuristic)
+    # Look for 2-4 character Chinese word patterns that might be nouns
+    chinese_pattern = re.findall(r"[\u4e00-\u9fff]{2,4}", text)
+    for phrase in chinese_pattern:
+        # Skip if it's a question word or emotional keyword
+        if phrase in ["怎么", "如何", "为什么", "是什么", "什么", "有什么", "哪些"]:
+            continue
+        if phrase in EMOTIONAL_KEYWORDS:
+            continue
+        if phrase not in found_keywords:
+            found_keywords.append(phrase)
+
+    # Limit to max_keywords
+    keywords = found_keywords[:max_keywords]
+
+    # If we found keywords, return them; otherwise return original text trimmed
+    if keywords:
+        return " ".join(keywords)
+    else:
+        # Fallback: return first 50 chars of original text
+        return text[:50].strip()
+
+
 class WebSearchService:
     """Service for performing web searches using Firecrawl API."""
 
@@ -260,6 +305,7 @@ class WebSearchService:
                 json={
                     "query": query,
                     "limit": max_results,
+                    "scrapeOptions": {"formats": ["markdown"]},
                 },
             )
             response.raise_for_status()
@@ -305,8 +351,9 @@ class WebSearchService:
             )
             return None
 
-        # Create a search-optimized query
-        search_query = f"产后恢复 {question}"  # Add context for better results
+        # Extract keywords for optimized search query
+        search_query = extract_keywords(question)
+        logger.debug(f"Extracted search keywords: {search_query}")
 
         results = await self.search(search_query, max_results=10)
 
