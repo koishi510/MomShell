@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.services.verification import get_cove_service
 
 from .models import ChatMemory
 from .schemas import (
@@ -646,6 +647,28 @@ class CompanionService:
             self._profile_store[session_id] = profile
         return updated
 
+    def _verify_and_correct_response(
+        self, text: str, search_context: str | None
+    ) -> tuple[str, dict[str, Any]]:
+        """Apply Chain-of-Verification to reduce hallucinations.
+
+        Args:
+            text: The text response from the LLM
+            search_context: The web search context used for generation
+
+        Returns:
+            Tuple of (verified_text, verification_metadata)
+        """
+        try:
+            cove_service = get_cove_service()
+            return cove_service.verify_and_correct(text, search_context)
+        except Exception as e:
+            print(
+                f"[Service] _verify_and_correct_response: CoVe failed: {e}",
+                file=sys.stderr,
+            )
+            return text, {"error": str(e)}
+
     async def chat_authenticated(
         self, message: UserMessage, user_id: str, db: AsyncSession
     ) -> VisualResponse:
@@ -724,6 +747,18 @@ class CompanionService:
         # 解析响应
         raw_content = response.choices[0].message.content or ""
         parsed = self._parse_llm_response(raw_content)
+
+        # Apply Chain-of-Verification to reduce hallucinations
+        if web_search_context and parsed.get("text"):
+            verified_text, cove_metadata = self._verify_and_correct_response(
+                parsed["text"], web_search_context
+            )
+            if cove_metadata.get("corrected"):
+                print(
+                    "[Service] chat_authenticated: CoVe corrected response",
+                    file=sys.stderr,
+                )
+            parsed["text"] = verified_text
 
         # 更新记忆
         memory_updated = self._update_profile_from_extract(
@@ -827,6 +862,18 @@ class CompanionService:
             f"[Service] chat: raw_content = {raw_content[:200]!r}...", file=sys.stderr
         )
         parsed = self._parse_llm_response(raw_content)
+
+        # Apply Chain-of-Verification to reduce hallucinations
+        if web_search_context and parsed.get("text"):
+            verified_text, cove_metadata = self._verify_and_correct_response(
+                parsed["text"], web_search_context
+            )
+            if cove_metadata.get("corrected"):
+                print(
+                    "[Service] chat: CoVe corrected response",
+                    file=sys.stderr,
+                )
+            parsed["text"] = verified_text
 
         # 更新记忆
         memory_updated = self._update_profile_from_extract_guest(
