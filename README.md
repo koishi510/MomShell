@@ -2,16 +2,16 @@
 
 <!-- Badges -->
 
-[![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue?style=flat-square&logo=gnu&logoColor=white)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Ruff](https://img.shields.io/badge/code%20style-Ruff-D7FF64?style=flat-square&logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
-[![Qwen](https://img.shields.io/badge/AI-Qwen-6F42C1?style=flat-square&logo=alibabacloud&logoColor=white)](https://www.alibabacloud.com/solutions/generative-ai/qwen)
+[![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue?style=flat&logo=gnu&logoColor=white)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Ruff](https://img.shields.io/badge/code%20style-Ruff-D7FF64?style=flat&logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
+[![Qwen](https://img.shields.io/badge/AI-Qwen-6F42C1?style=flat&logo=alibabacloud&logoColor=white)](https://www.alibabacloud.com/solutions/generative-ai/qwen)
 
 A warm, AI-powered companion for postpartum recovery — offering emotional support, exercise coaching, and a caring community for new mothers.
 
