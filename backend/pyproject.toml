@@ -1,6 +1,6 @@
 [project]
-name = "MomShell"
-version = "0.1.0"
+name = "momshell-backend"
+version = "0.5.2"
 description = "An AI powered assistant for postpartum mothers."
 requires-python = ">=3.11"
 dependencies = [
