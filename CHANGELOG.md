@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Source Citation Links in AI Replies
+
+- **Source Link Extraction**: AI replies now show which web sources were used
+  - New `format_source_links()` helper to format source links for display
+  - New `extract_used_sources()` helper to parse `[1]`, `[2]` references from AI response
+  - New `strip_citation_markers()` helper to remove inline markers from final output
+  - System prompt instructs AI to cite sources with `[1]`, `[2]` notation internally
+  - Markers are stripped before display; only clean source links section is shown
+
+- **Integrated into Community AI Replies**:
+  - All 6 reply methods in `ai_reply.py` now append source links when web search was used
+  - Format: `📚 参考来源：` followed by truncated title and URL
+  - Maximum 3 sources displayed per reply
+
 #### Chain-of-Verification (CoVe) for Hallucination Reduction
 
 - **CoVe Service**: New verification service to reduce AI hallucinations
