@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Integrated into Community AI Replies**:
   - All 6 reply methods in `ai_reply.py` now append source links when web search was used
-  - Format: `📚 参考来源：` followed by truncated title and URL
   - Maximum 3 sources displayed per reply
 
 #### Chain-of-Verification (CoVe) for Hallucination Reduction
@@ -105,7 +104,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Responds when users reply to AI's answers
   - `@贝壳姐姐` mention in comments triggers AI reply
   - Uses ModelScope Qwen LLM for generating contextual responses
-  - New `AI_ASSISTANT` user role with solid heart (❤) badge icon
 
 - **Backend**:
   - New `ai_reply.py` service with `AIReplyService` class
