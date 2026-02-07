@@ -22,7 +22,7 @@ RUN npm run build
 # ==========================================
 # Stage 2: 系统库安装 (绕过 apt 缓存空间限制)
 # ==========================================
-FROM python:3.11-slim-bookworm AS lib-builder
+FROM python:3.14-slim-bookworm AS lib-builder
 
 # 直接下载 deb 包并安装，绕过 apt 缓存
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::AllowInsecureRepositories=true && \
@@ -34,7 +34,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::AllowInsecure
 # ==========================================
 # Stage 3: 后端运行 (Backend Runtime)
 # ==========================================
-FROM python:3.11-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 # 环境变量设置
 ENV PYTHONDONTWRITEBYTECODE=1 \
