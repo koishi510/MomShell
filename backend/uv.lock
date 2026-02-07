@@ -1560,7 +1560,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.20.0" },
-    { name = "bcrypt", specifier = ">=4.0.0,<4.1.0" },
+    { name = "bcrypt", specifier = ">=4.0.0,<5.1.0" },
     { name = "edge-tts", specifier = ">=6.1.0" },
     { name = "email-validator", specifier = ">=2.0.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
