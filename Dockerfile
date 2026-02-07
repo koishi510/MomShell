@@ -8,7 +8,7 @@
 # ==========================================
 # Stage 1: 前端构建 (Frontend Builder)
 # ==========================================
-FROM node:22-alpine AS frontend-builder
+FROM node:25-alpine AS frontend-builder
 WORKDIR /build_frontend
 
 # 安装依赖 (利用缓存)
