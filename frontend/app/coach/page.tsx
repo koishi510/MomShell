@@ -37,6 +37,27 @@ const getApiBase = () => {
   return process.env.NEXT_PUBLIC_API_URL || '';
 };
 
+// 生成加密安全的会话 ID
+const generateSessionId = (): string => {
+  const timestamp = Date.now();
+
+  // 优先使用 Web Crypto API
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    // 转为 base36 字符串，保持与原实现类似的格式
+    const randomPart = Array.from(bytes)
+      .map((b) => b.toString(36).padStart(2, '0'))
+      .join('')
+      .slice(0, 16);
+    return `session_${timestamp}_${randomPart}`;
+  }
+
+  // 回退方案（极少使用环境）：退回 Math.random，保持行为一致
+  const fallbackRandom = Math.random().toString(36).substr(2, 16);
+  return `session_${timestamp}_${fallbackRandom}`;
+};
+
 const getWsBase = () => {
   if (typeof window === 'undefined') return '';
   const apiBase = getApiBase();
@@ -484,7 +505,7 @@ export default function RehabPage() {
 
   // WebSocket connection
   const connectWebSocket = useCallback((exerciseId: string) => {
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sessionId = generateSessionId();
     const wsUrl = `${getWsBase()}/api/v1/ws/coach/${sessionId}`;
     const ws = new WebSocket(wsUrl);
 
