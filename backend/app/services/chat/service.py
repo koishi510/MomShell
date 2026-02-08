@@ -128,14 +128,15 @@ class CompanionService:
         )
         self._base_url = settings.modelscope_base_url
         self._model = settings.modelscope_model
-        # DEBUG: 打印 API key 状态
+        # DEBUG: 打印 API key 状态（不输出具体密钥内容）
         print(
             f"[Service] __init__: api_key loaded = {bool(self._api_key)}",
             file=sys.stderr,
         )
         if self._api_key:
+            # 仅记录已配置状态，避免在日志中暴露任意部分的密钥
             print(
-                f"[Service] __init__: api_key preview = {self._api_key[:10]}...{self._api_key[-4:] if len(self._api_key) > 14 else '***'}",
+                "[Service] __init__: api_key is set.",
                 file=sys.stderr,
             )
         else:
