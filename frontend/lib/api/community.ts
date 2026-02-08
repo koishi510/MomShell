@@ -239,6 +239,7 @@ export interface UserStats {
 export interface UserProfile {
   id: string;
   nickname: string;
+  email: string;
   avatar_url: string | null;
   role: string;
   is_certified: boolean;
@@ -249,6 +250,7 @@ export interface UserProfile {
 
 export interface UserProfileUpdateParams {
   nickname?: string;
+  email?: string;
   avatar_url?: string;
   role?: 'mom' | 'dad' | 'family';
 }

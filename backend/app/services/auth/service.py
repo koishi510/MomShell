@@ -47,7 +47,7 @@ class AuthService:
             email=request.email,
             password_hash=get_password_hash(request.password),
             nickname=request.nickname,
-            role=UserRole.MOM,
+            role=UserRole(request.role),
             is_active=True,
             is_banned=False,
         )

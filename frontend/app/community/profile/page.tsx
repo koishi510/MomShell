@@ -40,7 +40,7 @@ const professionalRoles = ['certified_doctor', 'certified_therapist', 'certified
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +61,11 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Email change state
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [editEmail, setEditEmail] = useState('');
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   // Check if user has a professional role (cannot change)
   const isProfessional = profile ? professionalRoles.includes(profile.role) : false;
@@ -170,6 +175,37 @@ export default function ProfilePage() {
       setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    if (!editEmail.trim()) {
+      setSaveMessage({ show: true, success: false, text: '邮箱不能为空' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+      return;
+    }
+
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editEmail)) {
+      setSaveMessage({ show: true, success: false, text: '请输入有效的邮箱地址' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+      return;
+    }
+
+    setIsSavingEmail(true);
+    try {
+      const updatedProfile = await updateMyProfile({ email: editEmail.trim() });
+      setProfile(updatedProfile);
+      setIsEditingEmail(false);
+      setSaveMessage({ show: true, success: true, text: '邮箱修改成功' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+    } catch (err: any) {
+      console.error('Failed to update email:', err);
+      setSaveMessage({ show: true, success: false, text: err.response?.data?.detail || '邮箱修改失败' });
+      setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
+    } finally {
+      setIsSavingEmail(false);
     }
   };
 
@@ -415,16 +451,71 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* 修改密码 */}
+            {/* 账号安全 */}
             <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-100/50">
+              <h3 className="text-stone-700 font-medium mb-4">账号安全</h3>
+
+              {/* 用户名展示 */}
+              <div className="mb-4 p-3 bg-stone-50/80 rounded-xl">
+                <div className="text-sm text-stone-500 mb-1">用户名</div>
+                <div className="text-stone-700 font-mono">{user?.username}</div>
+              </div>
+
+              {/* 邮箱展示/编辑 */}
+              <div className="mb-4 p-3 bg-stone-50/80 rounded-xl">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-stone-500">邮箱</span>
+                  {!isEditingEmail && (
+                    <button
+                      onClick={() => {
+                        setEditEmail(profile?.email || '');
+                        setIsEditingEmail(true);
+                      }}
+                      className="text-xs text-[#e8a4b8] hover:text-[#d88a9f] transition-colors"
+                    >
+                      修改
+                    </button>
+                  )}
+                </div>
+                {isEditingEmail ? (
+                  <div className="space-y-2">
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-stone-200 focus:border-[#e8a4b8] focus:outline-none focus:ring-2 focus:ring-[#e8a4b8]/20 text-stone-700 text-sm"
+                      placeholder="输入新邮箱"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveEmail}
+                        disabled={isSavingEmail}
+                        className="px-3 py-1 bg-[#e8a4b8] text-white text-xs rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50"
+                      >
+                        {isSavingEmail ? '保存中...' : '保存'}
+                      </button>
+                      <button
+                        onClick={() => setIsEditingEmail(false)}
+                        disabled={isSavingEmail}
+                        className="px-3 py-1 bg-stone-100 text-stone-600 text-xs rounded-full hover:bg-stone-200 transition-colors disabled:opacity-50"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-stone-700">{profile?.email}</div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-stone-700 font-medium">账号安全</h3>
+                <span className="text-stone-600">修改密码</span>
                 {!isChangingPassword && (
                   <button
                     onClick={() => setIsChangingPassword(true)}
                     className="text-sm text-[#e8a4b8] hover:text-[#d88a9f] transition-colors"
                   >
-                    修改密码
+                    修改
                   </button>
                 )}
               </div>

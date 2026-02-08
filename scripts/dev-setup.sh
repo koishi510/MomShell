@@ -114,15 +114,31 @@ echo ""
 echo -e "${BLUE}=== Step 2: Setting Up Environment Variables ===${NC}"
 echo ""
 
+# Backend .env
 if [ -f ".env" ]; then
     success ".env file already exists"
 else
     if [ -f ".env.example" ]; then
         cp .env.example .env
-        success "Created .env from .env.example"
+        # Generate random JWT secret key
+        JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || python3 -c "import secrets; print(secrets.token_hex(32))")
+        sed -i "s/your-secret-key-change-in-production/$JWT_SECRET/" .env
+        success "Created .env from .env.example (JWT secret auto-generated)"
         warn "Please edit .env and fill in your API keys (MODELSCOPE_KEY, etc.)"
     else
         warn ".env.example not found, skipping .env setup"
+    fi
+fi
+
+# Frontend .env.local (required for local development)
+if [ -f "frontend/.env.local" ]; then
+    success "frontend/.env.local already exists"
+else
+    if [ -f "frontend/.env.example" ]; then
+        cp frontend/.env.example frontend/.env.local
+        success "Created frontend/.env.local from frontend/.env.example"
+    else
+        warn "frontend/.env.example not found, skipping frontend env setup"
     fi
 fi
 
