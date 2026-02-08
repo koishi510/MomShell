@@ -186,25 +186,34 @@ if FRONTEND_DIR.exists():
     )
     async def serve_spa(request: Request, full_path: str):
         """Serve frontend SPA for all non-API routes."""
+        root = FRONTEND_DIR.resolve()
+
+        def _is_within_root(path: Path) -> bool:
+            try:
+                path.resolve().relative_to(root)
+                return True
+            except ValueError:
+                return False
+
         # Try to serve the exact file first
-        file_path = FRONTEND_DIR / full_path
-        if file_path.exists() and file_path.is_file():
+        file_path = (FRONTEND_DIR / full_path).resolve()
+        if _is_within_root(file_path) and file_path.is_file():
             return FileResponse(file_path)
 
         # Try with index.html for directory paths (Next.js trailingSlash)
-        if file_path.exists() and file_path.is_dir():
-            index_file = file_path / "index.html"
-            if index_file.exists():
+        if _is_within_root(file_path) and file_path.is_dir():
+            index_file = (file_path / "index.html").resolve()
+            if _is_within_root(index_file) and index_file.is_file():
                 return FileResponse(index_file)
 
         # Try adding .html extension
-        html_file = FRONTEND_DIR / f"{full_path}.html"
-        if html_file.exists():
+        html_file = (FRONTEND_DIR / f"{full_path}.html").resolve()
+        if _is_within_root(html_file) and html_file.is_file():
             return FileResponse(html_file)
 
         # Fallback to index.html for SPA routing
-        index_html = FRONTEND_DIR / "index.html"
-        if index_html.exists():
+        index_html = (FRONTEND_DIR / "index.html").resolve()
+        if _is_within_root(index_html) and index_html.is_file():
             return FileResponse(index_html)
 
         # Final fallback to backend template
