@@ -34,6 +34,7 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 # Frontend static files (built from Next.js export)
 FRONTEND_DIR = Path("/app/frontend_dist")
+FRONTEND_DIR_RESOLVED = FRONTEND_DIR.resolve()
 
 
 def preload_mediapipe() -> None:
@@ -187,23 +188,38 @@ if FRONTEND_DIR.exists():
     async def serve_spa(request: Request, full_path: str):
         """Serve frontend SPA for all non-API routes."""
         # Try to serve the exact file first
-        file_path = FRONTEND_DIR / full_path
-        if file_path.exists() and file_path.is_file():
-            return FileResponse(file_path)
+        candidate = (FRONTEND_DIR / full_path).resolve()
+        try:
+            candidate.relative_to(FRONTEND_DIR_RESOLVED)
+            within_frontend = True
+        except ValueError:
+            within_frontend = False
+        if within_frontend and candidate.is_file():
+            return FileResponse(candidate)
 
         # Try with index.html for directory paths (Next.js trailingSlash)
-        if file_path.exists() and file_path.is_dir():
-            index_file = file_path / "index.html"
-            if index_file.exists():
+        if within_frontend and candidate.is_dir():
+            index_file = (candidate / "index.html").resolve()
+            try:
+                index_file.relative_to(FRONTEND_DIR_RESOLVED)
+                index_within_frontend = True
+            except ValueError:
+                index_within_frontend = False
+            if index_within_frontend and index_file.exists():
                 return FileResponse(index_file)
 
         # Try adding .html extension
-        html_file = FRONTEND_DIR / f"{full_path}.html"
-        if html_file.exists():
+        html_file = (FRONTEND_DIR / f"{full_path}.html").resolve()
+        try:
+            html_file.relative_to(FRONTEND_DIR_RESOLVED)
+            html_within_frontend = True
+        except ValueError:
+            html_within_frontend = False
+        if html_within_frontend and html_file.exists() and html_file.is_file():
             return FileResponse(html_file)
 
         # Fallback to index.html for SPA routing
-        index_html = FRONTEND_DIR / "index.html"
+        index_html = (FRONTEND_DIR / "index.html").resolve()
         if index_html.exists():
             return FileResponse(index_html)
 
