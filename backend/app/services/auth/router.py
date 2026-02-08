@@ -91,10 +91,10 @@ async def forgot_password(
         # Generate password reset token
         reset_token = create_password_reset_token(user.id)
         # In production, send this token via email
-        # For now, just log it (in development mode)
+        # For now, only log that a reset token was generated (without the token itself)
         import logging
 
-        logging.info(f"Password reset token for {request.email}: {reset_token}")
+        logging.info(f"Password reset token generated for {request.email}")
 
     # Always return success to prevent email enumeration
     return MessageResponse(message="如果该邮箱已注册，您将收到重置密码的邮件")
