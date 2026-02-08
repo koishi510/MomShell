@@ -156,8 +156,15 @@ export default apiClient;
 // Helper function to extract error message
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ detail?: string }>;
-    return axiosError.response?.data?.detail || axiosError.message || '请求失败';
+    const axiosError = error as AxiosError<{ detail?: string | { message?: string } }>;
+    const detail = axiosError.response?.data?.detail;
+    if (typeof detail === 'string') {
+      return detail;
+    }
+    if (detail && typeof detail === 'object' && 'message' in detail) {
+      return detail.message || '请求失败';
+    }
+    return axiosError.message || '请求失败';
   }
   if (error instanceof Error) {
     return error.message;

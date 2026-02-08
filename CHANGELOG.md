@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Validates position accuracy, timing, and drag trail
   - Required before form submission on both login and register pages
 
+- **Content Moderation Expansion**: Extended sensitive content filtering
+  - Post titles now moderated (previously only content was checked)
+  - Comments rejection on moderation failure (previously only marked for review)
+  - Nickname moderation on registration and profile update
+  - Post title moderation on edit (previously only content was checked)
+
 #### User Experience Improvements
 
 - **Profile Page Enhancements**:
@@ -33,8 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Backend accepts `role` field in registration request
 
 - **Password Visibility Toggle**: Show/hide password button on login and register pages
-  - Eye icon toggle for password fields
-  - Register page: single toggle controls both password and confirm password fields
+  - Eye icon toggle for all password fields
+  - Both password fields share the same visibility state
 
 #### Developer Experience
 
@@ -52,6 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Backend lint errors in `config.py` (unnecessary f-string) and `main.py` (unused import)
+- **Moderation error messages not displayed**: Frontend now correctly extracts and shows detailed error messages from backend moderation responses
+  - Updated `getErrorMessage()` to handle `{message: ...}` response format
+  - Applied fix to post creation, comments, profile updates, and all error handlers
 
 ---
 
