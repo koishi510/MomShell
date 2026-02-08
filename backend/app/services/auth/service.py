@@ -5,8 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
-from app.services.community.enums import CertificationStatus, UserRole
+from app.services.community.enums import CertificationStatus, ModerationResult, UserRole
 from app.services.community.models import User, UserCertification
+from app.services.community.moderation import get_moderation_service
 
 from .schemas import (
     LoginRequest,
@@ -30,6 +31,17 @@ class AuthService:
 
     async def register(self, request: RegisterRequest) -> UserResponse:
         """Register a new user."""
+        from fastapi import HTTPException
+
+        # Moderate nickname
+        moderation = get_moderation_service()
+        nickname_decision = await moderation.moderate_text(request.nickname)
+        if nickname_decision.result == ModerationResult.REJECTED:
+            raise HTTPException(
+                status_code=400,
+                detail=f"昵称包含敏感内容: {nickname_decision.reason}",
+            )
+
         # Check if username already exists
         existing = await self.db.execute(
             select(User).where(
@@ -37,8 +49,6 @@ class AuthService:
             )
         )
         if existing.scalar_one_or_none():
-            from fastapi import HTTPException
-
             raise HTTPException(status_code=400, detail="用户名或邮箱已存在")
 
         # Create new user

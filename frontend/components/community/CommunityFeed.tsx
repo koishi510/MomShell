@@ -20,6 +20,7 @@ import UserMenu from './UserMenu';
 import { type ChannelType, type Question } from '../../types/community';
 import { SPRING_CONFIGS } from '../../lib/design-tokens';
 import { getQuestions, createQuestion as apiCreateQuestion, toggleLike, toggleCollection } from '../../lib/api/community';
+import { getErrorMessage } from '../../lib/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function CommunityFeed() {
@@ -236,8 +237,8 @@ export default function CommunityFeed() {
       setTimeout(() => {
         setSubmitMessage({ show: false, success: true, text: '' });
       }, 3000);
-    } catch (err: any) {
-      setSubmitMessage({ show: true, success: false, text: err.message || '发布失败，请重试' });
+    } catch (err: unknown) {
+      setSubmitMessage({ show: true, success: false, text: getErrorMessage(err) });
 
       setTimeout(() => {
         setSubmitMessage({ show: false, success: true, text: '' });
