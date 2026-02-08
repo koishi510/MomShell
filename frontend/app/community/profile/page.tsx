@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getMyProfile, updateMyProfile, type UserProfile } from '../../../lib/api/community';
 import { changePassword, getAccessToken } from '../../../lib/auth';
+import { getErrorMessage } from '../../../lib/apiClient';
 import CommunityBackground from '../../../components/community/CommunityBackground';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AuthGuard } from '../../../components/AuthGuard';
@@ -169,9 +170,9 @@ export default function ProfilePage() {
       setConfirmPassword('');
       setIsChangingPassword(false);
       setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to change password:', err);
-      setSaveMessage({ show: true, success: false, text: err.message || '密码修改失败' });
+      setSaveMessage({ show: true, success: false, text: getErrorMessage(err) });
       setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
     } finally {
       setIsUpdatingPassword(false);
@@ -200,9 +201,9 @@ export default function ProfilePage() {
       setIsEditingEmail(false);
       setSaveMessage({ show: true, success: true, text: '邮箱修改成功' });
       setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to update email:', err);
-      setSaveMessage({ show: true, success: false, text: err.response?.data?.detail || '邮箱修改失败' });
+      setSaveMessage({ show: true, success: false, text: getErrorMessage(err) });
       setTimeout(() => setSaveMessage({ show: false, success: true, text: '' }), 3000);
     } finally {
       setIsSavingEmail(false);

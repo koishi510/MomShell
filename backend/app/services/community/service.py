@@ -306,21 +306,38 @@ class CommunityService:
         author: User,
     ) -> Question:
         """Create a new question with moderation."""
-        # Content moderation
-        decision = await self._moderation.moderate_text(question_in.content, author.id)
-
-        if decision.result == ModerationResult.REJECTED:
+        # Content moderation - check both title and content
+        title_decision = await self._moderation.moderate_text(
+            question_in.title, author.id
+        )
+        if title_decision.result == ModerationResult.REJECTED:
             raise HTTPException(
                 status_code=400,
                 detail={
-                    "message": f"内容审核未通过: {decision.reason}",
-                    "categories": [c.value for c in decision.categories],
-                    "crisis_intervention": decision.crisis_intervention,
+                    "message": f"标题审核未通过: {title_decision.reason}",
+                    "categories": [c.value for c in title_decision.categories],
+                    "crisis_intervention": title_decision.crisis_intervention,
                 },
             )
 
-        # Determine initial status
-        if decision.result == ModerationResult.PASSED:
+        content_decision = await self._moderation.moderate_text(
+            question_in.content, author.id
+        )
+        if content_decision.result == ModerationResult.REJECTED:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": f"内容审核未通过: {content_decision.reason}",
+                    "categories": [c.value for c in content_decision.categories],
+                    "crisis_intervention": content_decision.crisis_intervention,
+                },
+            )
+
+        # Determine initial status (use stricter result)
+        if (
+            title_decision.result == ModerationResult.PASSED
+            and content_decision.result == ModerationResult.PASSED
+        ):
             status = ContentStatus.PUBLISHED
             published_at = datetime.utcnow()
         else:  # NEED_MANUAL_REVIEW
@@ -353,20 +370,20 @@ class CommunityService:
                     .values(question_count=Tag.question_count + 1)
                 )
 
-        # Log moderation result
+        # Log moderation result (use content decision as primary)
         db.add(
             ModerationLog(
                 target_type="question",
                 target_id=question.id,
                 moderation_type="auto",
-                result=decision.result,
+                result=content_decision.result,
                 sensitive_categories=(
-                    json.dumps([c.value for c in decision.categories])
-                    if decision.categories
+                    json.dumps([c.value for c in content_decision.categories])
+                    if content_decision.categories
                     else None
                 ),
-                confidence_score=decision.confidence,
-                reason=decision.reason,
+                confidence_score=content_decision.confidence,
+                reason=content_decision.reason,
             )
         )
 
@@ -866,7 +883,18 @@ class CommunityService:
             reply_to_user_id = parent.author_id
 
         # Run moderation
-        moderation_result = await self._moderation.moderate_text(comment_in.content)
+        moderation_result = await self._moderation.moderate_text(
+            comment_in.content, user.id
+        )
+        if moderation_result.result == ModerationResult.REJECTED:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": f"评论审核未通过: {moderation_result.reason}",
+                    "categories": [c.value for c in moderation_result.categories],
+                    "crisis_intervention": moderation_result.crisis_intervention,
+                },
+            )
         status = (
             ContentStatus.PUBLISHED
             if moderation_result.result == ModerationResult.PASSED
@@ -997,7 +1025,22 @@ class CommunityService:
 
         # Update fields if provided
         if question_in.title is not None:
+            # Title moderation
+            title_decision = await self._moderation.moderate_text(
+                question_in.title, user.id
+            )
+            if title_decision.result == ModerationResult.REJECTED:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "message": f"标题审核未通过: {title_decision.reason}",
+                        "categories": [c.value for c in title_decision.categories],
+                    },
+                )
             question.title = question_in.title
+            if title_decision.result == ModerationResult.NEED_MANUAL_REVIEW:
+                question.status = ContentStatus.PENDING_REVIEW
+
         if question_in.content is not None:
             # Content moderation for new content
             decision = await self._moderation.moderate_text(
@@ -1336,6 +1379,15 @@ class CommunityService:
         from .enums import FAMILY_ROLES, PROFESSIONAL_ROLES
 
         if profile_update.nickname is not None:
+            # Moderate nickname
+            nickname_decision = await self._moderation.moderate_text(
+                profile_update.nickname
+            )
+            if nickname_decision.result == ModerationResult.REJECTED:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"昵称包含敏感内容: {nickname_decision.reason}",
+                )
             user.nickname = profile_update.nickname
 
         if profile_update.email is not None and profile_update.email != user.email:

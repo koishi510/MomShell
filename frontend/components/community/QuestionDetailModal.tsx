@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Question, type Answer, ROLE_CONFIG } from '../../types/community';
 import { getQuestion, getAnswers, createAnswer, toggleLike, deleteQuestion, deleteAnswer, updateQuestion, updateAnswer, getComments, createComment, deleteComment, type Comment } from '../../lib/api/community';
+import { getErrorMessage } from '../../lib/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface QuestionDetailModalProps {
@@ -126,9 +127,9 @@ export default function QuestionDetailModal({
       setReplyContent('');
       // 通知父组件更新回复数
       onAnswerCreated?.(question.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('回复失败:', err);
-      alert(err.message || '回复失败，请重试');
+      alert(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -159,9 +160,9 @@ export default function QuestionDetailModal({
       await deleteQuestion(question.id);
       onQuestionDeleted?.(question.id);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('删除失败:', err);
-      alert(err.message || '删除失败');
+      alert(getErrorMessage(err));
     }
   };
 
@@ -172,9 +173,9 @@ export default function QuestionDetailModal({
     try {
       await deleteAnswer(answerId);
       setAnswers((prev) => prev.filter((a) => a.id !== answerId));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('删除失败:', err);
-      alert(err.message || '删除失败');
+      alert(getErrorMessage(err));
     }
   };
 
@@ -207,9 +208,9 @@ export default function QuestionDetailModal({
       setLocalQuestion(updated);
       setIsEditingQuestion(false);
       onQuestionUpdated?.(question.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('保存失败:', err);
-      alert(err.message || '保存失败');
+      alert(getErrorMessage(err));
     } finally {
       setIsSavingQuestion(false);
     }
@@ -223,9 +224,9 @@ export default function QuestionDetailModal({
         prev.map((a) => (a.id === answerId ? { ...a, content: updated.content } : a))
       );
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('保存失败:', err);
-      alert(err.message || '保存失败');
+      alert(getErrorMessage(err));
       return false;
     }
   };
@@ -683,9 +684,9 @@ function AnswerCard({
 
       setCommentContent('');
       setReplyingTo(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('评论失败:', err);
-      alert(err.message || '评论失败');
+      alert(getErrorMessage(err));
     } finally {
       setIsSubmittingComment(false);
     }
@@ -706,9 +707,9 @@ function AnswerCard({
             replies: c.replies.filter((r) => r.id !== commentId),
           }))
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('删除评论失败:', err);
-      alert(err.message || '删除失败');
+      alert(getErrorMessage(err));
     }
   };
 
