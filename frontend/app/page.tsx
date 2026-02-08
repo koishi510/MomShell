@@ -54,6 +54,16 @@ const features = [
     gradient: '#E8F5E9, #C8E6C9',
     shadowColor: '#81C784',
   },
+  {
+    title: '心灵回响',
+    subtitle: 'Echo Bond',
+    description: '每一段回忆，都是爱的回响',
+    href: '/echo',
+    icon: '🔮',
+    gradient: '#EDE7F6, #D1C4E9',
+    shadowColor: '#B39DDB',
+    requiresAuth: true,
+  },
 ];
 
 export default function HomePage() {

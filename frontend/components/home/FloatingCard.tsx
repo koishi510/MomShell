@@ -132,8 +132,8 @@ export default function FloatingCard({
               {subtitle}
             </p>
 
-            {/* 描述 */}
-            <p className="text-stone-600 leading-relaxed">
+            {/* 描述 - 固定两行高度 */}
+            <p className="text-stone-600 leading-relaxed line-clamp-2 min-h-[3.25rem]">
               {description}
             </p>
           </div>

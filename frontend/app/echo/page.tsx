@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AuthGuard } from '../../components/AuthGuard';
 import { ECHO_COLORS, SPRING_CONFIGS } from '../../lib/design-tokens';
@@ -61,7 +62,14 @@ function EchoEntrance() {
   }
 
   return (
-    <div className="min-h-screen flex overflow-hidden">
+    <div className="min-h-screen flex overflow-hidden relative">
+      {/* 返回首页按钮 */}
+      <Link
+        href="/"
+        className="absolute top-6 left-6 z-20 text-gray-500 hover:text-gray-700 bg-white/70 hover:bg-white/90 px-4 py-2 rounded-full backdrop-blur-sm shadow-sm transition-all hover:shadow-md"
+      >
+        ← 返回首页
+      </Link>
       {/* 妈妈模式 - 左侧 */}
       <motion.div
         className="relative flex-1 flex flex-col items-center justify-center cursor-pointer overflow-hidden"
