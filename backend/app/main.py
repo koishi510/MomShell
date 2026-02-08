@@ -180,26 +180,53 @@ if FRONTEND_DIR.exists():
     if next_static.exists():
         app.mount("/_next", StaticFiles(directory=str(next_static)), name="next_static")
 
+    def _safe_frontend_path(relative_path: str) -> Path | None:
+        """
+        Resolve a user-supplied path safely within the FRONTEND_DIR.
+
+        Returns the resolved Path if it is contained within FRONTEND_DIR,
+        otherwise returns None.
+        """
+        try:
+            candidate = (FRONTEND_DIR / relative_path).resolve()
+        except Exception:
+            return None
+
+        try:
+            # Python 3.9+: use is_relative_to if available
+            is_relative = candidate.is_relative_to(FRONTEND_DIR)  # type: ignore[attr-defined]
+        except AttributeError:
+            # Fallback for older Python versions
+            try:
+                candidate.relative_to(FRONTEND_DIR)
+                is_relative = True
+            except ValueError:
+                is_relative = False
+
+        if not is_relative:
+            return None
+        return candidate
+
     # SPA fallback - serve frontend for all non-API routes
     @app.api_route(
         "/{full_path:path}", methods=["GET", "HEAD"], response_class=HTMLResponse
     )
     async def serve_spa(request: Request, full_path: str):
         """Serve frontend SPA for all non-API routes."""
-        # Try to serve the exact file first
-        file_path = FRONTEND_DIR / full_path
-        if file_path.exists() and file_path.is_file():
+        # Try to serve the exact file first, ensuring the path stays within FRONTEND_DIR
+        file_path = _safe_frontend_path(full_path)
+        if file_path and file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
 
         # Try with index.html for directory paths (Next.js trailingSlash)
-        if file_path.exists() and file_path.is_dir():
+        if file_path and file_path.exists() and file_path.is_dir():
             index_file = file_path / "index.html"
             if index_file.exists():
                 return FileResponse(index_file)
 
         # Try adding .html extension
-        html_file = FRONTEND_DIR / f"{full_path}.html"
-        if html_file.exists():
+        html_file = _safe_frontend_path(f"{full_path}.html")
+        if html_file and html_file.exists():
             return FileResponse(html_file)
 
         # Fallback to index.html for SPA routing
