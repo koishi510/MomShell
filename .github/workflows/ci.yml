@@ -83,3 +83,6 @@ jobs:
 
       - name: TypeScript type check
         run: npm run typecheck
+
+      - name: Build
+        run: npm run build
