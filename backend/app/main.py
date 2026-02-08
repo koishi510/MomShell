@@ -34,6 +34,7 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 # Frontend static files (built from Next.js export)
 FRONTEND_DIR = Path("/app/frontend_dist")
+FRONTEND_DIR_RESOLVED = FRONTEND_DIR.resolve()
 
 
 def preload_mediapipe() -> None:
@@ -180,6 +181,19 @@ if FRONTEND_DIR.exists():
     if next_static.exists():
         app.mount("/_next", StaticFiles(directory=str(next_static)), name="next_static")
 
+    def _safe_frontend_path(path: Path) -> Path | None:
+        """
+        Resolve a path under FRONTEND_DIR and ensure it does not escape the frontend root.
+        Returns the resolved Path if safe, otherwise None.
+        """
+        try:
+            resolved = path.resolve()
+        except OSError:
+            return None
+        if resolved == FRONTEND_DIR_RESOLVED or FRONTEND_DIR_RESOLVED in resolved.parents:
+            return resolved
+        return None
+
     # SPA fallback - serve frontend for all non-API routes
     @app.api_route(
         "/{full_path:path}", methods=["GET", "HEAD"], response_class=HTMLResponse
@@ -187,24 +201,24 @@ if FRONTEND_DIR.exists():
     async def serve_spa(request: Request, full_path: str):
         """Serve frontend SPA for all non-API routes."""
         # Try to serve the exact file first
-        file_path = FRONTEND_DIR / full_path
-        if file_path.exists() and file_path.is_file():
+        file_path = _safe_frontend_path(FRONTEND_DIR / full_path)
+        if file_path is not None and file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
 
         # Try with index.html for directory paths (Next.js trailingSlash)
-        if file_path.exists() and file_path.is_dir():
-            index_file = file_path / "index.html"
-            if index_file.exists():
+        if file_path is not None and file_path.exists() and file_path.is_dir():
+            index_file = _safe_frontend_path(file_path / "index.html")
+            if index_file is not None and index_file.exists() and index_file.is_file():
                 return FileResponse(index_file)
 
         # Try adding .html extension
-        html_file = FRONTEND_DIR / f"{full_path}.html"
-        if html_file.exists():
+        html_file = _safe_frontend_path(FRONTEND_DIR / f"{full_path}.html")
+        if html_file is not None and html_file.exists() and html_file.is_file():
             return FileResponse(html_file)
 
         # Fallback to index.html for SPA routing
-        index_html = FRONTEND_DIR / "index.html"
-        if index_html.exists():
+        index_html = _safe_frontend_path(FRONTEND_DIR / "index.html")
+        if index_html is not None and index_html.exists() and index_html.is_file():
             return FileResponse(index_html)
 
         # Final fallback to backend template
