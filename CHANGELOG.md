@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2026-02-09
+
+### Added
+
+#### Security Improvements
+
+- **JWT Secret Auto-Generation**: Automatic random JWT secret key generation for Docker deployments
+  - If `JWT_SECRET_KEY` is not set, a random 64-char hex key is generated at startup
+  - Startup warning in production mode when using auto-generated (non-persisted) key
+  - `dev-setup.sh` now auto-generates a persistent JWT secret in `.env`
+
+- **Slider CAPTCHA**: Human verification for login and registration
+  - New `SliderCaptcha` component with drag-to-verify interaction
+  - Validates position accuracy, timing, and drag trail
+  - Required before form submission on both login and register pages
+
+#### User Experience Improvements
+
+- **Profile Page Enhancements**:
+  - Username display in account security section (read-only)
+  - Email display with edit capability
+  - Backend support for email updates with duplicate checking
+
+- **Registration Improvements**:
+  - Role selection during registration (Mom/Dad/Family)
+  - Backend accepts `role` field in registration request
+
+- **Password Visibility Toggle**: Show/hide password button on login and register pages
+  - Eye icon toggle for password fields
+  - Register page: single toggle controls both password and confirm password fields
+
+#### Developer Experience
+
+- **Local Development Setup**:
+  - New `frontend/.env.example` template with `NEXT_PUBLIC_API_URL`
+  - `dev-setup.sh` now creates `frontend/.env.local` automatically
+  - Updated `docs/development.md` with frontend environment setup instructions
+
+### Changed
+
+- **Environment Variables**: Unified `.env.example` style
+  - Required keys use placeholder values (e.g., `MODELSCOPE_KEY=your_key_here`)
+  - Optional keys are commented out with placeholder values
+
+### Fixed
+
+- Backend lint errors in `config.py` (unnecessary f-string) and `main.py` (unused import)
+
+---
+
 ## [0.5.2] - 2026-02-06
 
 ### Added

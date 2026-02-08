@@ -1312,6 +1312,7 @@ class CommunityService:
         return UserProfile(
             id=user.id,
             nickname=user.nickname,
+            email=user.email,
             avatar_url=user.avatar_url,
             role=user.role,
             is_certified=is_certified,
@@ -1336,6 +1337,15 @@ class CommunityService:
 
         if profile_update.nickname is not None:
             user.nickname = profile_update.nickname
+
+        if profile_update.email is not None and profile_update.email != user.email:
+            # Check if email is already taken
+            existing = await db.execute(
+                select(User).where(User.email == profile_update.email)
+            )
+            if existing.scalar_one_or_none():
+                raise HTTPException(status_code=400, detail="该邮箱已被使用")
+            user.email = profile_update.email
 
         if profile_update.avatar_url is not None:
             user.avatar_url = profile_update.avatar_url
