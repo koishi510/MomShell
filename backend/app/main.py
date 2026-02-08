@@ -23,6 +23,8 @@ from app.services.chat import router as companion_router
 from app.services.coach import models as coach_models  # noqa: F401
 from app.services.community import community_router
 from app.services.community import models as community_models  # noqa: F401
+from app.services.echo import echo_router
+from app.services.echo import models as echo_models  # noqa: F401
 from app.services.guardian import guardian_router
 from app.services.guardian import models as guardian_models  # noqa: F401
 
@@ -143,6 +145,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     async with async_session_maker() as session:
         await seed_task_templates(session)
+    # Seed echo domain data
+    from app.services.echo.seed_data import seed_echo_data
+
+    async with async_session_maker() as session:
+        echo_counts = await seed_echo_data(session)
+        if echo_counts["scenes"] > 0 or echo_counts["audio"] > 0:
+            print(f"[Startup] Echo data seeded: {echo_counts}")
     # Create initial admin if configured
     await ensure_admin()
     # Start MediaPipe preloading in background (non-blocking)
@@ -182,6 +191,7 @@ app.include_router(companion_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
 app.include_router(guardian_router, prefix="/api/v1")
+app.include_router(echo_router, prefix="/api/v1")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])

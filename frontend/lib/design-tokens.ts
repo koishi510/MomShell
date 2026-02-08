@@ -32,6 +32,42 @@ export const MODULE_COLORS = {
   },
 } as const;
 
+// Echo Domain 配色
+export const ECHO_COLORS = {
+  mom: {
+    primary: '#FFF8E1', // 米黄色
+    accent: '#FFE082', // 暖金色
+    text: '#5D4037', // 深棕色
+    gradient: ['#FFF8E1', '#FFECB3'],
+    shadow: 'rgba(255, 224, 130, 0.3)',
+    glow: 'rgba(255, 224, 130, 0.5)',
+  },
+  partner: {
+    primary: '#1A237E', // 墨蓝色
+    accent: '#3F51B5', // 靛蓝色
+    text: '#E8EAF6', // 浅蓝灰
+    gradient: ['#1A237E', '#283593'],
+    shadow: 'rgba(63, 81, 181, 0.3)',
+    glow: 'rgba(63, 81, 181, 0.5)',
+  },
+  // 窗户效果
+  window: {
+    blur: {
+      low: 'blur(20px)',
+      medium: 'blur(10px)',
+      high: 'blur(5px)',
+      clear: 'blur(0px)',
+    },
+    frost: 'rgba(255, 255, 255, 0.1)',
+  },
+  // 冥想呼吸颜色
+  breathing: {
+    inhale: '#81D4FA', // 浅蓝
+    hold: '#B39DDB', // 淡紫
+    exhale: '#A5D6A7', // 浅绿
+  },
+} as const;
+
 // 社区频道配色
 export const CHANNEL_COLORS = {
   professional: {
