@@ -704,8 +704,38 @@ window.showView = showView;
 // Utility Functions
 // ============================================================================
 
+function generateSecureRandomString(length) {
+    // Use cryptographically secure random values where available
+    const cryptoObj = window.crypto || window.msCrypto;
+    if (!cryptoObj || typeof cryptoObj.getRandomValues !== 'function') {
+        // Fallback to Math.random if crypto is unavailable (older browsers),
+        // but this should be avoided in modern environments.
+        return Math.random().toString(36).substr(2, length);
+    }
+
+    // Generate enough random bytes, then base64-url encode them
+    const byteLength = Math.ceil((length * 3) / 4); // base64 expands by 4/3
+    const randomBytes = new Uint8Array(byteLength);
+    cryptoObj.getRandomValues(randomBytes);
+
+    let binary = '';
+    for (let i = 0; i < randomBytes.length; i++) {
+        binary += String.fromCharCode(randomBytes[i]);
+    }
+
+    // Standard base64, then make it URL-safe and strip padding
+    const base64 = btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+    return base64.substr(0, length);
+}
+
 function generateSessionId() {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // Use a cryptographically strong random suffix for the session ID
+    const randomSuffix = generateSecureRandomString(16);
+    return 'session_' + Date.now() + '_' + randomSuffix;
 }
 
 function getCategoryName(category) {
