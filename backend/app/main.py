@@ -186,25 +186,47 @@ if FRONTEND_DIR.exists():
     )
     async def serve_spa(request: Request, full_path: str):
         """Serve frontend SPA for all non-API routes."""
+        frontend_root = FRONTEND_DIR.resolve()
+
         # Try to serve the exact file first
-        file_path = FRONTEND_DIR / full_path
-        if file_path.exists() and file_path.is_file():
+        file_path = (FRONTEND_DIR / full_path).resolve()
+        if (
+            (file_path == frontend_root or frontend_root in file_path.parents)
+            and file_path.exists()
+            and file_path.is_file()
+        ):
             return FileResponse(file_path)
 
         # Try with index.html for directory paths (Next.js trailingSlash)
-        if file_path.exists() and file_path.is_dir():
-            index_file = file_path / "index.html"
-            if index_file.exists():
+        if (
+            (file_path == frontend_root or frontend_root in file_path.parents)
+            and file_path.exists()
+            and file_path.is_dir()
+        ):
+            index_file = (file_path / "index.html").resolve()
+            if (
+                (index_file == frontend_root or frontend_root in index_file.parents)
+                and index_file.exists()
+                and index_file.is_file()
+            ):
                 return FileResponse(index_file)
 
         # Try adding .html extension
-        html_file = FRONTEND_DIR / f"{full_path}.html"
-        if html_file.exists():
+        html_file = (FRONTEND_DIR / f"{full_path}.html").resolve()
+        if (
+            (html_file == frontend_root or frontend_root in html_file.parents)
+            and html_file.exists()
+            and html_file.is_file()
+        ):
             return FileResponse(html_file)
 
         # Fallback to index.html for SPA routing
-        index_html = FRONTEND_DIR / "index.html"
-        if index_html.exists():
+        index_html = (FRONTEND_DIR / "index.html").resolve()
+        if (
+            (index_html == frontend_root or frontend_root in index_html.parents)
+            and index_html.exists()
+            and index_html.is_file()
+        ):
             return FileResponse(index_html)
 
         # Final fallback to backend template
