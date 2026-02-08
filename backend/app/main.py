@@ -186,25 +186,45 @@ if FRONTEND_DIR.exists():
     )
     async def serve_spa(request: Request, full_path: str):
         """Serve frontend SPA for all non-API routes."""
+
+        def _safe_path(sub_path: str) -> Path | None:
+            """
+            Safely combine FRONTEND_DIR with a user-controlled sub_path.
+
+            Returns a resolved Path within FRONTEND_DIR, or None if the
+            resulting path is outside the frontend root.
+            """
+            try:
+                candidate = (FRONTEND_DIR / sub_path).resolve()
+            except FileNotFoundError:
+                # On some platforms resolve() may raise if the path does not exist
+                return None
+            # Ensure the resolved path is within the FRONTEND_DIR tree
+            try:
+                candidate.relative_to(FRONTEND_DIR)
+            except ValueError:
+                return None
+            return candidate
+
         # Try to serve the exact file first
-        file_path = FRONTEND_DIR / full_path
-        if file_path.exists() and file_path.is_file():
+        file_path = _safe_path(full_path)
+        if file_path is not None and file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
 
         # Try with index.html for directory paths (Next.js trailingSlash)
-        if file_path.exists() and file_path.is_dir():
+        if file_path is not None and file_path.exists() and file_path.is_dir():
             index_file = file_path / "index.html"
-            if index_file.exists():
+            if index_file.exists() and index_file.is_file():
                 return FileResponse(index_file)
 
         # Try adding .html extension
-        html_file = FRONTEND_DIR / f"{full_path}.html"
-        if html_file.exists():
+        html_file = _safe_path(f"{full_path}.html")
+        if html_file is not None and html_file.exists() and html_file.is_file():
             return FileResponse(html_file)
 
         # Fallback to index.html for SPA routing
-        index_html = FRONTEND_DIR / "index.html"
-        if index_html.exists():
+        index_html = _safe_path("index.html")
+        if index_html is not None and index_html.exists() and index_html.is_file():
             return FileResponse(index_html)
 
         # Final fallback to backend template
