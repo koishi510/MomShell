@@ -603,12 +603,27 @@ function showSessionComplete(summary) {
 
     if (summary.new_achievements && summary.new_achievements.length > 0) {
         elements.newAchievements.classList.remove('hidden');
-        elements.achievementsEarned.innerHTML = summary.new_achievements
-            .map(a => `<div class="achievement-badge earned">
-                <div class="achievement-icon">${getAchievementIcon(a.icon)}</div>
-                <div class="achievement-name">${a.name}</div>
-            </div>`)
-            .join('');
+        // Clear any existing achievements
+        elements.achievementsEarned.innerHTML = '';
+
+        summary.new_achievements.forEach(a => {
+            const badge = document.createElement('div');
+            badge.className = 'achievement-badge earned';
+
+            const iconContainer = document.createElement('div');
+            iconContainer.className = 'achievement-icon';
+            // getAchievementIcon is assumed to return safe, controlled HTML
+            iconContainer.innerHTML = getAchievementIcon(a.icon);
+
+            const nameContainer = document.createElement('div');
+            nameContainer.className = 'achievement-name';
+            // Use textContent so that achievement names are treated as plain text
+            nameContainer.textContent = a.name;
+
+            badge.appendChild(iconContainer);
+            badge.appendChild(nameContainer);
+            elements.achievementsEarned.appendChild(badge);
+        });
     } else {
         elements.newAchievements.classList.add('hidden');
     }
