@@ -25,9 +25,15 @@ cd MomShell
 1. **Environment variables**
 
 ```bash
+# Backend environment (API keys, database, etc.)
 cp .env.example .env
 # Edit .env and fill in your API keys
+
+# Frontend environment (required for local development)
+cp frontend/.env.example frontend/.env.local
 ```
+
+> **Note:** In Docker deployment, the frontend uses relative paths via Nginx. But for local development with separate frontend/backend servers, the frontend needs `NEXT_PUBLIC_API_URL` to point to the backend at `http://localhost:8000`.
 
 2. **Backend dependencies**
 

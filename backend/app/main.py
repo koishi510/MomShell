@@ -28,6 +28,22 @@ from app.services.guardian import models as guardian_models  # noqa: F401
 
 settings = get_settings()
 
+
+def check_security_settings() -> None:
+    """Check for insecure settings in production mode."""
+    from app.core.config import _generated_jwt_secret
+
+    if settings.debug:
+        return  # Skip checks in debug mode
+
+    if _generated_jwt_secret is not None:
+        print("\033[93m" + "=" * 60)
+        print("WARNING: JWT secret was auto-generated (not persisted).")
+        print("User sessions will be invalidated on restart.")
+        print("Set JWT_SECRET_KEY in environment for persistent sessions.")
+        print("=" * 60 + "\033[0m")
+
+
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -118,6 +134,7 @@ async def ensure_admin() -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
     # Startup
+    check_security_settings()
     ensure_db_directory()
     await init_db()
     # Seed guardian task templates

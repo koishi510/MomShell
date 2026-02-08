@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from ..enums import UserRole
 from .base import TagInfo
@@ -16,6 +16,7 @@ class UserProfileUpdate(BaseModel):
     """Request schema for updating user profile."""
 
     nickname: str | None = Field(None, min_length=1, max_length=50)
+    email: EmailStr | None = None
     avatar_url: str | None = Field(None, max_length=500)
     role: FamilyRoleType | None = Field(
         None, description="Only family roles allowed: mom, dad, family"
@@ -36,6 +37,7 @@ class UserProfile(BaseModel):
 
     id: str
     nickname: str
+    email: str
     avatar_url: str | None = None
     role: UserRole
     is_certified: bool = False

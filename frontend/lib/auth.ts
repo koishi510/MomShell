@@ -63,6 +63,7 @@ export interface RegisterParams {
   email: string;
   password: string;
   nickname: string;
+  role?: 'mom' | 'dad' | 'family';
 }
 
 export interface LoginParams {

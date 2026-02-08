@@ -1,9 +1,15 @@
 """Application configuration."""
 
+import secrets
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Security constants
+DEFAULT_JWT_SECRET = "your-secret-key-change-in-production"
+_generated_jwt_secret: str | None = None
 
 
 def _find_env_file() -> str | None:
@@ -59,10 +65,21 @@ class Settings(BaseSettings):
     rest_prompt_interval: int = 300  # seconds
 
     # JWT Authentication
-    jwt_secret_key: str = "your-secret-key-change-in-production"
+    jwt_secret_key: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
+
+    @model_validator(mode="after")
+    def _auto_generate_jwt_secret(self) -> "Settings":
+        """Auto-generate JWT secret if using default value."""
+        global _generated_jwt_secret
+        if self.jwt_secret_key == DEFAULT_JWT_SECRET:
+            if _generated_jwt_secret is None:
+                _generated_jwt_secret = secrets.token_hex(32)
+                print("[Config] Auto-generated JWT secret (not persisted)")
+            object.__setattr__(self, "jwt_secret_key", _generated_jwt_secret)
+        return self
 
     # Web Search (Firecrawl API for reducing AI hallucinations)
     firecrawl_api_key: str = ""
