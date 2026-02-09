@@ -130,11 +130,14 @@ export default function SliderCaptcha({ onSuccess, onReset }: SliderCaptchaProps
           style={{ width: `${position}%` }}
         />
 
-        {/* Target indicator */}
+        {/* Target indicator - 和滑块一样大小的方块 */}
         {!isVerified && (
           <div
-            className="absolute top-0 h-full w-1 bg-pink-300/50"
-            style={{ left: `${targetPosition}%` }}
+            className="absolute top-0 h-full bg-pink-300/50 rounded"
+            style={{
+              width: `${sliderWidth}px`,
+              left: `calc(${targetPosition}% - ${(targetPosition / 100) * sliderWidth}px)`,
+            }}
           />
         )}
 
