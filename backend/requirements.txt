@@ -908,9 +908,9 @@ kiwisolver==1.4.9 \
     --hash=sha256:f68e4f3eeca8fb22cc3d731f9715a13b652795ef657a13df1ad0c7dc0e9731df \
     --hash=sha256:fb940820c63a9590d31d88b815e7a3aa5915cad3ce735ab45f0c730b39547de1
     # via matplotlib
-langchain-anthropic==1.3.1 \
-    --hash=sha256:1fc28cf8037c30597ee6172fc2ff9e345efe8149a8c2a39897b1eebba2948322 \
-    --hash=sha256:4f3d7a4a7729ab1aeaf62d32c87d4d227c1b5421668ca9e3734562b383470b07
+langchain-anthropic==1.3.2 \
+    --hash=sha256:35bc30862696a493680b898eb76bd6c866841f8e48a57d5eca1420a4fd807ac0 \
+    --hash=sha256:e551726a6ebf20229bde06022b5149d33bd48d28e34bd002a744953667b8ad48
     # via momshell-backend
 langchain-core==1.2.7 \
     --hash=sha256:452f4fef7a3d883357b22600788d37e3d8854ef29da345b7ac7099f33c31828b \
