@@ -1,13 +1,8 @@
 // frontend/components/shell/ConchMemoryInjector.tsx
-/**
- * 海螺记忆注入组件 - 伴侣为妈妈注入记忆
- */
-
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef } from 'react';
-import { SHELL_COLORS, SPRING_CONFIGS } from '../../lib/design-tokens';
 
 interface ConchMemoryInjectorProps {
   onInject?: (content: string, imageFile?: File) => Promise<void>;
@@ -41,10 +36,8 @@ export function ConchMemoryInjector({
 
   const handleInject = async () => {
     if (!content.trim() || isInjecting) return;
-
     setIsInjecting(true);
     await onInject?.(content.trim(), imageFile || undefined);
-
     setTimeout(() => {
       setContent('');
       setImagePreview(null);
@@ -64,103 +57,46 @@ export function ConchMemoryInjector({
 
   return (
     <>
-      {/* 海螺图标按钮 */}
+      {/* 按钮 */}
       <motion.button
-        className={`relative ${className}`}
+        className={`relative w-14 h-14 rounded-full flex items-center justify-center ${className}`}
+        style={{
+          background: 'rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 0 20px rgba(255,183,77,0.3)',
+        }}
         onClick={() => !disabled && setIsOpen(true)}
-        whileHover={{ scale: 1.1, rotate: [0, 5, -5, 0] }}
+        whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         disabled={disabled}
       >
-        <svg width="56" height="48" viewBox="0 0 56 48" fill="none">
-          {/* 海螺主体 */}
-          <path
-            d="M8 32 Q2 24 8 16 Q16 8 28 8 Q44 8 50 20 Q54 28 48 36 Q40 44 24 44 Q12 44 8 32"
-            fill={SHELL_COLORS.conch.outer}
-            stroke="#D7CCC8"
-            strokeWidth="1.5"
-          />
-          {/* 螺旋纹理 */}
-          <path
-            d="M20 28 Q24 22 32 22 Q40 24 42 30"
-            fill="none"
-            stroke={SHELL_COLORS.conch.inner}
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-          <path
-            d="M26 26 Q30 24 34 26"
-            fill="none"
-            stroke={SHELL_COLORS.conch.inner}
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          {/* 海螺口 */}
-          <ellipse
-            cx="14"
-            cy="28"
-            rx="6"
-            ry="10"
-            fill={SHELL_COLORS.conch.inner}
-          />
-        </svg>
-
-        {/* 发光效果 */}
         <motion.div
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(circle, ${SHELL_COLORS.conch.glow} 0%, transparent 70%)`,
-          }}
+          className="absolute inset-0 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(255,183,77,0.4) 0%, transparent 70%)' }}
           animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
           transition={{ duration: 3, repeat: Infinity }}
         />
+        <span className="text-2xl relative z-10">🐚</span>
       </motion.button>
 
-      {/* 输入弹窗 */}
+      {/* 弹窗 */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            {/* 背景遮罩 */}
-            <motion.div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => !isInjecting && setIsOpen(false)}
-            />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pr-12">
+            <div className="absolute inset-0 bg-black/40" onClick={() => !isInjecting && setIsOpen(false)} />
 
-            {/* 弹窗内容 */}
             <motion.div
-              className="relative rounded-3xl p-6 w-full max-w-sm shadow-xl"
-              style={{
-                background: `linear-gradient(135deg, ${SHELL_COLORS.partner.background} 0%, #0D1B2A 100%)`,
-              }}
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 50 }}
-              transition={SPRING_CONFIGS.bouncy}
+              className="relative bg-slate-800 rounded-2xl p-6 w-80 shadow-xl"
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             >
-              {/* 装饰海螺 */}
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-                <svg width="36" height="30" viewBox="0 0 56 48" fill="none">
-                  <path
-                    d="M8 32 Q2 24 8 16 Q16 8 28 8 Q44 8 50 20 Q54 28 48 36 Q40 44 24 44 Q12 44 8 32"
-                    fill={SHELL_COLORS.conch.outer}
-                    stroke="#D7CCC8"
-                    strokeWidth="1"
-                  />
-                </svg>
+              <div className="text-center mb-5">
+                <span className="text-4xl">🐚</span>
+                <h3 className="text-lg font-medium mt-2 text-gray-100">注入记忆</h3>
+                <p className="text-xs text-gray-400 mt-1">写下你想让她回忆的时光</p>
               </div>
-
-              <h3 className="text-lg font-medium text-center mb-4" style={{ color: SHELL_COLORS.partner.text }}>
-                注入一段记忆
-              </h3>
-
-              <p className="text-xs text-center mb-4" style={{ color: `${SHELL_COLORS.partner.text}80` }}>
-                写下你想让她回忆的时光
-              </p>
 
               {/* 图片预览 */}
               {imagePreview && (
@@ -170,13 +106,12 @@ export function ConchMemoryInjector({
                     alt="预览"
                     className="w-full h-32 object-cover rounded-xl"
                   />
-                  <motion.button
+                  <button
                     onClick={clearImage}
                     className="absolute top-2 right-2 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center text-white text-xs"
-                    whileTap={{ scale: 0.9 }}
                   >
                     ✕
-                  </motion.button>
+                  </button>
                 </div>
               )}
 
@@ -184,104 +119,47 @@ export function ConchMemoryInjector({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="描述一段你们共同的记忆..."
-                className="w-full h-28 p-4 rounded-2xl border-2 focus:outline-none resize-none text-sm"
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  borderColor: 'rgba(255,255,255,0.2)',
-                  color: SHELL_COLORS.partner.text,
-                }}
                 disabled={isInjecting}
                 maxLength={300}
+                className="w-full h-28 p-3 rounded-xl border-2 border-slate-600 bg-slate-700 text-sm text-gray-100 resize-none outline-none placeholder-gray-500"
               />
 
-              <div className="flex justify-between items-center mt-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="hidden"
-                    disabled={isInjecting}
-                  />
-                  <motion.button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{
-                      background: 'rgba(255,255,255,0.1)',
-                      color: SHELL_COLORS.partner.text,
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={isInjecting}
-                  >
-                    📷
-                  </motion.button>
-                  <span className="text-xs" style={{ color: `${SHELL_COLORS.partner.text}60` }}>
-                    {content.length}/300
-                  </span>
-                </div>
-
-                <div className="flex gap-2">
-                  <motion.button
-                    onClick={() => setIsOpen(false)}
-                    className="px-4 py-2 rounded-full text-sm"
-                    style={{ color: SHELL_COLORS.partner.text }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={isInjecting}
-                  >
-                    取消
-                  </motion.button>
-
-                  <motion.button
-                    onClick={handleInject}
-                    className="px-6 py-2 rounded-full text-sm font-medium"
-                    style={{
-                      background: `linear-gradient(135deg, ${SHELL_COLORS.partner.accent} 0%, #5C6BC0 100%)`,
-                      color: 'white',
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={!content.trim() || isInjecting}
-                  >
-                    {isInjecting ? (
-                      <motion.span
-                        animate={{ opacity: [1, 0.5, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        注入中...
-                      </motion.span>
-                    ) : (
-                      '注入记忆'
-                    )}
-                  </motion.button>
-                </div>
+              <div className="flex items-center gap-2 mt-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  disabled={isInjecting}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isInjecting}
+                  className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-700 text-xl"
+                >
+                  📷
+                </button>
+                <span className="text-xs text-gray-500">{content.length}/300</span>
               </div>
-            </motion.div>
 
-            {/* 注入动画 - 金色光点飞向沙滩 */}
-            {isInjecting && (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-3 h-3 rounded-full"
-                    style={{ background: SHELL_COLORS.shell.golden }}
-                    initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
-                    animate={{
-                      x: [0, -50 - i * 20, -150 - i * 30],
-                      y: [0, -20 - i * 10, 50 + i * 20],
-                      scale: [1, 1.2, 0.5],
-                      opacity: [1, 1, 0],
-                    }}
-                    transition={{
-                      duration: 1.2,
-                      delay: i * 0.1,
-                      ease: 'easeOut',
-                    }}
-                  />
-                ))}
-              </>
-            )}
-          </motion.div>
+              <button
+                onClick={handleInject}
+                disabled={!content.trim() || isInjecting}
+                className="w-full mt-3 py-3 rounded-full bg-indigo-500 text-white text-sm font-medium disabled:opacity-50"
+              >
+                {isInjecting ? '注入中...' : '注入记忆'}
+              </button>
+
+              <button
+                onClick={() => setIsOpen(false)}
+                disabled={isInjecting}
+                className="w-full mt-4 text-sm text-gray-500"
+              >
+                关闭
+              </button>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>

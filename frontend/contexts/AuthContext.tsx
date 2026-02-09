@@ -40,6 +40,14 @@ interface AuthProviderProps {
 // Helper to initialize guest mode from sessionStorage
 function getInitialGuestState() {
   if (typeof window === 'undefined') return { isGuest: false, identity: null };
+
+  // 首先检查 localStorage 中的持久化身份（一次性选择后保存）
+  const persistentIdentity = localStorage.getItem('momshell_identity') as 'mom' | 'partner' | null;
+  if (persistentIdentity) {
+    return { isGuest: false, identity: persistentIdentity };
+  }
+
+  // 回退到 sessionStorage 中的访客模式
   const guestMode = sessionStorage.getItem('momshell_guest_mode') === 'true';
   const identity = sessionStorage.getItem('momshell_selected_identity') as 'mom' | 'partner' | null;
   return guestMode && identity ? { isGuest: true, identity } : { isGuest: false, identity: null };
@@ -126,6 +134,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setAccessToken(null);
     setIsGuestMode(false);
     setSelectedIdentity(null);
+    // 清除持久化身份
+    localStorage.removeItem('momshell_identity');
+    sessionStorage.removeItem('momshell_guest_mode');
+    sessionStorage.removeItem('momshell_selected_identity');
   }, []);
 
   // Guest mode functions

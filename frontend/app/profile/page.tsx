@@ -1,6 +1,6 @@
 'use client';
 
-// frontend/app/community/profile/page.tsx
+// frontend/app/profile/page.tsx
 /**
  * 个人中心页面
  * 查看和编辑用户资料
@@ -10,12 +10,12 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getMyProfile, updateMyProfile, type UserProfile } from '../../../lib/api/community';
-import { changePassword, getAccessToken } from '../../../lib/auth';
-import { getErrorMessage } from '../../../lib/apiClient';
-import CommunityBackground from '../../../components/community/CommunityBackground';
-import { useAuth } from '../../../contexts/AuthContext';
-import { AuthGuard } from '../../../components/AuthGuard';
+import { getMyProfile, updateMyProfile, type UserProfile } from '../../lib/api/community';
+import { changePassword, getAccessToken } from '../../lib/auth';
+import { getErrorMessage } from '../../lib/apiClient';
+import CommunityBackground from '../../components/community/CommunityBackground';
+import { useAuth } from '../../contexts/AuthContext';
+import { AuthGuard } from '../../components/AuthGuard';
 
 // Role display names
 const roleNames: Record<string, string> = {
@@ -260,12 +260,15 @@ export default function ProfilePage() {
         className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-stone-200/50"
       >
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link
-            href="/community"
+          <button
+            onClick={() => {
+              const identity = localStorage.getItem('momshell_identity') || 'mom';
+              router.push(`/shell/${identity}`);
+            }}
             className="text-stone-500 hover:text-stone-700 transition-colors"
           >
-            ← 社区
-          </Link>
+            ← 返回
+          </button>
           <span className="text-2xl">👤</span>
           <span className="text-lg font-medium text-stone-700">个人中心</span>
         </div>
@@ -451,6 +454,9 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+
+            {/* 贝壳码绑定 */}
+            <ShellCodeSection />
 
             {/* 账号安全 */}
             <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-stone-100/50">
@@ -663,5 +669,160 @@ function EditIcon() {
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
+  );
+}
+
+// 贝壳码绑定区域
+function ShellCodeSection() {
+  const [myCode, setMyCode] = useState<string | null>(null);
+  const [partnerCode, setPartnerCode] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isBinding, setIsBinding] = useState(false);
+  const [bindStatus, setBindStatus] = useState<'none' | 'pending' | 'bound'>('none');
+  const [partnerName, setPartnerName] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 生成贝壳码
+  const handleGenerateCode = async () => {
+    setIsGenerating(true);
+    setMessage(null);
+    try {
+      // 模拟 API 调用
+      await new Promise(r => setTimeout(r, 1000));
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      setMyCode(code);
+      setMessage({ type: 'success', text: '贝壳码已生成，请分享给伴侣' });
+    } catch {
+      setMessage({ type: 'error', text: '生成失败，请重试' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // 绑定伴侣
+  const handleBind = async () => {
+    if (!partnerCode.trim() || partnerCode.length !== 6) {
+      setMessage({ type: 'error', text: '请输入6位贝壳码' });
+      return;
+    }
+    setIsBinding(true);
+    setMessage(null);
+    try {
+      // 模拟 API 调用
+      await new Promise(r => setTimeout(r, 1500));
+      setBindStatus('bound');
+      setPartnerName('伴侣昵称');
+      setMessage({ type: 'success', text: '绑定成功！现在可以共建回忆了' });
+    } catch {
+      setMessage({ type: 'error', text: '绑定失败，请检查贝壳码是否正确' });
+    } finally {
+      setIsBinding(false);
+    }
+  };
+
+  // 复制贝壳码
+  const handleCopy = () => {
+    if (myCode) {
+      navigator.clipboard.writeText(myCode);
+      setMessage({ type: 'success', text: '已复制到剪贴板' });
+      setTimeout(() => setMessage(null), 2000);
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-amber-50/70 to-rose-50/70 backdrop-blur-sm rounded-3xl p-6 border border-amber-100/50">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-2xl">🐚</span>
+        <h3 className="text-stone-700 font-medium">贝壳码绑定</h3>
+      </div>
+
+      <p className="text-sm text-stone-500 mb-4">
+        与伴侣互换贝壳码，即可共建 Echo Domain
+      </p>
+
+      {/* 已绑定状态 */}
+      {bindStatus === 'bound' && partnerName && (
+        <div className="p-4 rounded-2xl bg-green-50 border border-green-200 mb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💑</span>
+            <div>
+              <div className="text-green-700 font-medium">已与 {partnerName} 绑定</div>
+              <div className="text-xs text-green-600">你们可以开始共建回忆了</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 我的贝壳码 */}
+      <div className="mb-4">
+        <label className="text-sm text-stone-600 block mb-2">我的贝壳码</label>
+        {myCode ? (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 p-3 bg-white rounded-xl border border-amber-200 font-mono text-xl text-center tracking-widest text-amber-700">
+              {myCode}
+            </div>
+            <motion.button
+              onClick={handleCopy}
+              className="p-3 rounded-xl bg-amber-100 text-amber-700"
+              whileTap={{ scale: 0.95 }}
+            >
+              📋
+            </motion.button>
+          </div>
+        ) : (
+          <motion.button
+            onClick={handleGenerateCode}
+            disabled={isGenerating}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium disabled:opacity-50"
+            whileTap={{ scale: 0.98 }}
+          >
+            {isGenerating ? '生成中...' : '生成我的贝壳码'}
+          </motion.button>
+        )}
+      </div>
+
+      {/* 输入伴侣贝壳码 */}
+      {bindStatus !== 'bound' && (
+        <div className="mb-4">
+          <label className="text-sm text-stone-600 block mb-2">输入伴侣的贝壳码</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={partnerCode}
+              onChange={(e) => setPartnerCode(e.target.value.toUpperCase().slice(0, 6))}
+              placeholder="6位贝壳码"
+              className="flex-1 p-3 rounded-xl border border-stone-200 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 font-mono text-center tracking-widest uppercase"
+              maxLength={6}
+            />
+            <motion.button
+              onClick={handleBind}
+              disabled={isBinding || partnerCode.length !== 6}
+              className="px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-400 to-purple-400 text-white font-medium disabled:opacity-50"
+              whileTap={{ scale: 0.95 }}
+            >
+              {isBinding ? '...' : '绑定'}
+            </motion.button>
+          </div>
+        </div>
+      )}
+
+      {/* 消息提示 */}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={`p-3 rounded-xl text-sm ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}
+          >
+            {message.text}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

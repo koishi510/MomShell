@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-02-09
+
+### Changed
+
+#### Shell UI Improvements
+
+- **WishBottle Component**:
+  - Redesigned popup menu with cleaner layout
+  - Slide-in/out animation from right side
+  - Fixed width (320px) for consistent display
+  - Horizontal button layout with icon left, text right
+  - Glowing button with pulsing animation
+  - Badge showing fulfilled wishes count
+
+- **ConchMemoryInjector Component**:
+  - Redesigned to match WishBottle style
+  - Slide-in/out animation from right side
+  - Dark theme (slate-800) for partner night mode
+  - Full-width "Inject Memory" button on separate line
+  - Photo upload with preview support
+
+- **TopHeader Component**:
+  - Simplified dropdown menu (Profile Center, Logout only)
+  - Removed redundant edit avatar/nickname buttons
+
+- **Profile Page**:
+  - Moved from `/community/profile` to `/profile`
+  - Back button now returns to shell page based on identity
+  - Added logout functionality
+  - Added shell code section for partner binding
+
+- **Partner Page**:
+  - Added labels under sidebar buttons (Wish Sea, Inject Memory)
+  - Better visibility for conch and bottle buttons
+
+### Added
+
+- **GuestGuard Component**: Forces login for data input features
+- **Onboarding Component**: New user tutorial overlay
+
 ## [0.7.0] - 2026-02-09
 
 ### Added

@@ -203,7 +203,7 @@ function CertificationContent() {
       >
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link
-            href="/community/profile"
+            href="/profile"
             className="text-stone-500 hover:text-stone-700 transition-colors"
           >
             &larr; 个人中心

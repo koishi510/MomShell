@@ -14,6 +14,7 @@ import {
   TopHeader,
   Shell,
   ConchMemoryInjector,
+  Onboarding,
 } from '../../../components/shell';
 import { SHELL_COLORS, SPRING_CONFIGS } from '../../../lib/design-tokens';
 import type { ShellState } from '../../../components/shell';
@@ -183,40 +184,59 @@ export default function PartnerBeachPage() {
           )}
         </div>
 
-        {/* 右侧功能按钮 */}
+        {/* 右侧功能按钮 - 屏幕右栏中心 */}
         <motion.div
-          className="fixed right-6 bottom-28 z-20 flex flex-col gap-4"
+          className="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4"
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.8 }}
         >
-          {/* 心愿海域入口 */}
-          <motion.button
-            onClick={handleWishSeaClick}
-            className="relative w-14 h-14 rounded-full flex items-center justify-center"
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(8px)',
-            }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="text-2xl">🍾</span>
-            {wishCount > 0 && (
-              <motion.span
-                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                {wishCount}
-              </motion.span>
-            )}
-          </motion.button>
+          {/* 心愿海域入口 - 截获漂流瓶 */}
+          <div className="flex flex-col items-center gap-1">
+            <motion.button
+              onClick={handleWishSeaClick}
+              className="relative w-14 h-14 rounded-full flex items-center justify-center"
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 0 20px rgba(135, 206, 235, 0.3)',
+              }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {/* 微光效果 */}
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle, rgba(135,206,235,0.4) 0%, transparent 70%)',
+                }}
+                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span className="text-2xl relative z-10">🍾</span>
+              {wishCount > 0 && (
+                <motion.span
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white z-20"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  {wishCount}
+                </motion.span>
+              )}
+            </motion.button>
+            <span className="text-xs" style={{ color: `${SHELL_COLORS.partner.text}80` }}>心愿海域</span>
+          </div>
 
           {/* 海螺记忆注入 */}
-          <ConchMemoryInjector onInject={handleInjectMemory} />
+          <div className="flex flex-col items-center gap-1">
+            <ConchMemoryInjector onInject={handleInjectMemory} />
+            <span className="text-xs" style={{ color: `${SHELL_COLORS.partner.text}80` }}>注入记忆</span>
+          </div>
         </motion.div>
       </main>
+
+      {/* 新手引导 */}
+      <Onboarding mode="partner" onComplete={() => {}} />
     </BeachBackground>
   );
 }

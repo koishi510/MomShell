@@ -6,13 +6,16 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SHELL_COLORS, SPRING_CONFIGS } from '../../lib/design-tokens';
 import { useAuth } from '../../contexts/AuthContext';
 
 type IdentityType = 'mom' | 'partner' | null;
+
+// 身份存储键
+const IDENTITY_STORAGE_KEY = 'momshell_identity';
 
 // Pre-generate star positions to avoid Math.random during render
 function generateStarPositions(count: number, seed: number) {
@@ -35,9 +38,21 @@ export default function IdentityPage() {
   const [selectedIdentity, setSelectedIdentity] = useState<IdentityType>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   // Pre-generate star positions with a fixed seed
   const starPositions = useMemo(() => generateStarPositions(15, 42), []);
+
+  // 检查是否已选择身份，自动跳转
+  useEffect(() => {
+    const savedIdentity = localStorage.getItem(IDENTITY_STORAGE_KEY) as IdentityType;
+    if (savedIdentity && (savedIdentity === 'mom' || savedIdentity === 'partner')) {
+      router.replace(`/shell/${savedIdentity}`);
+    } else {
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => setIsChecking(false), 0);
+    }
+  }, [router]);
 
   const handleSelect = (identity: IdentityType) => {
     setSelectedIdentity(identity);
@@ -46,6 +61,10 @@ export default function IdentityPage() {
 
   const handleConfirm = () => {
     setShowConfirm(false);
+    // 保存身份到 localStorage（持久化）
+    if (selectedIdentity) {
+      localStorage.setItem(IDENTITY_STORAGE_KEY, selectedIdentity);
+    }
     if (isAuthenticated) {
       // 已登录，直接进入
       router.push(`/shell/${selectedIdentity}`);
@@ -56,7 +75,7 @@ export default function IdentityPage() {
   };
 
   const handleAuthRedirect = (mode: 'login' | 'register') => {
-    // 保存选择的身份到 sessionStorage
+    // 保存选择的身份到 sessionStorage（用于登录后恢复）
     if (selectedIdentity) {
       sessionStorage.setItem('selectedIdentity', selectedIdentity);
     }
@@ -68,6 +87,21 @@ export default function IdentityPage() {
     if (hoveredSide === null) return '50%';
     return hoveredSide === side ? '60%' : '40%';
   };
+
+  // 检查中显示加载
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: SHELL_COLORS.mom.background }}>
+        <motion.div
+          animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="text-4xl"
+        >
+          🐚
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex overflow-hidden">
@@ -178,7 +212,7 @@ export default function IdentityPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: hoveredSide === 'mom' ? 1 : 0 }}
           >
-            在温暖沙滩上，寻回尘封的记忆
+            洗去尘嚣，让自我重新发光
           </motion.p>
         </div>
       </motion.div>
@@ -284,7 +318,7 @@ export default function IdentityPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: hoveredSide === 'partner' ? 1 : 0 }}
           >
-            在宁静月夜下，守护她的每一段流光
+            守望她的流光溢彩
           </motion.p>
         </div>
       </motion.div>

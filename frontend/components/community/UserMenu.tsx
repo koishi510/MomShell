@@ -18,7 +18,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   {
-    href: '/community/profile',
+    href: '/profile',
     icon: '👤',
     label: '个人中心',
     description: '编辑资料',

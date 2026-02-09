@@ -14,6 +14,7 @@ import {
   TopHeader,
   Shell,
   WishBottle,
+  Onboarding,
 } from '../../../components/shell';
 import { SHELL_COLORS, SPRING_CONFIGS } from '../../../lib/design-tokens';
 import type { ShellState } from '../../../components/shell';
@@ -140,9 +141,9 @@ export default function MomBeachPage() {
           )}
         </div>
 
-        {/* 右侧漂流瓶 */}
+        {/* 右侧漂流瓶 - 屏幕右栏中心 */}
         <motion.div
-          className="fixed right-6 bottom-28 z-20"
+          className="fixed right-4 top-1/2 -translate-y-1/2 z-20"
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.8 }}
@@ -202,6 +203,9 @@ export default function MomBeachPage() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* 新手引导 */}
+      <Onboarding mode="mom" onComplete={() => {}} />
     </BeachBackground>
   );
 }

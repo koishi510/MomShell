@@ -1,213 +1,214 @@
 // frontend/components/shell/WishBottle.tsx
-/**
- * 心愿漂流瓶组件 - 妈妈发送心愿给伴侣
- */
-
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { SHELL_COLORS, SPRING_CONFIGS } from '../../lib/design-tokens';
+import { SHELL_COLORS } from '../../lib/design-tokens';
+
+interface Wish {
+  id: string;
+  content: string;
+  createdAt: string;
+  status: 'pending' | 'accepted' | 'fulfilled';
+}
 
 interface WishBottleProps {
   onSend?: (wish: string) => void;
+  wishes?: Wish[];
   disabled?: boolean;
   className?: string;
 }
 
+const MOCK_WISHES: Wish[] = [
+  { id: '1', content: '想喝一杯不用管小孩的咖啡', createdAt: '2026-02-08', status: 'fulfilled' },
+  { id: '2', content: '想吃草莓蛋糕', createdAt: '2026-02-07', status: 'accepted' },
+  { id: '3', content: '想去看一场电影', createdAt: '2026-02-05', status: 'pending' },
+];
+
 export function WishBottle({
   onSend,
+  wishes = MOCK_WISHES,
   disabled = false,
   className = '',
 }: WishBottleProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [mode, setMode] = useState<'closed' | 'menu' | 'create' | 'history'>('closed');
   const [wish, setWish] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   const handleSend = async () => {
     if (!wish.trim() || isSending) return;
-
     setIsSending(true);
     await onSend?.(wish.trim());
-
-    // 发送动画
     setTimeout(() => {
       setWish('');
-      setIsOpen(false);
+      setMode('closed');
       setIsSending(false);
     }, 1500);
   };
 
+  const getStatusLabel = (status: Wish['status']) => {
+    if (status === 'pending') return '漂流中';
+    if (status === 'accepted') return 'TA已接住';
+    return '已达成';
+  };
+
   return (
     <>
-      {/* 漂流瓶图标按钮 */}
+      {/* 按钮 */}
       <motion.button
-        className={`relative ${className}`}
-        onClick={() => !disabled && setIsOpen(true)}
-        whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+        className={`relative w-14 h-14 rounded-full flex items-center justify-center ${className}`}
+        style={{
+          background: 'rgba(255,255,255,0.15)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 0 20px rgba(135,206,235,0.3)',
+        }}
+        onClick={() => !disabled && setMode('menu')}
+        whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         disabled={disabled}
       >
-        <svg width="48" height="64" viewBox="0 0 48 64" fill="none">
-          {/* 瓶身 */}
-          <path
-            d="M12 20 Q8 25 8 40 Q8 58 24 60 Q40 58 40 40 Q40 25 36 20 L36 14 L12 14 Z"
-            fill={SHELL_COLORS.bottle.glass}
-            stroke="#87CEEB"
-            strokeWidth="1.5"
-          />
-          {/* 软木塞 */}
-          <rect
-            x="14"
-            y="8"
-            width="20"
-            height="8"
-            rx="2"
-            fill={SHELL_COLORS.bottle.cork}
-          />
-          {/* 瓶内纸条 */}
-          <rect
-            x="18"
-            y="30"
-            width="12"
-            height="16"
-            rx="1"
-            fill={SHELL_COLORS.bottle.message}
-            transform="rotate(-10 24 38)"
-          />
-          {/* 高光 */}
-          <ellipse cx="16" cy="35" rx="2" ry="8" fill="white" opacity="0.4" />
-        </svg>
-
-        {/* 发光效果 */}
         <motion.div
           className="absolute inset-0 rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(135,206,235,0.3) 0%, transparent 70%)',
-          }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+          style={{ background: 'radial-gradient(circle, rgba(135,206,235,0.4) 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.8, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
         />
+        <span className="text-2xl relative z-10">🍾</span>
+        {wishes.filter(w => w.status === 'fulfilled').length > 0 && (
+          <motion.span
+            className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-xs text-white z-20"
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            {wishes.filter(w => w.status === 'fulfilled').length}
+          </motion.span>
+        )}
       </motion.button>
 
-      {/* 输入弹窗 */}
+      {/* 弹窗 */}
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            {/* 背景遮罩 */}
-            <motion.div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => !isSending && setIsOpen(false)}
-            />
+        {mode !== 'closed' && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pr-12">
+            <div className="absolute inset-0 bg-black/40" onClick={() => !isSending && setMode('closed')} />
 
-            {/* 弹窗内容 */}
-            <motion.div
-              className="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl"
-              style={{
-                background: `linear-gradient(135deg, ${SHELL_COLORS.bottle.message} 0%, #FFF 100%)`,
-              }}
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 50 }}
-              transition={SPRING_CONFIGS.bouncy}
-            >
-              {/* 装饰贝壳 */}
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                <svg width="40" height="32" viewBox="0 0 40 32">
-                  <path
-                    d="M5 20 Q5 5 20 2 Q35 5 35 20 Q35 28 20 30 Q5 28 5 20"
-                    fill={SHELL_COLORS.shell.clean}
-                    stroke="#DDD"
-                    strokeWidth="1"
-                  />
-                </svg>
-              </div>
-
-              <h3 className="text-lg font-medium text-center mb-4" style={{ color: SHELL_COLORS.mom.text }}>
-                写下你的心愿
-              </h3>
-
-              <textarea
-                value={wish}
-                onChange={(e) => setWish(e.target.value)}
-                placeholder="告诉 TA 你想要什么..."
-                className="w-full h-32 p-4 rounded-2xl border-2 border-amber-100 focus:border-amber-300 focus:outline-none resize-none text-sm"
-                style={{
-                  background: 'rgba(255,255,255,0.8)',
-                  color: SHELL_COLORS.mom.text,
-                }}
-                disabled={isSending}
-                maxLength={200}
-              />
-
-              <div className="flex justify-between items-center mt-3">
-                <span className="text-xs text-gray-400">{wish.length}/200</span>
-
-                <div className="flex gap-2">
-                  <motion.button
-                    onClick={() => setIsOpen(false)}
-                    className="px-4 py-2 rounded-full text-sm"
-                    style={{ color: SHELL_COLORS.mom.text }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={isSending}
-                  >
-                    取消
-                  </motion.button>
-
-                  <motion.button
-                    onClick={handleSend}
-                    className="px-6 py-2 rounded-full text-sm font-medium text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${SHELL_COLORS.mom.accent} 0%, #FFA726 100%)`,
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={!wish.trim() || isSending}
-                  >
-                    {isSending ? (
-                      <motion.span
-                        animate={{ opacity: [1, 0.5, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        漂向远方...
-                      </motion.span>
-                    ) : (
-                      '放入瓶中'
-                    )}
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* 发送动画 - 漂流瓶飞走 */}
-            {isSending && (
+            {mode === 'menu' && (
               <motion.div
-                className="absolute"
-                initial={{ x: 0, y: 0, rotate: 0 }}
-                animate={{
-                  x: [0, 50, 150, 300],
-                  y: [0, -30, -20, -50],
-                  rotate: [0, 10, -5, 15],
-                  opacity: [1, 1, 0.8, 0],
-                }}
-                transition={{ duration: 1.5, ease: 'easeOut' }}
+                className="relative bg-white rounded-2xl p-6 w-80 shadow-xl"
+                initial={{ x: 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 100, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               >
-                <svg width="32" height="42" viewBox="0 0 48 64" fill="none">
-                  <path
-                    d="M12 20 Q8 25 8 40 Q8 58 24 60 Q40 58 40 40 Q40 25 36 20 L36 14 L12 14 Z"
-                    fill={SHELL_COLORS.bottle.glass}
-                    stroke="#87CEEB"
-                    strokeWidth="1.5"
-                  />
-                  <rect x="14" y="8" width="20" height="8" rx="2" fill={SHELL_COLORS.bottle.cork} />
-                </svg>
+                <div className="text-center mb-5">
+                  <span className="text-4xl">🍾</span>
+                  <h3 className="text-lg font-medium mt-2 text-gray-800">心愿漂流瓶</h3>
+                </div>
+
+                <button
+                  onClick={() => setMode('create')}
+                  className="w-full mb-3 p-4 rounded-xl bg-amber-50 flex items-center"
+                >
+                  <span className="text-2xl mr-3">✏️</span>
+                  <span className="text-gray-800">写下新心愿</span>
+                </button>
+
+                <button
+                  onClick={() => setMode('history')}
+                  className="w-full p-4 rounded-xl bg-blue-50 flex items-center"
+                >
+                  <span className="text-2xl mr-3">📜</span>
+                  <span className="text-gray-800">往昔心愿 ({wishes.length})</span>
+                </button>
+
+                <button
+                  onClick={() => setMode('closed')}
+                  className="w-full mt-4 text-sm text-gray-400"
+                >
+                  关闭
+                </button>
               </motion.div>
             )}
-          </motion.div>
+
+            {mode === 'create' && (
+              <motion.div
+                className="relative bg-white rounded-2xl p-6 w-80 shadow-xl"
+                initial={{ x: 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 100, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              >
+                <button
+                  onClick={() => setMode('menu')}
+                  disabled={isSending}
+                  className="absolute top-4 left-4 text-sm text-gray-400"
+                >
+                  ← 返回
+                </button>
+
+                <h3 className="text-lg font-medium text-center text-gray-800 mb-4 mt-2">写下心愿</h3>
+
+                <textarea
+                  value={wish}
+                  onChange={(e) => setWish(e.target.value)}
+                  placeholder="想要什么？告诉 TA..."
+                  disabled={isSending}
+                  maxLength={200}
+                  className="w-full h-28 p-3 rounded-xl border-2 border-amber-200 text-sm resize-none outline-none"
+                />
+
+                <div className="flex justify-between items-center mt-3">
+                  <span className="text-xs text-gray-400">{wish.length}/200</span>
+                  <button
+                    onClick={handleSend}
+                    disabled={!wish.trim() || isSending}
+                    className="px-5 py-2 rounded-full bg-amber-400 text-white text-sm font-medium disabled:opacity-50"
+                  >
+                    {isSending ? '发送中...' : '放入瓶中'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {mode === 'history' && (
+              <motion.div
+                className="relative bg-white rounded-2xl p-6 w-80 shadow-xl max-h-96 flex flex-col"
+                initial={{ x: 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 100, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              >
+                <button
+                  onClick={() => setMode('menu')}
+                  className="absolute top-4 left-4 text-sm text-gray-400"
+                >
+                  ← 返回
+                </button>
+
+                <h3 className="text-lg font-medium text-center text-gray-800 mb-4 mt-2">往昔心愿</h3>
+
+                <div className="flex-1 overflow-y-auto space-y-3">
+                  {wishes.map((w) => (
+                    <div key={w.id} className="p-3 rounded-xl bg-amber-50">
+                      <p className="text-sm text-gray-800 mb-2">{w.content}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-400">{w.createdAt}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">
+                          {getStatusLabel(w.status)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setMode('create')}
+                  className="w-full mt-4 py-3 rounded-full bg-amber-400 text-white text-sm font-medium"
+                >
+                  写下新心愿
+                </button>
+              </motion.div>
+            )}
+          </div>
         )}
       </AnimatePresence>
     </>

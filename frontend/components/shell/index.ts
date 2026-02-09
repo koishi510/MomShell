@@ -14,3 +14,5 @@ export { SandGrainTag, SandGrainTagGroup } from './SandGrainTag';
 export { AISticker, AIStickerGrid } from './AISticker';
 export { ShellWrapper } from './ShellWrapper';
 export { GlobalNav } from './GlobalNav';
+export { GuestGuard, useGuestGuard } from './GuestGuard';
+export { Onboarding, resetOnboarding } from './Onboarding';
