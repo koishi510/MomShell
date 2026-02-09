@@ -1,5 +1,9 @@
 """Authentication service."""
 
+import random
+import string
+from datetime import datetime, timedelta
+
 from sqlalchemy import inspect, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,10 +12,15 @@ from app.core.config import get_settings
 from app.services.community.enums import CertificationStatus, ModerationResult, UserRole
 from app.services.community.models import User, UserCertification
 from app.services.community.moderation import get_moderation_service
+from app.services.guardian.enums import BindingStatus
+from app.services.guardian.models import PartnerBinding
 
 from .schemas import (
     LoginRequest,
     RegisterRequest,
+    ShellCodeBindResponse,
+    ShellCodeGenerateResponse,
+    ShellCodeStatusResponse,
     TokenResponse,
     UserResponse,
 )
@@ -172,6 +181,154 @@ class AuthService:
             baby_birth_date=user.baby_birth_date,
             postpartum_weeks=user.postpartum_weeks,
             created_at=user.created_at,
+        )
+
+    # ============================================================
+    # Shell Code (贝壳码) - Partner Binding
+    # ============================================================
+
+    # Store shell codes temporarily (in production, use Redis or DB)
+    _shell_codes: dict[str, dict] = {}
+
+    @staticmethod
+    def _generate_code() -> str:
+        """Generate a random 6-character alphanumeric code."""
+        return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+    async def generate_shell_code(self, user_id: str) -> ShellCodeGenerateResponse:
+        """Generate a shell code for partner binding (Mom mode)."""
+        # Check user role (should be mom)
+        user = await self.db.get(User, user_id)
+        if not user:
+            raise ValueError("用户不存在")
+
+        if user.role not in [UserRole.MOM]:
+            raise ValueError("只有妈妈可以生成贝壳码")
+
+        # Check if already bound
+        existing_binding = await self.db.execute(
+            select(PartnerBinding).where(
+                PartnerBinding.mom_id == user_id,
+                PartnerBinding.status == BindingStatus.ACTIVE,
+            )
+        )
+        if existing_binding.scalar_one_or_none():
+            raise ValueError("您已绑定伴侣，无法生成新的贝壳码")
+
+        # Generate unique code
+        code = self._generate_code()
+        while code in AuthService._shell_codes:
+            code = self._generate_code()
+
+        # Store with 24-hour expiration
+        expires_at = datetime.utcnow() + timedelta(hours=24)
+        AuthService._shell_codes[code] = {
+            "user_id": user_id,
+            "expires_at": expires_at,
+        }
+
+        return ShellCodeGenerateResponse(
+            shell_code=code,
+            expires_at=expires_at,
+        )
+
+    async def bind_with_shell_code(
+        self, user_id: str, shell_code: str
+    ) -> ShellCodeBindResponse:
+        """Bind to a partner using their shell code (Partner mode)."""
+        # Validate code
+        code_upper = shell_code.upper()
+        code_data = AuthService._shell_codes.get(code_upper)
+
+        if not code_data:
+            raise ValueError("无效的贝壳码")
+
+        if datetime.utcnow() > code_data["expires_at"]:
+            del AuthService._shell_codes[code_upper]
+            raise ValueError("贝壳码已过期")
+
+        mom_id = code_data["user_id"]
+
+        # Can't bind to self
+        if mom_id == user_id:
+            raise ValueError("不能绑定自己")
+
+        # Check user role (should be partner/dad/family)
+        user = await self.db.get(User, user_id)
+        if not user:
+            raise ValueError("用户不存在")
+
+        if user.role == UserRole.MOM:
+            raise ValueError("妈妈角色不能作为守护者绑定")
+
+        # Check if already bound
+        existing = await self.db.execute(
+            select(PartnerBinding).where(
+                PartnerBinding.partner_id == user_id,
+                PartnerBinding.status == BindingStatus.ACTIVE,
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise ValueError("您已绑定其他用户")
+
+        # Create binding
+        binding = PartnerBinding(
+            mom_id=mom_id,
+            partner_id=user_id,
+            status=BindingStatus.ACTIVE,
+        )
+        self.db.add(binding)
+        await self.db.commit()
+
+        # Remove used code
+        del AuthService._shell_codes[code_upper]
+
+        return ShellCodeBindResponse(
+            message="绑定成功",
+            partner_id=mom_id,
+        )
+
+    async def get_shell_code_status(self, user_id: str) -> ShellCodeStatusResponse:
+        """Get current shell code status."""
+        # Check for active binding
+        binding = await self.db.execute(
+            select(PartnerBinding).where(
+                (PartnerBinding.mom_id == user_id)
+                | (PartnerBinding.partner_id == user_id),
+                PartnerBinding.status == BindingStatus.ACTIVE,
+            )
+        )
+        active_binding = binding.scalar_one_or_none()
+
+        partner_nickname = None
+        if active_binding:
+            # Get partner's nickname
+            if active_binding.mom_id == user_id:
+                partner = await self.db.get(User, active_binding.partner_id)
+            else:
+                partner = await self.db.get(User, active_binding.mom_id)
+            if partner:
+                partner_nickname = partner.nickname
+
+        # Check for existing shell code
+        has_code = False
+        shell_code = None
+        expires_at = None
+
+        for code, data in AuthService._shell_codes.items():
+            if data["user_id"] == user_id:
+                if datetime.utcnow() <= data["expires_at"]:
+                    has_code = True
+                    shell_code = code
+                    expires_at = data["expires_at"]
+                break
+
+        return ShellCodeStatusResponse(
+            has_code=has_code,
+            shell_code=shell_code,
+            expires_at=expires_at,
+            is_bound=active_binding is not None,
+            partner_nickname=partner_nickname,
         )
 
 

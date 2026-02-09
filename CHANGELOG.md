@@ -5,6 +5,105 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-09
+
+### Added
+
+#### Shell Beach - Unified UI with Beach & Shell Metaphors
+
+A complete UI redesign using beach and shell metaphors, now serving as the main entry point and unifying all features under one navigation system.
+
+- **New Landing Page** (`/`):
+  - Sunrise beach gradient background with animated waves
+  - Pearl decoration and scattered shells
+  - "Open Echo" button leading to identity selection
+  - Auto-redirect for logged-in users to their mode
+
+- **Identity Selection** (`/identity`):
+  - 50/50 vertical split layout for role selection
+  - Left: Tracer - warm amber theme (#F9F4E8) with pearl shell for moms
+  - Right: Guardian - deep indigo theme (#1A2B4C) with frosted shell for partners
+  - Guest mode support with session persistence
+  - Identity lock confirmation warning
+
+- **Unified Bottom Navigation (4 Tabs)**:
+  - Beach - Main shell beach page
+  - Community - Links to `/community`
+  - Chat - Links to `/chat` (Soul Companion)
+  - Museum - Links to `/shell/museum` (Pearl collection)
+
+- **Global Navigation** (`GlobalNav`):
+  - TabBar displayed across all feature pages
+  - Theme-aware (day/night based on user role)
+  - Consistent navigation experience throughout the app
+
+- **Mom Mode - Realm of Origin**:
+  - Beach background with warm daytime theme (#F9F4E8)
+  - Dusty shells scattered on beach representing unexplored memories
+  - Memory tagging with sand grain tags (SandGrainTag component)
+  - Shell cleaning interaction: dusty → clean → golden states
+  - AI-generated stickers from memory inputs (AISticker component)
+  - Wish bottle for sending wishes to partner (WishBottle component)
+  - Pearl Museum for collecting stickers and wish history
+
+- **Partner Mode - Guardian Shore**:
+  - Beach background with night theme (#1A2B4C) and twinkling stars
+  - Muddy shells representing tasks to complete for mom
+  - Task completion flow with shell cleaning animation
+  - Wish Sea for receiving and accepting mom's wish bottles
+  - Conch memory injector for creating golden shells on mom's beach
+  - Progress visualization through shell states
+
+- **Core Components** (`frontend/components/shell/`):
+  - `BeachBackground`: Day/night themed background with wave animations
+  - `Shell`: State-based shell component (dusty/muddy/clean/golden) with SVG graphics
+  - `TabBar`: Bottom navigation with 4 tabs
+  - `TopHeader`: Theme-aware header with avatar, partner status, and notifications
+  - `WishBottle`: Animated drift bottle for sending wishes
+  - `ConchMemoryInjector`: Partner's memory injection interface
+  - `SandGrainTag`: Memory tagging with sand grain visual
+  - `AISticker`: Display component for AI-generated stickers
+
+- **New Pages** (`frontend/app/shell/`):
+  - `/shell/mom` - Mom's main beach page
+  - `/shell/mom/memory` - Memory input and sticker generation
+  - `/shell/partner` - Partner's main beach page
+  - `/shell/partner/task/[id]` - Task completion page
+  - `/shell/partner/wish-sea` - Wish bottle collection
+  - `/shell/community` - Community tab
+  - `/shell/chat` - AI chat tab
+  - `/shell/museum` - Sticker collection museum
+
+- **Backend Extensions** (`backend/app/services/echo/`):
+  - New models: `WishBottle`, `MemorySticker`, `ShellStateRecord`
+  - New enums: `WishStatus`, `StickerType`, `ShellState`
+  - 9 new API endpoints:
+    - `POST /echo/wish` - Send wish bottle
+    - `GET /echo/wish-sea` - Get wish sea (partner)
+    - `POST /echo/wish/{id}/accept` - Accept wish
+    - `POST /echo/wish/{id}/fulfill` - Mark wish fulfilled
+    - `POST /echo/wish/{id}/confirm` - Confirm wish completion (mom)
+    - `POST /echo/memory` - Create memory and generate sticker
+    - `GET /echo/stickers` - Get sticker collection
+    - `POST /echo/inject-memory` - Inject memory (partner)
+    - `GET /echo/shells` - Get beach shells
+
+- **Shell Code Authentication**:
+  - `POST /auth/shell-code/generate` - Generate 6-digit binding code
+  - `POST /auth/shell-code/bind` - Bind partner with code
+  - `GET /auth/shell-code/status` - Check binding status
+
+- **Design Tokens**:
+  - `SHELL_COLORS` with mom/partner/shell/bottle/conch color palettes
+  - Warm amber (#F9F4E8) for mom mode
+  - Deep indigo (#1A2B4C) for partner mode
+  - Shell states: dusty (#9E9E9E), muddy (#4E342E), clean (#FFFFFF), golden (#FFD700)
+
+- **Profile Page**:
+  - Logout button in account security section
+
+---
+
 ## [0.6.0] - 2026-02-09
 
 ### Added

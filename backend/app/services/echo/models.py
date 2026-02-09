@@ -18,7 +18,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-from .enums import AudioType, SceneCategory, TagType
+from .enums import (
+    AudioType,
+    SceneCategory,
+    ShellState,
+    StickerType,
+    TagType,
+    WishStatus,
+)
 
 
 def generate_uuid() -> str:
@@ -258,3 +265,133 @@ class EchoYouthMemoir(Base):
 # Import for relationship type hints
 from app.services.community.models import User  # noqa: E402, F401
 from app.services.guardian.models import PartnerBinding  # noqa: E402, F401
+
+# ============================================================
+# Wish Bottle (心愿漂流瓶)
+# ============================================================
+
+
+class WishBottle(Base):
+    """Wish bottle sent from mom to partner."""
+
+    __tablename__ = "echo_wish_bottles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    binding_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("partner_bindings.id", ondelete="CASCADE"), index=True
+    )
+    sender_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    # Wish content
+    content: Mapped[str] = mapped_column(Text)
+
+    # Status tracking
+    status: Mapped[WishStatus] = mapped_column(
+        SAEnum(WishStatus), default=WishStatus.PENDING
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    fulfilled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Relationships
+    binding: Mapped["PartnerBinding"] = relationship("PartnerBinding")
+    sender: Mapped["User"] = relationship("User")
+
+
+# ============================================================
+# Memory Sticker (AI生成贴纸)
+# ============================================================
+
+
+class MemorySticker(Base):
+    """AI-generated memory sticker from shell cleaning."""
+
+    __tablename__ = "echo_memory_stickers"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    # Sticker content
+    title: Mapped[str] = mapped_column(String(200))
+    memory_text: Mapped[str] = mapped_column(Text)  # Original memory input
+    image_url: Mapped[str] = mapped_column(String(500))  # Generated sticker image
+    tags_used: Mapped[str] = mapped_column(Text)  # JSON array of tags
+
+    # Type and source
+    sticker_type: Mapped[StickerType] = mapped_column(
+        SAEnum(StickerType), default=StickerType.MEMORY
+    )
+    source_wish_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("echo_wish_bottles.id"), nullable=True
+    )
+    source_memory_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("echo_partner_memories.id"), nullable=True
+    )
+
+    # Visibility
+    is_new: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user: Mapped["User"] = relationship("User")
+
+
+# ============================================================
+# Shell State (贝壳状态)
+# ============================================================
+
+
+class ShellStateRecord(Base):
+    """Shell state record for beach visualization."""
+
+    __tablename__ = "echo_shell_states"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    # Shell info
+    label: Mapped[str] = mapped_column(String(50))
+    state: Mapped[ShellState] = mapped_column(
+        SAEnum(ShellState), default=ShellState.DUSTY
+    )
+
+    # Position on beach (for visualization)
+    position_x: Mapped[int] = mapped_column(Integer, default=50)  # 0-100 percentage
+    position_y: Mapped[int] = mapped_column(Integer, default=50)  # 0-100 percentage
+
+    # Associated content
+    memory_tags: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    sticker_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("echo_memory_stickers.id"), nullable=True
+    )
+    wish_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("echo_wish_bottles.id"), nullable=True
+    )
+    injected_memory_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("echo_partner_memories.id"), nullable=True
+    )
+
+    # Shell type
+    is_task: Mapped[bool] = mapped_column(Boolean, default=False)  # Partner task shell
+    is_wish: Mapped[bool] = mapped_column(Boolean, default=False)  # Wish-based shell
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User")
+    sticker: Mapped["MemorySticker | None"] = relationship("MemorySticker")

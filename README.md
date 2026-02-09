@@ -12,17 +12,17 @@
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-An AI-powered postpartum recovery platform with emotional support, exercise coaching, community connection, and partner engagement for new mothers.
+An AI-powered postpartum recovery platform with emotional support, exercise coaching, community connection, and partner engagement for new mothers. Features a unified beach-themed UI with shell metaphors.
 
 ## Features
 
 | Module               | Description                                                                                                      |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Shell Beach**      | Unified beach-themed interface with shell metaphors - the main entry point connecting all features               |
 | **Soul Companion**   | AI chat companion providing emotional support with conversation memory and web search for fact-checked responses |
 | **Sisterhood Bond**  | Community connecting mothers with verified healthcare professionals and fellow moms                              |
 | **Recovery Coach**   | Real-time pose detection with voice-guided postpartum exercises and progress tracking                            |
 | **Guardian Partner** | Gamified system engaging partners in the recovery journey with tasks and level progression                       |
-| **Echo Domain**      | Meditative space for mothers to reconnect with their pre-motherhood self, with a partner observation window      |
 
 [View detailed feature documentation](docs/features.md)
 

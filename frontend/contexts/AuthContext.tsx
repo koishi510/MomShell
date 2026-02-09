@@ -21,10 +21,14 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   accessToken: string | null;
+  isGuestMode: boolean;
+  selectedIdentity: 'mom' | 'partner' | null;
   login: (params: LoginParams, rememberMe: boolean) => Promise<void>;
   register: (params: RegisterParams) => Promise<User>;
   logout: () => void;
   refreshAuth: () => Promise<boolean>;
+  setGuestMode: (identity: 'mom' | 'partner') => void;
+  clearGuestMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,10 +37,22 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper to initialize guest mode from sessionStorage
+function getInitialGuestState() {
+  if (typeof window === 'undefined') return { isGuest: false, identity: null };
+  const guestMode = sessionStorage.getItem('momshell_guest_mode') === 'true';
+  const identity = sessionStorage.getItem('momshell_selected_identity') as 'mom' | 'partner' | null;
+  return guestMode && identity ? { isGuest: true, identity } : { isGuest: false, identity: null };
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGuestMode, setIsGuestMode] = useState(() => getInitialGuestState().isGuest);
+  const [selectedIdentity, setSelectedIdentity] = useState<'mom' | 'partner' | null>(
+    () => getInitialGuestState().identity
+  );
 
   const isAuthenticated = !!user && !!accessToken;
 
@@ -108,6 +124,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     clearTokens();
     setUser(null);
     setAccessToken(null);
+    setIsGuestMode(false);
+    setSelectedIdentity(null);
+  }, []);
+
+  // Guest mode functions
+  const setGuestMode = useCallback((identity: 'mom' | 'partner') => {
+    setIsGuestMode(true);
+    setSelectedIdentity(identity);
+    // Store in session for page refresh persistence
+    sessionStorage.setItem('momshell_guest_mode', 'true');
+    sessionStorage.setItem('momshell_selected_identity', identity);
+  }, []);
+
+  const clearGuestMode = useCallback(() => {
+    setIsGuestMode(false);
+    setSelectedIdentity(null);
+    sessionStorage.removeItem('momshell_guest_mode');
+    sessionStorage.removeItem('momshell_selected_identity');
   }, []);
 
   const value: AuthContextType = {
@@ -115,10 +149,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated,
     accessToken,
+    isGuestMode,
+    selectedIdentity,
     login,
     register,
     logout,
     refreshAuth,
+    setGuestMode,
+    clearGuestMode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

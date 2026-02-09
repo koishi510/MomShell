@@ -4,7 +4,15 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from .enums import AudioType, MeditationPhase, SceneCategory, TagType
+from .enums import (
+    AudioType,
+    MeditationPhase,
+    SceneCategory,
+    ShellState,
+    StickerType,
+    TagType,
+    WishStatus,
+)
 
 # ============================================================
 # Echo Status
@@ -269,3 +277,134 @@ class MemoirListResponse(BaseModel):
 
     memoirs: list[MemoirResponse]
     total: int
+
+
+# ============================================================
+# Wish Bottle (心愿漂流瓶)
+# ============================================================
+
+
+class WishBottleCreate(BaseModel):
+    """Request to create a wish bottle."""
+
+    content: str = Field(..., min_length=1, max_length=200)
+
+
+class WishBottleResponse(BaseModel):
+    """Response for a wish bottle."""
+
+    id: str
+    content: str
+    status: WishStatus
+    created_at: datetime
+    accepted_at: datetime | None
+    fulfilled_at: datetime | None
+    confirmed_at: datetime | None
+    sender_nickname: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class WishSeaResponse(BaseModel):
+    """Response for wish sea (partner's view)."""
+
+    wishes: list[WishBottleResponse]
+    pending_count: int
+    accepted_count: int
+    fulfilled_count: int
+
+
+class WishFulfillRequest(BaseModel):
+    """Request to mark a wish as fulfilled."""
+
+    note: str | None = Field(default=None, max_length=200)
+
+
+# ============================================================
+# Memory Sticker (记忆贴纸)
+# ============================================================
+
+
+class MemoryStickerCreate(BaseModel):
+    """Request to create a memory sticker."""
+
+    tags: list[str] = Field(..., min_length=1, max_length=3)
+    memory_text: str | None = Field(default=None, max_length=200)
+
+
+class MemoryStickerResponse(BaseModel):
+    """Response for a memory sticker."""
+
+    id: str
+    title: str
+    memory_text: str
+    image_url: str
+    tags_used: list[str]
+    sticker_type: StickerType
+    is_new: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class StickerListResponse(BaseModel):
+    """Response for sticker collection."""
+
+    stickers: list[MemoryStickerResponse]
+    total: int
+    new_count: int
+
+
+# ============================================================
+# Shell State (贝壳状态)
+# ============================================================
+
+
+class ShellResponse(BaseModel):
+    """Response for a shell on the beach."""
+
+    id: str
+    label: str
+    state: ShellState
+    position_x: int
+    position_y: int
+    is_task: bool
+    is_wish: bool
+    sticker_id: str | None
+    wish_id: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BeachShellsResponse(BaseModel):
+    """Response for all shells on the beach."""
+
+    shells: list[ShellResponse]
+    dusty_count: int
+    muddy_count: int
+    clean_count: int
+    golden_count: int
+
+
+# ============================================================
+# Inject Memory (伴侣注入记忆)
+# ============================================================
+
+
+class InjectMemoryRequest(BaseModel):
+    """Request to inject a memory (partner mode)."""
+
+    content: str = Field(..., min_length=1, max_length=300)
+    image_url: str | None = None
+
+
+class InjectMemoryResponse(BaseModel):
+    """Response for injected memory."""
+
+    id: str
+    shell_id: str
+    message: str

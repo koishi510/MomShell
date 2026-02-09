@@ -41,7 +41,7 @@ const professionalRoles = ['certified_doctor', 'certified_therapist', 'certified
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -578,6 +578,19 @@ export default function ProfilePage() {
               ) : (
                 <p className="text-stone-500 text-sm">定期修改密码有助于账号安全</p>
               )}
+
+              {/* 退出登录 */}
+              <div className="mt-6 pt-6 border-t border-stone-100">
+                <button
+                  onClick={() => {
+                    logout();
+                    router.push('/');
+                  }}
+                  className="w-full py-3 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition-colors text-sm font-medium"
+                >
+                  退出登录
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

@@ -13,7 +13,7 @@ from app.services.guardian.models import (
     PartnerProgress,
 )
 
-from .enums import BREATHING_RHYTHM, TagType
+from .enums import BREATHING_RHYTHM, ShellState, StickerType, TagType, WishStatus
 from .matching import calculate_clarity, match_audio, match_scenes
 from .models import (
     EchoAudioLibrary,
@@ -23,21 +23,31 @@ from .models import (
     EchoSceneLibrary,
     EchoWindowClarity,
     EchoYouthMemoir,
+    MemorySticker,
+    ShellStateRecord,
+    WishBottle,
 )
 from .schemas import (
     AudioResponse,
+    BeachShellsResponse,
     EchoStatusResponse,
     IdentityTagListResponse,
     IdentityTagResponse,
+    InjectMemoryResponse,
     MeditationEndResponse,
     MeditationStartResponse,
     MeditationStatsResponse,
     MemoirListResponse,
     MemoirResponse,
+    MemoryStickerResponse,
     PartnerMemoryResponse,
     RevealedMemoriesResponse,
     SceneResponse,
+    ShellResponse,
+    StickerListResponse,
     WindowClarityResponse,
+    WishBottleResponse,
+    WishSeaResponse,
 )
 
 
@@ -715,13 +725,12 @@ class EchoService:
 
         if sound_tags:
             paragraphs.append(
-                f"闭上眼睛，仿佛能听到{sound_tags[0]}的声音，"
-                f"那是属于青春的独特背景音。"
+                f"闭上眼睛，仿佛能听到{sound_tags[0]}的声音，那是属于青春的独特背景音。"
             )
 
         if lit_tags:
             paragraphs.append(
-                f"那时候最爱读的是{lit_tags[0]}，" f"书中的故事仿佛就是自己的人生写照。"
+                f"那时候最爱读的是{lit_tags[0]}，书中的故事仿佛就是自己的人生写照。"
             )
 
         paragraphs.append(
@@ -777,3 +786,372 @@ class EchoService:
             )
         )
         return result.scalar_one_or_none()
+
+    # ============================================================
+    # Wish Bottles (心愿漂流瓶)
+    # ============================================================
+
+    async def send_wish(self, user_id: str, content: str) -> WishBottleResponse:
+        """Send a wish bottle to partner (Mom mode)."""
+        binding = await self._get_binding_for_user(user_id)
+
+        if not binding:
+            raise ValueError("未找到绑定关系，请先绑定伴侣")
+
+        if binding.mom_id != user_id:
+            raise ValueError("只有妈妈可以发送心愿")
+
+        wish = WishBottle(
+            binding_id=binding.id,
+            sender_id=user_id,
+            content=content,
+            status=WishStatus.PENDING,
+        )
+        self.db.add(wish)
+        await self.db.flush()
+
+        return self._wish_to_response(wish)
+
+    async def get_wish_sea(self, user_id: str) -> WishSeaResponse:
+        """Get wish sea with all wish bottles (Partner mode)."""
+        binding = await self._get_binding_for_user(user_id)
+
+        if not binding:
+            raise ValueError("未找到绑定关系")
+
+        if binding.partner_id != user_id:
+            raise ValueError("只有伴侣可以查看心愿海域")
+
+        # Get all wishes
+        result = await self.db.execute(
+            select(WishBottle)
+            .where(WishBottle.binding_id == binding.id)
+            .order_by(WishBottle.created_at.desc())
+        )
+        wishes = list(result.scalars().all())
+
+        pending_count = sum(1 for w in wishes if w.status == WishStatus.PENDING)
+        accepted_count = sum(1 for w in wishes if w.status == WishStatus.ACCEPTED)
+        fulfilled_count = sum(1 for w in wishes if w.status == WishStatus.FULFILLED)
+
+        return WishSeaResponse(
+            wishes=[self._wish_to_response(w) for w in wishes],
+            pending_count=pending_count,
+            accepted_count=accepted_count,
+            fulfilled_count=fulfilled_count,
+        )
+
+    async def accept_wish(self, wish_id: str, user_id: str) -> None:
+        """Accept a wish bottle (Partner mode)."""
+        binding = await self._get_binding_for_user(user_id)
+
+        if not binding or binding.partner_id != user_id:
+            raise ValueError("只有伴侣可以接住心愿")
+
+        result = await self.db.execute(
+            select(WishBottle).where(
+                WishBottle.id == wish_id,
+                WishBottle.binding_id == binding.id,
+            )
+        )
+        wish = result.scalar_one_or_none()
+
+        if not wish:
+            raise ValueError("心愿不存在")
+
+        if wish.status != WishStatus.PENDING:
+            raise ValueError("该心愿已被接住")
+
+        wish.status = WishStatus.ACCEPTED
+        wish.accepted_at = datetime.utcnow()
+
+        # Create a golden shell on partner's beach
+        shell = ShellStateRecord(
+            user_id=user_id,
+            label=wish.content[:20],
+            state=ShellState.GOLDEN,
+            position_x=50 + (hash(wish_id) % 30) - 15,
+            position_y=40 + (hash(wish_id[::-1]) % 30) - 15,
+            is_task=True,
+            is_wish=True,
+            wish_id=wish_id,
+        )
+        self.db.add(shell)
+        await self.db.flush()
+
+    async def fulfill_wish(
+        self, wish_id: str, user_id: str, note: str | None
+    ) -> WishBottleResponse:
+        """Mark a wish as fulfilled (Partner mode)."""
+        binding = await self._get_binding_for_user(user_id)
+
+        if not binding or binding.partner_id != user_id:
+            raise ValueError("只有伴侣可以完成心愿")
+
+        result = await self.db.execute(
+            select(WishBottle).where(
+                WishBottle.id == wish_id,
+                WishBottle.binding_id == binding.id,
+            )
+        )
+        wish = result.scalar_one_or_none()
+
+        if not wish:
+            raise ValueError("心愿不存在")
+
+        if wish.status not in [WishStatus.PENDING, WishStatus.ACCEPTED]:
+            raise ValueError("该心愿无法完成")
+
+        wish.status = WishStatus.FULFILLED
+        wish.fulfilled_at = datetime.utcnow()
+
+        # Update shell state
+        shell_result = await self.db.execute(
+            select(ShellStateRecord).where(ShellStateRecord.wish_id == wish_id)
+        )
+        shell = shell_result.scalar_one_or_none()
+        if shell:
+            shell.state = ShellState.CLEAN
+
+        await self.db.flush()
+        return self._wish_to_response(wish)
+
+    async def confirm_wish_fulfilled(
+        self, wish_id: str, user_id: str
+    ) -> WishBottleResponse:
+        """Confirm wish was fulfilled (Mom mode)."""
+        binding = await self._get_binding_for_user(user_id)
+
+        if not binding or binding.mom_id != user_id:
+            raise ValueError("只有妈妈可以确认心愿完成")
+
+        result = await self.db.execute(
+            select(WishBottle).where(
+                WishBottle.id == wish_id,
+                WishBottle.binding_id == binding.id,
+            )
+        )
+        wish = result.scalar_one_or_none()
+
+        if not wish:
+            raise ValueError("心愿不存在")
+
+        if wish.status != WishStatus.FULFILLED:
+            raise ValueError("该心愿尚未完成")
+
+        wish.confirmed_at = datetime.utcnow()
+        await self.db.flush()
+
+        return self._wish_to_response(wish)
+
+    def _wish_to_response(self, wish: WishBottle) -> WishBottleResponse:
+        """Convert wish model to response."""
+        return WishBottleResponse(
+            id=wish.id,
+            content=wish.content,
+            status=wish.status,
+            created_at=wish.created_at,
+            accepted_at=wish.accepted_at,
+            fulfilled_at=wish.fulfilled_at,
+            confirmed_at=wish.confirmed_at,
+        )
+
+    # ============================================================
+    # Memory Stickers (记忆贴纸)
+    # ============================================================
+
+    async def create_memory_sticker(
+        self, user_id: str, tags: list[str], memory_text: str | None
+    ) -> MemoryStickerResponse:
+        """Create a memory sticker from shell cleaning (Mom mode)."""
+        if len(tags) == 0 or len(tags) > 3:
+            raise ValueError("请选择1-3个标签")
+
+        # Generate title from tags
+        title = "·".join(tags[:2]) if len(tags) >= 2 else tags[0]
+
+        # Placeholder image URL (would be AI-generated)
+        placeholder_url = f"https://placehold.co/400x400/FFE082/5D4037?text={title}"
+
+        sticker = MemorySticker(
+            user_id=user_id,
+            title=f"记忆: {title}",
+            memory_text=memory_text or "",
+            image_url=placeholder_url,
+            tags_used=json.dumps(tags),
+            sticker_type=StickerType.MEMORY,
+            is_new=True,
+        )
+        self.db.add(sticker)
+        await self.db.flush()
+
+        # Create or update shell
+        shell = ShellStateRecord(
+            user_id=user_id,
+            label=title,
+            state=ShellState.CLEAN,
+            position_x=20 + (hash(sticker.id) % 60),
+            position_y=30 + (hash(sticker.id[::-1]) % 40),
+            memory_tags=json.dumps(tags),
+            sticker_id=sticker.id,
+        )
+        self.db.add(shell)
+        await self.db.flush()
+
+        return self._sticker_to_response(sticker)
+
+    async def get_stickers(
+        self, user_id: str, limit: int = 20, offset: int = 0
+    ) -> StickerListResponse:
+        """Get memory sticker collection."""
+        # Count total
+        count_result = await self.db.execute(
+            select(func.count(MemorySticker.id)).where(MemorySticker.user_id == user_id)
+        )
+        total = count_result.scalar() or 0
+
+        # Count new
+        new_result = await self.db.execute(
+            select(func.count(MemorySticker.id)).where(
+                MemorySticker.user_id == user_id,
+                MemorySticker.is_new.is_(True),
+            )
+        )
+        new_count = new_result.scalar() or 0
+
+        # Get stickers
+        result = await self.db.execute(
+            select(MemorySticker)
+            .where(MemorySticker.user_id == user_id)
+            .order_by(MemorySticker.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        stickers = list(result.scalars().all())
+
+        return StickerListResponse(
+            stickers=[self._sticker_to_response(s) for s in stickers],
+            total=total,
+            new_count=new_count,
+        )
+
+    async def mark_sticker_viewed(self, sticker_id: str, user_id: str) -> None:
+        """Mark a sticker as viewed (remove 'new' flag)."""
+        result = await self.db.execute(
+            select(MemorySticker).where(
+                MemorySticker.id == sticker_id,
+                MemorySticker.user_id == user_id,
+            )
+        )
+        sticker = result.scalar_one_or_none()
+
+        if not sticker:
+            raise ValueError("贴纸不存在")
+
+        sticker.is_new = False
+        await self.db.flush()
+
+    def _sticker_to_response(self, sticker: MemorySticker) -> MemoryStickerResponse:
+        """Convert sticker model to response."""
+        try:
+            tags_used = json.loads(sticker.tags_used)
+        except (json.JSONDecodeError, TypeError):
+            tags_used = []
+
+        return MemoryStickerResponse(
+            id=sticker.id,
+            title=sticker.title,
+            memory_text=sticker.memory_text,
+            image_url=sticker.image_url,
+            tags_used=tags_used,
+            sticker_type=sticker.sticker_type,
+            is_new=sticker.is_new,
+            created_at=sticker.created_at,
+        )
+
+    # ============================================================
+    # Inject Memory (伴侣注入记忆)
+    # ============================================================
+
+    async def inject_memory_for_mom(
+        self, user_id: str, content: str, image_url: str | None
+    ) -> InjectMemoryResponse:
+        """Inject a memory to create a golden shell on mom's beach (Partner mode)."""
+        binding = await self._get_binding_for_user(user_id)
+
+        if not binding:
+            raise ValueError("未找到绑定关系")
+
+        if binding.partner_id != user_id:
+            raise ValueError("只有伴侣可以注入记忆")
+
+        # Create partner memory
+        memory = EchoPartnerMemory(
+            binding_id=binding.id,
+            title=content[:50],
+            content=content,
+            image_url=image_url,
+            reveal_at_clarity=0,  # Immediately visible as a golden shell
+            is_revealed=False,
+        )
+        self.db.add(memory)
+        await self.db.flush()
+
+        # Create golden shell on mom's beach
+        shell = ShellStateRecord(
+            user_id=binding.mom_id,
+            label="来自 TA 的礼物",
+            state=ShellState.GOLDEN,
+            position_x=40 + (hash(memory.id) % 40),
+            position_y=35 + (hash(memory.id[::-1]) % 35),
+            injected_memory_id=memory.id,
+        )
+        self.db.add(shell)
+        await self.db.flush()
+
+        return InjectMemoryResponse(
+            id=memory.id,
+            shell_id=shell.id,
+            message="记忆已注入，金色贝壳将出现在她的沙滩上",
+        )
+
+    # ============================================================
+    # Beach Shells (沙滩贝壳)
+    # ============================================================
+
+    async def get_beach_shells(self, user_id: str) -> BeachShellsResponse:
+        """Get all shells on the user's beach."""
+        result = await self.db.execute(
+            select(ShellStateRecord)
+            .where(ShellStateRecord.user_id == user_id)
+            .order_by(ShellStateRecord.created_at.desc())
+        )
+        shells = list(result.scalars().all())
+
+        dusty_count = sum(1 for s in shells if s.state == ShellState.DUSTY)
+        muddy_count = sum(1 for s in shells if s.state == ShellState.MUDDY)
+        clean_count = sum(1 for s in shells if s.state == ShellState.CLEAN)
+        golden_count = sum(1 for s in shells if s.state == ShellState.GOLDEN)
+
+        return BeachShellsResponse(
+            shells=[self._shell_to_response(s) for s in shells],
+            dusty_count=dusty_count,
+            muddy_count=muddy_count,
+            clean_count=clean_count,
+            golden_count=golden_count,
+        )
+
+    def _shell_to_response(self, shell: ShellStateRecord) -> ShellResponse:
+        """Convert shell model to response."""
+        return ShellResponse(
+            id=shell.id,
+            label=shell.label,
+            state=shell.state,
+            position_x=shell.position_x,
+            position_y=shell.position_y,
+            is_task=shell.is_task,
+            is_wish=shell.is_wish,
+            sticker_id=shell.sticker_id,
+            wish_id=shell.wish_id,
+            created_at=shell.created_at,
+        )

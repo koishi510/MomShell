@@ -273,3 +273,82 @@ export function clearTokens(): void {
   sessionStorage.removeItem(ACCESS_TOKEN_KEY);
   sessionStorage.removeItem(REFRESH_TOKEN_KEY);
 }
+
+// Shell code types and functions
+export interface ShellCodeResponse {
+  shell_code: string;
+  expires_at: string;
+}
+
+export interface ShellCodeBindParams {
+  shell_code: string;
+}
+
+/**
+ * Generate a shell code for partner binding
+ * This code can be shared with a partner to link accounts
+ */
+export async function generateShellCode(accessToken: string): Promise<ShellCodeResponse> {
+  const response = await fetch(`${AUTH_API}/shell-code/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: '生成贝壳码失败' }));
+    throw new Error(error.detail || '生成贝壳码失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * Bind to a partner using their shell code
+ */
+export async function bindWithShellCode(
+  accessToken: string,
+  params: ShellCodeBindParams
+): Promise<{ message: string; partner_id: string }> {
+  const response = await fetch(`${AUTH_API}/shell-code/bind`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: '绑定失败' }));
+    throw new Error(error.detail || '绑定失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * Get current shell code status
+ */
+export async function getShellCodeStatus(accessToken: string): Promise<{
+  has_code: boolean;
+  shell_code?: string;
+  expires_at?: string;
+  is_bound: boolean;
+  partner_nickname?: string;
+}> {
+  const response = await fetch(`${AUTH_API}/shell-code/status`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: '获取状态失败' }));
+    throw new Error(error.detail || '获取状态失败');
+  }
+
+  return response.json();
+}

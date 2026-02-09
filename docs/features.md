@@ -1,6 +1,6 @@
 # Features
 
-MomShell provides five integrated modules designed to support new mothers through the postpartum recovery journey.
+MomShell provides integrated modules designed to support new mothers through the postpartum recovery journey.
 
 ## Soul Companion
 
@@ -92,9 +92,64 @@ A gamified system to engage partners in the postpartum recovery journey.
 
 ---
 
-## Echo Domain
+## Shell Beach
+
+The unified beach-themed interface serving as the main entry point, connecting all MomShell features through consistent navigation.
+
+### What It Does
+
+- **Landing Experience**:
+  - Sunrise beach gradient with animated waves
+  - Pearl and shell decorations
+  - "开启回响" (Open Echo) button to begin
+  - Auto-redirect for returning users
+
+- **Identity Selection**:
+  - 50/50 split screen for role choice
+  - Mom (溯源者/Tracer): Warm amber beach theme
+  - Partner (守护者/Guardian): Deep indigo night beach theme
+
+- **Unified Navigation (5 Tabs)**:
+  - 境 (Beach) - Main shell beach page
+  - 圈 (Community) - Sisterhood Bond
+  - 愈 (Chat) - Soul Companion
+  - 练 (Coach) - Recovery Coach
+  - 护 (Guardian) - Guardian Partner
+
+- **Mom Mode (溯源之境 - Realm of Origin)**:
+  - **Dusty Shells**: Unexplored memories scattered on a warm beach
+  - **Memory Tags**: Sand grain tags to capture personal memories
+  - **Shell Cleaning**: Interactive cleaning animation as memories are explored
+  - **AI Stickers**: Generated visual stickers from your memory inputs
+  - **Wish Bottles**: Send wishes to your partner that drift across the sea
+  - **Pearl Museum**: Collect your stickers and track wish history
+
+- **Partner Mode (守护之滨 - Guardian Shore)**:
+  - **Night Beach**: Starlit beach with muddy shells representing tasks
+  - **Task Shells**: Complete tasks to clean shells and reveal mom's stickers
+  - **Wish Sea**: Receive and accept wish bottles from mom
+  - **Conch Injector**: Create surprise golden shells with memories for mom
+
+- **Theme Design**:
+  - Mom: Warm amber daytime beach (#F9F4E8)
+  - Partner: Deep indigo night beach (#1A2B4C)
+  - Consistent theming across all features
+
+### Use Cases
+
+- Start your MomShell journey by selecting your role
+- Navigate seamlessly between all features via bottom tabs
+- Explore and clean dusty shells to reconnect with memories
+- Send wishes to your partner as drift bottles
+- Access Soul Companion, Community, Coach, and Guardian from anywhere
+
+---
+
+## Echo Domain (Classic)
 
 A meditative space where mothers reconnect with their pre-motherhood identity, while partners observe and support through a symbolic glass window.
+
+> Note: Echo Domain remains available at `/echo` for users who prefer the classic meditation-focused experience.
 
 ### What It Does
 

@@ -146,3 +146,38 @@ export const GLASS_STYLES = {
   medium: 'bg-white/70 backdrop-blur-lg',
   heavy: 'bg-white/80 backdrop-blur-xl',
 } as const;
+
+// Shell UI 配色 - 贝壳/沙滩隐喻
+export const SHELL_COLORS = {
+  mom: {
+    background: '#F9F4E8', // 暖米色沙滩
+    text: '#5D4037', // 深棕文字
+    accent: '#FFE082', // 金色高亮
+    gradient: ['#F9F4E8', '#FFF8E1'],
+    shadow: 'rgba(93, 64, 55, 0.15)',
+  },
+  partner: {
+    background: '#1A2B4C', // 深墨蓝夜色
+    text: '#E8EAF6', // 浅蓝灰文字
+    accent: '#3F51B5', // 靛蓝高亮
+    gradient: ['#1A2B4C', '#0D1B2A'],
+    shadow: 'rgba(26, 43, 76, 0.3)',
+  },
+  shell: {
+    dusty: '#9E9E9E', // 灰尘覆盖
+    muddy: '#4E342E', // 泥泞状态
+    clean: '#FFFFFF', // 洁白贝壳
+    golden: '#FFD700', // 金色贝壳
+    glow: 'rgba(255, 215, 0, 0.4)',
+  },
+  bottle: {
+    glass: 'rgba(200, 230, 255, 0.3)', // 漂流瓶玻璃
+    cork: '#8D6E63', // 软木塞
+    message: '#FFF8E1', // 信纸色
+  },
+  conch: {
+    outer: '#FFCCBC', // 海螺外壳
+    inner: '#FFE0B2', // 海螺内部
+    glow: 'rgba(255, 204, 188, 0.5)',
+  },
+} as const;

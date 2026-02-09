@@ -10,10 +10,13 @@ from app.services.auth.dependencies import CurrentUserJWT
 
 from .schemas import (
     AudioResponse,
+    BeachShellsResponse,
     EchoStatusResponse,
     IdentityTagCreate,
     IdentityTagListResponse,
     IdentityTagResponse,
+    InjectMemoryRequest,
+    InjectMemoryResponse,
     MeditationEndRequest,
     MeditationEndResponse,
     MeditationStartRequest,
@@ -24,10 +27,17 @@ from .schemas import (
     MemoirRatingRequest,
     MemoirResponse,
     MemoryInjectRequest,
+    MemoryStickerCreate,
+    MemoryStickerResponse,
     PartnerMemoryResponse,
     RevealedMemoriesResponse,
     SceneResponse,
+    StickerListResponse,
     WindowClarityResponse,
+    WishBottleCreate,
+    WishBottleResponse,
+    WishFulfillRequest,
+    WishSeaResponse,
 )
 from .service import EchoService
 
@@ -291,3 +301,177 @@ async def rate_memoir(
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+# ============================================================
+# Wish Bottles (心愿漂流瓶)
+# ============================================================
+
+
+@router.post("/wish", response_model=WishBottleResponse)
+async def send_wish(
+    data: WishBottleCreate,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> WishBottleResponse:
+    """Send a wish bottle to partner (Mom mode)."""
+    service = EchoService(db)
+    try:
+        result = await service.send_wish(current_user.id, data.content)
+        await db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.get("/wish-sea", response_model=WishSeaResponse)
+async def get_wish_sea(
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> WishSeaResponse:
+    """Get wish sea with all wish bottles (Partner mode)."""
+    service = EchoService(db)
+    try:
+        return await service.get_wish_sea(current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.post("/wish/{wish_id}/accept")
+async def accept_wish(
+    wish_id: str,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict:
+    """Accept a wish bottle (Partner mode)."""
+    service = EchoService(db)
+    try:
+        await service.accept_wish(wish_id, current_user.id)
+        await db.commit()
+        return {"message": "已接住心愿"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.post("/wish/{wish_id}/fulfill", response_model=WishBottleResponse)
+async def fulfill_wish(
+    wish_id: str,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    data: WishFulfillRequest | None = None,
+) -> WishBottleResponse:
+    """Mark a wish as fulfilled (Partner mode)."""
+    service = EchoService(db)
+    try:
+        result = await service.fulfill_wish(
+            wish_id, current_user.id, data.note if data else None
+        )
+        await db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.post("/wish/{wish_id}/confirm", response_model=WishBottleResponse)
+async def confirm_wish_fulfilled(
+    wish_id: str,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> WishBottleResponse:
+    """Confirm wish was fulfilled (Mom mode)."""
+    service = EchoService(db)
+    try:
+        result = await service.confirm_wish_fulfilled(wish_id, current_user.id)
+        await db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+# ============================================================
+# Memory Stickers (记忆贴纸)
+# ============================================================
+
+
+@router.post("/memory", response_model=MemoryStickerResponse)
+async def create_memory_sticker(
+    data: MemoryStickerCreate,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> MemoryStickerResponse:
+    """Create a memory sticker from shell cleaning (Mom mode)."""
+    service = EchoService(db)
+    try:
+        result = await service.create_memory_sticker(
+            current_user.id, data.tags, data.memory_text
+        )
+        await db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.get("/stickers", response_model=StickerListResponse)
+async def get_stickers(
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    limit: int = Query(20, ge=1, le=100),  # noqa: B008
+    offset: int = Query(0, ge=0),  # noqa: B008
+) -> StickerListResponse:
+    """Get memory sticker collection."""
+    service = EchoService(db)
+    return await service.get_stickers(current_user.id, limit, offset)
+
+
+@router.post("/stickers/{sticker_id}/view")
+async def mark_sticker_viewed(
+    sticker_id: str,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict:
+    """Mark a sticker as viewed (remove 'new' flag)."""
+    service = EchoService(db)
+    try:
+        await service.mark_sticker_viewed(sticker_id, current_user.id)
+        await db.commit()
+        return {"message": "已标记为已查看"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+# ============================================================
+# Inject Memory (伴侣注入记忆)
+# ============================================================
+
+
+@router.post("/inject-memory", response_model=InjectMemoryResponse)
+async def inject_memory_for_mom(
+    data: InjectMemoryRequest,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> InjectMemoryResponse:
+    """Inject a memory to create a golden shell on mom's beach (Partner mode)."""
+    service = EchoService(db)
+    try:
+        result = await service.inject_memory_for_mom(
+            current_user.id, data.content, data.image_url
+        )
+        await db.commit()
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+# ============================================================
+# Beach Shells (沙滩贝壳)
+# ============================================================
+
+
+@router.get("/shells", response_model=BeachShellsResponse)
+async def get_beach_shells(
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> BeachShellsResponse:
+    """Get all shells on the user's beach."""
+    service = EchoService(db)
+    return await service.get_beach_shells(current_user.id)

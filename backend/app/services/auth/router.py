@@ -16,6 +16,10 @@ from .schemas import (
     RefreshRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    ShellCodeBindRequest,
+    ShellCodeBindResponse,
+    ShellCodeGenerateResponse,
+    ShellCodeStatusResponse,
     TokenResponse,
     UserResponse,
 )
@@ -168,3 +172,45 @@ async def get_current_user_info(
         postpartum_weeks=current_user.postpartum_weeks,
         created_at=current_user.created_at,
     )
+
+
+# ============================================================
+# Shell Code (贝壳码) - Partner Binding
+# ============================================================
+
+
+@router.post("/shell-code/generate", response_model=ShellCodeGenerateResponse)
+async def generate_shell_code(
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ShellCodeGenerateResponse:
+    """Generate a shell code for partner binding (Mom mode)."""
+    service = AuthService(db)
+    try:
+        return await service.generate_shell_code(current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.post("/shell-code/bind", response_model=ShellCodeBindResponse)
+async def bind_with_shell_code(
+    request: ShellCodeBindRequest,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ShellCodeBindResponse:
+    """Bind to a partner using their shell code (Partner mode)."""
+    service = AuthService(db)
+    try:
+        return await service.bind_with_shell_code(current_user.id, request.shell_code)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
+@router.get("/shell-code/status", response_model=ShellCodeStatusResponse)
+async def get_shell_code_status(
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ShellCodeStatusResponse:
+    """Get current shell code status."""
+    service = AuthService(db)
+    return await service.get_shell_code_status(current_user.id)

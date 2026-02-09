@@ -51,3 +51,33 @@ BREATHING_CYCLE_SECONDS = sum(BREATHING_RHYTHM.values())  # 14 seconds
 
 # Default meditation durations (in minutes)
 DEFAULT_MEDITATION_DURATIONS = [5, 10, 15, 20, 30]
+
+
+# ============================================================
+# Shell UI Enums
+# ============================================================
+
+
+class ShellState(str, Enum):
+    """Shell (贝壳) states for visual representation."""
+
+    DUSTY = "dusty"  # 灰尘覆盖 - 未探索的记忆
+    MUDDY = "muddy"  # 泥泞状态 - 待完成的任务
+    CLEAN = "clean"  # 洁白贝壳 - 已完成/已探索
+    GOLDEN = "golden"  # 金色贝壳 - 来自伴侣的特殊记忆/心愿
+
+
+class WishStatus(str, Enum):
+    """Wish bottle status."""
+
+    PENDING = "pending"  # 等待中
+    ACCEPTED = "accepted"  # 已接住
+    FULFILLED = "fulfilled"  # 已实现
+
+
+class StickerType(str, Enum):
+    """Memory sticker types."""
+
+    MEMORY = "memory"  # 记忆贴纸
+    WISH = "wish"  # 心愿贴纸
+    INJECTED = "injected"  # 注入的记忆

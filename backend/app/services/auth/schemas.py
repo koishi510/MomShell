@@ -81,3 +81,38 @@ class MessageResponse(BaseModel):
     """Simple message response."""
 
     message: str
+
+
+# ============================================================
+# Shell Code (贝壳码)
+# ============================================================
+
+
+class ShellCodeGenerateResponse(BaseModel):
+    """Response for generated shell code."""
+
+    shell_code: str
+    expires_at: datetime
+
+
+class ShellCodeBindRequest(BaseModel):
+    """Request to bind using shell code."""
+
+    shell_code: str = Field(..., min_length=6, max_length=10)
+
+
+class ShellCodeBindResponse(BaseModel):
+    """Response for shell code binding."""
+
+    message: str
+    partner_id: str
+
+
+class ShellCodeStatusResponse(BaseModel):
+    """Response for shell code status."""
+
+    has_code: bool
+    shell_code: str | None = None
+    expires_at: datetime | None = None
+    is_bound: bool
+    partner_nickname: str | None = None
