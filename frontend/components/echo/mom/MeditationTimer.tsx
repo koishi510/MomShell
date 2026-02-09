@@ -57,30 +57,43 @@ export function MeditationTimer({
     [cycleSeconds, phaseDurations]
   );
 
+  // 定时器只更新本地状态
   useEffect(() => {
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => {
         const newValue = prev + 0.1; // 更新频率 100ms
-        onTimeUpdate(Math.floor(newValue));
 
         if (newValue >= targetSeconds) {
           clearInterval(interval);
-          onComplete();
           return targetSeconds;
         }
 
-        // 更新呼吸阶段
+        // 更新呼吸阶段（本地状态）
         const { phase, progress } = calculatePhase(newValue);
         setCurrentPhase(phase);
         setPhaseProgress(progress);
-        onPhaseChange(phase);
 
         return newValue;
       });
     }, 100);
 
     return () => clearInterval(interval);
-  }, [targetSeconds, calculatePhase, onTimeUpdate, onPhaseChange, onComplete]);
+  }, [targetSeconds, calculatePhase]);
+
+  // 单独的 useEffect 处理父组件回调，避免在 setState 内部调用
+  useEffect(() => {
+    onTimeUpdate(Math.floor(elapsedSeconds));
+  }, [elapsedSeconds, onTimeUpdate]);
+
+  useEffect(() => {
+    onPhaseChange(currentPhase);
+  }, [currentPhase, onPhaseChange]);
+
+  useEffect(() => {
+    if (elapsedSeconds >= targetSeconds && targetSeconds > 0) {
+      onComplete();
+    }
+  }, [elapsedSeconds, targetSeconds, onComplete]);
 
   // 格式化时间显示
   const formatTime = (seconds: number) => {

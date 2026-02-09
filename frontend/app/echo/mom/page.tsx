@@ -115,7 +115,7 @@ function MomModePage() {
       <header className="sticky top-0 z-50 px-4 py-4">
         <div className={`${GLASS_STYLES.medium} rounded-2xl px-4 py-3 flex items-center justify-between`}>
           <button
-            onClick={() => router.push('/echo')}
+            onClick={() => router.push('/')}
             className="p-2 rounded-full hover:bg-white/30 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
