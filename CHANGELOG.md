@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-02-09
+
+### Added
+
+#### Echo Domain - Self-Reflection & Partner Connection
+
+A meditative space for mothers to reconnect with their pre-motherhood identity, and a window for partners to observe and support.
+
+- **Mom Mode (The Origin)**: Self-reflection and meditation features
+  - **Identity Tags**: Capture personal preferences across 4 categories (music, natural sounds, literature, youth memories)
+  - **Meditation Timer**: Guided breathing sessions with 4-4-6 second rhythm (inhale-hold-exhale)
+  - **Scene & Audio Matching**: Personalized backgrounds and ambient audio based on identity tags
+  - **Youth Memoir Generation**: AI-generated nostalgic stories based on personal tags
+  - **Memoir Rating**: Rate generated memoirs to improve future suggestions
+
+- **Partner Mode (The Guardian)**: Support through observation
+  - **Window Clarity System**: Glass window gradually clears as mom meditates (0-100% clarity)
+  - **Blurred Mom View**: Partners see a frosted glass view of mom's meditation status
+  - **Memory Injection**: Partners can prepare heartwarming memories that unlock at clarity thresholds
+  - **Revealed Memories**: Memories automatically unlock and display as clarity increases
+
+- **Dual-Color Nebula UI**: Split-screen entrance with warm amber (mom) and cool indigo (partner) themes
+  - Particle animations and breathing nebula effects
+  - Role-locked navigation (once chosen, cannot switch roles)
+  - Automatic role detection and redirection
+
+- **Backend**:
+  - New `echo` service module (`backend/app/services/echo/`)
+  - Models: `IdentityTag`, `Scene`, `Audio`, `MeditationSession`, `WindowClarity`, `PartnerMemory`, `YouthMemoir`
+  - 14 API endpoints for identity tags, meditation, scenes, audio, memories, and memoirs
+  - Seed data with predefined scenes and audio resources
+
+- **Frontend**:
+  - Echo entrance page with dual-side selection (`/echo`)
+  - Mom dashboard with identity editor and meditation timer (`/echo/mom`)
+  - Meditation session page with breathing guidance (`/echo/mom/meditation`)
+  - Partner view with clarity meter and memory injector (`/echo/partner`)
+  - New components: `GlassWindow`, `IdentityTagEditor`, `MeditationTimer`, `MemoirCard`, `BlurredMomView`, `ClarityMeter`, `MemoryInjector`
+  - Echo-specific design tokens with mom/partner color themes
+
+---
+
 ## [0.5.3] - 2026-02-09
 
 ### Added
@@ -142,7 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better suited for a web application that could be deployed as a service
 
 - **Documentation Standards**: CLAUDE.md now specifies English-only rule for documentation
-  - Exception: Chinese text allowed for code identifiers and UI references (e.g., `@贝壳姐姐`)
+  - Exception: Chinese text allowed for code identifiers and UI references
 
 ### Fixed
 

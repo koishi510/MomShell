@@ -22,6 +22,7 @@ An AI-powered postpartum recovery platform with emotional support, exercise coac
 | **Sisterhood Bond**  | Community connecting mothers with verified healthcare professionals and fellow moms                              |
 | **Recovery Coach**   | Real-time pose detection with voice-guided postpartum exercises and progress tracking                            |
 | **Guardian Partner** | Gamified system engaging partners in the recovery journey with tasks and level progression                       |
+| **Echo Domain**      | Meditative space for mothers to reconnect with their pre-motherhood self, with a partner observation window      |
 
 [View detailed feature documentation](docs/features.md)
 

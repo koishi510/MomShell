@@ -1,6 +1,6 @@
 # Features
 
-MomShell provides four integrated modules designed to support new mothers through the postpartum recovery journey.
+MomShell provides five integrated modules designed to support new mothers through the postpartum recovery journey.
 
 ## Soul Companion
 
@@ -89,6 +89,35 @@ A gamified system to engage partners in the postpartum recovery journey.
 - Gamify the division of responsibilities
 - Track and celebrate partner involvement
 - Preserve precious moments with milestone photos
+
+---
+
+## Echo Domain
+
+A meditative space where mothers reconnect with their pre-motherhood identity, while partners observe and support through a symbolic glass window.
+
+### What It Does
+
+- **Mom Mode (The Origin)**:
+  - **Identity Tags**: Record personal preferences across music, sounds, literature, and youth memories
+  - **Meditation Sessions**: Guided breathing with 4-4-6 rhythm (inhale-hold-exhale) and matched scenes/audio
+  - **Youth Memoirs**: AI-generated nostalgic stories based on your identity tags
+  - **Scene & Audio Matching**: Personalized visuals and ambient sounds based on your preferences
+
+- **Partner Mode (The Guardian)**:
+  - **Window Clarity**: Glass window that clears as mom meditates (0-100% clarity)
+  - **Blurred View**: See mom's meditation status through a frosted glass effect
+  - **Memory Injection**: Prepare heartwarming memories that unlock at clarity thresholds
+  - **Revealed Memories**: Memories automatically appear as clarity increases
+
+- **Dual-Color Nebula UI**: Beautiful split-screen with warm amber (mom) and cool indigo (partner) themes
+
+### Use Cases
+
+- Reconnect with your identity beyond motherhood during quiet meditation
+- Find peace through personalized scenes and sounds that resonate with your memories
+- Allow your partner to participate in your healing journey in a supportive, non-intrusive way
+- Receive surprise memories from your partner as rewards for self-care
 
 ---
 
