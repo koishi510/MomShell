@@ -45,13 +45,36 @@ function PartnerModePage() {
         return;
       }
 
-      const [clarityData, tasksData] = await Promise.all([
-        getWindowClarity(),
-        getDailyTasks(),
-      ]);
+      // 分别获取数据并处理各自的错误
+      try {
+        const clarityData = await getWindowClarity();
+        setClarity(clarityData);
+      } catch (clarityError) {
+        console.error('Failed to load window clarity:', clarityError);
+        // 使用默认值
+        setClarity({
+          clarity_level: 0,
+          tasks_completed_today: 0,
+          tasks_confirmed_today: 0,
+          streak_bonus: 0,
+          level_bonus: 0,
+          breakdown: {
+            base_clarity: 0,
+            task_clarity: 0,
+            streak_bonus: 0,
+            level_bonus: 0,
+          },
+        });
+      }
 
-      setClarity(clarityData);
-      setTasks(tasksData);
+      try {
+        const tasksData = await getDailyTasks();
+        setTasks(tasksData);
+      } catch (tasksError) {
+        console.error('Failed to load daily tasks:', tasksError);
+        // 使用空数组
+        setTasks([]);
+      }
     } catch (error) {
       console.error('Failed to load partner mode data:', error);
     } finally {
@@ -157,7 +180,7 @@ function PartnerModePage() {
       <header className="sticky top-0 z-50 px-4 py-4">
         <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 py-3 flex items-center justify-between">
           <button
-            onClick={() => router.push('/echo')}
+            onClick={() => router.push('/')}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
             style={{ color: ECHO_COLORS.partner.text }}
           >

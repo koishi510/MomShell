@@ -29,9 +29,15 @@ function EchoEntrance() {
       const data = await getEchoStatus();
       setStatus(data);
 
-      // 如果已有角色，可以自动跳转
-      // if (data.role === 'mom') router.push('/echo/mom');
-      // if (data.role === 'partner') router.push('/echo/partner');
+      // 如果已有角色，自动跳转
+      if (data.role === 'mom') {
+        router.push('/echo/mom');
+        return;
+      }
+      if (data.role === 'partner') {
+        router.push('/echo/partner');
+        return;
+      }
     } catch (error) {
       console.error('Failed to load echo status:', error);
     } finally {
@@ -40,12 +46,24 @@ function EchoEntrance() {
   };
 
   const handleMomClick = () => {
+    // 已选择伴侣角色的用户不能进入妈妈模式
+    if (status?.role === 'partner') {
+      return;
+    }
     router.push('/echo/mom');
   };
 
   const handlePartnerClick = () => {
+    // 已选择妈妈角色的用户不能进入伴侣模式
+    if (status?.role === 'mom') {
+      return;
+    }
     router.push('/echo/partner');
   };
+
+  // 判断按钮是否禁用
+  const isMomDisabled = status?.role === 'partner';
+  const isPartnerDisabled = status?.role === 'mom';
 
   if (loading) {
     return (
@@ -72,15 +90,18 @@ function EchoEntrance() {
       </Link>
       {/* 妈妈模式 - 左侧 */}
       <motion.div
-        className="relative flex-1 flex flex-col items-center justify-center cursor-pointer overflow-hidden"
+        className={`relative flex-1 flex flex-col items-center justify-center overflow-hidden ${
+          isMomDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+        }`}
         style={{
           background: `linear-gradient(135deg, ${ECHO_COLORS.mom.gradient[0]} 0%, ${ECHO_COLORS.mom.gradient[1]} 100%)`,
+          opacity: isMomDisabled ? 0.5 : 1,
         }}
         animate={{
-          flex: hoveredSide === 'mom' ? 1.2 : hoveredSide === 'partner' ? 0.8 : 1,
+          flex: hoveredSide === 'mom' && !isMomDisabled ? 1.2 : hoveredSide === 'partner' && !isPartnerDisabled ? 0.8 : 1,
         }}
         transition={SPRING_CONFIGS.smooth}
-        onMouseEnter={() => setHoveredSide('mom')}
+        onMouseEnter={() => !isMomDisabled && setHoveredSide('mom')}
         onMouseLeave={() => setHoveredSide(null)}
         onClick={handleMomClick}
       >
@@ -177,15 +198,18 @@ function EchoEntrance() {
 
       {/* 爸爸模式 - 右侧 */}
       <motion.div
-        className="relative flex-1 flex flex-col items-center justify-center cursor-pointer overflow-hidden"
+        className={`relative flex-1 flex flex-col items-center justify-center overflow-hidden ${
+          isPartnerDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+        }`}
         style={{
           background: `linear-gradient(135deg, ${ECHO_COLORS.partner.gradient[0]} 0%, ${ECHO_COLORS.partner.gradient[1]} 100%)`,
+          opacity: isPartnerDisabled ? 0.5 : 1,
         }}
         animate={{
-          flex: hoveredSide === 'partner' ? 1.2 : hoveredSide === 'mom' ? 0.8 : 1,
+          flex: hoveredSide === 'partner' && !isPartnerDisabled ? 1.2 : hoveredSide === 'mom' && !isMomDisabled ? 0.8 : 1,
         }}
         transition={SPRING_CONFIGS.smooth}
-        onMouseEnter={() => setHoveredSide('partner')}
+        onMouseEnter={() => !isPartnerDisabled && setHoveredSide('partner')}
         onMouseLeave={() => setHoveredSide(null)}
         onClick={handlePartnerClick}
       >
