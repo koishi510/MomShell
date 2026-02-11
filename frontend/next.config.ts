@@ -1,13 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  // Remove "export" to enable dynamic routes
+  // For static hosting, deploy with `next start` or serverless
   images: {
     unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
         hostname: "picsum.photos",
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co",
       },
     ],
   },
