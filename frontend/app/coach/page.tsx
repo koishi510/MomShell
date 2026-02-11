@@ -519,7 +519,7 @@ export default function RehabPage() {
   // WebSocket connection
   const connectWebSocket = useCallback(
     (exerciseId: string) => {
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const sessionId = `session_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`;
       const wsUrl = `${getWsBase()}/api/v1/ws/coach/${sessionId}`;
       const ws = new WebSocket(wsUrl);
 
