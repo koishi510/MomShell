@@ -1,54 +1,292 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #44403c;
+  /* ===== Mom Mode (Origin Seeker) - Lavender Dream ===== */
+  /* Inspired by: Calm app aesthetics, wellness apps, soft pastels */
+  --mom-bg-start: #F8F6FF;
+  --mom-bg-mid: #F3EFFF;
+  --mom-bg-end: #EDE7FF;
+  --mom-text: #4A4063;
+  --mom-text-light: #7B6F99;
+  --mom-accent: #B8A9E8;
+  --mom-accent-light: #DDD6F5;
+  --mom-card: rgba(255, 255, 255, 0.72);
+  --mom-card-border: rgba(184, 169, 232, 0.25);
+  --mom-glow: rgba(184, 169, 232, 0.35);
+
+  /* ===== Dad Mode (Guardian) - Deep Ocean Night ===== */
+  /* Inspired by: Calm app's night mode, moonlit ocean */
+  --dad-bg-start: #0D1B2A;
+  --dad-bg-mid: #1B2838;
+  --dad-bg-end: #1F3044;
+  --dad-text: #E8EEF4;
+  --dad-text-light: #8BA4BC;
+  --dad-accent: #64B5F6;
+  --dad-accent-light: rgba(100, 181, 246, 0.2);
+  --dad-card: rgba(27, 40, 56, 0.75);
+  --dad-card-border: rgba(100, 181, 246, 0.18);
+  --dad-glow: rgba(100, 181, 246, 0.3);
+
+  /* ===== Shared Accent Colors ===== */
+  --coral-soft: #F4A7B9;
+  --mint: #9BE8D8;
+  --sage: #B8D4C8;
+  --gold-soft: #F6D89E;
+  --rose: #E8C4C4;
+  --lavender: #C9B8E8;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-serif:
-    "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia,
-    "Times New Roman", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, 'Times New Roman', serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-/* 衬线字体类 */
 .font-serif {
   font-family: var(--font-serif);
 }
 
-/* 隐藏滚动条但保持滚动功能 */
+/* Hide scrollbars but keep scroll functionality */
 ::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
-/* 输入框自动调整高度 */
-textarea {
-  field-sizing: content;
+/* ===== Glass Card Effect - Mom (Light) ===== */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 8px 32px rgba(184, 169, 232, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
-/* Shimmer 动画 */
+/* ===== Glass Card Effect - Dad (Dark) ===== */
+.glass-card-dark {
+  background: rgba(27, 40, 56, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(100, 181, 246, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+/* ===== Soft Glow Effects ===== */
+.glow-soft-mom {
+  box-shadow: 0 0 40px rgba(184, 169, 232, 0.25);
+}
+
+.glow-soft-dad {
+  box-shadow: 0 0 40px rgba(100, 181, 246, 0.2);
+}
+
+/* ===== Animations ===== */
+
+/* Gentle floating */
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+/* Soft pulse glow */
+@keyframes pulse-glow-soft {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-glow-soft 3s ease-in-out infinite;
+}
+
+/* Gentle shimmer */
 @keyframes shimmer {
   0% {
-    transform: translateX(-100%);
+    background-position: -200% center;
   }
   100% {
-    transform: translateX(100%);
+    background-position: 200% center;
   }
 }
 
 .animate-shimmer {
-  animation: shimmer 2s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 75%
+  );
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Slide up entrance */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+/* Fade in scale */
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-scale 0.3s ease-out;
+}
+
+/* ===== Gradient Text ===== */
+.gradient-text-mom {
+  background: linear-gradient(135deg, #B8A9E8 0%, #E8C4C4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-dad {
+  background: linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== Button Styles ===== */
+.btn-primary-mom {
+  background: linear-gradient(135deg, #B8A9E8 0%, #D4C8F0 100%);
+  color: #4A4063;
+  box-shadow: 0 4px 16px rgba(184, 169, 232, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-primary-mom:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(184, 169, 232, 0.45);
+}
+
+.btn-primary-dad {
+  background: linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%);
+  color: #0D1B2A;
+  box-shadow: 0 4px 16px rgba(100, 181, 246, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-primary-dad:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(100, 181, 246, 0.45);
+}
+
+/* ===== Input Styles ===== */
+.input-mom {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(184, 169, 232, 0.3);
+  transition: all 0.2s ease;
+}
+
+.input-mom:focus {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(184, 169, 232, 0.6);
+  box-shadow: 0 0 0 3px rgba(184, 169, 232, 0.15);
+}
+
+.input-dad {
+  background: rgba(27, 40, 56, 0.5);
+  border: 1px solid rgba(100, 181, 246, 0.2);
+  transition: all 0.2s ease;
+}
+
+.input-dad:focus {
+  background: rgba(27, 40, 56, 0.7);
+  border-color: rgba(100, 181, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.15);
+}
+
+/* ===== Tag/Chip Styles ===== */
+.tag-mom {
+  background: rgba(184, 169, 232, 0.15);
+  color: #7B6F99;
+  border: 1px solid rgba(184, 169, 232, 0.25);
+}
+
+.tag-mom-active {
+  background: linear-gradient(135deg, #B8A9E8 0%, #D4C8F0 100%);
+  color: #4A4063;
+  border: none;
+}
+
+.tag-dad {
+  background: rgba(100, 181, 246, 0.12);
+  color: #8BA4BC;
+  border: 1px solid rgba(100, 181, 246, 0.2);
+}
+
+.tag-dad-active {
+  background: linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%);
+  color: #0D1B2A;
+  border: none;
+}
+
+/* ===== Status Colors ===== */
+.status-success {
+  background: linear-gradient(135deg, #81C784 0%, #A5D6A7 100%);
+  color: #1B5E20;
+}
+
+.status-pending {
+  background: linear-gradient(135deg, #FFD54F 0%, #FFE082 100%);
+  color: #5D4037;
+}
+
+.status-info {
+  background: linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%);
+  color: #0D47A1;
+}
+
+/* ===== Safe Area for Mobile ===== */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0);
 }
