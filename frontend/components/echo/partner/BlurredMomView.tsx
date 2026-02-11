@@ -3,10 +3,10 @@
  * 模糊妈妈视图组件 - 通过窗户观看
  */
 
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { ECHO_COLORS } from '../../../lib/design-tokens';
+import { motion } from "framer-motion";
+import { ECHO_COLORS } from "../../../lib/design-tokens";
 
 interface BlurredMomViewProps {
   clarityLevel: number; // 0-100
@@ -51,7 +51,7 @@ export function BlurredMomView({ clarityLevel }: BlurredMomViewProps) {
           transition={{
             duration: 3,
             repeat: Infinity,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         >
           {/* 光环 */}
@@ -68,7 +68,7 @@ export function BlurredMomView({ clarityLevel }: BlurredMomViewProps) {
             transition={{
               duration: 4,
               repeat: Infinity,
-              ease: 'easeInOut',
+              ease: "easeInOut",
             }}
           />
 
@@ -124,10 +124,10 @@ export function BlurredMomView({ clarityLevel }: BlurredMomViewProps) {
       {/* 提示文字 */}
       <div className="absolute bottom-4 left-0 right-0 text-center">
         <p className="text-white/60 text-sm">
-          {clarityLevel < 30 && '窗户太模糊了...完成任务来擦亮它'}
-          {clarityLevel >= 30 && clarityLevel < 60 && '她的轮廓渐渐清晰...'}
-          {clarityLevel >= 60 && clarityLevel < 90 && '你能看到她了...'}
-          {clarityLevel >= 90 && '守护让一切变得清晰 ✨'}
+          {clarityLevel < 30 && "窗户太模糊了...完成任务来擦亮它"}
+          {clarityLevel >= 30 && clarityLevel < 60 && "她的轮廓渐渐清晰..."}
+          {clarityLevel >= 60 && clarityLevel < 90 && "你能看到她了..."}
+          {clarityLevel >= 90 && "守护让一切变得清晰 ✨"}
         </p>
       </div>
     </div>

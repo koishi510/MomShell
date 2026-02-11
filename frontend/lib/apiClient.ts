@@ -3,9 +3,19 @@
  * Axios-based API client with automatic Bearer token injection and refresh
  */
 
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getAccessToken, getRefreshToken, saveTokens, clearTokens, refreshToken } from './auth';
-import { getUserId } from './user';
+import axios, {
+  AxiosInstance,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
+import {
+  getAccessToken,
+  getRefreshToken,
+  saveTokens,
+  clearTokens,
+  refreshToken,
+} from "./auth";
+import { getUserId } from "./user";
 
 /**
  * Detect API base URL at runtime.
@@ -18,7 +28,7 @@ function getApiBaseUrl(): string {
   }
 
   // In browser, detect base path from URL
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const pathname = window.location.pathname;
 
     // ModelScope pattern: /studios/{user}/{app}/...
@@ -35,7 +45,7 @@ function getApiBaseUrl(): string {
   }
 
   // Default: relative to root (local development / direct Docker access)
-  return '';
+  return "";
 }
 
 const API_BASE = getApiBaseUrl();
@@ -44,7 +54,7 @@ const API_BASE = getApiBaseUrl();
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -74,23 +84,25 @@ apiClient.interceptors.request.use(
       // Send token via both Authorization header and X-Access-Token
       // Some proxies (like ModelScope) strip Authorization header
       config.headers.Authorization = `Bearer ${token}`;
-      config.headers['X-Access-Token'] = token;
+      config.headers["X-Access-Token"] = token;
     } else if (config.headers) {
       // Fallback to X-User-ID for backward compatibility (development mode)
-      config.headers['X-User-ID'] = getUserId();
+      config.headers["X-User-ID"] = getUserId();
     }
     return config;
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor to handle 401 and refresh token
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // If error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -123,9 +135,10 @@ apiClient.interceptors.response.use(
 
       try {
         const tokens = await refreshToken(currentRefreshToken);
-        const rememberMe = typeof localStorage !== 'undefined'
-          ? localStorage.getItem('momshell_remember_me') === 'true'
-          : false;
+        const rememberMe =
+          typeof localStorage !== "undefined"
+            ? localStorage.getItem("momshell_remember_me") === "true"
+            : false;
         saveTokens(tokens, rememberMe);
 
         if (originalRequest.headers) {
@@ -138,8 +151,8 @@ apiClient.interceptors.response.use(
         processQueue(refreshError as Error, null);
         clearTokens();
         // Redirect to login if in browser and token refresh failed
-        if (typeof window !== 'undefined') {
-          window.location.href = '/auth/login';
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login";
         }
         return Promise.reject(refreshError);
       } finally {
@@ -148,7 +161,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
@@ -156,18 +169,20 @@ export default apiClient;
 // Helper function to extract error message
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ detail?: string | { message?: string } }>;
+    const axiosError = error as AxiosError<{
+      detail?: string | { message?: string };
+    }>;
     const detail = axiosError.response?.data?.detail;
-    if (typeof detail === 'string') {
+    if (typeof detail === "string") {
       return detail;
     }
-    if (detail && typeof detail === 'object' && 'message' in detail) {
-      return detail.message || '请求失败';
+    if (detail && typeof detail === "object" && "message" in detail) {
+      return detail.message || "请求失败";
     }
-    return axiosError.message || '请求失败';
+    return axiosError.message || "请求失败";
   }
   if (error instanceof Error) {
     return error.message;
   }
-  return '未知错误';
+  return "未知错误";
 }

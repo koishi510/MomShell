@@ -4,31 +4,31 @@
  */
 
 // 绑定状态
-export type BindingStatus = 'pending' | 'active' | 'unbound';
+export type BindingStatus = "pending" | "active" | "unbound";
 
 // 心情等级
-export type MoodLevel = 'very_low' | 'low' | 'neutral' | 'good' | 'great';
+export type MoodLevel = "very_low" | "low" | "neutral" | "good" | "great";
 
 // 健康状况
 export type HealthCondition =
-  | 'wound_pain'
-  | 'hair_loss'
-  | 'insomnia'
-  | 'breast_pain'
-  | 'back_pain'
-  | 'fatigue'
-  | 'emotional'
-  | 'constipation'
-  | 'sweating';
+  | "wound_pain"
+  | "hair_loss"
+  | "insomnia"
+  | "breast_pain"
+  | "back_pain"
+  | "fatigue"
+  | "emotional"
+  | "constipation"
+  | "sweating";
 
 // 任务难度
-export type TaskDifficulty = 'easy' | 'medium' | 'hard';
+export type TaskDifficulty = "easy" | "medium" | "hard";
 
 // 任务状态
-export type TaskStatus = 'available' | 'completed' | 'confirmed' | 'expired';
+export type TaskStatus = "available" | "completed" | "confirmed" | "expired";
 
 // 伴侣等级
-export type PartnerLevel = 'intern' | 'trainee' | 'regular' | 'gold';
+export type PartnerLevel = "intern" | "trainee" | "regular" | "gold";
 
 // 绑定关系
 export interface PartnerBinding {
@@ -69,7 +69,7 @@ export interface MomInfo {
 // 绑定状态响应
 export interface BindingStatusResponse {
   has_binding: boolean;
-  role: 'mom' | 'partner' | null;
+  role: "mom" | "partner" | null;
   binding: PartnerBinding | null;
   partner_info: PartnerInfo | null;
   mom_info: MomInfo | null;
@@ -180,58 +180,58 @@ export interface Album {
 
 // 健康状况显示名称
 export const HEALTH_CONDITION_LABELS: Record<HealthCondition, string> = {
-  wound_pain: '伤口疼痛',
-  hair_loss: '脱发期',
-  insomnia: '失眠',
-  breast_pain: '涨奶/乳房疼痛',
-  back_pain: '腰背痛',
-  fatigue: '疲惫',
-  emotional: '情绪波动',
-  constipation: '便秘',
-  sweating: '盗汗',
+  wound_pain: "伤口疼痛",
+  hair_loss: "脱发期",
+  insomnia: "失眠",
+  breast_pain: "涨奶/乳房疼痛",
+  back_pain: "腰背痛",
+  fatigue: "疲惫",
+  emotional: "情绪波动",
+  constipation: "便秘",
+  sweating: "盗汗",
 };
 
 // 心情等级显示
 export const MOOD_LEVEL_LABELS: Record<MoodLevel, string> = {
-  very_low: '很低落',
-  low: '有点低落',
-  neutral: '一般',
-  good: '不错',
-  great: '很开心',
+  very_low: "很低落",
+  low: "有点低落",
+  neutral: "一般",
+  good: "不错",
+  great: "很开心",
 };
 
 export const MOOD_LEVEL_EMOJIS: Record<MoodLevel, string> = {
-  very_low: '😢',
-  low: '😔',
-  neutral: '😐',
-  good: '🙂',
-  great: '😊',
+  very_low: "😢",
+  low: "😔",
+  neutral: "😐",
+  good: "🙂",
+  great: "😊",
 };
 
 // 伴侣等级显示
 export const PARTNER_LEVEL_LABELS: Record<PartnerLevel, string> = {
-  intern: '实习爸爸',
-  trainee: '见习守护者',
-  regular: '正式守护者',
-  gold: '金牌守护者',
+  intern: "实习爸爸",
+  trainee: "见习守护者",
+  regular: "正式守护者",
+  gold: "金牌守护者",
 };
 
 export const PARTNER_LEVEL_EMOJIS: Record<PartnerLevel, string> = {
-  intern: '🐣',
-  trainee: '🌱',
-  regular: '⭐',
-  gold: '👑',
+  intern: "🐣",
+  trainee: "🌱",
+  regular: "⭐",
+  gold: "👑",
 };
 
 // 任务难度显示
 export const TASK_DIFFICULTY_LABELS: Record<TaskDifficulty, string> = {
-  easy: '简易',
-  medium: '进阶',
-  hard: '挑战',
+  easy: "简易",
+  medium: "进阶",
+  hard: "挑战",
 };
 
 export const TASK_DIFFICULTY_COLORS: Record<TaskDifficulty, string> = {
-  easy: '#4CAF50',
-  medium: '#FF9800',
-  hard: '#F44336',
+  easy: "#4CAF50",
+  medium: "#FF9800",
+  hard: "#F44336",
 };

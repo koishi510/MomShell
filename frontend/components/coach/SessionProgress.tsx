@@ -4,9 +4,9 @@
  * 展示当前训练的进度、组数、次数和得分
  */
 
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 export interface SessionProgressProps {
   progress: number; // 0-100
@@ -20,17 +20,17 @@ export interface SessionProgressProps {
 
 // 得分颜色映射
 function getScoreColor(score: number | null): string {
-  if (score === null) return 'bg-stone-500';
-  if (score >= 80) return 'bg-emerald-500';
-  if (score >= 60) return 'bg-amber-500';
-  return 'bg-rose-500';
+  if (score === null) return "bg-stone-500";
+  if (score >= 80) return "bg-emerald-500";
+  if (score >= 60) return "bg-amber-500";
+  return "bg-rose-500";
 }
 
 function getScoreTextColor(score: number | null): string {
-  if (score === null) return 'text-stone-500';
-  if (score >= 80) return 'text-emerald-600';
-  if (score >= 60) return 'text-amber-600';
-  return 'text-rose-600';
+  if (score === null) return "text-stone-500";
+  if (score >= 80) return "text-emerald-600";
+  if (score >= 60) return "text-amber-600";
+  return "text-rose-600";
 }
 
 export function SessionProgress({
@@ -48,19 +48,25 @@ export function SessionProgress({
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-stone-600">训练进度</span>
-          <span className="text-sm text-stone-500">{Math.round(progress)}%</span>
+          <span className="text-sm text-stone-500">
+            {Math.round(progress)}%
+          </span>
         </div>
         <div className="h-3 bg-stone-200 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-[#e8a4b8] to-[#8bc99b] rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           />
         </div>
         <div className="flex justify-between text-sm text-stone-500 mt-2">
-          <span>第 {currentSet}/{totalSets} 组</span>
-          <span>第 {currentRep}/{totalReps} 次</span>
+          <span>
+            第 {currentSet}/{totalSets} 组
+          </span>
+          <span>
+            第 {currentRep}/{totalReps} 次
+          </span>
         </div>
       </div>
 
@@ -96,7 +102,7 @@ export function SessionProgress({
             animate={{ scale: 1 }}
             className={`text-2xl font-bold ${getScoreTextColor(score)}`}
           >
-            {score ?? '--'}
+            {score ?? "--"}
           </motion.span>
         </motion.div>
       </div>
@@ -108,7 +114,7 @@ export function SessionProgress({
 export function SessionProgressOverlay({
   currentPhase,
   score,
-}: Pick<SessionProgressProps, 'currentPhase' | 'score'>) {
+}: Pick<SessionProgressProps, "currentPhase" | "score">) {
   return (
     <div className="absolute inset-x-0 top-0 p-4 flex justify-between pointer-events-none">
       {/* 当前阶段 */}
@@ -128,7 +134,7 @@ export function SessionProgressOverlay({
         animate={{ scale: 1 }}
         className={`px-3 py-2 rounded-lg backdrop-blur-sm text-white ${getScoreColor(score)}`}
       >
-        <span className="text-xl font-bold">{score ?? '--'}</span>
+        <span className="text-xl font-bold">{score ?? "--"}</span>
         <span className="text-xs ml-1">分</span>
       </motion.div>
     </div>
@@ -147,7 +153,7 @@ export function CircularProgress({
   progress,
   size = 60,
   strokeWidth = 4,
-  color = '#e8a4b8',
+  color = "#e8a4b8",
 }: CircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -176,7 +182,7 @@ export function CircularProgress({
           strokeLinecap="round"
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: circumference * (1 - progress / 100) }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           style={{ strokeDasharray: circumference }}
         />
       </svg>

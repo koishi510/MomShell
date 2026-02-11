@@ -3,14 +3,18 @@
  * 身份标签编辑器组件
  */
 
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ECHO_COLORS, GLASS_STYLES } from '../../../lib/design-tokens';
-import { createIdentityTag, deleteIdentityTag } from '../../../lib/api/echo';
-import type { IdentityTagList, TagType } from '../../../types/echo';
-import { TAG_TYPE_LABELS, TAG_TYPE_PLACEHOLDERS, TAG_TYPE_ICONS } from '../../../types/echo';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ECHO_COLORS, GLASS_STYLES } from "../../../lib/design-tokens";
+import { createIdentityTag, deleteIdentityTag } from "../../../lib/api/echo";
+import type { IdentityTagList, TagType } from "../../../types/echo";
+import {
+  TAG_TYPE_LABELS,
+  TAG_TYPE_PLACEHOLDERS,
+  TAG_TYPE_ICONS,
+} from "../../../types/echo";
 
 interface IdentityTagEditorProps {
   tags: IdentityTagList | null;
@@ -18,12 +22,12 @@ interface IdentityTagEditorProps {
 }
 
 export function IdentityTagEditor({ tags, onUpdate }: IdentityTagEditorProps) {
-  const [activeType, setActiveType] = useState<TagType>('music');
-  const [inputValue, setInputValue] = useState('');
+  const [activeType, setActiveType] = useState<TagType>("music");
+  const [inputValue, setInputValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const tagTypes: TagType[] = ['music', 'sound', 'literature', 'memory'];
+  const tagTypes: TagType[] = ["music", "sound", "literature", "memory"];
 
   const handleAddTag = async () => {
     if (!inputValue.trim()) return;
@@ -36,10 +40,10 @@ export function IdentityTagEditor({ tags, onUpdate }: IdentityTagEditorProps) {
         tag_type: activeType,
         content: inputValue.trim(),
       });
-      setInputValue('');
+      setInputValue("");
       onUpdate();
     } catch (err: any) {
-      setError(err.response?.data?.detail || '添加失败');
+      setError(err.response?.data?.detail || "添加失败");
     } finally {
       setSubmitting(false);
     }
@@ -50,7 +54,7 @@ export function IdentityTagEditor({ tags, onUpdate }: IdentityTagEditorProps) {
       await deleteIdentityTag(tagId);
       onUpdate();
     } catch (err) {
-      console.error('Failed to delete tag:', err);
+      console.error("Failed to delete tag:", err);
     }
   };
 
@@ -74,11 +78,14 @@ export function IdentityTagEditor({ tags, onUpdate }: IdentityTagEditorProps) {
             onClick={() => setActiveType(type)}
             className={`flex items-center gap-1 px-3 py-2 rounded-full whitespace-nowrap transition-colors ${
               activeType === type
-                ? 'bg-white shadow-md'
-                : 'bg-white/30 hover:bg-white/50'
+                ? "bg-white shadow-md"
+                : "bg-white/30 hover:bg-white/50"
             }`}
             style={{
-              color: activeType === type ? ECHO_COLORS.mom.text : ECHO_COLORS.mom.text + '99',
+              color:
+                activeType === type
+                  ? ECHO_COLORS.mom.text
+                  : ECHO_COLORS.mom.text + "99",
             }}
           >
             <span>{TAG_TYPE_ICONS[type]}</span>
@@ -98,7 +105,7 @@ export function IdentityTagEditor({ tags, onUpdate }: IdentityTagEditorProps) {
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+          onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
           placeholder={TAG_TYPE_PLACEHOLDERS[activeType]}
           className="flex-1 px-4 py-2 rounded-xl bg-white/50 border-0 outline-none placeholder:text-gray-400"
           style={{ color: ECHO_COLORS.mom.text }}
@@ -111,7 +118,7 @@ export function IdentityTagEditor({ tags, onUpdate }: IdentityTagEditorProps) {
           className="px-4 py-2 rounded-xl text-white font-medium disabled:opacity-50"
           style={{ backgroundColor: ECHO_COLORS.mom.accent }}
         >
-          {submitting ? '...' : '添加'}
+          {submitting ? "..." : "添加"}
         </motion.button>
       </div>
 

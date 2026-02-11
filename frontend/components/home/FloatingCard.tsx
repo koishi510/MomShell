@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/home/FloatingCard.tsx
 /**
@@ -6,9 +6,9 @@
  * 带彩色软阴影效果
  */
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface FloatingCardProps {
   title: string;
@@ -40,7 +40,7 @@ export default function FloatingCard({
   const handleClick = (e: React.MouseEvent) => {
     if (requiresAuth && !isAuthenticated) {
       e.preventDefault();
-      router.push('/auth/login');
+      router.push("/auth/login");
     }
   };
 
@@ -81,7 +81,7 @@ export default function FloatingCard({
           }}
           whileTap={{ scale: 0.98 }}
           transition={{
-            type: 'spring',
+            type: "spring",
             stiffness: 300,
             damping: 20,
           }}
@@ -100,7 +100,8 @@ export default function FloatingCard({
           <div
             className="absolute top-0 left-0 right-0 h-1/2 rounded-t-3xl"
             style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)',
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)",
             }}
           />
 
@@ -115,7 +116,7 @@ export default function FloatingCard({
               transition={{
                 duration: 3,
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: "easeInOut",
                 delay: index * 0.5,
               }}
             >
@@ -141,9 +142,16 @@ export default function FloatingCard({
           {/* 箭头指示 */}
           <motion.div
             className="absolute bottom-6 right-6 text-stone-300 z-10"
-            whileHover={{ x: 5, color: '#78716c' }}
+            whileHover={{ x: 5, color: "#78716c" }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </motion.div>

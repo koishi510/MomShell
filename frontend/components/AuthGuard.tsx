@@ -4,11 +4,11 @@
  * Redirects unauthenticated users to login page
  */
 
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../contexts/AuthContext";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push("/auth/login");
     }
   }, [isAuthenticated, isLoading, router]);
 

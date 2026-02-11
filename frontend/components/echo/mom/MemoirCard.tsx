@@ -3,13 +3,13 @@
  * 青春回忆录卡片组件
  */
 
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ECHO_COLORS, GLASS_STYLES } from '../../../lib/design-tokens';
-import { generateMemoir, rateMemoir } from '../../../lib/api/echo';
-import type { Memoir } from '../../../types/echo';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ECHO_COLORS, GLASS_STYLES } from "../../../lib/design-tokens";
+import { generateMemoir, rateMemoir } from "../../../lib/api/echo";
+import type { Memoir } from "../../../types/echo";
 
 interface MemoirCardProps {
   memoirs: Memoir[];
@@ -19,16 +19,16 @@ interface MemoirCardProps {
 export function MemoirCard({ memoirs, onGenerate }: MemoirCardProps) {
   const [generating, setGenerating] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [theme, setTheme] = useState('');
+  const [theme, setTheme] = useState("");
 
   const handleGenerate = async () => {
     setGenerating(true);
     try {
       await generateMemoir(theme ? { theme } : undefined);
-      setTheme('');
+      setTheme("");
       onGenerate();
     } catch (error) {
-      console.error('Failed to generate memoir:', error);
+      console.error("Failed to generate memoir:", error);
     } finally {
       setGenerating(false);
     }
@@ -39,7 +39,7 @@ export function MemoirCard({ memoirs, onGenerate }: MemoirCardProps) {
       await rateMemoir(memoirId, rating);
       onGenerate();
     } catch (error) {
-      console.error('Failed to rate memoir:', error);
+      console.error("Failed to rate memoir:", error);
     }
   };
 
@@ -74,12 +74,12 @@ export function MemoirCard({ memoirs, onGenerate }: MemoirCardProps) {
             {generating ? (
               <motion.span
                 animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               >
                 ⏳
               </motion.span>
             ) : (
-              '生成'
+              "生成"
             )}
           </motion.button>
         </div>
@@ -125,8 +125,11 @@ export function MemoirCard({ memoirs, onGenerate }: MemoirCardProps) {
                     >
                       {memoir.title}
                     </h4>
-                    <p className="text-xs opacity-60" style={{ color: ECHO_COLORS.mom.text }}>
-                      {new Date(memoir.created_at).toLocaleDateString('zh-CN')}
+                    <p
+                      className="text-xs opacity-60"
+                      style={{ color: ECHO_COLORS.mom.text }}
+                    >
+                      {new Date(memoir.created_at).toLocaleDateString("zh-CN")}
                     </p>
                   </div>
                   <motion.div
@@ -154,7 +157,7 @@ export function MemoirCard({ memoirs, onGenerate }: MemoirCardProps) {
                   {expandedId === memoir.id && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
+                      animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
@@ -181,8 +184,8 @@ export function MemoirCard({ memoirs, onGenerate }: MemoirCardProps) {
                               className="text-xl transition-transform hover:scale-110"
                             >
                               {memoir.user_rating && star <= memoir.user_rating
-                                ? '⭐'
-                                : '☆'}
+                                ? "⭐"
+                                : "☆"}
                             </button>
                           ))}
                         </div>

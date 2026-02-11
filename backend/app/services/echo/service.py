@@ -715,13 +715,12 @@ class EchoService:
 
         if sound_tags:
             paragraphs.append(
-                f"闭上眼睛，仿佛能听到{sound_tags[0]}的声音，"
-                f"那是属于青春的独特背景音。"
+                f"闭上眼睛，仿佛能听到{sound_tags[0]}的声音，那是属于青春的独特背景音。"
             )
 
         if lit_tags:
             paragraphs.append(
-                f"那时候最爱读的是{lit_tags[0]}，" f"书中的故事仿佛就是自己的人生写照。"
+                f"那时候最爱读的是{lit_tags[0]}，书中的故事仿佛就是自己的人生写照。"
             )
 
         paragraphs.append(

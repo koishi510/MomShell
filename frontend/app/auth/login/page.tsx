@@ -1,30 +1,30 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '../../../contexts/AuthContext';
-import { getErrorMessage } from '../../../lib/apiClient';
-import SliderCaptcha from '../../../components/auth/SliderCaptcha';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "../../../contexts/AuthContext";
+import { getErrorMessage } from "../../../lib/apiClient";
+import SliderCaptcha from "../../../components/auth/SliderCaptcha";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading: authLoading } = useAuth();
 
-  const [login_, setLogin] = useState('');
-  const [password, setPassword] = useState('');
+  const [login_, setLogin] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!captchaToken) {
-      setError('请完成滑块验证');
+      setError("请完成滑块验证");
       return;
     }
 
@@ -32,7 +32,7 @@ export default function LoginPage() {
 
     try {
       await login({ login: login_, password }, rememberMe);
-      router.push('/');
+      router.push("/");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -67,7 +67,10 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="login" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="login"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 用户名或邮箱
               </label>
               <input
@@ -82,13 +85,16 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 密码
               </label>
               <div className="relative">
                 <input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -101,12 +107,26 @@ export default function LoginPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                       <line x1="1" y1="1" x2="23" y2="23" />
                     </svg>
                   ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
@@ -144,14 +164,17 @@ export default function LoginPage() {
               disabled={isLoading || !captchaToken}
               className="w-full py-3 px-4 bg-[#e8a4b8] text-white font-medium rounded-lg hover:bg-[#d88a9f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {isLoading ? '登录中...' : '登录'}
+              {isLoading ? "登录中..." : "登录"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              还没有账号？{' '}
-              <Link href="/auth/register" className="text-pink-600 hover:text-pink-700 font-medium">
+              还没有账号？{" "}
+              <Link
+                href="/auth/register"
+                className="text-pink-600 hover:text-pink-700 font-medium"
+              >
                 立即注册
               </Link>
             </p>

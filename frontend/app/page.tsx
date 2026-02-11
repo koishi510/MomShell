@@ -4,64 +4,64 @@
  * 极度治愈、温馨且充满动态呼吸感
  */
 
-'use client';
+"use client";
 
-import Link from 'next/link';
-import MeshGradientBackground from '../components/home/MeshGradientBackground';
-import MoodBall from '../components/home/MoodBall';
-import { SerifTitle, Subtitle } from '../components/home/AnimatedText';
-import FloatingCard from '../components/home/FloatingCard';
-import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
+import Link from "next/link";
+import MeshGradientBackground from "../components/home/MeshGradientBackground";
+import MoodBall from "../components/home/MoodBall";
+import { SerifTitle, Subtitle } from "../components/home/AnimatedText";
+import FloatingCard from "../components/home/FloatingCard";
+import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
 
 const features = [
   {
-    title: '心灵港湾',
-    subtitle: 'Soul Companion',
-    description: '每一个瞬间，你都不再孤单',
-    href: '/chat',
-    icon: '💝',
-    gradient: '#FFE4EC, #FFF0F5',
-    shadowColor: '#FFB6C1',
+    title: "心灵港湾",
+    subtitle: "Soul Companion",
+    description: "每一个瞬间，你都不再孤单",
+    href: "/chat",
+    icon: "💝",
+    gradient: "#FFE4EC, #FFF0F5",
+    shadowColor: "#FFB6C1",
     requiresAuth: true,
   },
   {
-    title: '经验连接',
-    subtitle: 'Sisterhood Bond',
-    description: '每一次交流，你都能获得力量',
-    href: '/community',
-    icon: '👩‍👩‍👧',
-    gradient: '#FFF3E0, #FFE4B5',
-    shadowColor: '#FFB347',
+    title: "经验连接",
+    subtitle: "Sisterhood Bond",
+    description: "每一次交流，你都能获得力量",
+    href: "/community",
+    icon: "👩‍👩‍👧",
+    gradient: "#FFF3E0, #FFE4B5",
+    shadowColor: "#FFB347",
     requiresAuth: true,
   },
   {
-    title: '身体重塑',
-    subtitle: 'Recovery Coach',
-    description: '每一项训练，你都在重塑自我',
-    href: '/coach',
-    icon: '🧘‍♀️',
-    gradient: '#E0F7FA, #B2EBF2',
-    shadowColor: '#4DD0E1',
+    title: "身体重塑",
+    subtitle: "Recovery Coach",
+    description: "每一项训练，你都在重塑自我",
+    href: "/coach",
+    icon: "🧘‍♀️",
+    gradient: "#E0F7FA, #B2EBF2",
+    shadowColor: "#4DD0E1",
     requiresAuth: true,
   },
   {
-    title: '伴侣守护',
-    subtitle: 'Guardian Partner',
-    description: '每一份坚持，你都有贴心守护',
-    href: '/guardian',
-    icon: '🤝',
-    gradient: '#E8F5E9, #C8E6C9',
-    shadowColor: '#81C784',
+    title: "伴侣守护",
+    subtitle: "Guardian Partner",
+    description: "每一份坚持，你都有贴心守护",
+    href: "/guardian",
+    icon: "🤝",
+    gradient: "#E8F5E9, #C8E6C9",
+    shadowColor: "#81C784",
   },
   {
-    title: '心灵回响',
-    subtitle: 'Echo Bond',
-    description: '每一段回忆，都是爱的回响',
-    href: '/echo',
-    icon: '🔮',
-    gradient: '#EDE7F6, #D1C4E9',
-    shadowColor: '#B39DDB',
+    title: "心灵回响",
+    subtitle: "Echo Bond",
+    description: "每一段回忆，都是爱的回响",
+    href: "/echo",
+    icon: "🔮",
+    gradient: "#EDE7F6, #D1C4E9",
+    shadowColor: "#B39DDB",
     requiresAuth: true,
   },
 ];
@@ -79,7 +79,7 @@ export default function HomePage() {
         className="fixed top-8 left-8 z-20"
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.8, duration: 0.5, ease: 'backOut' }}
+        transition={{ delay: 0.8, duration: 0.5, ease: "backOut" }}
       >
         <MoodBall />
       </motion.div>
@@ -135,7 +135,8 @@ export default function HomePage() {
           <motion.div
             className="mx-auto mt-8 w-16 h-0.5 rounded-full"
             style={{
-              background: 'linear-gradient(90deg, transparent, #FFB6C1, transparent)',
+              background:
+                "linear-gradient(90deg, transparent, #FFB6C1, transparent)",
             }}
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
@@ -175,7 +176,7 @@ export default function HomePage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
           >
-            {['🌸', '🌿', '🦋'].map((emoji, i) => (
+            {["🌸", "🌿", "🦋"].map((emoji, i) => (
               <motion.span
                 key={i}
                 className="text-lg opacity-50"
@@ -186,7 +187,7 @@ export default function HomePage() {
                 transition={{
                   duration: 3,
                   repeat: Infinity,
-                  ease: 'easeInOut',
+                  ease: "easeInOut",
                   delay: i * 0.5,
                 }}
               >

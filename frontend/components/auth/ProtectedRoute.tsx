@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
+import { useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
   fallbackUrl?: string;
 }
 
-export function ProtectedRoute({ children, fallbackUrl = '/auth/login' }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  fallbackUrl = "/auth/login",
+}: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 

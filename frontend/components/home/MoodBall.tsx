@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/home/MoodBall.tsx
 /**
@@ -6,21 +6,22 @@
  * 像水母一样缓慢收缩和扩张，营造治愈氛围
  */
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface MoodBallProps {
   className?: string;
 }
 
-export default function MoodBall({ className = '' }: MoodBallProps) {
+export default function MoodBall({ className = "" }: MoodBallProps) {
   return (
     <div className={`relative ${className}`}>
       {/* 外层光晕 */}
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(255,182,193,0.3) 0%, transparent 70%)',
-          filter: 'blur(20px)',
+          background:
+            "radial-gradient(circle, rgba(255,182,193,0.3) 0%, transparent 70%)",
+          filter: "blur(20px)",
         }}
         animate={{
           scale: [1, 1.4, 1],
@@ -29,7 +30,7 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
         transition={{
           duration: 4,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
         }}
       />
 
@@ -37,8 +38,9 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
       <motion.div
         className="absolute inset-2 rounded-full"
         style={{
-          background: 'radial-gradient(circle at 30% 30%, rgba(255,228,235,0.9) 0%, rgba(255,182,193,0.6) 50%, rgba(255,160,180,0.4) 100%)',
-          boxShadow: 'inset 0 0 20px rgba(255,255,255,0.5)',
+          background:
+            "radial-gradient(circle at 30% 30%, rgba(255,228,235,0.9) 0%, rgba(255,182,193,0.6) 50%, rgba(255,160,180,0.4) 100%)",
+          boxShadow: "inset 0 0 20px rgba(255,255,255,0.5)",
         }}
         animate={{
           scale: [1, 1.1, 1],
@@ -46,7 +48,7 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
         transition={{
           duration: 3,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
           delay: 0.5,
         }}
       />
@@ -55,7 +57,8 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
       <motion.div
         className="relative w-16 h-16 rounded-full overflow-hidden"
         style={{
-          background: 'radial-gradient(circle at 35% 35%, #FFF0F3 0%, #FFD6E0 40%, #FFB6C1 100%)',
+          background:
+            "radial-gradient(circle at 35% 35%, #FFF0F3 0%, #FFD6E0 40%, #FFB6C1 100%)",
           boxShadow: `
             0 0 30px rgba(255,182,193,0.5),
             inset 0 0 15px rgba(255,255,255,0.6),
@@ -68,20 +71,20 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
         transition={{
           duration: 5,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
         }}
       >
         {/* 高光 */}
         <motion.div
           className="absolute top-2 left-3 w-4 h-3 rounded-full bg-white/60"
-          style={{ filter: 'blur(2px)' }}
+          style={{ filter: "blur(2px)" }}
           animate={{
             opacity: [0.6, 0.9, 0.6],
           }}
           transition={{
             duration: 3,
             repeat: Infinity,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         />
 
@@ -89,7 +92,8 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
         <motion.div
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse at 60% 60%, rgba(255,200,210,0.4) 0%, transparent 50%)',
+            background:
+              "radial-gradient(ellipse at 60% 60%, rgba(255,200,210,0.4) 0%, transparent 50%)",
           }}
           animate={{
             rotate: [0, 360],
@@ -97,7 +101,7 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
           transition={{
             duration: 20,
             repeat: Infinity,
-            ease: 'linear',
+            ease: "linear",
           }}
         />
       </motion.div>
@@ -110,7 +114,8 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
             className="w-0.5 rounded-full"
             style={{
               height: 12 + i * 2,
-              background: 'linear-gradient(180deg, rgba(255,182,193,0.6) 0%, transparent 100%)',
+              background:
+                "linear-gradient(180deg, rgba(255,182,193,0.6) 0%, transparent 100%)",
             }}
             animate={{
               scaleY: [1, 1.3, 1],
@@ -119,7 +124,7 @@ export default function MoodBall({ className = '' }: MoodBallProps) {
             transition={{
               duration: 2 + i * 0.3,
               repeat: Infinity,
-              ease: 'easeInOut',
+              ease: "easeInOut",
               delay: i * 0.2,
             }}
           />

@@ -3,24 +3,20 @@
  * 互助社区类型定义
  */
 
-export type ChannelType = 'professional' | 'experience';
+export type ChannelType = "professional" | "experience";
 
 export type UserRole =
-  | 'guest'
-  | 'mom'
-  | 'dad'
-  | 'family'
-  | 'certified_doctor'
-  | 'certified_therapist'
-  | 'certified_nurse'
-  | 'admin'
-  | 'ai_assistant';
+  | "guest"
+  | "mom"
+  | "dad"
+  | "family"
+  | "certified_doctor"
+  | "certified_therapist"
+  | "certified_nurse"
+  | "admin"
+  | "ai_assistant";
 
-export type ContentStatus =
-  | 'draft'
-  | 'pending_review'
-  | 'published'
-  | 'hidden';
+export type ContentStatus = "draft" | "pending_review" | "published" | "hidden";
 
 export interface Author {
   id: string;
@@ -91,56 +87,70 @@ export interface HotTopic {
   id: string;
   name: string;
   question_count: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
 }
 
 // 角色配置
-export const ROLE_CONFIG: Record<UserRole, { label: string; badgeColor: string; icon?: string }> = {
-  guest: { label: '游客', badgeColor: 'bg-gray-100 text-gray-600' },
-  mom: { label: '妈妈', badgeColor: 'bg-pink-100 text-pink-700' },
-  dad: { label: '爸爸', badgeColor: 'bg-blue-100 text-blue-700' },
-  family: { label: '家属', badgeColor: 'bg-stone-100 text-stone-600' },
+export const ROLE_CONFIG: Record<
+  UserRole,
+  { label: string; badgeColor: string; icon?: string }
+> = {
+  guest: { label: "游客", badgeColor: "bg-gray-100 text-gray-600" },
+  mom: { label: "妈妈", badgeColor: "bg-pink-100 text-pink-700" },
+  dad: { label: "爸爸", badgeColor: "bg-blue-100 text-blue-700" },
+  family: { label: "家属", badgeColor: "bg-stone-100 text-stone-600" },
   certified_doctor: {
-    label: '认证医生',
-    badgeColor: 'bg-emerald-100 text-emerald-700',
-    icon: '✓'
+    label: "认证医生",
+    badgeColor: "bg-emerald-100 text-emerald-700",
+    icon: "✓",
   },
   certified_therapist: {
-    label: '认证康复师',
-    badgeColor: 'bg-teal-100 text-teal-700',
-    icon: '✓'
+    label: "认证康复师",
+    badgeColor: "bg-teal-100 text-teal-700",
+    icon: "✓",
   },
   certified_nurse: {
-    label: '认证护士',
-    badgeColor: 'bg-cyan-100 text-cyan-700',
-    icon: '✓'
+    label: "认证护士",
+    badgeColor: "bg-cyan-100 text-cyan-700",
+    icon: "✓",
   },
-  admin: { label: '管理员', badgeColor: 'bg-purple-100 text-purple-700', icon: '★' },
-  ai_assistant: { label: 'AI 助手', badgeColor: 'bg-amber-100 text-amber-700', icon: '❤' },
+  admin: {
+    label: "管理员",
+    badgeColor: "bg-purple-100 text-purple-700",
+    icon: "★",
+  },
+  ai_assistant: {
+    label: "AI 助手",
+    badgeColor: "bg-amber-100 text-amber-700",
+    icon: "❤",
+  },
 };
 
 // 频道配置
-export const CHANNEL_CONFIG: Record<ChannelType, {
-  label: string;
-  subtitle: string;
-  color: { bg: string; text: string; accent: string };
-}> = {
+export const CHANNEL_CONFIG: Record<
+  ChannelType,
+  {
+    label: string;
+    subtitle: string;
+    color: { bg: string; text: string; accent: string };
+  }
+> = {
   professional: {
-    label: '专业频道',
-    subtitle: '听听医生怎么说',
+    label: "专业频道",
+    subtitle: "听听医生怎么说",
     color: {
-      bg: 'bg-sky-50',
-      text: 'text-sky-700',
-      accent: '#0ea5e9', // sky-500
+      bg: "bg-sky-50",
+      text: "text-sky-700",
+      accent: "#0ea5e9", // sky-500
     },
   },
   experience: {
-    label: '经验频道',
-    subtitle: '看看妈妈们的经验',
+    label: "经验频道",
+    subtitle: "看看妈妈们的经验",
     color: {
-      bg: 'bg-amber-50',
-      text: 'text-amber-700',
-      accent: '#f59e0b', // amber-500
+      bg: "bg-amber-50",
+      text: "text-amber-700",
+      accent: "#f59e0b", // amber-500
     },
   },
 };

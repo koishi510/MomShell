@@ -4,25 +4,25 @@
  * 展示用户获得的成就和锁定的成就
  */
 
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 
 // 成就图标映射
 const ACHIEVEMENT_ICONS: Record<string, string> = {
-  footprints: '👣',
-  fire: '🔥',
-  'calendar-check': '📅',
-  trophy: '🏆',
-  star: '⭐',
-  'check-circle': '✅',
-  medal: '🏅',
-  'trending-up': '📈',
-  award: '🎖️',
-  heart: '❤️',
-  sparkles: '✨',
-  crown: '👑',
+  footprints: "👣",
+  fire: "🔥",
+  "calendar-check": "📅",
+  trophy: "🏆",
+  star: "⭐",
+  "check-circle": "✅",
+  medal: "🏅",
+  "trending-up": "📈",
+  award: "🎖️",
+  heart: "❤️",
+  sparkles: "✨",
+  crown: "👑",
 };
 
 export interface AchievementBadgeProps {
@@ -56,8 +56,8 @@ export function AchievementBadge({
       <div
         className={`text-center p-3 rounded-xl transition-all cursor-pointer ${
           isEarned
-            ? 'bg-gradient-to-br from-amber-100 to-yellow-100 shadow-sm'
-            : 'bg-stone-100 opacity-50 grayscale'
+            ? "bg-gradient-to-br from-amber-100 to-yellow-100 shadow-sm"
+            : "bg-stone-100 opacity-50 grayscale"
         }`}
       >
         {/* 图标 */}
@@ -66,7 +66,7 @@ export function AchievementBadge({
           animate={isEarned && isHovered ? { rotate: [0, -10, 10, 0] } : {}}
           transition={{ duration: 0.5 }}
         >
-          {ACHIEVEMENT_ICONS[icon] || '🌟'}
+          {ACHIEVEMENT_ICONS[icon] || "🌟"}
         </motion.div>
 
         {/* 名称 */}
@@ -102,7 +102,7 @@ export function AchievementBadge({
               )}
               {isEarned && earnedAt && (
                 <div className="text-emerald-400 text-[10px] mt-1">
-                  获得于 {new Date(earnedAt).toLocaleDateString('zh-CN')}
+                  获得于 {new Date(earnedAt).toLocaleDateString("zh-CN")}
                 </div>
               )}
               {!isEarned && (
@@ -124,12 +124,16 @@ interface AchievementGridProps {
   columns?: number;
 }
 
-export function AchievementGrid({ achievements, columns = 5 }: AchievementGridProps) {
-  const gridCols = {
-    3: 'grid-cols-3',
-    4: 'grid-cols-4',
-    5: 'grid-cols-3 md:grid-cols-5',
-  }[columns] || 'grid-cols-3 md:grid-cols-5';
+export function AchievementGrid({
+  achievements,
+  columns = 5,
+}: AchievementGridProps) {
+  const gridCols =
+    {
+      3: "grid-cols-3",
+      4: "grid-cols-4",
+      5: "grid-cols-3 md:grid-cols-5",
+    }[columns] || "grid-cols-3 md:grid-cols-5";
 
   return (
     <div className={`grid ${gridCols} gap-3`}>
@@ -166,7 +170,7 @@ export function NewAchievementModal({
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.5, opacity: 0 }}
-            transition={{ type: 'spring', damping: 15 }}
+            transition={{ type: "spring", damping: 15 }}
             className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -196,7 +200,7 @@ export function NewAchievementModal({
                 transition={{ delay: 0.5, duration: 0.5 }}
                 className="text-5xl mb-3"
               >
-                {ACHIEVEMENT_ICONS[achievement.icon] || '🌟'}
+                {ACHIEVEMENT_ICONS[achievement.icon] || "🌟"}
               </motion.div>
               <div className="text-lg font-medium text-stone-700">
                 {achievement.name}
@@ -228,7 +232,10 @@ interface AchievementProgressProps {
   total: number;
 }
 
-export function AchievementProgress({ earned, total }: AchievementProgressProps) {
+export function AchievementProgress({
+  earned,
+  total,
+}: AchievementProgressProps) {
   const percentage = total > 0 ? (earned / total) * 100 : 0;
 
   return (
@@ -238,7 +245,7 @@ export function AchievementProgress({ earned, total }: AchievementProgressProps)
           className="h-full bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         />
       </div>
       <span className="text-sm text-stone-500 whitespace-nowrap">

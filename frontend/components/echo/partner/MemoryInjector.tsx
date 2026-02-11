@@ -3,12 +3,12 @@
  * 记忆注入表单组件
  */
 
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ECHO_COLORS, GLASS_STYLES } from '../../../lib/design-tokens';
-import type { MemoryInjectRequest } from '../../../types/echo';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { ECHO_COLORS, GLASS_STYLES } from "../../../lib/design-tokens";
+import type { MemoryInjectRequest } from "../../../types/echo";
 
 interface MemoryInjectorProps {
   currentClarity: number;
@@ -23,8 +23,8 @@ export function MemoryInjector({
   onCancel,
   submitting,
 }: MemoryInjectorProps) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [revealAt, setRevealAt] = useState(50);
 
   const handleSubmit = () => {
@@ -39,10 +39,10 @@ export function MemoryInjector({
 
   // 预设揭示等级选项
   const revealOptions = [
-    { value: 30, label: '尽早', desc: '30% 即可揭示' },
-    { value: 50, label: '中等', desc: '50% 揭示' },
-    { value: 70, label: '较高', desc: '70% 揭示' },
-    { value: 90, label: '惊喜', desc: '90% 揭示' },
+    { value: 30, label: "尽早", desc: "30% 即可揭示" },
+    { value: 50, label: "中等", desc: "50% 揭示" },
+    { value: 70, label: "较高", desc: "70% 揭示" },
+    { value: 90, label: "惊喜", desc: "90% 揭示" },
   ];
 
   return (
@@ -64,8 +64,18 @@ export function MemoryInjector({
           className="p-2 rounded-full hover:bg-white/10 transition-colors"
           style={{ color: ECHO_COLORS.partner.text }}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -131,8 +141,8 @@ export function MemoryInjector({
               onClick={() => setRevealAt(option.value)}
               className={`p-2 rounded-lg text-center transition-colors ${
                 revealAt === option.value
-                  ? 'bg-white/30'
-                  : 'bg-white/10 hover:bg-white/20'
+                  ? "bg-white/30"
+                  : "bg-white/10 hover:bg-white/20"
               }`}
               disabled={submitting}
             >
@@ -156,7 +166,7 @@ export function MemoryInjector({
           style={{ color: ECHO_COLORS.partner.text }}
         >
           当前清晰度: {currentClarity}%
-          {currentClarity >= revealAt && ' - 立即可见'}
+          {currentClarity >= revealAt && " - 立即可见"}
         </p>
       </div>
 
@@ -172,7 +182,7 @@ export function MemoryInjector({
           color: ECHO_COLORS.partner.text,
         }}
       >
-        {submitting ? '正在保存...' : '注入记忆'}
+        {submitting ? "正在保存..." : "注入记忆"}
       </motion.button>
     </div>
   );

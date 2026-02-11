@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/app/community/my-posts/page.tsx
 /**
@@ -6,53 +6,63 @@
  * 展示用户发布的所有问题
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getMyQuestions, toggleLike, toggleCollection, type MyQuestionItem } from '../../../lib/api/community';
-import { getUserId } from '../../../lib/user';
-import { type Question } from '../../../types/community';
-import CommunityBackground from '../../../components/community/CommunityBackground';
-import QuestionDetailModal from '../../../components/community/QuestionDetailModal';
-import PostCard from '../../../components/community/PostCard';
-import { AuthGuard } from '../../../components/AuthGuard';
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  getMyQuestions,
+  toggleLike,
+  toggleCollection,
+  type MyQuestionItem,
+} from "../../../lib/api/community";
+import { getUserId } from "../../../lib/user";
+import { type Question } from "../../../types/community";
+import CommunityBackground from "../../../components/community/CommunityBackground";
+import QuestionDetailModal from "../../../components/community/QuestionDetailModal";
+import PostCard from "../../../components/community/PostCard";
+import { AuthGuard } from "../../../components/AuthGuard";
 
 function MyPostsContent() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+    null,
+  );
   const hasFetched = useRef(false);
 
   // Convert MyQuestionItem to Question type
-  const mapToQuestion = useCallback((item: MyQuestionItem): Question => ({
-    id: item.id,
-    title: item.title,
-    content: item.content_preview,
-    content_preview: item.content_preview,
-    channel: item.channel as any,
-    status: item.status as any,
-    author: {
-      id: getUserId(),
-      nickname: '我',
-      avatar_url: null,
-      role: 'mom',
-      is_certified: false,
-      certification_title: undefined,
-    },
-    tags: item.tags,
-    image_urls: [],
-    view_count: item.view_count,
-    answer_count: item.answer_count,
-    like_count: item.like_count,
-    collection_count: item.collection_count,
-    is_liked: item.is_liked,
-    is_collected: item.is_collected,
-    professional_answer_count: 0,
-    experience_answer_count: 0,
-    created_at: item.created_at,
-    has_accepted_answer: item.has_accepted_answer,
-  }), []);
+  const mapToQuestion = useCallback(
+    (item: MyQuestionItem): Question => ({
+      id: item.id,
+      title: item.title,
+      content: item.content_preview,
+      content_preview: item.content_preview,
+      channel: item.channel as any,
+      status: item.status as any,
+      author: {
+        id: getUserId(),
+        nickname: "我",
+        avatar_url: null,
+        role: "mom",
+        is_certified: false,
+        certification_title: undefined,
+      },
+      tags: item.tags,
+      image_urls: [],
+      view_count: item.view_count,
+      answer_count: item.answer_count,
+      like_count: item.like_count,
+      collection_count: item.collection_count,
+      is_liked: item.is_liked,
+      is_collected: item.is_collected,
+      professional_answer_count: 0,
+      experience_answer_count: 0,
+      created_at: item.created_at,
+      has_accepted_answer: item.has_accepted_answer,
+    }),
+    [],
+  );
 
   // Load questions
   const loadQuestions = useCallback(async () => {
@@ -62,8 +72,8 @@ function MyPostsContent() {
       const response = await getMyQuestions({ page: 1, page_size: 50 });
       setQuestions(response.items.map(mapToQuestion));
     } catch (err) {
-      console.error('Failed to load questions:', err);
-      setError('加载失败，请刷新重试');
+      console.error("Failed to load questions:", err);
+      setError("加载失败，请刷新重试");
     } finally {
       setIsLoading(false);
     }
@@ -81,21 +91,27 @@ function MyPostsContent() {
 
   const handleLike = async (id: string) => {
     try {
-      const result = await toggleLike('question', id);
+      const result = await toggleLike("question", id);
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === id
             ? { ...q, is_liked: result.is_liked, like_count: result.like_count }
-            : q
-        )
+            : q,
+        ),
       );
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
-          prev ? { ...prev, is_liked: result.is_liked, like_count: result.like_count } : null
+          prev
+            ? {
+                ...prev,
+                is_liked: result.is_liked,
+                like_count: result.like_count,
+              }
+            : null,
         );
       }
     } catch (err) {
-      console.error('点赞失败:', err);
+      console.error("点赞失败:", err);
     }
   };
 
@@ -105,17 +121,27 @@ function MyPostsContent() {
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === id
-            ? { ...q, is_collected: result.is_collected, collection_count: result.collection_count }
-            : q
-        )
+            ? {
+                ...q,
+                is_collected: result.is_collected,
+                collection_count: result.collection_count,
+              }
+            : q,
+        ),
       );
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
-          prev ? { ...prev, is_collected: result.is_collected, collection_count: result.collection_count } : null
+          prev
+            ? {
+                ...prev,
+                is_collected: result.is_collected,
+                collection_count: result.collection_count,
+              }
+            : null,
         );
       }
     } catch (err) {
-      console.error('收藏失败:', err);
+      console.error("收藏失败:", err);
     }
   };
 
@@ -127,12 +153,12 @@ function MyPostsContent() {
   const handleViewCountUpdated = (questionId: string, viewCount: number) => {
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId ? { ...q, view_count: viewCount } : q
-      )
+        q.id === questionId ? { ...q, view_count: viewCount } : q,
+      ),
     );
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, view_count: viewCount } : null
+        prev ? { ...prev, view_count: viewCount } : null,
       );
     }
   };
@@ -140,25 +166,28 @@ function MyPostsContent() {
   const handleAnswerCreated = (questionId: string) => {
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId ? { ...q, answer_count: q.answer_count + 1 } : q
-      )
+        q.id === questionId ? { ...q, answer_count: q.answer_count + 1 } : q,
+      ),
     );
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, answer_count: prev.answer_count + 1 } : null
+        prev ? { ...prev, answer_count: prev.answer_count + 1 } : null,
       );
     }
   };
 
-  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+  const handleAnswerCountUpdated = (
+    questionId: string,
+    answerCount: number,
+  ) => {
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId ? { ...q, answer_count: answerCount } : q
-      )
+        q.id === questionId ? { ...q, answer_count: answerCount } : q,
+      ),
     );
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, answer_count: answerCount } : null
+        prev ? { ...prev, answer_count: answerCount } : null,
       );
     }
   };

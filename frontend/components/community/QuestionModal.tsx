@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
 // frontend/components/community/QuestionModal.tsx
 /**
  * 发布问题弹窗
  */
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { type ChannelType, CHANNEL_CONFIG } from '../../types/community';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { type ChannelType, CHANNEL_CONFIG } from "../../types/community";
 
 interface QuestionModalProps {
   isOpen: boolean;
@@ -22,8 +22,8 @@ export default function QuestionModal({
   onSubmit,
   defaultChannel,
 }: QuestionModalProps) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [channel, setChannel] = useState<ChannelType>(defaultChannel);
 
   // 同步 defaultChannel 变化
@@ -34,13 +34,13 @@ export default function QuestionModal({
   const handleSubmit = () => {
     if (!title.trim() || !content.trim()) return;
     onSubmit(title.trim(), content.trim(), channel);
-    setTitle('');
-    setContent('');
+    setTitle("");
+    setContent("");
   };
 
   const handleClose = () => {
-    setTitle('');
-    setContent('');
+    setTitle("");
+    setContent("");
     onClose();
   };
 
@@ -62,7 +62,7 @@ export default function QuestionModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg bg-white rounded-2xl shadow-2xl z-50 flex flex-col max-h-[90vh]"
           >
             {/* 头部 */}
@@ -84,29 +84,39 @@ export default function QuestionModal({
                   选择频道
                 </label>
                 <div className="flex gap-2">
-                  {(['professional', 'experience'] as ChannelType[]).map((ch) => {
-                    const config = CHANNEL_CONFIG[ch];
-                    const isActive = channel === ch;
-                    return (
-                      <button
-                        key={ch}
-                        onClick={() => setChannel(ch)}
-                        className={`
+                  {(["professional", "experience"] as ChannelType[]).map(
+                    (ch) => {
+                      const config = CHANNEL_CONFIG[ch];
+                      const isActive = channel === ch;
+                      return (
+                        <button
+                          key={ch}
+                          onClick={() => setChannel(ch)}
+                          className={`
                           flex-1 px-4 py-3 rounded-xl text-sm font-medium
                           transition-all duration-200
                           ${
                             isActive
                               ? `${config.color.bg} ${config.color.text} ring-2 ring-offset-1`
-                              : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                              : "bg-stone-100 text-stone-500 hover:bg-stone-200"
                           }
                         `}
-                        style={isActive ? { '--tw-ring-color': config.color.accent } as React.CSSProperties : {}}
-                      >
-                        <div>{config.label}</div>
-                        <div className="text-xs opacity-70 mt-0.5">{config.subtitle}</div>
-                      </button>
-                    );
-                  })}
+                          style={
+                            isActive
+                              ? ({
+                                  "--tw-ring-color": config.color.accent,
+                                } as React.CSSProperties)
+                              : {}
+                          }
+                        >
+                          <div>{config.label}</div>
+                          <div className="text-xs opacity-70 mt-0.5">
+                            {config.subtitle}
+                          </div>
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
               </div>
 

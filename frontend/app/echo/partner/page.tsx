@@ -3,24 +3,32 @@
  * 爸爸模式主页 - 同步守护
  */
 
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AuthGuard } from '../../../components/AuthGuard';
-import { ECHO_COLORS, GLASS_STYLES, SPRING_CONFIGS } from '../../../lib/design-tokens';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { AuthGuard } from "../../../components/AuthGuard";
+import {
+  ECHO_COLORS,
+  GLASS_STYLES,
+  SPRING_CONFIGS,
+} from "../../../lib/design-tokens";
 import {
   getEchoStatus,
   getWindowClarity,
   injectMemory,
-} from '../../../lib/api/echo';
-import { getDailyTasks, completeTask } from '../../../lib/api/guardian';
-import { BlurredMomView } from '../../../components/echo/partner/BlurredMomView';
-import { ClarityMeter } from '../../../components/echo/partner/ClarityMeter';
-import { MemoryInjector } from '../../../components/echo/partner/MemoryInjector';
-import type { EchoStatus, WindowClarity, MemoryInjectRequest } from '../../../types/echo';
-import type { DailyTask } from '../../../types/guardian';
+} from "../../../lib/api/echo";
+import { getDailyTasks, completeTask } from "../../../lib/api/guardian";
+import { BlurredMomView } from "../../../components/echo/partner/BlurredMomView";
+import { ClarityMeter } from "../../../components/echo/partner/ClarityMeter";
+import { MemoryInjector } from "../../../components/echo/partner/MemoryInjector";
+import type {
+  EchoStatus,
+  WindowClarity,
+  MemoryInjectRequest,
+} from "../../../types/echo";
+import type { DailyTask } from "../../../types/guardian";
 
 function PartnerModePage() {
   const router = useRouter();
@@ -50,7 +58,7 @@ function PartnerModePage() {
         const clarityData = await getWindowClarity();
         setClarity(clarityData);
       } catch (clarityError) {
-        console.error('Failed to load window clarity:', clarityError);
+        console.error("Failed to load window clarity:", clarityError);
         // 使用默认值
         setClarity({
           clarity_level: 0,
@@ -71,12 +79,12 @@ function PartnerModePage() {
         const tasksData = await getDailyTasks();
         setTasks(tasksData);
       } catch (tasksError) {
-        console.error('Failed to load daily tasks:', tasksError);
+        console.error("Failed to load daily tasks:", tasksError);
         // 使用空数组
         setTasks([]);
       }
     } catch (error) {
-      console.error('Failed to load partner mode data:', error);
+      console.error("Failed to load partner mode data:", error);
     } finally {
       setLoading(false);
     }
@@ -88,7 +96,7 @@ function PartnerModePage() {
       // 重新加载数据
       await loadData();
     } catch (error) {
-      console.error('Failed to complete task:', error);
+      console.error("Failed to complete task:", error);
     }
   };
 
@@ -99,7 +107,7 @@ function PartnerModePage() {
       setShowMemoryInjector(false);
       // 可以显示成功提示
     } catch (error) {
-      console.error('Failed to inject memory:', error);
+      console.error("Failed to inject memory:", error);
     } finally {
       setSubmitting(false);
     }
@@ -155,7 +163,7 @@ function PartnerModePage() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/guardian')}
+            onClick={() => router.push("/guardian")}
             className="px-6 py-3 rounded-xl font-medium"
             style={{
               backgroundColor: ECHO_COLORS.partner.accent,
@@ -180,12 +188,22 @@ function PartnerModePage() {
       <header className="sticky top-0 z-50 px-4 py-4">
         <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 py-3 flex items-center justify-between">
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push("/")}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
             style={{ color: ECHO_COLORS.partner.text }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <h1
@@ -199,8 +217,18 @@ function PartnerModePage() {
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
             style={{ color: ECHO_COLORS.partner.text }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
           </button>
         </div>
@@ -256,11 +284,11 @@ function PartnerModePage() {
                 <motion.div
                   key={task.id}
                   className={`p-4 rounded-xl transition-colors ${
-                    task.status === 'confirmed'
-                      ? 'bg-green-500/20'
-                      : task.status === 'completed'
-                      ? 'bg-blue-500/20'
-                      : 'bg-white/10'
+                    task.status === "confirmed"
+                      ? "bg-green-500/20"
+                      : task.status === "completed"
+                        ? "bg-blue-500/20"
+                        : "bg-white/10"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -280,16 +308,16 @@ function PartnerModePage() {
                       <div className="flex items-center gap-2 mt-2">
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full ${
-                            task.template.difficulty === 'easy'
-                              ? 'bg-green-500/30 text-green-200'
-                              : task.template.difficulty === 'medium'
-                              ? 'bg-yellow-500/30 text-yellow-200'
-                              : 'bg-red-500/30 text-red-200'
+                            task.template.difficulty === "easy"
+                              ? "bg-green-500/30 text-green-200"
+                              : task.template.difficulty === "medium"
+                                ? "bg-yellow-500/30 text-yellow-200"
+                                : "bg-red-500/30 text-red-200"
                           }`}
                         >
                           +{task.template.points}分
                         </span>
-                        {task.status === 'confirmed' && (
+                        {task.status === "confirmed" && (
                           <span className="text-xs text-green-300">
                             {task.mom_feedback}
                           </span>
@@ -297,7 +325,7 @@ function PartnerModePage() {
                       </div>
                     </div>
 
-                    {task.status === 'available' && (
+                    {task.status === "available" && (
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleCompleteTask(task.id)}
@@ -311,7 +339,7 @@ function PartnerModePage() {
                       </motion.button>
                     )}
 
-                    {task.status === 'completed' && (
+                    {task.status === "completed" && (
                       <span
                         className="text-sm opacity-70"
                         style={{ color: ECHO_COLORS.partner.text }}
@@ -320,7 +348,7 @@ function PartnerModePage() {
                       </span>
                     )}
 
-                    {task.status === 'confirmed' && (
+                    {task.status === "confirmed" && (
                       <span className="text-2xl">✓</span>
                     )}
                   </div>

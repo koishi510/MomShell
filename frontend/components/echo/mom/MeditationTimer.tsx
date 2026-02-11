@@ -3,13 +3,17 @@
  * 冥想计时器组件 - 包含呼吸引导
  */
 
-'use client';
+"use client";
 
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { ECHO_COLORS } from '../../../lib/design-tokens';
-import type { MeditationPhase } from '../../../types/echo';
-import { MEDITATION_PHASE_LABELS, BREATHING_RHYTHM, BREATHING_CYCLE_SECONDS } from '../../../types/echo';
+import { useEffect, useState, useRef, useCallback } from "react";
+import { motion } from "framer-motion";
+import { ECHO_COLORS } from "../../../lib/design-tokens";
+import type { MeditationPhase } from "../../../types/echo";
+import {
+  MEDITATION_PHASE_LABELS,
+  BREATHING_RHYTHM,
+  BREATHING_CYCLE_SECONDS,
+} from "../../../types/echo";
 
 interface MeditationTimerProps {
   targetDurationMinutes: number;
@@ -27,15 +31,17 @@ export function MeditationTimer({
   onComplete,
 }: MeditationTimerProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [currentPhase, setCurrentPhase] = useState<MeditationPhase>('inhale');
+  const [currentPhase, setCurrentPhase] = useState<MeditationPhase>("inhale");
   const [phaseProgress, setPhaseProgress] = useState(0); // 0-1
 
   const targetSeconds = targetDurationMinutes * 60;
   const cycleSeconds = BREATHING_CYCLE_SECONDS;
 
   // 呼吸阶段序列
-  const phases: MeditationPhase[] = ['inhale', 'hold', 'exhale'];
-  const phaseDurations = phases.map((p) => breathingRhythm[p] || BREATHING_RHYTHM[p]);
+  const phases: MeditationPhase[] = ["inhale", "hold", "exhale"];
+  const phaseDurations = phases.map(
+    (p) => breathingRhythm[p] || BREATHING_RHYTHM[p],
+  );
 
   // 计算当前在呼吸周期中的位置
   const calculatePhase = useCallback(
@@ -52,9 +58,9 @@ export function MeditationTimer({
         accumulated += duration;
       }
 
-      return { phase: 'exhale' as MeditationPhase, progress: 1 };
+      return { phase: "exhale" as MeditationPhase, progress: 1 };
     },
-    [cycleSeconds, phaseDurations]
+    [cycleSeconds, phaseDurations],
   );
 
   // 定时器只更新本地状态
@@ -99,7 +105,7 @@ export function MeditationTimer({
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   // 圆环进度
@@ -110,11 +116,11 @@ export function MeditationTimer({
 
   // 呼吸圆圈大小
   const breathCircleScale =
-    currentPhase === 'inhale'
+    currentPhase === "inhale"
       ? 0.6 + phaseProgress * 0.4 // 0.6 -> 1.0
-      : currentPhase === 'hold'
-      ? 1.0 // 保持
-      : 1.0 - phaseProgress * 0.4; // 1.0 -> 0.6
+      : currentPhase === "hold"
+        ? 1.0 // 保持
+        : 1.0 - phaseProgress * 0.4; // 1.0 -> 0.6
 
   // 阶段颜色
   const phaseColors = {
@@ -149,7 +155,7 @@ export function MeditationTimer({
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             style={{
-              transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s ease',
+              transition: "stroke-dashoffset 0.1s linear, stroke 0.3s ease",
             }}
           />
         </svg>
@@ -159,7 +165,7 @@ export function MeditationTimer({
           <motion.div
             className="rounded-full"
             style={{
-              backgroundColor: phaseColors[currentPhase] + '40',
+              backgroundColor: phaseColors[currentPhase] + "40",
               boxShadow: `0 0 60px ${phaseColors[currentPhase]}60`,
             }}
             animate={{
@@ -168,8 +174,8 @@ export function MeditationTimer({
               height: 160,
             }}
             transition={{
-              type: 'tween',
-              ease: 'easeInOut',
+              type: "tween",
+              ease: "easeInOut",
             }}
           />
         </div>
@@ -183,9 +189,7 @@ export function MeditationTimer({
           >
             {formatTime(elapsedSeconds)}
           </motion.p>
-          <p className="text-white/60 text-sm">
-            / {formatTime(targetSeconds)}
-          </p>
+          <p className="text-white/60 text-sm">/ {formatTime(targetSeconds)}</p>
         </div>
       </div>
 
@@ -203,9 +207,9 @@ export function MeditationTimer({
           {MEDITATION_PHASE_LABELS[currentPhase]}
         </p>
         <p className="text-white/60 text-sm mt-1">
-          {currentPhase === 'inhale' && '缓慢深吸...'}
-          {currentPhase === 'hold' && '保持...'}
-          {currentPhase === 'exhale' && '慢慢呼出...'}
+          {currentPhase === "inhale" && "缓慢深吸..."}
+          {currentPhase === "hold" && "保持..."}
+          {currentPhase === "exhale" && "慢慢呼出..."}
         </p>
       </motion.div>
 
@@ -215,7 +219,7 @@ export function MeditationTimer({
           <div
             key={phase}
             className={`w-3 h-3 rounded-full transition-all ${
-              currentPhase === phase ? 'scale-125' : 'opacity-40'
+              currentPhase === phase ? "scale-125" : "opacity-40"
             }`}
             style={{ backgroundColor: phaseColors[phase] }}
           />

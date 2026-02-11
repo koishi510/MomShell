@@ -3,7 +3,7 @@
  * Guardian Partner API 服务
  */
 
-import apiClient from '../apiClient';
+import apiClient from "../apiClient";
 import type {
   InviteInfo,
   BindingStatusResponse,
@@ -16,9 +16,9 @@ import type {
   Memory,
   MemoryCreate,
   Album,
-} from '../../types/guardian';
+} from "../../types/guardian";
 
-const GUARDIAN_API = '/api/v1/guardian';
+const GUARDIAN_API = "/api/v1/guardian";
 
 /**
  * 生成邀请链接 (妈妈)
@@ -54,7 +54,7 @@ export async function getBindingStatus(): Promise<BindingStatusResponse> {
  * 记录今日状态 (妈妈)
  */
 export async function recordDailyStatus(
-  data: DailyStatusCreate
+  data: DailyStatusCreate,
 ): Promise<DailyStatusResponse> {
   const response = await apiClient.post(`${GUARDIAN_API}/daily-status`, data);
   return response.data;
@@ -64,10 +64,12 @@ export async function recordDailyStatus(
  * 获取今日状态 (伴侣)
  */
 export async function getDailyStatus(
-  targetDate?: string
+  targetDate?: string,
 ): Promise<StatusNotification | null> {
   const params = targetDate ? { target_date: targetDate } : {};
-  const response = await apiClient.get(`${GUARDIAN_API}/daily-status`, { params });
+  const response = await apiClient.get(`${GUARDIAN_API}/daily-status`, {
+    params,
+  });
   return response.data;
 }
 
@@ -84,11 +86,11 @@ export async function getDailyTasks(): Promise<DailyTask[]> {
  */
 export async function completeTask(
   taskId: string,
-  notes?: string
+  notes?: string,
 ): Promise<DailyTask> {
   const response = await apiClient.post(
     `${GUARDIAN_API}/tasks/${taskId}/complete`,
-    notes ? { notes } : {}
+    notes ? { notes } : {},
   );
   return response.data;
 }
@@ -98,11 +100,14 @@ export async function completeTask(
  */
 export async function confirmTask(
   taskId: string,
-  feedback: string
+  feedback: string,
 ): Promise<{ task: DailyTask; points_awarded: number; message: string }> {
-  const response = await apiClient.post(`${GUARDIAN_API}/tasks/${taskId}/confirm`, {
-    feedback,
-  });
+  const response = await apiClient.post(
+    `${GUARDIAN_API}/tasks/${taskId}/confirm`,
+    {
+      feedback,
+    },
+  );
   return response.data;
 }
 
@@ -110,7 +115,9 @@ export async function confirmTask(
  * 拒绝任务 - 标记为没完成 (妈妈)
  */
 export async function rejectTask(taskId: string): Promise<DailyTask> {
-  const response = await apiClient.post(`${GUARDIAN_API}/tasks/${taskId}/reject`);
+  const response = await apiClient.post(
+    `${GUARDIAN_API}/tasks/${taskId}/reject`,
+  );
   return response.data;
 }
 
@@ -143,7 +150,7 @@ export async function addMemory(data: MemoryCreate): Promise<Memory> {
  */
 export async function getMemories(
   limit: number = 30,
-  offset: number = 0
+  offset: number = 0,
 ): Promise<Memory[]> {
   const response = await apiClient.get(`${GUARDIAN_API}/memories`, {
     params: { limit, offset },
@@ -156,6 +163,8 @@ export async function getMemories(
  */
 export async function generateAlbum(milestone?: string): Promise<Album> {
   const params = milestone ? { milestone } : {};
-  const response = await apiClient.get(`${GUARDIAN_API}/memories/album`, { params });
+  const response = await apiClient.get(`${GUARDIAN_API}/memories/album`, {
+    params,
+  });
   return response.data;
 }

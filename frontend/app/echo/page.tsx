@@ -3,22 +3,24 @@
  * Echo Domain 入口页面 - 双色星云选择界面
  */
 
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { AuthGuard } from '../../components/AuthGuard';
-import { ECHO_COLORS, SPRING_CONFIGS } from '../../lib/design-tokens';
-import { getEchoStatus } from '../../lib/api/echo';
-import type { EchoStatus } from '../../types/echo';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { AuthGuard } from "../../components/AuthGuard";
+import { ECHO_COLORS, SPRING_CONFIGS } from "../../lib/design-tokens";
+import { getEchoStatus } from "../../lib/api/echo";
+import type { EchoStatus } from "../../types/echo";
 
 function EchoEntrance() {
   const router = useRouter();
   const [status, setStatus] = useState<EchoStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hoveredSide, setHoveredSide] = useState<'mom' | 'partner' | null>(null);
+  const [hoveredSide, setHoveredSide] = useState<"mom" | "partner" | null>(
+    null,
+  );
 
   useEffect(() => {
     loadStatus();
@@ -30,16 +32,16 @@ function EchoEntrance() {
       setStatus(data);
 
       // 如果已有角色，自动跳转
-      if (data.role === 'mom') {
-        router.push('/echo/mom');
+      if (data.role === "mom") {
+        router.push("/echo/mom");
         return;
       }
-      if (data.role === 'partner') {
-        router.push('/echo/partner');
+      if (data.role === "partner") {
+        router.push("/echo/partner");
         return;
       }
     } catch (error) {
-      console.error('Failed to load echo status:', error);
+      console.error("Failed to load echo status:", error);
     } finally {
       setLoading(false);
     }
@@ -47,23 +49,23 @@ function EchoEntrance() {
 
   const handleMomClick = () => {
     // 已选择伴侣角色的用户不能进入妈妈模式
-    if (status?.role === 'partner') {
+    if (status?.role === "partner") {
       return;
     }
-    router.push('/echo/mom');
+    router.push("/echo/mom");
   };
 
   const handlePartnerClick = () => {
     // 已选择妈妈角色的用户不能进入伴侣模式
-    if (status?.role === 'mom') {
+    if (status?.role === "mom") {
       return;
     }
-    router.push('/echo/partner');
+    router.push("/echo/partner");
   };
 
   // 判断按钮是否禁用
-  const isMomDisabled = status?.role === 'partner';
-  const isPartnerDisabled = status?.role === 'mom';
+  const isMomDisabled = status?.role === "partner";
+  const isPartnerDisabled = status?.role === "mom";
 
   if (loading) {
     return (
@@ -91,17 +93,22 @@ function EchoEntrance() {
       {/* 妈妈模式 - 左侧 */}
       <motion.div
         className={`relative flex-1 flex flex-col items-center justify-center overflow-hidden ${
-          isMomDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+          isMomDisabled ? "cursor-not-allowed" : "cursor-pointer"
         }`}
         style={{
           background: `linear-gradient(135deg, ${ECHO_COLORS.mom.gradient[0]} 0%, ${ECHO_COLORS.mom.gradient[1]} 100%)`,
           opacity: isMomDisabled ? 0.5 : 1,
         }}
         animate={{
-          flex: hoveredSide === 'mom' && !isMomDisabled ? 1.2 : hoveredSide === 'partner' && !isPartnerDisabled ? 0.8 : 1,
+          flex:
+            hoveredSide === "mom" && !isMomDisabled
+              ? 1.2
+              : hoveredSide === "partner" && !isPartnerDisabled
+                ? 0.8
+                : 1,
         }}
         transition={SPRING_CONFIGS.smooth}
-        onMouseEnter={() => !isMomDisabled && setHoveredSide('mom')}
+        onMouseEnter={() => !isMomDisabled && setHoveredSide("mom")}
         onMouseLeave={() => setHoveredSide(null)}
         onClick={handleMomClick}
       >
@@ -112,21 +119,21 @@ function EchoEntrance() {
               key={i}
               className="absolute w-2 h-2 rounded-full bg-amber-300/30"
               initial={{
-                x: Math.random() * 100 + '%',
-                y: Math.random() * 100 + '%',
+                x: Math.random() * 100 + "%",
+                y: Math.random() * 100 + "%",
               }}
               animate={{
                 y: [
-                  Math.random() * 100 + '%',
-                  Math.random() * 100 + '%',
-                  Math.random() * 100 + '%',
+                  Math.random() * 100 + "%",
+                  Math.random() * 100 + "%",
+                  Math.random() * 100 + "%",
                 ],
                 opacity: [0.2, 0.5, 0.2],
               }}
               transition={{
                 duration: 10 + Math.random() * 10,
                 repeat: Infinity,
-                ease: 'linear',
+                ease: "linear",
               }}
             />
           ))}
@@ -136,7 +143,7 @@ function EchoEntrance() {
         <motion.div
           className="relative z-10 text-center px-8"
           animate={{
-            scale: hoveredSide === 'mom' ? 1.05 : 1,
+            scale: hoveredSide === "mom" ? 1.05 : 1,
           }}
           transition={SPRING_CONFIGS.gentle}
         >
@@ -145,17 +152,18 @@ function EchoEntrance() {
             className="w-32 h-32 mx-auto mb-6 rounded-full flex items-center justify-center"
             style={{
               background: `radial-gradient(circle, ${ECHO_COLORS.mom.accent} 0%, ${ECHO_COLORS.mom.primary} 70%)`,
-              boxShadow: hoveredSide === 'mom'
-                ? `0 0 40px ${ECHO_COLORS.mom.glow}, 0 0 80px ${ECHO_COLORS.mom.glow}`
-                : `0 0 20px ${ECHO_COLORS.mom.shadow}`,
+              boxShadow:
+                hoveredSide === "mom"
+                  ? `0 0 40px ${ECHO_COLORS.mom.glow}, 0 0 80px ${ECHO_COLORS.mom.glow}`
+                  : `0 0 20px ${ECHO_COLORS.mom.shadow}`,
             }}
             animate={{
-              scale: hoveredSide === 'mom' ? [1, 1.05, 1] : 1,
+              scale: hoveredSide === "mom" ? [1, 1.05, 1] : 1,
             }}
             transition={{
               duration: 2,
-              repeat: hoveredSide === 'mom' ? Infinity : 0,
-              ease: 'easeInOut',
+              repeat: hoveredSide === "mom" ? Infinity : 0,
+              ease: "easeInOut",
             }}
           >
             <span className="text-5xl">🌸</span>
@@ -180,7 +188,7 @@ function EchoEntrance() {
             回到成为妈妈之前的自己，在温暖的画卷中找回内心的宁静
           </p>
 
-          {status && status.role === 'mom' && (
+          {status && status.role === "mom" && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -199,17 +207,22 @@ function EchoEntrance() {
       {/* 爸爸模式 - 右侧 */}
       <motion.div
         className={`relative flex-1 flex flex-col items-center justify-center overflow-hidden ${
-          isPartnerDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+          isPartnerDisabled ? "cursor-not-allowed" : "cursor-pointer"
         }`}
         style={{
           background: `linear-gradient(135deg, ${ECHO_COLORS.partner.gradient[0]} 0%, ${ECHO_COLORS.partner.gradient[1]} 100%)`,
           opacity: isPartnerDisabled ? 0.5 : 1,
         }}
         animate={{
-          flex: hoveredSide === 'partner' && !isPartnerDisabled ? 1.2 : hoveredSide === 'mom' && !isMomDisabled ? 0.8 : 1,
+          flex:
+            hoveredSide === "partner" && !isPartnerDisabled
+              ? 1.2
+              : hoveredSide === "mom" && !isMomDisabled
+                ? 0.8
+                : 1,
         }}
         transition={SPRING_CONFIGS.smooth}
-        onMouseEnter={() => !isPartnerDisabled && setHoveredSide('partner')}
+        onMouseEnter={() => !isPartnerDisabled && setHoveredSide("partner")}
         onMouseLeave={() => setHoveredSide(null)}
         onClick={handlePartnerClick}
       >
@@ -220,21 +233,21 @@ function EchoEntrance() {
               key={i}
               className="absolute w-2 h-2 rounded-full bg-indigo-300/30"
               initial={{
-                x: Math.random() * 100 + '%',
-                y: Math.random() * 100 + '%',
+                x: Math.random() * 100 + "%",
+                y: Math.random() * 100 + "%",
               }}
               animate={{
                 y: [
-                  Math.random() * 100 + '%',
-                  Math.random() * 100 + '%',
-                  Math.random() * 100 + '%',
+                  Math.random() * 100 + "%",
+                  Math.random() * 100 + "%",
+                  Math.random() * 100 + "%",
                 ],
                 opacity: [0.2, 0.5, 0.2],
               }}
               transition={{
                 duration: 10 + Math.random() * 10,
                 repeat: Infinity,
-                ease: 'linear',
+                ease: "linear",
               }}
             />
           ))}
@@ -244,7 +257,7 @@ function EchoEntrance() {
         <motion.div
           className="relative z-10 text-center px-8"
           animate={{
-            scale: hoveredSide === 'partner' ? 1.05 : 1,
+            scale: hoveredSide === "partner" ? 1.05 : 1,
           }}
           transition={SPRING_CONFIGS.gentle}
         >
@@ -253,17 +266,18 @@ function EchoEntrance() {
             className="w-32 h-32 mx-auto mb-6 rounded-full flex items-center justify-center"
             style={{
               background: `radial-gradient(circle, ${ECHO_COLORS.partner.accent} 0%, ${ECHO_COLORS.partner.primary} 70%)`,
-              boxShadow: hoveredSide === 'partner'
-                ? `0 0 40px ${ECHO_COLORS.partner.glow}, 0 0 80px ${ECHO_COLORS.partner.glow}`
-                : `0 0 20px ${ECHO_COLORS.partner.shadow}`,
+              boxShadow:
+                hoveredSide === "partner"
+                  ? `0 0 40px ${ECHO_COLORS.partner.glow}, 0 0 80px ${ECHO_COLORS.partner.glow}`
+                  : `0 0 20px ${ECHO_COLORS.partner.shadow}`,
             }}
             animate={{
-              scale: hoveredSide === 'partner' ? [1, 1.05, 1] : 1,
+              scale: hoveredSide === "partner" ? [1, 1.05, 1] : 1,
             }}
             transition={{
               duration: 2,
-              repeat: hoveredSide === 'partner' ? Infinity : 0,
-              ease: 'easeInOut',
+              repeat: hoveredSide === "partner" ? Infinity : 0,
+              ease: "easeInOut",
             }}
           >
             <span className="text-5xl">🛡️</span>
@@ -288,7 +302,7 @@ function EchoEntrance() {
             透过任务窗户，守护她的宁静，为她注入温暖的回忆
           </p>
 
-          {status && status.role === 'partner' && (
+          {status && status.role === "partner" && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

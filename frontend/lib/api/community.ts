@@ -4,10 +4,10 @@
  * 使用 Bearer token 认证，兼容 X-User-ID 开发模式
  */
 
-import type { Question, Answer, ChannelType } from '../../types/community';
-import apiClient from '../apiClient';
+import type { Question, Answer, ChannelType } from "../../types/community";
+import apiClient from "../apiClient";
 
-const COMMUNITY_API = '/api/v1/community';
+const COMMUNITY_API = "/api/v1/community";
 
 export interface PaginatedResponse<T> {
   items: T[];
@@ -54,10 +54,12 @@ export async function getQuestions(params?: {
   channel?: ChannelType;
   page?: number;
   page_size?: number;
-  sort_by?: 'created_at' | 'view_count' | 'answer_count' | 'like_count';
-  order?: 'asc' | 'desc';
+  sort_by?: "created_at" | "view_count" | "answer_count" | "like_count";
+  order?: "asc" | "desc";
 }): Promise<PaginatedResponse<Question>> {
-  const response = await apiClient.get(`${COMMUNITY_API}/questions`, { params });
+  const response = await apiClient.get(`${COMMUNITY_API}/questions`, {
+    params,
+  });
   return response.data;
 }
 
@@ -67,11 +69,14 @@ export async function getQuestions(params?: {
 export async function getQuestionsByChannel(
   channel: ChannelType,
   page: number = 1,
-  page_size: number = 20
+  page_size: number = 20,
 ): Promise<PaginatedResponse<Question>> {
-  const response = await apiClient.get(`${COMMUNITY_API}/questions/channel/${channel}`, {
-    params: { page, page_size },
-  });
+  const response = await apiClient.get(
+    `${COMMUNITY_API}/questions/channel/${channel}`,
+    {
+      params: { page, page_size },
+    },
+  );
   return response.data;
 }
 
@@ -80,7 +85,7 @@ export async function getQuestionsByChannel(
  */
 export async function getHotQuestions(
   page: number = 1,
-  page_size: number = 20
+  page_size: number = 20,
 ): Promise<PaginatedResponse<Question>> {
   const response = await apiClient.get(`${COMMUNITY_API}/questions/hot`, {
     params: { page, page_size },
@@ -92,14 +97,18 @@ export async function getHotQuestions(
  * 获取问题详情
  */
 export async function getQuestion(questionId: string): Promise<Question> {
-  const response = await apiClient.get(`${COMMUNITY_API}/questions/${questionId}`);
+  const response = await apiClient.get(
+    `${COMMUNITY_API}/questions/${questionId}`,
+  );
   return response.data;
 }
 
 /**
  * 创建问题
  */
-export async function createQuestion(params: QuestionCreateParams): Promise<Question> {
+export async function createQuestion(
+  params: QuestionCreateParams,
+): Promise<Question> {
   const response = await apiClient.post(`${COMMUNITY_API}/questions`, {
     title: params.title,
     content: params.content,
@@ -114,8 +123,8 @@ export async function createQuestion(params: QuestionCreateParams): Promise<Ques
  * 点赞问题（toggle）
  */
 export async function toggleLike(
-  targetType: 'question' | 'answer' | 'comment',
-  targetId: string
+  targetType: "question" | "answer" | "comment",
+  targetId: string,
 ): Promise<LikeStatus> {
   const response = await apiClient.post(`${COMMUNITY_API}/likes`, {
     target_type: targetType,
@@ -127,7 +136,9 @@ export async function toggleLike(
 /**
  * 收藏问题（toggle）
  */
-export async function toggleCollection(questionId: string): Promise<{ is_collected: boolean; collection_count: number }> {
+export async function toggleCollection(
+  questionId: string,
+): Promise<{ is_collected: boolean; collection_count: number }> {
   const response = await apiClient.post(`${COMMUNITY_API}/collections`, {
     question_id: questionId,
   });
@@ -142,11 +153,14 @@ export async function getAnswers(
   params?: {
     page?: number;
     page_size?: number;
-    sort_by?: 'created_at' | 'like_count';
-    order?: 'asc' | 'desc';
-  }
+    sort_by?: "created_at" | "like_count";
+    order?: "asc" | "desc";
+  },
 ): Promise<PaginatedResponse<Answer>> {
-  const response = await apiClient.get(`${COMMUNITY_API}/questions/${questionId}/answers`, { params });
+  const response = await apiClient.get(
+    `${COMMUNITY_API}/questions/${questionId}/answers`,
+    { params },
+  );
   return response.data;
 }
 
@@ -155,12 +169,15 @@ export async function getAnswers(
  */
 export async function createAnswer(
   questionId: string,
-  params: AnswerCreateParams
+  params: AnswerCreateParams,
 ): Promise<Answer> {
-  const response = await apiClient.post(`${COMMUNITY_API}/questions/${questionId}/answers`, {
-    content: params.content,
-    image_urls: params.image_urls || [],
-  });
+  const response = await apiClient.post(
+    `${COMMUNITY_API}/questions/${questionId}/answers`,
+    {
+      content: params.content,
+      image_urls: params.image_urls || [],
+    },
+  );
   return response.data;
 }
 
@@ -174,8 +191,14 @@ export async function deleteQuestion(questionId: string): Promise<void> {
 /**
  * 更新问题
  */
-export async function updateQuestion(questionId: string, params: QuestionUpdateParams): Promise<Question> {
-  const response = await apiClient.put(`${COMMUNITY_API}/questions/${questionId}`, params);
+export async function updateQuestion(
+  questionId: string,
+  params: QuestionUpdateParams,
+): Promise<Question> {
+  const response = await apiClient.put(
+    `${COMMUNITY_API}/questions/${questionId}`,
+    params,
+  );
   return response.data;
 }
 
@@ -189,15 +212,23 @@ export async function deleteAnswer(answerId: string): Promise<void> {
 /**
  * 更新回答
  */
-export async function updateAnswer(answerId: string, params: AnswerUpdateParams): Promise<Answer> {
-  const response = await apiClient.put(`${COMMUNITY_API}/answers/${answerId}`, params);
+export async function updateAnswer(
+  answerId: string,
+  params: AnswerUpdateParams,
+): Promise<Answer> {
+  const response = await apiClient.put(
+    `${COMMUNITY_API}/answers/${answerId}`,
+    params,
+  );
   return response.data;
 }
 
 /**
  * 获取标签列表
  */
-export async function getTags(): Promise<Array<{ id: string; name: string; slug: string }>> {
+export async function getTags(): Promise<
+  Array<{ id: string; name: string; slug: string }>
+> {
   try {
     const response = await apiClient.get(`${COMMUNITY_API}/tags`);
     const data = response.data;
@@ -223,7 +254,9 @@ export async function getMyCollections(params?: {
   page?: number;
   page_size?: number;
 }): Promise<PaginatedResponse<CollectionItem>> {
-  const response = await apiClient.get(`${COMMUNITY_API}/collections/my`, { params });
+  const response = await apiClient.get(`${COMMUNITY_API}/collections/my`, {
+    params,
+  });
   return response.data;
 }
 
@@ -252,7 +285,7 @@ export interface UserProfileUpdateParams {
   nickname?: string;
   email?: string;
   avatar_url?: string;
-  role?: 'mom' | 'dad' | 'family';
+  role?: "mom" | "dad" | "family";
 }
 
 export interface MyQuestionItem {
@@ -302,7 +335,9 @@ export async function getMyProfile(): Promise<UserProfile> {
 /**
  * 更新当前用户资料
  */
-export async function updateMyProfile(params: UserProfileUpdateParams): Promise<UserProfile> {
+export async function updateMyProfile(
+  params: UserProfileUpdateParams,
+): Promise<UserProfile> {
   const response = await apiClient.put(`${COMMUNITY_API}/users/me`, params);
   return response.data;
 }
@@ -314,7 +349,9 @@ export async function getMyQuestions(params?: {
   page?: number;
   page_size?: number;
 }): Promise<PaginatedResponse<MyQuestionItem>> {
-  const response = await apiClient.get(`${COMMUNITY_API}/users/me/questions`, { params });
+  const response = await apiClient.get(`${COMMUNITY_API}/users/me/questions`, {
+    params,
+  });
   return response.data;
 }
 
@@ -325,7 +362,9 @@ export async function getMyAnswers(params?: {
   page?: number;
   page_size?: number;
 }): Promise<PaginatedResponse<MyAnswerItem>> {
-  const response = await apiClient.get(`${COMMUNITY_API}/users/me/answers`, { params });
+  const response = await apiClient.get(`${COMMUNITY_API}/users/me/answers`, {
+    params,
+  });
   return response.data;
 }
 
@@ -357,7 +396,9 @@ export interface Comment {
  * 获取回答的评论列表
  */
 export async function getComments(answerId: string): Promise<Comment[]> {
-  const response = await apiClient.get(`${COMMUNITY_API}/answers/${answerId}/comments`);
+  const response = await apiClient.get(
+    `${COMMUNITY_API}/answers/${answerId}/comments`,
+  );
   return response.data;
 }
 
@@ -366,9 +407,12 @@ export async function getComments(answerId: string): Promise<Comment[]> {
  */
 export async function createComment(
   answerId: string,
-  params: { content: string; parent_id?: string }
+  params: { content: string; parent_id?: string },
 ): Promise<Comment> {
-  const response = await apiClient.post(`${COMMUNITY_API}/answers/${answerId}/comments`, params);
+  const response = await apiClient.post(
+    `${COMMUNITY_API}/answers/${answerId}/comments`,
+    params,
+  );
   return response.data;
 }
 
@@ -381,8 +425,15 @@ export async function deleteComment(commentId: string): Promise<void> {
 
 // ==================== Certification APIs ====================
 
-export type CertificationType = 'certified_doctor' | 'certified_therapist' | 'certified_nurse';
-export type CertificationStatusType = 'pending' | 'approved' | 'rejected' | 'expired';
+export type CertificationType =
+  | "certified_doctor"
+  | "certified_therapist"
+  | "certified_nurse";
+export type CertificationStatusType =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "expired";
 
 export interface CertificationCreate {
   certification_type: CertificationType;
@@ -426,7 +477,12 @@ export async function getMyCertification(): Promise<CertificationStatus | null> 
 /**
  * 提交认证申请
  */
-export async function createCertification(data: CertificationCreate): Promise<CertificationStatus> {
-  const response = await apiClient.post(`${COMMUNITY_API}/certifications`, data);
+export async function createCertification(
+  data: CertificationCreate,
+): Promise<CertificationStatus> {
+  const response = await apiClient.post(
+    `${COMMUNITY_API}/certifications`,
+    data,
+  );
   return response.data;
 }

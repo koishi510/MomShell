@@ -3,33 +3,33 @@
  * 毛玻璃窗户组件 - 核心视觉元素
  */
 
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { ECHO_COLORS } from '../../lib/design-tokens';
-import type { Scene } from '../../types/echo';
+import { motion } from "framer-motion";
+import { ECHO_COLORS } from "../../lib/design-tokens";
+import type { Scene } from "../../types/echo";
 
 interface GlassWindowProps {
   scene?: Scene | null;
   clarityLevel: number; // 0-100
-  size?: 'small' | 'medium' | 'large' | 'fullscreen';
+  size?: "small" | "medium" | "large" | "fullscreen";
   className?: string;
 }
 
 export function GlassWindow({
   scene,
   clarityLevel,
-  size = 'medium',
-  className = '',
+  size = "medium",
+  className = "",
 }: GlassWindowProps) {
   // 计算模糊程度 (100 = 清晰, 0 = 最模糊)
   const blurAmount = Math.max(0, 20 - (clarityLevel / 100) * 20);
 
   const sizeClasses = {
-    small: 'h-24 rounded-xl',
-    medium: 'h-48 rounded-2xl',
-    large: 'h-72 rounded-3xl',
-    fullscreen: 'h-full w-full rounded-none',
+    small: "h-24 rounded-xl",
+    medium: "h-48 rounded-2xl",
+    large: "h-72 rounded-3xl",
+    fullscreen: "h-full w-full rounded-none",
   };
 
   // 默认渐变背景（没有场景时）
@@ -82,7 +82,7 @@ export function GlassWindow({
       />
 
       {/* 清晰度指示（仅在非完全清晰时显示） */}
-      {clarityLevel < 100 && size !== 'fullscreen' && (
+      {clarityLevel < 100 && size !== "fullscreen" && (
         <div className="absolute bottom-2 right-2 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5">
           <span className="text-white text-xs">{clarityLevel}%</span>
         </div>

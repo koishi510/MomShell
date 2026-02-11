@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { forgotPassword } from '../../../lib/auth';
-import { getErrorMessage } from '../../../lib/apiClient';
+import { useState } from "react";
+import Link from "next/link";
+import { forgotPassword } from "../../../lib/auth";
+import { getErrorMessage } from "../../../lib/apiClient";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
@@ -35,7 +35,9 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">忘记密码</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            忘记密码
+          </h2>
           <p className="text-gray-600 mb-6 text-sm">
             输入您的注册邮箱，我们将发送重置密码的链接
           </p>
@@ -50,7 +52,9 @@ export default function ForgotPasswordPage() {
             <div className="text-center py-4">
               <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
                 <p className="font-medium">邮件已发送</p>
-                <p className="text-sm mt-1">如果该邮箱已注册，您将收到重置密码的邮件</p>
+                <p className="text-sm mt-1">
+                  如果该邮箱已注册，您将收到重置密码的邮件
+                </p>
               </div>
               <Link
                 href="/auth/login"
@@ -62,7 +66,10 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   邮箱地址
                 </label>
                 <input
@@ -81,13 +88,16 @@ export default function ForgotPasswordPage() {
                 disabled={isLoading}
                 className="w-full py-3 px-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium rounded-lg hover:from-pink-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                {isLoading ? '发送中...' : '发送重置邮件'}
+                {isLoading ? "发送中..." : "发送重置邮件"}
               </button>
             </form>
           )}
 
           <div className="mt-6 text-center">
-            <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-800">
+            <Link
+              href="/auth/login"
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
               返回登录
             </Link>
           </div>

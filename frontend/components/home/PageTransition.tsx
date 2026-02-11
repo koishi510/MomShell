@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/home/PageTransition.tsx
 /**
@@ -6,9 +6,9 @@
  * 实现水滴融合般的平滑过渡效果
  */
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname } from 'next/navigation';
-import { ReactNode } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
+import { ReactNode } from "react";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -40,7 +40,8 @@ export default function PageTransition({ children }: PageTransitionProps) {
           <motion.div
             className="absolute inset-0"
             style={{
-              background: 'radial-gradient(circle at center, #FFF0F5 0%, #FFF8F0 50%, transparent 70%)',
+              background:
+                "radial-gradient(circle at center, #FFF0F5 0%, #FFF8F0 50%, transparent 70%)",
             }}
             variants={rippleVariants}
           />
@@ -55,12 +56,12 @@ const pageVariants = {
   initial: {
     opacity: 0,
     scale: 0.98,
-    filter: 'blur(10px)',
+    filter: "blur(10px)",
   },
   animate: {
     opacity: 1,
     scale: 1,
-    filter: 'blur(0px)',
+    filter: "blur(0px)",
     transition: {
       duration: 0.6,
       ease: [0.25, 0.46, 0.45, 0.94] as const,
@@ -69,7 +70,7 @@ const pageVariants = {
   exit: {
     opacity: 0,
     scale: 1.02,
-    filter: 'blur(10px)',
+    filter: "blur(10px)",
     transition: {
       duration: 0.4,
       ease: [0.25, 0.46, 0.45, 0.94] as const,
@@ -86,7 +87,7 @@ const overlayVariants = {
     opacity: 0,
     transition: {
       duration: 0.8,
-      ease: 'easeOut' as const,
+      ease: "easeOut" as const,
       delay: 0.2,
     },
   },
@@ -94,7 +95,7 @@ const overlayVariants = {
     opacity: 1,
     transition: {
       duration: 0.4,
-      ease: 'easeIn' as const,
+      ease: "easeIn" as const,
     },
   },
 };
@@ -118,7 +119,7 @@ const rippleVariants = {
     opacity: 1,
     transition: {
       duration: 0.5,
-      ease: 'easeIn' as const,
+      ease: "easeIn" as const,
     },
   },
 };

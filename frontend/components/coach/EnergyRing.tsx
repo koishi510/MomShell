@@ -5,11 +5,11 @@
  * 动效：顺时针生长 + 呼吸光晕
  */
 
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import type { EnergyMetrics } from '../../types/coach';
-import { METRIC_LABELS, METRIC_COLORS } from '../../types/coach';
+import { motion } from "framer-motion";
+import type { EnergyMetrics } from "../../types/coach";
+import { METRIC_LABELS, METRIC_COLORS } from "../../types/coach";
 
 interface EnergyRingProps {
   metrics: EnergyMetrics;
@@ -23,20 +23,24 @@ const RING_CONFIG: Array<{
   radius: number;
   strokeWidth: number;
 }> = [
-  { key: 'core_strength', radius: 50, strokeWidth: 10 },
-  { key: 'pelvic_floor', radius: 68, strokeWidth: 10 },
-  { key: 'posture', radius: 86, strokeWidth: 10 },
-  { key: 'flexibility', radius: 104, strokeWidth: 10 },
+  { key: "core_strength", radius: 50, strokeWidth: 10 },
+  { key: "pelvic_floor", radius: 68, strokeWidth: 10 },
+  { key: "posture", radius: 86, strokeWidth: 10 },
+  { key: "flexibility", radius: 104, strokeWidth: 10 },
 ];
 
 // 呼吸动画配置
 const BREATHING_TRANSITION = {
   duration: 3,
   repeat: Infinity,
-  ease: 'easeInOut' as const,
+  ease: "easeInOut" as const,
 };
 
-export function EnergyRing({ metrics, size = 240, showBreathing = true }: EnergyRingProps) {
+export function EnergyRing({
+  metrics,
+  size = 240,
+  showBreathing = true,
+}: EnergyRingProps) {
   const viewBoxSize = 240;
   const center = viewBoxSize / 2;
 
@@ -45,7 +49,7 @@ export function EnergyRing({ metrics, size = 240, showBreathing = true }: Energy
       <svg
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
         className="w-full h-full"
-        style={{ transform: 'rotate(-90deg)' }} // 从顶部开始绘制
+        style={{ transform: "rotate(-90deg)" }} // 从顶部开始绘制
       >
         {/* SVG 滤镜定义 - 呼吸光晕效果 */}
         <defs>
@@ -121,7 +125,7 @@ export function EnergyRing({ metrics, size = 240, showBreathing = true }: Energy
                 pathLength: {
                   duration: 1.2,
                   delay: index * 0.15,
-                  ease: 'easeOut',
+                  ease: "easeOut",
                 },
                 opacity: showBreathing
                   ? {
@@ -153,7 +157,7 @@ export function EnergyRing({ metrics, size = 240, showBreathing = true }: Energy
               metrics.pelvic_floor +
               metrics.posture +
               metrics.flexibility) /
-              4
+              4,
           )}
         </motion.span>
         <span className="text-xs text-stone-400 mt-1">综合指数</span>
@@ -187,13 +191,11 @@ export function MetricLegend({ metrics }: { metrics: EnergyMetrics }) {
             transition={{
               duration: 3,
               repeat: Infinity,
-              ease: 'easeInOut',
+              ease: "easeInOut",
               delay: index * 0.3,
             }}
           />
-          <span className="text-sm text-stone-600">
-            {METRIC_LABELS[key]}
-          </span>
+          <span className="text-sm text-stone-600">{METRIC_LABELS[key]}</span>
           <span className="text-sm font-medium text-stone-700 ml-auto">
             {metrics[key]}%
           </span>

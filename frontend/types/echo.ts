@@ -4,23 +4,28 @@
  */
 
 // 身份标签类型
-export type TagType = 'music' | 'sound' | 'literature' | 'memory';
+export type TagType = "music" | "sound" | "literature" | "memory";
 
 // 音频类型
-export type AudioType = 'nature' | 'ambient' | 'music' | 'guided';
+export type AudioType = "nature" | "ambient" | "music" | "guided";
 
 // 场景类别
-export type SceneCategory = 'nature' | 'cozy' | 'abstract' | 'vintage' | 'ocean';
+export type SceneCategory =
+  | "nature"
+  | "cozy"
+  | "abstract"
+  | "vintage"
+  | "ocean";
 
 // 冥想呼吸阶段
-export type MeditationPhase = 'inhale' | 'hold' | 'exhale';
+export type MeditationPhase = "inhale" | "hold" | "exhale";
 
 // ============================================================
 // Echo 状态
 // ============================================================
 
 export interface EchoStatus {
-  role: 'mom' | 'partner' | null;
+  role: "mom" | "partner" | null;
   has_binding: boolean;
   binding_id: string | null;
   identity_tags_count: number;
@@ -195,45 +200,45 @@ export interface MemoirList {
 // ============================================================
 
 export const TAG_TYPE_LABELS: Record<TagType, string> = {
-  music: '音乐偏好',
-  sound: '自然声音',
-  literature: '文学作品',
-  memory: '青春记忆',
+  music: "音乐偏好",
+  sound: "自然声音",
+  literature: "文学作品",
+  memory: "青春记忆",
 };
 
 export const TAG_TYPE_PLACEHOLDERS: Record<TagType, string> = {
-  music: '例如：摇滚乐、古典音乐、民谣...',
-  sound: '例如：雨声、海浪、森林鸟鸣...',
-  literature: '例如：诗歌、散文、武侠小说...',
-  memory: '例如：校园、旅行、初恋...',
+  music: "例如：摇滚乐、古典音乐、民谣...",
+  sound: "例如：雨声、海浪、森林鸟鸣...",
+  literature: "例如：诗歌、散文、武侠小说...",
+  memory: "例如：校园、旅行、初恋...",
 };
 
 export const TAG_TYPE_ICONS: Record<TagType, string> = {
-  music: '🎵',
-  sound: '🔊',
-  literature: '📚',
-  memory: '💭',
+  music: "🎵",
+  sound: "🔊",
+  literature: "📚",
+  memory: "💭",
 };
 
 export const SCENE_CATEGORY_LABELS: Record<SceneCategory, string> = {
-  nature: '自然风景',
-  cozy: '温馨室内',
-  abstract: '抽象艺术',
-  vintage: '复古怀旧',
-  ocean: '海洋主题',
+  nature: "自然风景",
+  cozy: "温馨室内",
+  abstract: "抽象艺术",
+  vintage: "复古怀旧",
+  ocean: "海洋主题",
 };
 
 export const AUDIO_TYPE_LABELS: Record<AudioType, string> = {
-  nature: '自然声音',
-  ambient: '环境音',
-  music: '背景音乐',
-  guided: '引导冥想',
+  nature: "自然声音",
+  ambient: "环境音",
+  music: "背景音乐",
+  guided: "引导冥想",
 };
 
 export const MEDITATION_PHASE_LABELS: Record<MeditationPhase, string> = {
-  inhale: '吸气',
-  hold: '屏息',
-  exhale: '呼气',
+  inhale: "吸气",
+  hold: "屏息",
+  exhale: "呼气",
 };
 
 // 默认冥想时长选项（分钟）

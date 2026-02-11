@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/community/CommunityBackground.tsx
 /**
@@ -6,7 +6,7 @@
  * 静态渐变背景，避免持续动画造成性能问题
  */
 
-import { MESH_COLORS } from '../../lib/design-tokens';
+import { MESH_COLORS } from "../../lib/design-tokens";
 
 export default function CommunityBackground() {
   return (
@@ -24,8 +24,8 @@ export default function CommunityBackground() {
         className="absolute w-[500px] h-[500px] rounded-full blur-[80px] opacity-25"
         style={{
           background: `radial-gradient(circle, ${MESH_COLORS.cream} 0%, transparent 70%)`,
-          top: '-10%',
-          left: '-5%',
+          top: "-10%",
+          left: "-5%",
         }}
       />
 
@@ -34,8 +34,8 @@ export default function CommunityBackground() {
         className="absolute w-[400px] h-[400px] rounded-full blur-[60px] opacity-20"
         style={{
           background: `radial-gradient(circle, ${MESH_COLORS.softPink} 0%, transparent 70%)`,
-          top: '40%',
-          right: '-5%',
+          top: "40%",
+          right: "-5%",
         }}
       />
 
@@ -44,8 +44,8 @@ export default function CommunityBackground() {
         className="absolute w-[350px] h-[350px] rounded-full blur-[50px] opacity-15"
         style={{
           background: `radial-gradient(circle, ${MESH_COLORS.mintGreen} 0%, transparent 70%)`,
-          bottom: '0%',
-          left: '30%',
+          bottom: "0%",
+          left: "30%",
         }}
       />
 

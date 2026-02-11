@@ -4,38 +4,38 @@
  * 展示单个康复动作的信息，支持点击开始训练
  */
 
-'use client';
+"use client";
 
 // 类别图标映射
 const CATEGORY_ICONS: Record<string, string> = {
-  breathing: '🌬️',
-  pelvic_floor: '🧘',
-  diastasis_recti: '💪',
-  posture: '🧍',
-  strength: '🏋️',
+  breathing: "🌬️",
+  pelvic_floor: "🧘",
+  diastasis_recti: "💪",
+  posture: "🧍",
+  strength: "🏋️",
 };
 
 // 类别名称映射
 const CATEGORY_NAMES: Record<string, string> = {
-  breathing: '呼吸训练',
-  pelvic_floor: '盆底肌',
-  diastasis_recti: '腹直肌修复',
-  posture: '体态矫正',
-  strength: '力量训练',
+  breathing: "呼吸训练",
+  pelvic_floor: "盆底肌",
+  diastasis_recti: "腹直肌修复",
+  posture: "体态矫正",
+  strength: "力量训练",
 };
 
 // 难度名称映射
 const DIFFICULTY_NAMES: Record<string, string> = {
-  beginner: '初级',
-  intermediate: '中级',
-  advanced: '高级',
+  beginner: "初级",
+  intermediate: "中级",
+  advanced: "高级",
 };
 
 // 难度颜色映射
 const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: 'bg-emerald-100 text-emerald-700',
-  intermediate: 'bg-amber-100 text-amber-700',
-  advanced: 'bg-rose-100 text-rose-700',
+  beginner: "bg-emerald-100 text-emerald-700",
+  intermediate: "bg-amber-100 text-amber-700",
+  advanced: "bg-rose-100 text-rose-700",
 };
 
 export interface ExerciseCardProps {
@@ -68,16 +68,16 @@ export function ExerciseCard({
       {/* 头部：图标 + 名称 + 难度 */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">
-            {CATEGORY_ICONS[category] || '🧘'}
-          </span>
+          <span className="text-2xl">{CATEGORY_ICONS[category] || "🧘"}</span>
           <h3 className="text-lg font-medium text-stone-700 group-hover:text-[#e8a4b8] transition-colors">
             {name}
           </h3>
         </div>
-        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-          DIFFICULTY_COLORS[difficulty] || 'bg-stone-100 text-stone-600'
-        }`}>
+        <span
+          className={`text-xs px-2 py-1 rounded-full font-medium ${
+            DIFFICULTY_COLORS[difficulty] || "bg-stone-100 text-stone-600"
+          }`}
+        >
           {DIFFICULTY_NAMES[difficulty] || difficulty}
         </span>
       </div>
@@ -101,7 +101,8 @@ export function ExerciseCard({
       <div
         className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
         style={{
-          background: 'linear-gradient(135deg, rgba(232,164,184,0.1) 0%, rgba(139,201,155,0.1) 100%)',
+          background:
+            "linear-gradient(135deg, rgba(232,164,184,0.1) 0%, rgba(139,201,155,0.1) 100%)",
         }}
       />
     </div>
@@ -138,7 +139,11 @@ interface ExerciseCardGridProps {
   loading?: boolean;
 }
 
-export function ExerciseCardGrid({ exercises, onExerciseClick, loading }: ExerciseCardGridProps) {
+export function ExerciseCardGrid({
+  exercises,
+  onExerciseClick,
+  loading,
+}: ExerciseCardGridProps) {
   if (loading) {
     return (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
