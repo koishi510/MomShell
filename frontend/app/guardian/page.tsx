@@ -3,10 +3,10 @@
  * 伴侣守护页面
  */
 
-'use client';
+"use client";
 
-import GuardianDashboard from '../../components/guardian/GuardianDashboard';
-import { AuthGuard } from '../../components/AuthGuard';
+import GuardianDashboard from "../../components/guardian/GuardianDashboard";
+import { AuthGuard } from "../../components/AuthGuard";
 
 export default function GuardianPage() {
   return (

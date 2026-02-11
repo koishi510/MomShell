@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/app/community/admin/certifications/page.tsx
 /**
@@ -6,29 +6,48 @@
  * 查看和审核用户的专业认证申请
  */
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import apiClient from '../../../../lib/apiClient';
-import CommunityBackground from '../../../../components/community/CommunityBackground';
-import { AuthGuard } from '../../../../components/AuthGuard';
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import apiClient from "../../../../lib/apiClient";
+import CommunityBackground from "../../../../components/community/CommunityBackground";
+import { AuthGuard } from "../../../../components/AuthGuard";
 
-const COMMUNITY_API = '/api/v1/community';
+const COMMUNITY_API = "/api/v1/community";
 
 // Certification types
 const certificationTypeNames: Record<string, string> = {
-  certified_doctor: '医生',
-  certified_therapist: '康复师',
-  certified_nurse: '护士',
+  certified_doctor: "医生",
+  certified_therapist: "康复师",
+  certified_nurse: "护士",
 };
 
 // Status config
-const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-  pending: { label: '待审核', color: 'text-amber-700', bgColor: 'bg-amber-100' },
-  approved: { label: '已通过', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
-  rejected: { label: '已拒绝', color: 'text-red-700', bgColor: 'bg-red-100' },
-  expired: { label: '已过期', color: 'text-stone-700', bgColor: 'bg-stone-100' },
-  revoked: { label: '已撤销', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+const statusConfig: Record<
+  string,
+  { label: string; color: string; bgColor: string }
+> = {
+  pending: {
+    label: "待审核",
+    color: "text-amber-700",
+    bgColor: "bg-amber-100",
+  },
+  approved: {
+    label: "已通过",
+    color: "text-emerald-700",
+    bgColor: "bg-emerald-100",
+  },
+  rejected: { label: "已拒绝", color: "text-red-700", bgColor: "bg-red-100" },
+  expired: {
+    label: "已过期",
+    color: "text-stone-700",
+    bgColor: "bg-stone-100",
+  },
+  revoked: {
+    label: "已撤销",
+    color: "text-orange-700",
+    bgColor: "bg-orange-100",
+  },
 };
 
 interface CertificationItem {
@@ -55,18 +74,26 @@ function AdminCertificationsContent() {
   const [certifications, setCertifications] = useState<CertificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedCert, setSelectedCert] = useState<CertificationItem | null>(null);
-  const [reviewComment, setReviewComment] = useState('');
+  const [selectedCert, setSelectedCert] = useState<CertificationItem | null>(
+    null,
+  );
+  const [reviewComment, setReviewComment] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
-  const [revokeTarget, setRevokeTarget] = useState<CertificationItem | null>(null);
-  const [revokeReason, setRevokeReason] = useState('');
-  const [message, setMessage] = useState<{ show: boolean; success: boolean; text: string }>({
+  const [revokeTarget, setRevokeTarget] = useState<CertificationItem | null>(
+    null,
+  );
+  const [revokeReason, setRevokeReason] = useState("");
+  const [message, setMessage] = useState<{
+    show: boolean;
+    success: boolean;
+    text: string;
+  }>({
     show: false,
     success: true,
-    text: '',
+    text: "",
   });
   const hasFetched = useRef(false);
 
@@ -77,21 +104,24 @@ function AdminCertificationsContent() {
       if (statusFilter) {
         params.status = statusFilter;
       }
-      const response = await apiClient.get<PaginatedResponse>(`${COMMUNITY_API}/certifications/`, { params });
+      const response = await apiClient.get<PaginatedResponse>(
+        `${COMMUNITY_API}/certifications/`,
+        { params },
+      );
       setCertifications(response.data.items);
       setTotalPages(response.data.total_pages);
       setError(null);
     } catch (err: unknown) {
-      console.error('Failed to load certifications:', err);
-      if (err && typeof err === 'object' && 'response' in err) {
+      console.error("Failed to load certifications:", err);
+      if (err && typeof err === "object" && "response" in err) {
         const axiosErr = err as { response?: { status?: number } };
         if (axiosErr.response?.status === 403) {
-          setError('无权限访问，仅管理员可用');
+          setError("无权限访问，仅管理员可用");
         } else {
-          setError('加载失败，请刷新重试');
+          setError("加载失败，请刷新重试");
         }
       } else {
-        setError('加载失败，请刷新重试');
+        setError("加载失败，请刷新重试");
       }
     } finally {
       setIsLoading(false);
@@ -112,24 +142,30 @@ function AdminCertificationsContent() {
 
   const showMessage = (success: boolean, text: string) => {
     setMessage({ show: true, success, text });
-    setTimeout(() => setMessage({ show: false, success: true, text: '' }), 3000);
+    setTimeout(
+      () => setMessage({ show: false, success: true, text: "" }),
+      3000,
+    );
   };
 
-  const handleReview = async (certId: string, status: 'approved' | 'rejected') => {
+  const handleReview = async (
+    certId: string,
+    status: "approved" | "rejected",
+  ) => {
     setIsReviewing(true);
     try {
       await apiClient.put(`${COMMUNITY_API}/certifications/${certId}/review`, {
         status,
         review_comment: reviewComment.trim() || null,
       });
-      showMessage(true, status === 'approved' ? '已通过认证' : '已拒绝认证');
+      showMessage(true, status === "approved" ? "已通过认证" : "已拒绝认证");
       setSelectedCert(null);
-      setReviewComment('');
+      setReviewComment("");
       await fetchCertifications();
     } catch (err: unknown) {
-      console.error('Failed to review certification:', err);
-      let errorMessage = '审核失败，请重试';
-      if (err && typeof err === 'object' && 'response' in err) {
+      console.error("Failed to review certification:", err);
+      let errorMessage = "审核失败，请重试";
+      if (err && typeof err === "object" && "response" in err) {
         const axiosErr = err as { response?: { data?: { detail?: string } } };
         if (axiosErr.response?.data?.detail) {
           errorMessage = axiosErr.response.data.detail;
@@ -144,17 +180,21 @@ function AdminCertificationsContent() {
   const handleRevoke = async (certId: string) => {
     setIsReviewing(true);
     try {
-      await apiClient.put(`${COMMUNITY_API}/certifications/${certId}/revoke`, null, {
-        params: { reason: revokeReason.trim() || null },
-      });
-      showMessage(true, '已撤销认证');
+      await apiClient.put(
+        `${COMMUNITY_API}/certifications/${certId}/revoke`,
+        null,
+        {
+          params: { reason: revokeReason.trim() || null },
+        },
+      );
+      showMessage(true, "已撤销认证");
       setRevokeTarget(null);
-      setRevokeReason('');
+      setRevokeReason("");
       await fetchCertifications();
     } catch (err: unknown) {
-      console.error('Failed to revoke certification:', err);
-      let errorMessage = '撤销失败，请重试';
-      if (err && typeof err === 'object' && 'response' in err) {
+      console.error("Failed to revoke certification:", err);
+      let errorMessage = "撤销失败，请重试";
+      if (err && typeof err === "object" && "response" in err) {
         const axiosErr = err as { response?: { data?: { detail?: string } } };
         if (axiosErr.response?.data?.detail) {
           errorMessage = axiosErr.response.data.detail;
@@ -178,7 +218,9 @@ function AdminCertificationsContent() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
             className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-lg backdrop-blur-md ${
-              message.success ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white'
+              message.success
+                ? "bg-emerald-500/90 text-white"
+                : "bg-red-500/90 text-white"
             }`}
           >
             {message.text}
@@ -203,33 +245,48 @@ function AdminCertificationsContent() {
               className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-medium text-stone-800 mb-4">审核认证申请</h3>
+              <h3 className="text-lg font-medium text-stone-800 mb-4">
+                审核认证申请
+              </h3>
 
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-stone-500">用户昵称:</span>
-                  <span className="text-stone-700">{selectedCert.user_nickname}</span>
+                  <span className="text-stone-700">
+                    {selectedCert.user_nickname}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-stone-500">认证类型:</span>
-                  <span className="text-stone-700">{certificationTypeNames[selectedCert.certification_type] || selectedCert.certification_type}</span>
+                  <span className="text-stone-700">
+                    {certificationTypeNames[selectedCert.certification_type] ||
+                      selectedCert.certification_type}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-stone-500">真实姓名:</span>
-                  <span className="text-stone-700">{selectedCert.real_name}</span>
+                  <span className="text-stone-700">
+                    {selectedCert.real_name}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-stone-500">执业证号:</span>
-                  <span className="text-stone-700">{selectedCert.license_number}</span>
+                  <span className="text-stone-700">
+                    {selectedCert.license_number}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-stone-500">医院/机构:</span>
-                  <span className="text-stone-700">{selectedCert.hospital_or_institution}</span>
+                  <span className="text-stone-700">
+                    {selectedCert.hospital_or_institution}
+                  </span>
                 </div>
               </div>
 
               <div className="mb-6">
-                <label className="text-sm text-stone-600 mb-2 block">审核备注（可选）</label>
+                <label className="text-sm text-stone-600 mb-2 block">
+                  审核备注（可选）
+                </label>
                 <textarea
                   value={reviewComment}
                   onChange={(e) => setReviewComment(e.target.value)}
@@ -242,18 +299,18 @@ function AdminCertificationsContent() {
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => handleReview(selectedCert.id, 'approved')}
+                  onClick={() => handleReview(selectedCert.id, "approved")}
                   disabled={isReviewing}
                   className="flex-1 py-2.5 bg-emerald-500 text-white font-medium rounded-full hover:bg-emerald-600 transition-colors disabled:opacity-50"
                 >
-                  {isReviewing ? '处理中...' : '通过'}
+                  {isReviewing ? "处理中..." : "通过"}
                 </button>
                 <button
-                  onClick={() => handleReview(selectedCert.id, 'rejected')}
+                  onClick={() => handleReview(selectedCert.id, "rejected")}
                   disabled={isReviewing}
                   className="flex-1 py-2.5 bg-red-500 text-white font-medium rounded-full hover:bg-red-600 transition-colors disabled:opacity-50"
                 >
-                  {isReviewing ? '处理中...' : '拒绝'}
+                  {isReviewing ? "处理中..." : "拒绝"}
                 </button>
                 <button
                   onClick={() => setSelectedCert(null)}
@@ -285,16 +342,22 @@ function AdminCertificationsContent() {
               className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-medium text-stone-800 mb-4">撤销认证</h3>
+              <h3 className="text-lg font-medium text-stone-800 mb-4">
+                撤销认证
+              </h3>
 
               <div className="mb-4 p-4 bg-orange-50 rounded-xl text-orange-700 text-sm">
                 确定要撤销 <strong>{revokeTarget.user_nickname}</strong> 的
-                <strong>{certificationTypeNames[revokeTarget.certification_type]}</strong>认证吗？
-                撤销后该用户将失去专业认证身份。
+                <strong>
+                  {certificationTypeNames[revokeTarget.certification_type]}
+                </strong>
+                认证吗？ 撤销后该用户将失去专业认证身份。
               </div>
 
               <div className="mb-6">
-                <label className="text-sm text-stone-600 mb-2 block">撤销原因（可选）</label>
+                <label className="text-sm text-stone-600 mb-2 block">
+                  撤销原因（可选）
+                </label>
                 <textarea
                   value={revokeReason}
                   onChange={(e) => setRevokeReason(e.target.value)}
@@ -311,7 +374,7 @@ function AdminCertificationsContent() {
                   disabled={isReviewing}
                   className="flex-1 py-2.5 bg-orange-500 text-white font-medium rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50"
                 >
-                  {isReviewing ? '处理中...' : '确认撤销'}
+                  {isReviewing ? "处理中..." : "确认撤销"}
                 </button>
                 <button
                   onClick={() => setRevokeTarget(null)}
@@ -350,11 +413,11 @@ function AdminCertificationsContent() {
         {/* Status filter */}
         <div className="mb-6 flex gap-2 flex-wrap">
           {[
-            { value: 'pending', label: '待审核' },
-            { value: 'approved', label: '已通过' },
-            { value: 'rejected', label: '已拒绝' },
-            { value: 'revoked', label: '已撤销' },
-            { value: '', label: '全部' },
+            { value: "pending", label: "待审核" },
+            { value: "approved", label: "已通过" },
+            { value: "rejected", label: "已拒绝" },
+            { value: "revoked", label: "已撤销" },
+            { value: "", label: "全部" },
           ].map((filter) => (
             <button
               key={filter.value}
@@ -364,8 +427,8 @@ function AdminCertificationsContent() {
               }}
               className={`px-4 py-2 rounded-full text-sm transition-colors ${
                 statusFilter === filter.value
-                  ? 'bg-[#e8a4b8] text-white'
-                  : 'bg-white/70 text-stone-600 hover:bg-stone-100'
+                  ? "bg-[#e8a4b8] text-white"
+                  : "bg-white/70 text-stone-600 hover:bg-stone-100"
               }`}
             >
               {filter.label}
@@ -393,7 +456,7 @@ function AdminCertificationsContent() {
 
         {!isLoading && !error && certifications.length === 0 && (
           <div className="text-center py-16 text-stone-500">
-            暂无{statusFilter ? statusConfig[statusFilter]?.label : ''}认证申请
+            暂无{statusFilter ? statusConfig[statusFilter]?.label : ""}认证申请
           </div>
         )}
 
@@ -411,20 +474,31 @@ function AdminCertificationsContent() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-stone-800">{cert.user_nickname}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${statusConfig[cert.status]?.bgColor} ${statusConfig[cert.status]?.color}`}>
+                      <span className="font-medium text-stone-800">
+                        {cert.user_nickname}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs ${statusConfig[cert.status]?.bgColor} ${statusConfig[cert.status]?.color}`}
+                      >
                         {statusConfig[cert.status]?.label || cert.status}
                       </span>
                     </div>
                     <div className="text-sm text-stone-500 space-y-1">
-                      <div>认证类型: {certificationTypeNames[cert.certification_type] || cert.certification_type}</div>
+                      <div>
+                        认证类型:{" "}
+                        {certificationTypeNames[cert.certification_type] ||
+                          cert.certification_type}
+                      </div>
                       <div>真实姓名: {cert.real_name}</div>
                       <div>执业证号: {cert.license_number}</div>
                       <div>医院/机构: {cert.hospital_or_institution}</div>
-                      <div>申请时间: {new Date(cert.created_at).toLocaleString('zh-CN')}</div>
+                      <div>
+                        申请时间:{" "}
+                        {new Date(cert.created_at).toLocaleString("zh-CN")}
+                      </div>
                     </div>
                   </div>
-                  {cert.status === 'pending' && (
+                  {cert.status === "pending" && (
                     <button
                       onClick={() => setSelectedCert(cert)}
                       className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors"
@@ -432,7 +506,7 @@ function AdminCertificationsContent() {
                       审核
                     </button>
                   )}
-                  {cert.status === 'approved' && (
+                  {cert.status === "approved" && (
                     <button
                       onClick={() => setRevokeTarget(cert)}
                       className="px-4 py-2 bg-orange-500 text-white text-sm rounded-full hover:bg-orange-600 transition-colors"
@@ -472,7 +546,6 @@ function AdminCertificationsContent() {
     </div>
   );
 }
-
 
 export default function AdminCertificationsPage() {
   return (

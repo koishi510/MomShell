@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/community/UserMenu.tsx
 /**
@@ -6,8 +6,8 @@
  * 显示用户相关功能入口
  */
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface MenuItem {
   href: string;
@@ -18,28 +18,28 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   {
-    href: '/community/profile',
-    icon: '👤',
-    label: '个人中心',
-    description: '编辑资料',
+    href: "/community/profile",
+    icon: "👤",
+    label: "个人中心",
+    description: "编辑资料",
   },
   {
-    href: '/community/my-posts',
-    icon: '📝',
-    label: '我的提问',
-    description: '查看发布的问题',
+    href: "/community/my-posts",
+    icon: "📝",
+    label: "我的提问",
+    description: "查看发布的问题",
   },
   {
-    href: '/community/my-replies',
-    icon: '💬',
-    label: '我的回答',
-    description: '查看回复过的问题',
+    href: "/community/my-replies",
+    icon: "💬",
+    label: "我的回答",
+    description: "查看回复过的问题",
   },
   {
-    href: '/community/collections',
-    icon: '🐚',
-    label: '我的收藏',
-    description: '捡到的贝壳',
+    href: "/community/collections",
+    icon: "🐚",
+    label: "我的收藏",
+    description: "捡到的贝壳",
   },
 ];
 
@@ -55,7 +55,7 @@ export default function UserMenu() {
   return (
     <div
       className={`space-y-3 transition-all duration-400 ease-out ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       }`}
     >
       <h3 className="text-sm font-medium text-stone-500 px-2">我的</h3>
@@ -71,9 +71,9 @@ export default function UserMenu() {
                 group
                 transition-all duration-300 ease-out
                 hover:translate-x-1
-                ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}
+                ${visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"}
               `}
-              style={{ transitionDelay: visible ? `${index * 50}ms` : '0ms' }}
+              style={{ transitionDelay: visible ? `${index * 50}ms` : "0ms" }}
             >
               <span className="text-xl">{item.icon}</span>
               <div className="flex-1 min-w-0">
@@ -91,7 +91,11 @@ export default function UserMenu() {
                 strokeWidth="2"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </div>
           </Link>

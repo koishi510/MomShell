@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/guardian/GuardianDashboard.tsx
 /**
@@ -6,9 +6,9 @@
  * 根据用户角色（妈妈/伴侣）显示不同界面
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   getBindingStatus,
   createInvite,
@@ -20,7 +20,7 @@ import {
   confirmTask,
   rejectTask,
   getProgress,
-} from '../../lib/api/guardian';
+} from "../../lib/api/guardian";
 import type {
   BindingStatusResponse,
   InviteInfo,
@@ -30,7 +30,7 @@ import type {
   ProgressInfo,
   MoodLevel,
   HealthCondition,
-} from '../../types/guardian';
+} from "../../types/guardian";
 import {
   MOOD_LEVEL_LABELS,
   MOOD_LEVEL_EMOJIS,
@@ -39,10 +39,11 @@ import {
   PARTNER_LEVEL_EMOJIS,
   TASK_DIFFICULTY_LABELS,
   TASK_DIFFICULTY_COLORS,
-} from '../../types/guardian';
+} from "../../types/guardian";
 
 export default function GuardianDashboard() {
-  const [bindingStatus, setBindingStatus] = useState<BindingStatusResponse | null>(null);
+  const [bindingStatus, setBindingStatus] =
+    useState<BindingStatusResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,13 +55,13 @@ export default function GuardianDashboard() {
       setBindingStatus(status);
       setError(null);
     } catch (err: any) {
-      console.error('Failed to load binding status:', err);
+      console.error("Failed to load binding status:", err);
       // 401 means not logged in - redirect to login
       if (err.response?.status === 401) {
-        window.location.href = '/auth/login?redirect=/guardian';
+        window.location.href = "/auth/login?redirect=/guardian";
         return;
       }
-      setError('加载失败，请重试');
+      setError("加载失败，请重试");
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +83,7 @@ export default function GuardianDashboard() {
     return <NoBindingState onBindingCreated={loadBindingStatus} />;
   }
 
-  if (bindingStatus.role === 'mom') {
+  if (bindingStatus.role === "mom") {
     return (
       <MomDashboard
         binding={bindingStatus}
@@ -108,14 +109,20 @@ function LoadingState() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
       <motion.div
         animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
         className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full"
       />
     </div>
   );
 }
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-sm">
@@ -132,10 +139,14 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) {
-  const [mode, setMode] = useState<'select' | 'invite' | 'bind'>('select');
+function NoBindingState({
+  onBindingCreated,
+}: {
+  onBindingCreated: () => void;
+}) {
+  const [mode, setMode] = useState<"select" | "invite" | "bind">("select");
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,9 +156,9 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
       setError(null);
       const info = await createInvite();
       setInviteInfo(info);
-      setMode('invite');
+      setMode("invite");
     } catch (err: any) {
-      setError(err.response?.data?.detail || '创建邀请失败');
+      setError(err.response?.data?.detail || "创建邀请失败");
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +166,7 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
 
   const handleAcceptBind = async () => {
     if (!inviteCode.trim()) {
-      setError('请输入邀请码');
+      setError("请输入邀请码");
       return;
     }
     try {
@@ -164,7 +175,7 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
       await acceptBind(inviteCode.trim());
       onBindingCreated();
     } catch (err: any) {
-      setError(err.response?.data?.detail || '绑定失败');
+      setError(err.response?.data?.detail || "绑定失败");
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +188,10 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full"
       >
-        <Link href="/" className="text-gray-400 hover:text-gray-600 mb-4 inline-block">
+        <Link
+          href="/"
+          className="text-gray-400 hover:text-gray-600 mb-4 inline-block"
+        >
           ← 返回首页
         </Link>
 
@@ -188,7 +202,7 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
         </div>
 
         <AnimatePresence mode="wait">
-          {mode === 'select' && (
+          {mode === "select" && (
             <motion.div
               key="select"
               initial={{ opacity: 0 }}
@@ -205,7 +219,7 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
                 我是妈妈，邀请伴侣
               </button>
               <button
-                onClick={() => setMode('bind')}
+                onClick={() => setMode("bind")}
                 className="w-full py-4 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-2xl font-medium shadow-lg hover:shadow-xl transition"
               >
                 <span className="text-2xl mr-2">👨</span>
@@ -214,7 +228,7 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
             </motion.div>
           )}
 
-          {mode === 'invite' && inviteInfo && (
+          {mode === "invite" && inviteInfo && (
             <motion.div
               key="invite"
               initial={{ opacity: 0 }}
@@ -234,14 +248,14 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(inviteInfo.invite_code);
-                  alert('已复制到剪贴板');
+                  alert("已复制到剪贴板");
                 }}
                 className="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition"
               >
                 复制邀请码
               </button>
               <button
-                onClick={() => setMode('select')}
+                onClick={() => setMode("select")}
                 className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition"
               >
                 返回
@@ -249,7 +263,7 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
             </motion.div>
           )}
 
-          {mode === 'bind' && (
+          {mode === "bind" && (
             <motion.div
               key="bind"
               initial={{ opacity: 0 }}
@@ -272,10 +286,10 @@ function NoBindingState({ onBindingCreated }: { onBindingCreated: () => void }) 
                 disabled={isLoading}
                 className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition disabled:opacity-50"
               >
-                {isLoading ? '绑定中...' : '确认绑定'}
+                {isLoading ? "绑定中..." : "确认绑定"}
               </button>
               <button
-                onClick={() => setMode('select')}
+                onClick={() => setMode("select")}
                 className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition"
               >
                 返回
@@ -308,9 +322,9 @@ function MomDashboard({
   const loadTasks = useCallback(async () => {
     try {
       const tasks = await getDailyTasks();
-      setPendingTasks(tasks.filter((t) => t.status === 'completed'));
+      setPendingTasks(tasks.filter((t) => t.status === "completed"));
     } catch (err) {
-      console.error('Failed to load tasks:', err);
+      console.error("Failed to load tasks:", err);
     } finally {
       setIsLoadingTasks(false);
     }
@@ -345,7 +359,7 @@ function MomDashboard({
       // 静默刷新伴侣积分
       silentRefreshBinding();
     } catch (err) {
-      console.error('Failed to confirm task:', err);
+      console.error("Failed to confirm task:", err);
     }
   };
 
@@ -355,7 +369,7 @@ function MomDashboard({
       await rejectTask(taskId);
       setPendingTasks((prev) => prev.filter((t) => t.id !== taskId));
     } catch (err) {
-      console.error('Failed to reject task:', err);
+      console.error("Failed to reject task:", err);
     }
   };
 
@@ -389,7 +403,7 @@ function MomDashboard({
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  '👨'
+                  "👨"
                 )}
               </div>
               <div className="flex-1">
@@ -397,7 +411,7 @@ function MomDashboard({
                   {partnerInfo.nickname}
                 </h2>
                 <p className="text-gray-500 text-sm">
-                  {PARTNER_LEVEL_EMOJIS[partnerInfo.level]}{' '}
+                  {PARTNER_LEVEL_EMOJIS[partnerInfo.level]}{" "}
                   {PARTNER_LEVEL_LABELS[partnerInfo.level]}
                 </p>
               </div>
@@ -461,7 +475,7 @@ function MomDashboard({
                     {task.template.description}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {['❤️', '👍', '😊', '🥰'].map((emoji) => (
+                    {["❤️", "👍", "😊", "🥰"].map((emoji) => (
                       <button
                         key={emoji}
                         onClick={() => handleConfirmTask(task.id, emoji)}
@@ -512,7 +526,8 @@ function PartnerDashboard({
   binding: BindingStatusResponse;
   onTaskCompleted: () => void;
 }) {
-  const [statusNotification, setStatusNotification] = useState<StatusNotification | null>(null);
+  const [statusNotification, setStatusNotification] =
+    useState<StatusNotification | null>(null);
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -528,7 +543,7 @@ function PartnerDashboard({
       setTasks(taskList);
       setProgress(progressData);
     } catch (err) {
-      if (!silent) console.error('Failed to load data:', err);
+      if (!silent) console.error("Failed to load data:", err);
     } finally {
       if (!silent) setIsLoading(false);
     }
@@ -547,13 +562,13 @@ function PartnerDashboard({
       // 立即更新本地状态
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === taskId ? { ...t, status: 'completed' as const } : t
-        )
+          t.id === taskId ? { ...t, status: "completed" as const } : t,
+        ),
       );
       // 静默刷新进度
       loadData(true);
     } catch (err) {
-      console.error('Failed to complete task:', err);
+      console.error("Failed to complete task:", err);
     }
   };
 
@@ -585,13 +600,13 @@ function PartnerDashboard({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-800">
-                  {PARTNER_LEVEL_EMOJIS[progress.current_level]}{' '}
+                  {PARTNER_LEVEL_EMOJIS[progress.current_level]}{" "}
                   {PARTNER_LEVEL_LABELS[progress.current_level]}
                 </h2>
                 <p className="text-gray-500 text-sm">
                   {progress.points_to_next_level
                     ? `距离下一等级还需 ${progress.points_to_next_level} 积分`
-                    : '已达最高等级'}
+                    : "已达最高等级"}
                 </p>
               </div>
               <div className="text-right">
@@ -663,11 +678,11 @@ function PartnerDashboard({
               <div
                 key={task.id}
                 className={`p-4 rounded-xl border-2 transition ${
-                  task.status === 'confirmed'
-                    ? 'bg-green-50 border-green-200'
-                    : task.status === 'completed'
-                    ? 'bg-yellow-50 border-yellow-200'
-                    : 'bg-white border-gray-100 hover:border-blue-200'
+                  task.status === "confirmed"
+                    ? "bg-green-50 border-green-200"
+                    : task.status === "completed"
+                      ? "bg-yellow-50 border-yellow-200"
+                      : "bg-white border-gray-100 hover:border-blue-200"
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -694,7 +709,7 @@ function PartnerDashboard({
                     </p>
                   </div>
                   <div className="ml-4">
-                    {task.status === 'available' && (
+                    {task.status === "available" && (
                       <button
                         onClick={() => handleCompleteTask(task.id)}
                         className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition"
@@ -702,13 +717,15 @@ function PartnerDashboard({
                         完成
                       </button>
                     )}
-                    {task.status === 'completed' && (
+                    {task.status === "completed" && (
                       <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm rounded-lg">
                         等待确认
                       </span>
                     )}
-                    {task.status === 'confirmed' && (
-                      <span className="text-2xl">{task.mom_feedback || '✅'}</span>
+                    {task.status === "confirmed" && (
+                      <span className="text-2xl">
+                        {task.mom_feedback || "✅"}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -732,12 +749,14 @@ function StatusFormModal({
   onClose: () => void;
   onSubmit: (data: DailyStatusCreate) => Promise<void>;
 }) {
-  const [mood, setMood] = useState<MoodLevel>('neutral');
+  const [mood, setMood] = useState<MoodLevel>("neutral");
   const [energyLevel, setEnergyLevel] = useState(50);
-  const [healthConditions, setHealthConditions] = useState<HealthCondition[]>([]);
+  const [healthConditions, setHealthConditions] = useState<HealthCondition[]>(
+    [],
+  );
   const [feedingCount, setFeedingCount] = useState(0);
   const [sleepHours, setSleepHours] = useState<number | null>(null);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -752,7 +771,7 @@ function StatusFormModal({
         notes: notes || null,
       });
     } catch (err) {
-      console.error('Failed to submit status:', err);
+      console.error("Failed to submit status:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -762,20 +781,20 @@ function StatusFormModal({
     setHealthConditions((prev) =>
       prev.includes(condition)
         ? prev.filter((c) => c !== condition)
-        : [...prev, condition]
+        : [...prev, condition],
     );
   };
 
   const allConditions: HealthCondition[] = [
-    'wound_pain',
-    'hair_loss',
-    'insomnia',
-    'breast_pain',
-    'back_pain',
-    'fatigue',
-    'emotional',
-    'constipation',
-    'sweating',
+    "wound_pain",
+    "hair_loss",
+    "insomnia",
+    "breast_pain",
+    "back_pain",
+    "fatigue",
+    "emotional",
+    "constipation",
+    "sweating",
   ];
 
   return (
@@ -787,9 +806,9 @@ function StatusFormModal({
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: '100%' }}
+        initial={{ y: "100%" }}
         animate={{ y: 0 }}
-        exit={{ y: '100%' }}
+        exit={{ y: "100%" }}
         onClick={(e) => e.stopPropagation()}
         className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto"
       >
@@ -816,8 +835,8 @@ function StatusFormModal({
                   onClick={() => setMood(level)}
                   className={`flex-1 py-3 rounded-xl transition ${
                     mood === level
-                      ? 'bg-pink-100 border-2 border-pink-400'
-                      : 'bg-gray-50 border-2 border-transparent'
+                      ? "bg-pink-100 border-2 border-pink-400"
+                      : "bg-gray-50 border-2 border-transparent"
                   }`}
                 >
                   <div className="text-2xl">{MOOD_LEVEL_EMOJIS[level]}</div>
@@ -860,8 +879,8 @@ function StatusFormModal({
                   onClick={() => toggleCondition(condition)}
                   className={`px-3 py-2 rounded-lg text-sm transition ${
                     healthConditions.includes(condition)
-                      ? 'bg-pink-100 text-pink-700 border border-pink-300'
-                      : 'bg-gray-100 text-gray-600 border border-transparent'
+                      ? "bg-pink-100 text-pink-700 border border-pink-300"
+                      : "bg-gray-100 text-gray-600 border border-transparent"
                   }`}
                 >
                   {HEALTH_CONDITION_LABELS[condition]}
@@ -904,7 +923,7 @@ function StatusFormModal({
               min="0"
               max="24"
               step="0.5"
-              value={sleepHours ?? ''}
+              value={sleepHours ?? ""}
               onChange={(e) =>
                 setSleepHours(e.target.value ? Number(e.target.value) : null)
               }
@@ -933,7 +952,7 @@ function StatusFormModal({
             disabled={isSubmitting}
             className="w-full py-4 bg-gradient-to-r from-pink-400 to-rose-500 text-white rounded-xl font-medium hover:shadow-lg transition disabled:opacity-50"
           >
-            {isSubmitting ? '保存中...' : '保存状态'}
+            {isSubmitting ? "保存中..." : "保存状态"}
           </button>
         </div>
       </motion.div>

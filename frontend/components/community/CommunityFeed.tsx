@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/community/CommunityFeed.tsx
 /**
@@ -7,36 +7,47 @@
  * 视觉风格与首页"呼吸感"保持一致
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import ChannelSwitcher from './ChannelSwitcher';
-import PostCard from './PostCard';
-import QuestionModal from './QuestionModal';
-import QuestionDetailModal from './QuestionDetailModal';
-import CommunityBackground from './CommunityBackground';
-import UserMenu from './UserMenu';
-import { type ChannelType, type Question } from '../../types/community';
-import { SPRING_CONFIGS } from '../../lib/design-tokens';
-import { getQuestions, createQuestion as apiCreateQuestion, toggleLike, toggleCollection } from '../../lib/api/community';
-import { getErrorMessage } from '../../lib/apiClient';
-import { useAuth } from '../../contexts/AuthContext';
+import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import ChannelSwitcher from "./ChannelSwitcher";
+import PostCard from "./PostCard";
+import QuestionModal from "./QuestionModal";
+import QuestionDetailModal from "./QuestionDetailModal";
+import CommunityBackground from "./CommunityBackground";
+import UserMenu from "./UserMenu";
+import { type ChannelType, type Question } from "../../types/community";
+import { SPRING_CONFIGS } from "../../lib/design-tokens";
+import {
+  getQuestions,
+  createQuestion as apiCreateQuestion,
+  toggleLike,
+  toggleCollection,
+} from "../../lib/api/community";
+import { getErrorMessage } from "../../lib/apiClient";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function CommunityFeed() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const [activeChannel, setActiveChannel] = useState<ChannelType>('experience');
+  const [activeChannel, setActiveChannel] = useState<ChannelType>("experience");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<{ show: boolean; success: boolean; text: string }>({
+  const [submitMessage, setSubmitMessage] = useState<{
+    show: boolean;
+    success: boolean;
+    text: string;
+  }>({
     show: false,
     success: true,
-    text: '',
+    text: "",
   });
 
   // 加载问题列表
@@ -49,23 +60,24 @@ export default function CommunityFeed() {
         channel: channel,
         page: 1,
         page_size: 50,
-        sort_by: 'created_at',
-        order: 'desc',
+        sort_by: "created_at",
+        order: "desc",
       });
 
       // 转换 API 响应到前端类型
       const mappedQuestions: Question[] = response.items.map((item: any) => ({
         id: item.id,
         title: item.title,
-        content: item.content || item.content_preview || '',
-        content_preview: item.content_preview || '',
+        content: item.content || item.content_preview || "",
+        content_preview: item.content_preview || "",
         channel: item.channel,
-        status: 'published',
+        status: "published",
         author: {
-          id: item.author?.id || 'unknown',
-          nickname: item.author?.nickname || item.author?.display_name || '匿名用户',
+          id: item.author?.id || "unknown",
+          nickname:
+            item.author?.nickname || item.author?.display_name || "匿名用户",
           avatar_url: item.author?.avatar_url || null,
-          role: item.author?.role || 'mom',
+          role: item.author?.role || "mom",
           is_certified: item.author?.is_certified || false,
           certification_title: item.author?.certification_title,
         },
@@ -85,8 +97,8 @@ export default function CommunityFeed() {
 
       setQuestions(mappedQuestions);
     } catch (err) {
-      console.error('Failed to load questions:', err);
-      setError('加载失败，请刷新重试');
+      console.error("Failed to load questions:", err);
+      setError("加载失败，请刷新重试");
       setQuestions([]);
     } finally {
       setIsLoading(false);
@@ -96,21 +108,24 @@ export default function CommunityFeed() {
   // 初始加载
   useEffect(() => {
     loadQuestions(activeChannel);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadQuestions]);
 
   // 切换频道时重新加载
-  const handleChannelChange = useCallback((channel: ChannelType) => {
-    setActiveChannel(channel);
-    loadQuestions(channel);
-  }, [loadQuestions]);
+  const handleChannelChange = useCallback(
+    (channel: ChannelType) => {
+      setActiveChannel(channel);
+      loadQuestions(channel);
+    },
+    [loadQuestions],
+  );
 
   // 根据频道筛选问题（如果 API 已经筛选则不需要前端筛选）
   const filteredQuestions = questions;
 
   const handleLike = async (id: string) => {
     try {
-      const result = await toggleLike('question', id);
+      const result = await toggleLike("question", id);
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === id
@@ -119,17 +134,23 @@ export default function CommunityFeed() {
                 is_liked: result.is_liked,
                 like_count: result.like_count,
               }
-            : q
-        )
+            : q,
+        ),
       );
       // 同步更新详情弹窗中的状态
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
-          prev ? { ...prev, is_liked: result.is_liked, like_count: result.like_count } : null
+          prev
+            ? {
+                ...prev,
+                is_liked: result.is_liked,
+                like_count: result.like_count,
+              }
+            : null,
         );
       }
     } catch (err) {
-      console.error('点赞失败:', err);
+      console.error("点赞失败:", err);
     }
   };
 
@@ -144,17 +165,23 @@ export default function CommunityFeed() {
                 is_collected: result.is_collected,
                 collection_count: result.collection_count,
               }
-            : q
-        )
+            : q,
+        ),
       );
       // 同步更新详情弹窗中的状态
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
-          prev ? { ...prev, is_collected: result.is_collected, collection_count: result.collection_count } : null
+          prev
+            ? {
+                ...prev,
+                is_collected: result.is_collected,
+                collection_count: result.collection_count,
+              }
+            : null,
         );
       }
     } catch (err) {
-      console.error('收藏失败:', err);
+      console.error("收藏失败:", err);
     }
   };
 
@@ -166,15 +193,13 @@ export default function CommunityFeed() {
     // 更新问题列表中的回复数
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId
-          ? { ...q, answer_count: q.answer_count + 1 }
-          : q
-      )
+        q.id === questionId ? { ...q, answer_count: q.answer_count + 1 } : q,
+      ),
     );
     // 同步更新详情弹窗中的状态
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, answer_count: prev.answer_count + 1 } : null
+        prev ? { ...prev, answer_count: prev.answer_count + 1 } : null,
       );
     }
   };
@@ -189,33 +214,40 @@ export default function CommunityFeed() {
     // 更新问题列表中的浏览数
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId ? { ...q, view_count: viewCount } : q
-      )
+        q.id === questionId ? { ...q, view_count: viewCount } : q,
+      ),
     );
     // 同步更新详情弹窗中的状态
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, view_count: viewCount } : null
+        prev ? { ...prev, view_count: viewCount } : null,
       );
     }
   };
 
-  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+  const handleAnswerCountUpdated = (
+    questionId: string,
+    answerCount: number,
+  ) => {
     // 更新问题列表中的回复数（修复 AI 回复计数不同步问题）
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId ? { ...q, answer_count: answerCount } : q
-      )
+        q.id === questionId ? { ...q, answer_count: answerCount } : q,
+      ),
     );
     // 同步更新详情弹窗中的状态
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, answer_count: answerCount } : null
+        prev ? { ...prev, answer_count: answerCount } : null,
       );
     }
   };
 
-  const handleNewQuestion = async (title: string, content: string, channel: ChannelType) => {
+  const handleNewQuestion = async (
+    title: string,
+    content: string,
+    channel: ChannelType,
+  ) => {
     setIsSubmitting(true);
 
     try {
@@ -228,20 +260,24 @@ export default function CommunityFeed() {
       });
 
       setIsQuestionModalOpen(false);
-      setSubmitMessage({ show: true, success: true, text: '发布成功！' });
+      setSubmitMessage({ show: true, success: true, text: "发布成功！" });
 
       // 重新加载列表
       await loadQuestions(activeChannel);
 
       // 3秒后隐藏提示
       setTimeout(() => {
-        setSubmitMessage({ show: false, success: true, text: '' });
+        setSubmitMessage({ show: false, success: true, text: "" });
       }, 3000);
     } catch (err: unknown) {
-      setSubmitMessage({ show: true, success: false, text: getErrorMessage(err) });
+      setSubmitMessage({
+        show: true,
+        success: false,
+        text: getErrorMessage(err),
+      });
 
       setTimeout(() => {
-        setSubmitMessage({ show: false, success: true, text: '' });
+        setSubmitMessage({ show: false, success: true, text: "" });
       }, 3000);
     } finally {
       setIsSubmitting(false);
@@ -250,7 +286,7 @@ export default function CommunityFeed() {
 
   const handleAskClick = () => {
     if (!isAuthenticated) {
-      router.push('/auth/login');
+      router.push("/auth/login");
       return;
     }
     setIsQuestionModalOpen(true);
@@ -271,26 +307,40 @@ export default function CommunityFeed() {
             transition={SPRING_CONFIGS.gentle}
             className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-lg backdrop-blur-md ${
               submitMessage.success
-                ? 'bg-emerald-500/90 text-white'
-                : 'bg-red-500/90 text-white'
+                ? "bg-emerald-500/90 text-white"
+                : "bg-red-500/90 text-white"
             }`}
             style={{
               boxShadow: submitMessage.success
-                ? '0 8px 32px rgba(16, 185, 129, 0.4)'
-                : '0 8px 32px rgba(239, 68, 68, 0.4)',
+                ? "0 8px 32px rgba(16, 185, 129, 0.4)"
+                : "0 8px 32px rgba(239, 68, 68, 0.4)",
             }}
           >
             <div className="flex items-center gap-2">
               {submitMessage.success ? (
                 <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                   <span>{submitMessage.text}</span>
                 </>
               ) : (
                 <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <circle cx="12" cy="12" r="10" />
                     <line x1="15" y1="9" x2="9" y2="15" />
                     <line x1="9" y1="9" x2="15" y2="15" />
@@ -427,7 +477,13 @@ export default function CommunityFeed() {
 }
 
 // 空状态
-function EmptyState({ channel, onAsk }: { channel: ChannelType; onAsk: () => void }) {
+function EmptyState({
+  channel,
+  onAsk,
+}: {
+  channel: ChannelType;
+  onAsk: () => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -438,13 +494,9 @@ function EmptyState({ channel, onAsk }: { channel: ChannelType; onAsk: () => voi
         <span className="text-4xl">🌸</span>
       </div>
       <h3 className="text-lg font-medium text-stone-700 mb-2">
-        {channel === 'professional'
-          ? '暂无专业解答'
-          : '还没有妈妈分享经验'}
+        {channel === "professional" ? "暂无专业解答" : "还没有妈妈分享经验"}
       </h3>
-      <p className="text-sm text-stone-500 mb-4">
-        成为第一个发起话题的人吧
-      </p>
+      <p className="text-sm text-stone-500 mb-4">成为第一个发起话题的人吧</p>
       <button
         onClick={onAsk}
         className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors"

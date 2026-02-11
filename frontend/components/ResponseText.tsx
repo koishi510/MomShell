@@ -4,9 +4,9 @@
  * 淡入淡出效果，居中显示
  */
 
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ResponseTextProps {
   text: string | null;
@@ -47,7 +47,7 @@ export function ResponseText({ text, isLoading }: ResponseTextProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
             className="text-center text-xl md:text-2xl text-stone-700 leading-relaxed max-w-2xl font-light"
           >
             {text}

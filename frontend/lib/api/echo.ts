@@ -3,7 +3,7 @@
  * Echo Domain API 服务
  */
 
-import apiClient from '../apiClient';
+import apiClient from "../apiClient";
 import type {
   EchoStatus,
   IdentityTag,
@@ -23,9 +23,9 @@ import type {
   MemoirGenerateRequest,
   Memoir,
   MemoirList,
-} from '../../types/echo';
+} from "../../types/echo";
 
-const ECHO_API = '/api/v1/echo';
+const ECHO_API = "/api/v1/echo";
 
 // ============================================================
 // Echo 状态
@@ -55,7 +55,7 @@ export async function getIdentityTags(): Promise<IdentityTagList> {
  * 创建身份标签
  */
 export async function createIdentityTag(
-  data: IdentityTagCreate
+  data: IdentityTagCreate,
 ): Promise<IdentityTag> {
   const response = await apiClient.post(`${ECHO_API}/identity-tags`, data);
   return response.data;
@@ -100,7 +100,7 @@ export async function matchAudio(limit: number = 5): Promise<Audio[]> {
  * 开始冥想
  */
 export async function startMeditation(
-  data: MeditationStartRequest
+  data: MeditationStartRequest,
 ): Promise<MeditationStartResponse> {
   const response = await apiClient.post(`${ECHO_API}/meditation/start`, data);
   return response.data;
@@ -110,7 +110,7 @@ export async function startMeditation(
  * 结束冥想
  */
 export async function endMeditation(
-  data: MeditationEndRequest
+  data: MeditationEndRequest,
 ): Promise<MeditationEndResponse> {
   const response = await apiClient.post(`${ECHO_API}/meditation/end`, data);
   return response.data;
@@ -144,7 +144,7 @@ export async function getWindowClarity(): Promise<WindowClarity> {
  * 注入记忆（伴侣）
  */
 export async function injectMemory(
-  data: MemoryInjectRequest
+  data: MemoryInjectRequest,
 ): Promise<PartnerMemory> {
   const response = await apiClient.post(`${ECHO_API}/memories`, data);
   return response.data;
@@ -167,7 +167,7 @@ export async function getRevealedMemories(): Promise<RevealedMemories> {
  */
 export async function getMemoirs(
   limit: number = 10,
-  offset: number = 0
+  offset: number = 0,
 ): Promise<MemoirList> {
   const response = await apiClient.get(`${ECHO_API}/memoirs`, {
     params: { limit, offset },
@@ -179,9 +179,12 @@ export async function getMemoirs(
  * 生成回忆录
  */
 export async function generateMemoir(
-  data?: MemoirGenerateRequest
+  data?: MemoirGenerateRequest,
 ): Promise<Memoir> {
-  const response = await apiClient.post(`${ECHO_API}/memoirs/generate`, data || {});
+  const response = await apiClient.post(
+    `${ECHO_API}/memoirs/generate`,
+    data || {},
+  );
   return response.data;
 }
 
@@ -190,10 +193,13 @@ export async function generateMemoir(
  */
 export async function rateMemoir(
   memoirId: string,
-  rating: number
+  rating: number,
 ): Promise<Memoir> {
-  const response = await apiClient.post(`${ECHO_API}/memoirs/${memoirId}/rate`, {
-    rating,
-  });
+  const response = await apiClient.post(
+    `${ECHO_API}/memoirs/${memoirId}/rate`,
+    {
+      rating,
+    },
+  );
   return response.data;
 }

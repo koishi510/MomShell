@@ -4,24 +4,18 @@
  * 整合所有子组件，实现无对话框的情感交互界面
  */
 
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useCompanion } from '../hooks/useCompanion';
-import { AmbientCanvas } from './AmbientCanvas';
-import { ResponseText } from './ResponseText';
-import { InputArea } from './InputArea';
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useCompanion } from "../hooks/useCompanion";
+import { AmbientCanvas } from "./AmbientCanvas";
+import { ResponseText } from "./ResponseText";
+import { InputArea } from "./InputArea";
 
 export function CompanionInterface() {
-  const {
-    isLoading,
-    response,
-    visualState,
-    error,
-    send,
-    isRippling,
-  } = useCompanion();
+  const { isLoading, response, visualState, error, send, isRippling } =
+    useCompanion();
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col relative overflow-hidden">
@@ -51,9 +45,7 @@ export function CompanionInterface() {
       <main className="flex-1 flex flex-col relative z-10 pb-32">
         {/* 副标题 */}
         <div className="text-center py-6">
-          <p className="text-sm text-stone-400">
-            在这一刻，你并不孤单
-          </p>
+          <p className="text-sm text-stone-400">在这一刻，你并不孤单</p>
         </div>
 
         {/* 响应文字 */}

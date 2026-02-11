@@ -4,10 +4,10 @@
  * 底部固定，简洁的输入体验
  */
 
-'use client';
+"use client";
 
-import { useState, useCallback, KeyboardEvent } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, KeyboardEvent } from "react";
+import { motion } from "framer-motion";
 
 interface InputAreaProps {
   onSend: (content: string) => void;
@@ -15,23 +15,23 @@ interface InputAreaProps {
 }
 
 export function InputArea({ onSend, isLoading }: InputAreaProps) {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
 
   const handleSend = useCallback(() => {
     if (input.trim() && !isLoading) {
       onSend(input.trim());
-      setInput('');
+      setInput("");
     }
   }, [input, isLoading, onSend]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
     },
-    [handleSend]
+    [handleSend],
   );
 
   return (
@@ -39,7 +39,7 @@ export function InputArea({ onSend, isLoading }: InputAreaProps) {
       className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white/80 to-transparent backdrop-blur-sm z-20"
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
     >
       <div className="max-w-2xl mx-auto">
         <div className="relative flex items-center">
@@ -51,7 +51,7 @@ export function InputArea({ onSend, isLoading }: InputAreaProps) {
             disabled={isLoading}
             rows={1}
             className="w-full px-6 py-4 pr-14 text-lg bg-white/70 backdrop-blur-md border border-stone-200 rounded-full resize-none focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-transparent placeholder:text-stone-400 text-stone-700 shadow-lg transition-all"
-            style={{ minHeight: '56px', maxHeight: '120px' }}
+            style={{ minHeight: "56px", maxHeight: "120px" }}
           />
           <motion.button
             onClick={handleSend}
@@ -63,7 +63,7 @@ export function InputArea({ onSend, isLoading }: InputAreaProps) {
             {isLoading ? (
               <motion.span
                 animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               >
                 ◌
               </motion.span>

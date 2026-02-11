@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/app/community/collections/page.tsx
 /**
@@ -6,21 +6,28 @@
  * 展示用户收藏的帖子
  */
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getMyCollections, toggleLike, toggleCollection, type CollectionItem } from '../../../lib/api/community';
-import { type Question } from '../../../types/community';
-import CommunityBackground from '../../../components/community/CommunityBackground';
-import QuestionDetailModal from '../../../components/community/QuestionDetailModal';
-import PostCard from '../../../components/community/PostCard';
-import { AuthGuard } from '../../../components/AuthGuard';
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  getMyCollections,
+  toggleLike,
+  toggleCollection,
+  type CollectionItem,
+} from "../../../lib/api/community";
+import { type Question } from "../../../types/community";
+import CommunityBackground from "../../../components/community/CommunityBackground";
+import QuestionDetailModal from "../../../components/community/QuestionDetailModal";
+import PostCard from "../../../components/community/PostCard";
+import { AuthGuard } from "../../../components/AuthGuard";
 
 function CollectionsContent() {
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+    null,
+  );
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -32,8 +39,8 @@ function CollectionsContent() {
         const response = await getMyCollections({ page: 1, page_size: 50 });
         setCollections(response.items);
       } catch (err) {
-        console.error('Failed to load collections:', err);
-        setError('加载失败，请刷新重试');
+        console.error("Failed to load collections:", err);
+        setError("加载失败，请刷新重试");
       } finally {
         setIsLoading(false);
       }
@@ -42,18 +49,18 @@ function CollectionsContent() {
   }, []);
 
   // 将 CollectionItem.question 转换为完整的 Question 类型
-  const mapToQuestion = (item: CollectionItem['question']): Question => ({
+  const mapToQuestion = (item: CollectionItem["question"]): Question => ({
     id: item.id,
     title: item.title,
     content: item.content_preview,
     content_preview: item.content_preview,
     channel: item.channel,
-    status: 'published',
+    status: "published",
     author: {
-      id: item.author?.id || 'unknown',
-      nickname: item.author?.nickname || '匿名用户',
+      id: item.author?.id || "unknown",
+      nickname: item.author?.nickname || "匿名用户",
       avatar_url: item.author?.avatar_url || null,
-      role: item.author?.role || 'mom',
+      role: item.author?.role || "mom",
       is_certified: item.author?.is_certified || false,
       certification_title: item.author?.certification_title,
     },
@@ -77,7 +84,7 @@ function CollectionsContent() {
 
   const handleLike = async (id: string) => {
     try {
-      const result = await toggleLike('question', id);
+      const result = await toggleLike("question", id);
       setCollections((prev) =>
         prev.map((c) =>
           c.question.id === id
@@ -89,16 +96,22 @@ function CollectionsContent() {
                   like_count: result.like_count,
                 },
               }
-            : c
-        )
+            : c,
+        ),
       );
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
-          prev ? { ...prev, is_liked: result.is_liked, like_count: result.like_count } : null
+          prev
+            ? {
+                ...prev,
+                is_liked: result.is_liked,
+                like_count: result.like_count,
+              }
+            : null,
         );
       }
     } catch (err) {
-      console.error('点赞失败:', err);
+      console.error("点赞失败:", err);
     }
   };
 
@@ -110,7 +123,7 @@ function CollectionsContent() {
         setSelectedQuestion(null);
       }
     } catch (err) {
-      console.error('收藏失败:', err);
+      console.error("收藏失败:", err);
     }
   };
 
@@ -124,27 +137,30 @@ function CollectionsContent() {
       prev.map((c) =>
         c.question.id === questionId
           ? { ...c, question: { ...c.question, view_count: viewCount } }
-          : c
-      )
+          : c,
+      ),
     );
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, view_count: viewCount } : null
+        prev ? { ...prev, view_count: viewCount } : null,
       );
     }
   };
 
-  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+  const handleAnswerCountUpdated = (
+    questionId: string,
+    answerCount: number,
+  ) => {
     setCollections((prev) =>
       prev.map((c) =>
         c.question.id === questionId
           ? { ...c, question: { ...c.question, answer_count: answerCount } }
-          : c
-      )
+          : c,
+      ),
     );
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, answer_count: answerCount } : null
+        prev ? { ...prev, answer_count: answerCount } : null,
       );
     }
   };
@@ -177,9 +193,7 @@ function CollectionsContent() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* 副标题 */}
         <div className="text-center mb-8">
-          <p className="text-stone-500 text-sm">
-            收藏的温暖，随时回顾
-          </p>
+          <p className="text-stone-500 text-sm">收藏的温暖，随时回顾</p>
         </div>
 
         {/* 加载状态 */}

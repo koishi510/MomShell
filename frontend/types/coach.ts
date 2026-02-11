@@ -7,21 +7,21 @@
 // ============ Exercise Types ============
 
 export type ExerciseCategory =
-  | 'breathing'
-  | 'pelvic_floor'
-  | 'diastasis_recti'
-  | 'posture'
-  | 'strength';
+  | "breathing"
+  | "pelvic_floor"
+  | "diastasis_recti"
+  | "posture"
+  | "strength";
 
-export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+export type Difficulty = "beginner" | "intermediate" | "advanced";
 
 export type ExercisePhase =
-  | 'preparation'
-  | 'inhale'
-  | 'exhale'
-  | 'hold'
-  | 'release'
-  | 'rest';
+  | "preparation"
+  | "inhale"
+  | "exhale"
+  | "hold"
+  | "release"
+  | "rest";
 
 export interface AngleRequirement {
   joint_name: string;
@@ -67,15 +67,15 @@ export interface ExerciseSession {
 // ============ Progress Types ============
 
 export type AchievementType =
-  | 'first_session'
-  | 'streak_3'
-  | 'streak_7'
-  | 'streak_30'
-  | 'perfect_form'
-  | 'complete_exercise'
-  | 'complete_session'
-  | 'strength_milestone'
-  | 'consistency';
+  | "first_session"
+  | "streak_3"
+  | "streak_7"
+  | "streak_30"
+  | "perfect_form"
+  | "complete_exercise"
+  | "complete_session"
+  | "strength_milestone"
+  | "consistency";
 
 export interface Achievement {
   id: string;
@@ -126,15 +126,15 @@ export interface EnergyMetrics {
 }
 
 export const METRIC_LABELS: Record<keyof EnergyMetrics, string> = {
-  core_strength: '核心力量',
-  pelvic_floor: '盆底肌',
-  posture: '体态',
-  flexibility: '柔韧性',
+  core_strength: "核心力量",
+  pelvic_floor: "盆底肌",
+  posture: "体态",
+  flexibility: "柔韧性",
 };
 
 export const METRIC_COLORS: Record<keyof EnergyMetrics, string> = {
-  core_strength: '#e8a4b8', // Pink
-  pelvic_floor: '#8bc99b', // Mint
-  posture: '#7eb8da', // Blue
-  flexibility: '#f5c869', // Gold
+  core_strength: "#e8a4b8", // Pink
+  pelvic_floor: "#8bc99b", // Mint
+  posture: "#7eb8da", // Blue
+  flexibility: "#f5c869", // Gold
 };

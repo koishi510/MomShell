@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/home/MeshGradientBackground.tsx
 /**
@@ -6,7 +6,7 @@
  * 实现"呼吸感"的色彩流动效果
  */
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 export default function MeshGradientBackground() {
   return (
@@ -18,9 +18,9 @@ export default function MeshGradientBackground() {
       <motion.div
         className="absolute w-[800px] h-[800px] rounded-full blur-[120px] opacity-60"
         style={{
-          background: 'radial-gradient(circle, #FFF3E0 0%, transparent 70%)',
-          top: '-20%',
-          left: '-10%',
+          background: "radial-gradient(circle, #FFF3E0 0%, transparent 70%)",
+          top: "-20%",
+          left: "-10%",
         }}
         animate={{
           scale: [1, 1.2, 1],
@@ -30,7 +30,7 @@ export default function MeshGradientBackground() {
         transition={{
           duration: 18,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
         }}
       />
 
@@ -38,9 +38,9 @@ export default function MeshGradientBackground() {
       <motion.div
         className="absolute w-[700px] h-[700px] rounded-full blur-[100px] opacity-50"
         style={{
-          background: 'radial-gradient(circle, #FFE4EC 0%, transparent 70%)',
-          top: '30%',
-          right: '-15%',
+          background: "radial-gradient(circle, #FFE4EC 0%, transparent 70%)",
+          top: "30%",
+          right: "-15%",
         }}
         animate={{
           scale: [1.1, 1, 1.1],
@@ -50,7 +50,7 @@ export default function MeshGradientBackground() {
         transition={{
           duration: 20,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
           delay: 2,
         }}
       />
@@ -59,9 +59,9 @@ export default function MeshGradientBackground() {
       <motion.div
         className="absolute w-[600px] h-[600px] rounded-full blur-[100px] opacity-40"
         style={{
-          background: 'radial-gradient(circle, #E0F7E9 0%, transparent 70%)',
-          bottom: '-10%',
-          left: '20%',
+          background: "radial-gradient(circle, #E0F7E9 0%, transparent 70%)",
+          bottom: "-10%",
+          left: "20%",
         }}
         animate={{
           scale: [1, 1.15, 1],
@@ -71,7 +71,7 @@ export default function MeshGradientBackground() {
         transition={{
           duration: 16,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
           delay: 4,
         }}
       />
@@ -80,10 +80,10 @@ export default function MeshGradientBackground() {
       <motion.div
         className="absolute w-[500px] h-[500px] rounded-full blur-[80px] opacity-30"
         style={{
-          background: 'radial-gradient(circle, #F3E8FF 0%, transparent 70%)',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
+          background: "radial-gradient(circle, #F3E8FF 0%, transparent 70%)",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
         }}
         animate={{
           scale: [1, 1.3, 1],
@@ -92,7 +92,7 @@ export default function MeshGradientBackground() {
         transition={{
           duration: 15,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
           delay: 1,
         }}
       />
@@ -135,9 +135,10 @@ function TyndallEffect() {
       <motion.div
         className="absolute top-0 right-[20%] w-[300px] h-[600px] origin-top"
         style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)',
-          transform: 'rotate(15deg)',
-          filter: 'blur(30px)',
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)",
+          transform: "rotate(15deg)",
+          filter: "blur(30px)",
         }}
         animate={{
           opacity: [0.2, 0.35, 0.2],
@@ -145,7 +146,7 @@ function TyndallEffect() {
         transition={{
           duration: 8,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
         }}
       />
 
@@ -157,7 +158,7 @@ function TyndallEffect() {
           style={{
             left: `${particle.left}%`,
             top: `${particle.top}%`,
-            filter: 'blur(1px)',
+            filter: "blur(1px)",
           }}
           animate={{
             y: [0, -30, 0],
@@ -167,7 +168,7 @@ function TyndallEffect() {
           transition={{
             duration: particle.duration,
             repeat: Infinity,
-            ease: 'easeInOut',
+            ease: "easeInOut",
             delay: particle.delay,
           }}
         />

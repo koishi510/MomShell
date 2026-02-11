@@ -3,32 +3,41 @@
  * 冥想页面 - 呼吸引导与场景沉浸
  */
 
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AuthGuard } from '../../../../components/AuthGuard';
-import { ECHO_COLORS } from '../../../../lib/design-tokens';
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { AuthGuard } from "../../../../components/AuthGuard";
+import { ECHO_COLORS } from "../../../../lib/design-tokens";
 import {
   matchScenes,
   matchAudio,
   startMeditation,
   endMeditation,
-} from '../../../../lib/api/echo';
-import { MeditationTimer } from '../../../../components/echo/mom/MeditationTimer';
-import { GlassWindow } from '../../../../components/echo/GlassWindow';
-import type { Scene, Audio, MeditationStartResponse, MeditationPhase } from '../../../../types/echo';
-import { BREATHING_RHYTHM, BREATHING_CYCLE_SECONDS, MEDITATION_DURATIONS } from '../../../../types/echo';
+} from "../../../../lib/api/echo";
+import { MeditationTimer } from "../../../../components/echo/mom/MeditationTimer";
+import { GlassWindow } from "../../../../components/echo/GlassWindow";
+import type {
+  Scene,
+  Audio,
+  MeditationStartResponse,
+  MeditationPhase,
+} from "../../../../types/echo";
+import {
+  BREATHING_RHYTHM,
+  BREATHING_CYCLE_SECONDS,
+  MEDITATION_DURATIONS,
+} from "../../../../types/echo";
 
-type MeditationState = 'setup' | 'active' | 'completed';
+type MeditationState = "setup" | "active" | "completed";
 
 function MeditationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialSceneId = searchParams.get('scene');
+  const initialSceneId = searchParams.get("scene");
 
-  const [state, setState] = useState<MeditationState>('setup');
+  const [state, setState] = useState<MeditationState>("setup");
   const [loading, setLoading] = useState(true);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [audios, setAudios] = useState<Audio[]>([]);
@@ -37,7 +46,7 @@ function MeditationPage() {
   const [selectedDuration, setSelectedDuration] = useState(10);
   const [session, setSession] = useState<MeditationStartResponse | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [currentPhase, setCurrentPhase] = useState<MeditationPhase>('inhale');
+  const [currentPhase, setCurrentPhase] = useState<MeditationPhase>("inhale");
   const [completed, setCompleted] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -61,7 +70,7 @@ function MeditationPage() {
         if (scene) setSelectedScene(scene);
       }
     } catch (error) {
-      console.error('Failed to load resources:', error);
+      console.error("Failed to load resources:", error);
     } finally {
       setLoading(false);
     }
@@ -75,7 +84,7 @@ function MeditationPage() {
         audio_id: selectedAudio?.id,
       });
       setSession(sessionData);
-      setState('active');
+      setState("active");
 
       // 播放音频
       if (selectedAudio) {
@@ -87,7 +96,7 @@ function MeditationPage() {
         });
       }
     } catch (error) {
-      console.error('Failed to start meditation:', error);
+      console.error("Failed to start meditation:", error);
     }
   };
 
@@ -106,18 +115,18 @@ function MeditationPage() {
         actual_duration_seconds: actualSeconds,
       });
       setCompleted(result.completed);
-      setState('completed');
+      setState("completed");
     } catch (error) {
-      console.error('Failed to end meditation:', error);
-      setState('completed');
+      console.error("Failed to end meditation:", error);
+      setState("completed");
     }
   };
 
   const handleBack = () => {
-    if (state === 'active') {
+    if (state === "active") {
       handleEnd(elapsedSeconds);
     } else {
-      router.push('/echo/mom');
+      router.push("/echo/mom");
     }
   };
 
@@ -145,14 +154,15 @@ function MeditationPage() {
     <div
       className="min-h-screen"
       style={{
-        background: state === 'active'
-          ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-          : `linear-gradient(135deg, ${ECHO_COLORS.mom.gradient[0]} 0%, ${ECHO_COLORS.mom.gradient[1]} 100%)`,
+        background:
+          state === "active"
+            ? "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)"
+            : `linear-gradient(135deg, ${ECHO_COLORS.mom.gradient[0]} 0%, ${ECHO_COLORS.mom.gradient[1]} 100%)`,
       }}
     >
       {/* 设置阶段 */}
       <AnimatePresence mode="wait">
-        {state === 'setup' && (
+        {state === "setup" && (
           <motion.div
             key="setup"
             initial={{ opacity: 0 }}
@@ -165,8 +175,18 @@ function MeditationPage() {
               onClick={handleBack}
               className="p-2 rounded-full bg-white/30 hover:bg-white/50 transition-colors mb-4"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
 
@@ -193,11 +213,14 @@ function MeditationPage() {
                     onClick={() => setSelectedDuration(duration)}
                     className={`px-4 py-2 rounded-full font-medium transition-colors ${
                       selectedDuration === duration
-                        ? 'bg-white text-amber-800 shadow-md'
-                        : 'bg-white/30 hover:bg-white/50'
+                        ? "bg-white text-amber-800 shadow-md"
+                        : "bg-white/30 hover:bg-white/50"
                     }`}
                     style={{
-                      color: selectedDuration === duration ? undefined : ECHO_COLORS.mom.text,
+                      color:
+                        selectedDuration === duration
+                          ? undefined
+                          : ECHO_COLORS.mom.text,
                     }}
                   >
                     {duration} 分钟
@@ -219,12 +242,22 @@ function MeditationPage() {
                   <motion.div
                     key={scene.id}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedScene(selectedScene?.id === scene.id ? null : scene)}
+                    onClick={() =>
+                      setSelectedScene(
+                        selectedScene?.id === scene.id ? null : scene,
+                      )
+                    }
                     className={`relative rounded-xl overflow-hidden cursor-pointer ${
-                      selectedScene?.id === scene.id ? 'ring-2 ring-amber-500' : ''
+                      selectedScene?.id === scene.id
+                        ? "ring-2 ring-amber-500"
+                        : ""
                     }`}
                   >
-                    <GlassWindow scene={scene} clarityLevel={100} size="small" />
+                    <GlassWindow
+                      scene={scene}
+                      clarityLevel={100}
+                      size="small"
+                    />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                       <p className="text-white text-xs text-center truncate">
                         {scene.title}
@@ -248,17 +281,24 @@ function MeditationPage() {
                   <motion.button
                     key={audio.id}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedAudio(selectedAudio?.id === audio.id ? null : audio)}
+                    onClick={() =>
+                      setSelectedAudio(
+                        selectedAudio?.id === audio.id ? null : audio,
+                      )
+                    }
                     className={`p-3 rounded-xl text-left transition-colors ${
                       selectedAudio?.id === audio.id
-                        ? 'bg-white shadow-md'
-                        : 'bg-white/30 hover:bg-white/50'
+                        ? "bg-white shadow-md"
+                        : "bg-white/30 hover:bg-white/50"
                     }`}
                   >
                     <p
                       className="font-medium text-sm"
                       style={{
-                        color: selectedAudio?.id === audio.id ? '#5D4037' : ECHO_COLORS.mom.text,
+                        color:
+                          selectedAudio?.id === audio.id
+                            ? "#5D4037"
+                            : ECHO_COLORS.mom.text,
                       }}
                     >
                       {audio.title}
@@ -266,7 +306,10 @@ function MeditationPage() {
                     <p
                       className="text-xs opacity-70 truncate"
                       style={{
-                        color: selectedAudio?.id === audio.id ? '#5D4037' : ECHO_COLORS.mom.text,
+                        color:
+                          selectedAudio?.id === audio.id
+                            ? "#5D4037"
+                            : ECHO_COLORS.mom.text,
                       }}
                     >
                       {audio.description}
@@ -290,7 +333,7 @@ function MeditationPage() {
         )}
 
         {/* 冥想进行中 */}
-        {state === 'active' && session && (
+        {state === "active" && session && (
           <motion.div
             key="active"
             initial={{ opacity: 0 }}
@@ -317,7 +360,9 @@ function MeditationPage() {
                 breathingRhythm={session.breathing_rhythm}
                 onTimeUpdate={setElapsedSeconds}
                 onPhaseChange={setCurrentPhase}
-                onComplete={() => handleEnd(session.target_duration_minutes * 60)}
+                onComplete={() =>
+                  handleEnd(session.target_duration_minutes * 60)
+                }
               />
             </div>
 
@@ -335,7 +380,7 @@ function MeditationPage() {
         )}
 
         {/* 完成阶段 */}
-        {state === 'completed' && (
+        {state === "completed" && (
           <motion.div
             key="completed"
             initial={{ opacity: 0 }}
@@ -346,17 +391,17 @@ function MeditationPage() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', delay: 0.2 }}
+              transition={{ type: "spring", delay: 0.2 }}
               className="text-6xl mb-4"
             >
-              {completed ? '🌸' : '🌱'}
+              {completed ? "🌸" : "🌱"}
             </motion.div>
 
             <h2
               className="text-2xl font-bold mb-2"
               style={{ color: ECHO_COLORS.mom.text }}
             >
-              {completed ? '冥想完成' : '继续加油'}
+              {completed ? "冥想完成" : "继续加油"}
             </h2>
 
             <p
@@ -371,7 +416,7 @@ function MeditationPage() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/echo/mom')}
+              onClick={() => router.push("/echo/mom")}
               className="w-full max-w-xs py-3 rounded-xl text-white font-medium"
               style={{ backgroundColor: ECHO_COLORS.mom.accent }}
             >

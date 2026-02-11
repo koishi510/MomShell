@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/community/QuestionDetailModal.tsx
 /**
@@ -6,12 +6,25 @@
  * 显示问题全文和回答列表
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { type Question, type Answer, ROLE_CONFIG } from '../../types/community';
-import { getQuestion, getAnswers, createAnswer, toggleLike, deleteQuestion, deleteAnswer, updateQuestion, updateAnswer, getComments, createComment, deleteComment, type Comment } from '../../lib/api/community';
-import { getErrorMessage } from '../../lib/apiClient';
-import { useAuth } from '../../contexts/AuthContext';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { type Question, type Answer, ROLE_CONFIG } from "../../types/community";
+import {
+  getQuestion,
+  getAnswers,
+  createAnswer,
+  toggleLike,
+  deleteQuestion,
+  deleteAnswer,
+  updateQuestion,
+  updateAnswer,
+  getComments,
+  createComment,
+  deleteComment,
+  type Comment,
+} from "../../lib/api/community";
+import { getErrorMessage } from "../../lib/apiClient";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface QuestionDetailModalProps {
   question: Question | null;
@@ -38,14 +51,14 @@ export default function QuestionDetailModal({
 }: QuestionDetailModalProps) {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [isLoadingAnswers, setIsLoadingAnswers] = useState(false);
-  const [replyContent, setReplyContent] = useState('');
+  const [replyContent, setReplyContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewCount, setViewCount] = useState<number>(0);
 
   // 编辑问题状态
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
-  const [editQuestionTitle, setEditQuestionTitle] = useState('');
-  const [editQuestionContent, setEditQuestionContent] = useState('');
+  const [editQuestionTitle, setEditQuestionTitle] = useState("");
+  const [editQuestionContent, setEditQuestionContent] = useState("");
   const [isSavingQuestion, setIsSavingQuestion] = useState(false);
 
   // 本地问题状态（用于显示编辑后的内容）
@@ -56,34 +69,37 @@ export default function QuestionDetailModal({
 
   // 从 AuthContext 获取当前用户
   const { user } = useAuth();
-  const currentUserId = user?.id || '';
-  const isAdmin = user?.role === 'admin';
+  const currentUserId = user?.id || "";
+  const isAdmin = user?.role === "admin";
 
   // 加载回答列表
-  const loadAnswers = useCallback(async (questionId: string) => {
-    setIsLoadingAnswers(true);
-    try {
-      const response = await getAnswers(questionId, {
-        page: 1,
-        page_size: 50,
-        sort_by: 'created_at',
-        order: 'desc',
-      });
-      setAnswers(response.items);
-      // Sync actual answer count to parent (fixes AI reply count mismatch)
-      onAnswerCountUpdated?.(questionId, response.total);
-    } catch (err) {
-      console.error('加载回答失败:', err);
-    } finally {
-      setIsLoadingAnswers(false);
-    }
-  }, [onAnswerCountUpdated]);
+  const loadAnswers = useCallback(
+    async (questionId: string) => {
+      setIsLoadingAnswers(true);
+      try {
+        const response = await getAnswers(questionId, {
+          page: 1,
+          page_size: 50,
+          sort_by: "created_at",
+          order: "desc",
+        });
+        setAnswers(response.items);
+        // Sync actual answer count to parent (fixes AI reply count mismatch)
+        onAnswerCountUpdated?.(questionId, response.total);
+      } catch (err) {
+        console.error("加载回答失败:", err);
+      } finally {
+        setIsLoadingAnswers(false);
+      }
+    },
+    [onAnswerCountUpdated],
+  );
 
   // 当问题变化时加载回答并获取完整详情
   useEffect(() => {
     if (question) {
       setLocalQuestion(question);
-      setReplyContent('');
+      setReplyContent("");
       setViewCount(question.view_count);
       setIsEditingQuestion(false);
 
@@ -102,7 +118,7 @@ export default function QuestionDetailModal({
             }
           })
           .catch((err) => {
-            console.error('获取问题详情失败:', err);
+            console.error("获取问题详情失败:", err);
             // 保持使用初始 question 数据（可能只有 content_preview）
           });
       }
@@ -111,7 +127,7 @@ export default function QuestionDetailModal({
       setLocalQuestion(null);
       fetchedQuestionIdRef.current = null;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question?.id, loadAnswers]);
 
   // 提交回答
@@ -124,11 +140,11 @@ export default function QuestionDetailModal({
         content: replyContent.trim(),
       });
       setAnswers((prev) => [newAnswer, ...prev]);
-      setReplyContent('');
+      setReplyContent("");
       // 通知父组件更新回复数
       onAnswerCreated?.(question.id);
     } catch (err: unknown) {
-      console.error('回复失败:', err);
+      console.error("回复失败:", err);
       alert(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
@@ -138,43 +154,43 @@ export default function QuestionDetailModal({
   // 点赞回答
   const handleLikeAnswer = async (answerId: string) => {
     try {
-      const result = await toggleLike('answer', answerId);
+      const result = await toggleLike("answer", answerId);
       setAnswers((prev) =>
         prev.map((a) =>
           a.id === answerId
             ? { ...a, is_liked: result.is_liked, like_count: result.like_count }
-            : a
-        )
+            : a,
+        ),
       );
     } catch (err) {
-      console.error('点赞失败:', err);
+      console.error("点赞失败:", err);
     }
   };
 
   // 删除问题
   const handleDeleteQuestion = async () => {
     if (!question) return;
-    if (!confirm('确定要删除这个问题吗？删除后无法恢复。')) return;
+    if (!confirm("确定要删除这个问题吗？删除后无法恢复。")) return;
 
     try {
       await deleteQuestion(question.id);
       onQuestionDeleted?.(question.id);
       onClose();
     } catch (err: unknown) {
-      console.error('删除失败:', err);
+      console.error("删除失败:", err);
       alert(getErrorMessage(err));
     }
   };
 
   // 删除回答
   const handleDeleteAnswer = async (answerId: string) => {
-    if (!confirm('确定要删除这条回答吗？')) return;
+    if (!confirm("确定要删除这条回答吗？")) return;
 
     try {
       await deleteAnswer(answerId);
       setAnswers((prev) => prev.filter((a) => a.id !== answerId));
     } catch (err: unknown) {
-      console.error('删除失败:', err);
+      console.error("删除失败:", err);
       alert(getErrorMessage(err));
     }
   };
@@ -190,13 +206,14 @@ export default function QuestionDetailModal({
   // 取消编辑问题
   const handleCancelEditQuestion = () => {
     setIsEditingQuestion(false);
-    setEditQuestionTitle('');
-    setEditQuestionContent('');
+    setEditQuestionTitle("");
+    setEditQuestionContent("");
   };
 
   // 保存编辑的问题
   const handleSaveQuestion = async () => {
-    if (!question || !editQuestionTitle.trim() || !editQuestionContent.trim()) return;
+    if (!question || !editQuestionTitle.trim() || !editQuestionContent.trim())
+      return;
     if (isSavingQuestion) return;
 
     setIsSavingQuestion(true);
@@ -209,7 +226,7 @@ export default function QuestionDetailModal({
       setIsEditingQuestion(false);
       onQuestionUpdated?.(question.id);
     } catch (err: unknown) {
-      console.error('保存失败:', err);
+      console.error("保存失败:", err);
       alert(getErrorMessage(err));
     } finally {
       setIsSavingQuestion(false);
@@ -217,28 +234,38 @@ export default function QuestionDetailModal({
   };
 
   // 更新回答（由 AnswerCard 调用）
-  const handleUpdateAnswer = async (answerId: string, content: string): Promise<boolean> => {
+  const handleUpdateAnswer = async (
+    answerId: string,
+    content: string,
+  ): Promise<boolean> => {
     try {
       const updated = await updateAnswer(answerId, { content: content.trim() });
       setAnswers((prev) =>
-        prev.map((a) => (a.id === answerId ? { ...a, content: updated.content } : a))
+        prev.map((a) =>
+          a.id === answerId ? { ...a, content: updated.content } : a,
+        ),
       );
       return true;
     } catch (err: unknown) {
-      console.error('保存失败:', err);
+      console.error("保存失败:", err);
       alert(getErrorMessage(err));
       return false;
     }
   };
 
   // 检查是否可以删除/编辑问题（作者本人或管理员）
-  const canDeleteQuestion = question && (currentUserId === question.author.id || isAdmin);
+  const canDeleteQuestion =
+    question && (currentUserId === question.author.id || isAdmin);
   const canEditQuestion = canDeleteQuestion;
 
   // 检查是否可以删除/编辑回答（回答作者、问题作者或管理员）
   const canDeleteAnswer = (answer: Answer) => {
     if (!question) return false;
-    return currentUserId === answer.author?.id || currentUserId === question.author.id || isAdmin;
+    return (
+      currentUserId === answer.author?.id ||
+      currentUserId === question.author.id ||
+      isAdmin
+    );
   };
   const canEditAnswer = (answer: Answer) => {
     return currentUserId === answer.author?.id || isAdmin;
@@ -246,7 +273,9 @@ export default function QuestionDetailModal({
 
   // 使用 localQuestion 显示内容
   const displayQuestion = localQuestion || question;
-  const roleConfig = displayQuestion ? ROLE_CONFIG[displayQuestion.author.role] : ROLE_CONFIG.mom;
+  const roleConfig = displayQuestion
+    ? ROLE_CONFIG[displayQuestion.author.role]
+    : ROLE_CONFIG.mom;
 
   return (
     <AnimatePresence>
@@ -266,10 +295,10 @@ export default function QuestionDetailModal({
           {/* 弹窗内容 */}
           <motion.div
             key="modal-content"
-            initial={{ opacity: 0, x: '100%' }}
+            initial={{ opacity: 0, x: "100%" }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="fixed top-0 right-0 bottom-0 w-full md:w-[600px] bg-white shadow-2xl z-50 flex flex-col"
           >
             {/* 头部 */}
@@ -335,10 +364,14 @@ export default function QuestionDetailModal({
                       </button>
                       <button
                         onClick={handleSaveQuestion}
-                        disabled={!editQuestionTitle.trim() || !editQuestionContent.trim() || isSavingQuestion}
+                        disabled={
+                          !editQuestionTitle.trim() ||
+                          !editQuestionContent.trim() ||
+                          isSavingQuestion
+                        }
                         className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isSavingQuestion ? '保存中...' : '保存'}
+                        {isSavingQuestion ? "保存中..." : "保存"}
                       </button>
                     </div>
                   </div>
@@ -349,7 +382,9 @@ export default function QuestionDetailModal({
                       {displayQuestion!.title}
                     </h1>
                     <p className="text-stone-600 leading-relaxed whitespace-pre-wrap">
-                      {displayQuestion!.content || displayQuestion!.content_preview || '加载中...'}
+                      {displayQuestion!.content ||
+                        displayQuestion!.content_preview ||
+                        "加载中..."}
                     </p>
                   </>
                 )}
@@ -375,8 +410,8 @@ export default function QuestionDetailModal({
                       onClick={() => onLike(question.id)}
                       className={`flex items-center gap-1.5 ${
                         question.is_liked
-                          ? 'text-rose-500'
-                          : 'text-stone-500 hover:text-stone-700'
+                          ? "text-rose-500"
+                          : "text-stone-500 hover:text-stone-700"
                       }`}
                     >
                       <HeartIcon filled={question.is_liked} />
@@ -390,8 +425,8 @@ export default function QuestionDetailModal({
                       onClick={() => onCollect(question.id)}
                       className={`flex items-center gap-1.5 ${
                         question.is_collected
-                          ? 'text-amber-500'
-                          : 'text-stone-500 hover:text-stone-700'
+                          ? "text-amber-500"
+                          : "text-stone-500 hover:text-stone-700"
                       }`}
                     >
                       <BookmarkIcon filled={question.is_collected} />
@@ -409,7 +444,7 @@ export default function QuestionDetailModal({
                     {canDeleteQuestion && (
                       <button
                         onClick={handleDeleteQuestion}
-                        className={`flex items-center gap-1.5 text-stone-400 hover:text-red-500 transition-colors ${!canEditQuestion ? 'ml-auto' : ''}`}
+                        className={`flex items-center gap-1.5 text-stone-400 hover:text-red-500 transition-colors ${!canEditQuestion ? "ml-auto" : ""}`}
                       >
                         <TrashIcon />
                         <span className="text-sm">删除</span>
@@ -439,7 +474,7 @@ export default function QuestionDetailModal({
                         disabled={!replyContent.trim() || isSubmitting}
                         className="px-4 py-2 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isSubmitting ? '发送中...' : '发送回复'}
+                        {isSubmitting ? "发送中..." : "发送回复"}
                       </button>
                     </div>
                   </div>
@@ -454,7 +489,9 @@ export default function QuestionDetailModal({
                   {/* 回答列表 */}
                   {!isLoadingAnswers && answers.length === 0 ? (
                     <div className="py-12 text-center">
-                      <p className="text-stone-400">暂无回答，来分享你的经验吧</p>
+                      <p className="text-stone-400">
+                        暂无回答，来分享你的经验吧
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -508,7 +545,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
       width="18"
       height="18"
       viewBox="0 0 24 24"
-      fill={filled ? 'currentColor' : 'none'}
+      fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
@@ -525,7 +562,7 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
       width="18"
       height="18"
       viewBox="0 0 24 24"
-      fill={filled ? 'currentColor' : 'none'}
+      fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
@@ -574,7 +611,16 @@ function EditIcon() {
 
 function EyeIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -583,7 +629,9 @@ function EyeIcon() {
 
 // 相对时间格式化
 function formatRelativeTime(dateString: string): string {
-  const normalizedDateString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+  const normalizedDateString = dateString.endsWith("Z")
+    ? dateString
+    : dateString + "Z";
   const date = new Date(normalizedDateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -591,11 +639,11 @@ function formatRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return '刚刚';
+  if (diffMins < 1) return "刚刚";
   if (diffMins < 60) return `${diffMins}分钟前`;
   if (diffHours < 24) return `${diffHours}小时前`;
   if (diffDays < 7) return `${diffDays}天前`;
-  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 }
 
 // 回答卡片组件
@@ -621,17 +669,20 @@ function AnswerCard({
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [commentContent, setCommentContent] = useState('');
+  const [commentContent, setCommentContent] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string } | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{
+    id: string;
+    nickname: string;
+  } | null>(null);
 
   // 编辑状态
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState('');
+  const [editContent, setEditContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const authorName = answer.author?.nickname || '匿名用户';
-  const authorRole = answer.author?.role || 'mom';
+  const authorName = answer.author?.nickname || "匿名用户";
+  const authorRole = answer.author?.role || "mom";
   const roleConfig = ROLE_CONFIG[authorRole] || ROLE_CONFIG.mom;
 
   // 加载评论
@@ -642,7 +693,7 @@ function AnswerCard({
       const data = await getComments(answer.id);
       setComments(data);
     } catch (err) {
-      console.error('加载评论失败:', err);
+      console.error("加载评论失败:", err);
     } finally {
       setIsLoadingComments(false);
     }
@@ -672,20 +723,23 @@ function AnswerCard({
         setComments((prev) =>
           prev.map((c) => {
             // If replying to root comment or a reply under this root
-            if (c.id === replyingTo.id || c.replies.some((r) => r.id === replyingTo.id)) {
+            if (
+              c.id === replyingTo.id ||
+              c.replies.some((r) => r.id === replyingTo.id)
+            ) {
               return { ...c, replies: [...c.replies, newComment] };
             }
             return c;
-          })
+          }),
         );
       } else {
         setComments((prev) => [...prev, newComment]);
       }
 
-      setCommentContent('');
+      setCommentContent("");
       setReplyingTo(null);
     } catch (err: unknown) {
-      console.error('评论失败:', err);
+      console.error("评论失败:", err);
       alert(getErrorMessage(err));
     } finally {
       setIsSubmittingComment(false);
@@ -694,7 +748,7 @@ function AnswerCard({
 
   // 删除评论
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('确定要删除这条评论吗？')) return;
+    if (!confirm("确定要删除这条评论吗？")) return;
 
     try {
       await deleteComment(commentId);
@@ -705,10 +759,10 @@ function AnswerCard({
           .map((c) => ({
             ...c,
             replies: c.replies.filter((r) => r.id !== commentId),
-          }))
+          })),
       );
     } catch (err: unknown) {
-      console.error('删除评论失败:', err);
+      console.error("删除评论失败:", err);
       alert(getErrorMessage(err));
     }
   };
@@ -716,7 +770,7 @@ function AnswerCard({
   // 点赞评论
   const handleLikeComment = async (commentId: string) => {
     try {
-      const result = await toggleLike('comment', commentId);
+      const result = await toggleLike("comment", commentId);
       // 更新评论状态
       const updateComment = (c: Comment): Comment =>
         c.id === commentId
@@ -724,7 +778,7 @@ function AnswerCard({
           : { ...c, replies: c.replies.map(updateComment) };
       setComments((prev) => prev.map(updateComment));
     } catch (err) {
-      console.error('点赞失败:', err);
+      console.error("点赞失败:", err);
     }
   };
 
@@ -737,7 +791,7 @@ function AnswerCard({
   // 取消编辑
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditContent('');
+    setEditContent("");
   };
 
   // 保存编辑
@@ -796,7 +850,7 @@ function AnswerCard({
               disabled={!editContent.trim() || isSaving}
               className="px-3 py-1.5 bg-[#e8a4b8] text-white text-sm rounded-full hover:bg-[#d88a9f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? '保存中...' : '保存'}
+              {isSaving ? "保存中..." : "保存"}
             </button>
           </div>
         </div>
@@ -813,8 +867,8 @@ function AnswerCard({
             onClick={() => onLike(answer.id)}
             className={`flex items-center gap-1 text-sm ${
               answer.is_liked
-                ? 'text-rose-500'
-                : 'text-stone-400 hover:text-stone-600'
+                ? "text-rose-500"
+                : "text-stone-400 hover:text-stone-600"
             }`}
           >
             <HeartIcon filled={answer.is_liked} />
@@ -843,12 +897,12 @@ function AnswerCard({
           {canDelete && (
             <button
               onClick={() => onDelete(answer.id)}
-              className={`flex items-center gap-1 text-sm text-stone-400 hover:text-red-500 transition-colors ${!canEdit ? 'ml-auto' : ''}`}
+              className={`flex items-center gap-1 text-sm text-stone-400 hover:text-red-500 transition-colors ${!canEdit ? "ml-auto" : ""}`}
             >
               <TrashIcon />
-            <span>删除</span>
-          </button>
-        )}
+              <span>删除</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -873,10 +927,14 @@ function AnswerCard({
                 type="text"
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
-                placeholder={replyingTo ? `回复 @${replyingTo.nickname}...` : '写下你的评论...'}
+                placeholder={
+                  replyingTo
+                    ? `回复 @${replyingTo.nickname}...`
+                    : "写下你的评论..."
+                }
                 className="flex-1 px-3 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:border-stone-400"
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSubmitComment();
                   }
@@ -887,16 +945,20 @@ function AnswerCard({
                 disabled={!commentContent.trim() || isSubmittingComment}
                 className="px-3 py-2 bg-[#e8a4b8] text-white text-sm rounded-lg hover:bg-[#d88a9f] disabled:opacity-50"
               >
-                {isSubmittingComment ? '...' : '发送'}
+                {isSubmittingComment ? "..." : "发送"}
               </button>
             </div>
           </div>
 
           {/* 评论列表 */}
           {isLoadingComments ? (
-            <div className="text-center py-4 text-stone-400 text-sm">加载中...</div>
+            <div className="text-center py-4 text-stone-400 text-sm">
+              加载中...
+            </div>
           ) : comments.length === 0 ? (
-            <div className="text-center py-4 text-stone-400 text-sm">暂无评论</div>
+            <div className="text-center py-4 text-stone-400 text-sm">
+              暂无评论
+            </div>
           ) : (
             <div className="space-y-3">
               {comments.map((comment) => (
@@ -950,7 +1012,9 @@ function CommentItem({
             {comment.reply_to_user && (
               <>
                 <span className="text-stone-400 text-xs">回复</span>
-                <span className="text-[#e8a4b8] text-xs">@{comment.reply_to_user.nickname}</span>
+                <span className="text-[#e8a4b8] text-xs">
+                  @{comment.reply_to_user.nickname}
+                </span>
               </>
             )}
             <span className="text-stone-400 text-xs">
@@ -962,7 +1026,9 @@ function CommentItem({
             <button
               onClick={() => onLike(comment.id)}
               className={`flex items-center gap-1 text-xs ${
-                comment.is_liked ? 'text-rose-500' : 'text-stone-400 hover:text-stone-600'
+                comment.is_liked
+                  ? "text-rose-500"
+                  : "text-stone-400 hover:text-stone-600"
               }`}
             >
               <HeartIcon filled={comment.is_liked} />
@@ -1009,7 +1075,16 @@ function CommentItem({
 // 评论图标
 function CommentIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
     </svg>
   );

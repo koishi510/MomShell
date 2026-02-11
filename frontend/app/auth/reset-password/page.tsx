@@ -1,44 +1,44 @@
-'use client';
+"use client";
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { resetPassword } from '../../../lib/auth';
-import { getErrorMessage } from '../../../lib/apiClient';
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { resetPassword } from "../../../lib/auth";
+import { getErrorMessage } from "../../../lib/apiClient";
 
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams.get("token");
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!token) {
-      setError('无效的重置链接');
+      setError("无效的重置链接");
     }
   }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!token) {
-      setError('无效的重置链接');
+      setError("无效的重置链接");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('两次输入的密码不一致');
+      setError("两次输入的密码不一致");
       return;
     }
 
     if (password.length < 6) {
-      setError('密码长度至少为6位');
+      setError("密码长度至少为6位");
       return;
     }
 
@@ -63,7 +63,9 @@ function ResetPasswordForm() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">重置密码</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+            重置密码
+          </h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
@@ -78,7 +80,7 @@ function ResetPasswordForm() {
                 <p className="text-sm mt-1">请使用新密码登录</p>
               </div>
               <button
-                onClick={() => router.push('/auth/login')}
+                onClick={() => router.push("/auth/login")}
                 className="w-full py-3 px-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium rounded-lg hover:from-pink-600 hover:to-purple-600 transition"
               >
                 前往登录
@@ -87,7 +89,10 @@ function ResetPasswordForm() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   新密码
                 </label>
                 <input
@@ -103,7 +108,10 @@ function ResetPasswordForm() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   确认新密码
                 </label>
                 <input
@@ -122,13 +130,16 @@ function ResetPasswordForm() {
                 disabled={isLoading || !token}
                 className="w-full py-3 px-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium rounded-lg hover:from-pink-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                {isLoading ? '重置中...' : '重置密码'}
+                {isLoading ? "重置中..." : "重置密码"}
               </button>
             </form>
           )}
 
           <div className="mt-6 text-center">
-            <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-800">
+            <Link
+              href="/auth/login"
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
               返回登录
             </Link>
           </div>
@@ -146,11 +157,13 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
-        <div className="text-gray-500">...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
+          <div className="text-gray-500">...</div>
+        </div>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
   );

@@ -5,13 +5,17 @@
  * 支持不同类型的反馈样式和动画
  */
 
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
 
 // 反馈类型
-export type FeedbackType = 'correction' | 'safety_warning' | 'encouragement' | 'info';
+export type FeedbackType =
+  | "correction"
+  | "safety_warning"
+  | "encouragement"
+  | "info";
 
 export interface Feedback {
   text: string;
@@ -20,46 +24,49 @@ export interface Feedback {
 }
 
 // 反馈样式配置
-const FEEDBACK_STYLES: Record<FeedbackType, {
-  bg: string;
-  border: string;
-  text: string;
-  icon: string;
-  glow: string;
-}> = {
+const FEEDBACK_STYLES: Record<
+  FeedbackType,
+  {
+    bg: string;
+    border: string;
+    text: string;
+    icon: string;
+    glow: string;
+  }
+> = {
   correction: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-700',
-    icon: '⚡',
-    glow: 'shadow-amber-200/50',
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    text: "text-amber-700",
+    icon: "⚡",
+    glow: "shadow-amber-200/50",
   },
   safety_warning: {
-    bg: 'bg-rose-50',
-    border: 'border-rose-200',
-    text: 'text-rose-700',
-    icon: '⚠️',
-    glow: 'shadow-rose-200/50',
+    bg: "bg-rose-50",
+    border: "border-rose-200",
+    text: "text-rose-700",
+    icon: "⚠️",
+    glow: "shadow-rose-200/50",
   },
   encouragement: {
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
-    text: 'text-emerald-700',
-    icon: '✨',
-    glow: 'shadow-emerald-200/50',
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    text: "text-emerald-700",
+    icon: "✨",
+    glow: "shadow-emerald-200/50",
   },
   info: {
-    bg: 'bg-stone-50',
-    border: 'border-stone-200',
-    text: 'text-stone-700',
-    icon: '💡',
-    glow: 'shadow-stone-200/50',
+    bg: "bg-stone-50",
+    border: "border-stone-200",
+    text: "text-stone-700",
+    icon: "💡",
+    glow: "shadow-stone-200/50",
   },
 };
 
 export interface FeedbackToastProps {
   feedback: Feedback | null;
-  position?: 'top' | 'bottom' | 'center';
+  position?: "top" | "bottom" | "center";
   autoDismiss?: boolean;
   dismissDelay?: number;
   showAudioIndicator?: boolean;
@@ -68,7 +75,7 @@ export interface FeedbackToastProps {
 
 export function FeedbackToast({
   feedback,
-  position = 'bottom',
+  position = "bottom",
   autoDismiss = false,
   dismissDelay = 5000,
   showAudioIndicator = true,
@@ -113,21 +120,27 @@ export function FeedbackToast({
   }, [isPlayingAudio]);
 
   const positionClasses = {
-    top: 'top-4',
-    bottom: 'bottom-4',
-    center: 'top-1/2 -translate-y-1/2',
+    top: "top-4",
+    bottom: "bottom-4",
+    center: "top-1/2 -translate-y-1/2",
   };
 
-  const style = feedback ? FEEDBACK_STYLES[feedback.type] : FEEDBACK_STYLES.info;
+  const style = feedback
+    ? FEEDBACK_STYLES[feedback.type]
+    : FEEDBACK_STYLES.info;
 
   return (
     <AnimatePresence>
       {isVisible && feedback && (
         <motion.div
-          initial={{ opacity: 0, y: position === 'top' ? -20 : 20, scale: 0.95 }}
+          initial={{
+            opacity: 0,
+            y: position === "top" ? -20 : 20,
+            scale: 0.95,
+          }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: position === 'top' ? -20 : 20, scale: 0.95 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
+          exit={{ opacity: 0, y: position === "top" ? -20 : 20, scale: 0.95 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           className={`
             absolute left-4 right-4 ${positionClasses[position]}
             ${style.bg} ${style.border} border
@@ -139,8 +152,13 @@ export function FeedbackToast({
             {/* 图标 */}
             <motion.span
               className="text-xl flex-shrink-0"
-              animate={feedback.type === 'encouragement' ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.5, repeat: feedback.type === 'encouragement' ? 2 : 0 }}
+              animate={
+                feedback.type === "encouragement" ? { scale: [1, 1.2, 1] } : {}
+              }
+              transition={{
+                duration: 0.5,
+                repeat: feedback.type === "encouragement" ? 2 : 0,
+              }}
             >
               {style.icon}
             </motion.span>
@@ -166,10 +184,10 @@ export function FeedbackToast({
           </div>
 
           {/* 安全警告额外提示 */}
-          {feedback.type === 'safety_warning' && (
+          {feedback.type === "safety_warning" && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               className="mt-2 pt-2 border-t border-rose-200"
             >
               <p className="text-xs text-rose-600">
@@ -194,15 +212,15 @@ function AudioIndicator({ isPlaying }: { isPlaying: boolean }) {
           animate={
             isPlaying
               ? {
-                  height: ['8px', '16px', '8px'],
+                  height: ["8px", "16px", "8px"],
                 }
-              : { height: '8px' }
+              : { height: "8px" }
           }
           transition={{
             duration: 0.5,
             repeat: isPlaying ? Infinity : 0,
             delay: i * 0.15,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         />
       ))}
@@ -216,8 +234,13 @@ export interface FeedbackPanelProps {
   className?: string;
 }
 
-export function FeedbackPanel({ feedback, className = '' }: FeedbackPanelProps) {
-  const style = feedback ? FEEDBACK_STYLES[feedback.type] : FEEDBACK_STYLES.info;
+export function FeedbackPanel({
+  feedback,
+  className = "",
+}: FeedbackPanelProps) {
+  const style = feedback
+    ? FEEDBACK_STYLES[feedback.type]
+    : FEEDBACK_STYLES.info;
 
   return (
     <div
@@ -262,7 +285,10 @@ export interface FeedbackHistoryProps {
   maxItems?: number;
 }
 
-export function FeedbackHistory({ feedbacks, maxItems = 5 }: FeedbackHistoryProps) {
+export function FeedbackHistory({
+  feedbacks,
+  maxItems = 5,
+}: FeedbackHistoryProps) {
   const displayedFeedbacks = feedbacks.slice(-maxItems).reverse();
 
   return (
@@ -314,15 +340,16 @@ export function ScorePopup({ score, previousScore, show }: ScorePopupProps) {
           initial={{ opacity: 0, y: 20, scale: 0.8 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -20, scale: 0.8 }}
-          transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
+          transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
           className={`
             absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
             px-4 py-2 rounded-full font-bold text-lg
-            ${isPositive ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}
+            ${isPositive ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"}
             shadow-lg
           `}
         >
-          {isPositive ? '+' : ''}{diff}
+          {isPositive ? "+" : ""}
+          {diff}
         </motion.div>
       )}
     </AnimatePresence>
@@ -343,7 +370,7 @@ export function PhaseTransition({ phase, show }: PhaseTransitionProps) {
           initial={{ opacity: 0, scale: 1.5 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-40"
         >
           <motion.div
@@ -354,10 +381,16 @@ export function PhaseTransition({ phase, show }: PhaseTransitionProps) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
+              transition={{ delay: 0.2, type: "spring" }}
               className="text-4xl mb-2"
             >
-              {phase === '吸气' ? '🌬️' : phase === '呼气' ? '💨' : phase === '保持' ? '⏸️' : '🧘'}
+              {phase === "吸气"
+                ? "🌬️"
+                : phase === "呼气"
+                  ? "💨"
+                  : phase === "保持"
+                    ? "⏸️"
+                    : "🧘"}
             </motion.div>
             <h2 className="text-2xl font-medium text-stone-700">{phase}</h2>
           </motion.div>

@@ -3,11 +3,11 @@
  * 清晰度仪表盘组件
  */
 
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { ECHO_COLORS } from '../../../lib/design-tokens';
-import type { WindowClarity } from '../../../types/echo';
+import { motion } from "framer-motion";
+import { ECHO_COLORS } from "../../../lib/design-tokens";
+import type { WindowClarity } from "../../../types/echo";
 
 interface ClarityMeterProps {
   clarity: WindowClarity | null;
@@ -18,10 +18,10 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
 
   // 根据清晰度确定状态
   const getStatus = () => {
-    if (level < 30) return { label: '模糊', color: '#EF4444' };
-    if (level < 60) return { label: '朦胧', color: '#F59E0B' };
-    if (level < 90) return { label: '清晰', color: '#10B981' };
-    return { label: '透明', color: '#8B5CF6' };
+    if (level < 30) return { label: "模糊", color: "#EF4444" };
+    if (level < 60) return { label: "朦胧", color: "#F59E0B" };
+    if (level < 90) return { label: "清晰", color: "#10B981" };
+    return { label: "透明", color: "#8B5CF6" };
   };
 
   const status = getStatus();
@@ -30,21 +30,15 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
     <div
       className="rounded-2xl p-4"
       style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)',
+        background: "rgba(255, 255, 255, 0.1)",
+        backdropFilter: "blur(10px)",
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3
-          className="font-medium"
-          style={{ color: ECHO_COLORS.partner.text }}
-        >
+        <h3 className="font-medium" style={{ color: ECHO_COLORS.partner.text }}>
           窗户清晰度
         </h3>
-        <span
-          className="text-2xl font-bold"
-          style={{ color: status.color }}
-        >
+        <span className="text-2xl font-bold" style={{ color: status.color }}>
           {level}%
         </span>
       </div>
@@ -56,7 +50,7 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
           style={{ backgroundColor: status.color }}
           initial={{ width: 0 }}
           animate={{ width: `${level}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         />
       </div>
 
@@ -65,7 +59,7 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
         <span
           className="px-3 py-1 rounded-full text-sm font-medium"
           style={{
-            backgroundColor: status.color + '30',
+            backgroundColor: status.color + "30",
             color: status.color,
           }}
         >
@@ -80,7 +74,10 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
             <p style={{ color: ECHO_COLORS.partner.text }}>
               {clarity.breakdown.base_clarity}%
             </p>
-            <p className="text-xs opacity-60" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-xs opacity-60"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               确认任务
             </p>
           </div>
@@ -88,7 +85,10 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
             <p style={{ color: ECHO_COLORS.partner.text }}>
               {clarity.breakdown.task_clarity}%
             </p>
-            <p className="text-xs opacity-60" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-xs opacity-60"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               完成任务
             </p>
           </div>
@@ -96,7 +96,10 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
             <p style={{ color: ECHO_COLORS.partner.text }}>
               +{clarity.streak_bonus}%
             </p>
-            <p className="text-xs opacity-60" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-xs opacity-60"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               连续奖励
             </p>
           </div>
@@ -104,7 +107,10 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
             <p style={{ color: ECHO_COLORS.partner.text }}>
               +{clarity.level_bonus}%
             </p>
-            <p className="text-xs opacity-60" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-xs opacity-60"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               等级加成
             </p>
           </div>
@@ -115,18 +121,30 @@ export function ClarityMeter({ clarity }: ClarityMeterProps) {
       {clarity && (
         <div className="mt-4 pt-4 border-t border-white/10 flex justify-around">
           <div className="text-center">
-            <p className="text-lg font-bold" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-lg font-bold"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               {clarity.tasks_completed_today}
             </p>
-            <p className="text-xs opacity-60" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-xs opacity-60"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               今日完成
             </p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-lg font-bold"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               {clarity.tasks_confirmed_today}
             </p>
-            <p className="text-xs opacity-60" style={{ color: ECHO_COLORS.partner.text }}>
+            <p
+              className="text-xs opacity-60"
+              style={{ color: ECHO_COLORS.partner.text }}
+            >
               已确认
             </p>
           </div>

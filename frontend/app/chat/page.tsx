@@ -3,10 +3,10 @@
  * Soul Companion chat page (requires authentication)
  */
 
-'use client';
+"use client";
 
-import { AuthGuard } from '../../components/AuthGuard';
-import { CompanionInterface } from '../../components/CompanionInterface';
+import { AuthGuard } from "../../components/AuthGuard";
+import { CompanionInterface } from "../../components/CompanionInterface";
 
 export default function ChatPage() {
   return (

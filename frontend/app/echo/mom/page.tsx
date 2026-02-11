@@ -3,13 +3,17 @@
  * 妈妈模式主页 - 自我之境
  */
 
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AuthGuard } from '../../../components/AuthGuard';
-import { ECHO_COLORS, SPRING_CONFIGS, GLASS_STYLES } from '../../../lib/design-tokens';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { AuthGuard } from "../../../components/AuthGuard";
+import {
+  ECHO_COLORS,
+  SPRING_CONFIGS,
+  GLASS_STYLES,
+} from "../../../lib/design-tokens";
 import {
   getEchoStatus,
   getIdentityTags,
@@ -17,11 +21,18 @@ import {
   getMeditationStats,
   getRevealedMemories,
   getMemoirs,
-} from '../../../lib/api/echo';
-import { IdentityTagEditor } from '../../../components/echo/mom/IdentityTagEditor';
-import { GlassWindow } from '../../../components/echo/GlassWindow';
-import { MemoirCard } from '../../../components/echo/mom/MemoirCard';
-import type { EchoStatus, IdentityTagList, Scene, MeditationStats, Memoir, RevealedMemories } from '../../../types/echo';
+} from "../../../lib/api/echo";
+import { IdentityTagEditor } from "../../../components/echo/mom/IdentityTagEditor";
+import { GlassWindow } from "../../../components/echo/GlassWindow";
+import { MemoirCard } from "../../../components/echo/mom/MemoirCard";
+import type {
+  EchoStatus,
+  IdentityTagList,
+  Scene,
+  MeditationStats,
+  Memoir,
+  RevealedMemories,
+} from "../../../types/echo";
 
 function MomModePage() {
   const router = useRouter();
@@ -29,10 +40,14 @@ function MomModePage() {
   const [status, setStatus] = useState<EchoStatus | null>(null);
   const [tags, setTags] = useState<IdentityTagList | null>(null);
   const [scenes, setScenes] = useState<Scene[]>([]);
-  const [meditationStats, setMeditationStats] = useState<MeditationStats | null>(null);
+  const [meditationStats, setMeditationStats] =
+    useState<MeditationStats | null>(null);
   const [memoirs, setMemoirs] = useState<Memoir[]>([]);
-  const [revealedMemories, setRevealedMemories] = useState<RevealedMemories | null>(null);
-  const [activeTab, setActiveTab] = useState<'identity' | 'scenes' | 'memoirs'>('identity');
+  const [revealedMemories, setRevealedMemories] =
+    useState<RevealedMemories | null>(null);
+  const [activeTab, setActiveTab] = useState<"identity" | "scenes" | "memoirs">(
+    "identity",
+  );
   const [selectedScene, setSelectedScene] = useState<Scene | null>(null);
 
   useEffect(() => {
@@ -41,13 +56,14 @@ function MomModePage() {
 
   const loadData = async () => {
     try {
-      const [statusData, tagsData, scenesData, statsData, memoirsData] = await Promise.all([
-        getEchoStatus(),
-        getIdentityTags(),
-        matchScenes(5),
-        getMeditationStats(),
-        getMemoirs(5),
-      ]);
+      const [statusData, tagsData, scenesData, statsData, memoirsData] =
+        await Promise.all([
+          getEchoStatus(),
+          getIdentityTags(),
+          matchScenes(5),
+          getMeditationStats(),
+          getMemoirs(5),
+        ]);
 
       setStatus(statusData);
       setTags(tagsData);
@@ -65,7 +81,7 @@ function MomModePage() {
         }
       }
     } catch (error) {
-      console.error('Failed to load mom mode data:', error);
+      console.error("Failed to load mom mode data:", error);
     } finally {
       setLoading(false);
     }
@@ -81,7 +97,7 @@ function MomModePage() {
   };
 
   const handleStartMeditation = () => {
-    router.push('/echo/mom/meditation');
+    router.push("/echo/mom/meditation");
   };
 
   if (loading) {
@@ -113,13 +129,25 @@ function MomModePage() {
     >
       {/* 顶部导航 */}
       <header className="sticky top-0 z-50 px-4 py-4">
-        <div className={`${GLASS_STYLES.medium} rounded-2xl px-4 py-3 flex items-center justify-between`}>
+        <div
+          className={`${GLASS_STYLES.medium} rounded-2xl px-4 py-3 flex items-center justify-between`}
+        >
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push("/")}
             className="p-2 rounded-full hover:bg-white/30 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <h1
@@ -159,26 +187,44 @@ function MomModePage() {
 
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold" style={{ color: ECHO_COLORS.mom.text }}>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: ECHO_COLORS.mom.text }}
+              >
                 {meditationStats?.total_minutes || 0}
               </p>
-              <p className="text-sm opacity-70" style={{ color: ECHO_COLORS.mom.text }}>
+              <p
+                className="text-sm opacity-70"
+                style={{ color: ECHO_COLORS.mom.text }}
+              >
                 总分钟数
               </p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold" style={{ color: ECHO_COLORS.mom.text }}>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: ECHO_COLORS.mom.text }}
+              >
                 {meditationStats?.completed_sessions || 0}
               </p>
-              <p className="text-sm opacity-70" style={{ color: ECHO_COLORS.mom.text }}>
+              <p
+                className="text-sm opacity-70"
+                style={{ color: ECHO_COLORS.mom.text }}
+              >
                 完成次数
               </p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold" style={{ color: ECHO_COLORS.mom.text }}>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: ECHO_COLORS.mom.text }}
+              >
                 {meditationStats?.current_streak || 0}
               </p>
-              <p className="text-sm opacity-70" style={{ color: ECHO_COLORS.mom.text }}>
+              <p
+                className="text-sm opacity-70"
+                style={{ color: ECHO_COLORS.mom.text }}
+              >
                 连续天数
               </p>
             </div>
@@ -190,9 +236,9 @@ function MomModePage() {
       <section className="px-4 mb-4">
         <div className="flex gap-2">
           {[
-            { key: 'identity', label: '身份标签', icon: '🏷️' },
-            { key: 'scenes', label: '场景画卷', icon: '🖼️' },
-            { key: 'memoirs', label: '青春回忆录', icon: '📔' },
+            { key: "identity", label: "身份标签", icon: "🏷️" },
+            { key: "scenes", label: "场景画卷", icon: "🖼️" },
+            { key: "memoirs", label: "青春回忆录", icon: "📔" },
           ].map((tab) => (
             <motion.button
               key={tab.key}
@@ -200,11 +246,14 @@ function MomModePage() {
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
               className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${
                 activeTab === tab.key
-                  ? 'bg-white/80 shadow-md'
-                  : 'bg-white/30 hover:bg-white/50'
+                  ? "bg-white/80 shadow-md"
+                  : "bg-white/30 hover:bg-white/50"
               }`}
               style={{
-                color: activeTab === tab.key ? ECHO_COLORS.mom.text : ECHO_COLORS.mom.text + '99',
+                color:
+                  activeTab === tab.key
+                    ? ECHO_COLORS.mom.text
+                    : ECHO_COLORS.mom.text + "99",
               }}
             >
               <span className="mr-1">{tab.icon}</span>
@@ -217,21 +266,18 @@ function MomModePage() {
       {/* 内容区域 */}
       <section className="px-4">
         <AnimatePresence mode="wait">
-          {activeTab === 'identity' && (
+          {activeTab === "identity" && (
             <motion.div
               key="identity"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
             >
-              <IdentityTagEditor
-                tags={tags}
-                onUpdate={handleTagsUpdate}
-              />
+              <IdentityTagEditor tags={tags} onUpdate={handleTagsUpdate} />
             </motion.div>
           )}
 
-          {activeTab === 'scenes' && (
+          {activeTab === "scenes" && (
             <motion.div
               key="scenes"
               initial={{ opacity: 0, x: -20 }}
@@ -247,7 +293,10 @@ function MomModePage() {
                 </h3>
 
                 {scenes.length === 0 ? (
-                  <p className="text-center opacity-70 py-8" style={{ color: ECHO_COLORS.mom.text }}>
+                  <p
+                    className="text-center opacity-70 py-8"
+                    style={{ color: ECHO_COLORS.mom.text }}
+                  >
                     添加身份标签后，将为你匹配专属场景
                   </p>
                 ) : (
@@ -280,7 +329,7 @@ function MomModePage() {
             </motion.div>
           )}
 
-          {activeTab === 'memoirs' && (
+          {activeTab === "memoirs" && (
             <motion.div
               key="memoirs"
               initial={{ opacity: 0, x: -20 }}

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/community/DailyResonance.tsx
 /**
@@ -6,8 +6,8 @@
  * 展示3条精选话题，错落布局，温暖治愈风格
  */
 
-import { motion } from 'framer-motion';
-import { type HotTopic } from '../../types/community';
+import { motion } from "framer-motion";
+import { type HotTopic } from "../../types/community";
 
 interface DailyResonanceProps {
   topics: HotTopic[];
@@ -23,12 +23,15 @@ const STAGGER_OFFSETS = [
 
 // 柔和的边框颜色
 const BORDER_COLORS = [
-  'border-rose-200/60',
-  'border-amber-200/60',
-  'border-emerald-200/60',
+  "border-rose-200/60",
+  "border-amber-200/60",
+  "border-emerald-200/60",
 ];
 
-export default function DailyResonance({ topics, onTopicClick }: DailyResonanceProps) {
+export default function DailyResonance({
+  topics,
+  onTopicClick,
+}: DailyResonanceProps) {
   const displayTopics = topics.slice(0, 3);
 
   return (
@@ -55,7 +58,7 @@ export default function DailyResonance({ topics, onTopicClick }: DailyResonanceP
             transition={{ delay: 0.3 + index * 0.1 }}
             whileHover={{
               y: -2,
-              transition: { duration: 0.2 }
+              transition: { duration: 0.2 },
             }}
             className={`
               w-full text-left p-4 rounded-2xl

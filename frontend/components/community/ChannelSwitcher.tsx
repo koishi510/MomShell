@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/components/community/ChannelSwitcher.tsx
 /**
@@ -6,26 +6,31 @@
  * 光影平移 + 呼吸光晕效果
  */
 
-import { motion } from 'framer-motion';
-import { type ChannelType } from '../../types/community';
-import { CHANNEL_COLORS, SPRING_CONFIGS } from '../../lib/design-tokens';
+import { motion } from "framer-motion";
+import { type ChannelType } from "../../types/community";
+import { CHANNEL_COLORS, SPRING_CONFIGS } from "../../lib/design-tokens";
 
 interface ChannelSwitcherProps {
   activeChannel: ChannelType;
   onChannelChange: (channel: ChannelType) => void;
 }
 
-const CHANNELS: { type: ChannelType; label: string; subtitle: string; icon: React.ReactNode }[] = [
+const CHANNELS: {
+  type: ChannelType;
+  label: string;
+  subtitle: string;
+  icon: React.ReactNode;
+}[] = [
   {
-    type: 'professional',
-    label: '专业频道',
-    subtitle: '听听医生怎么说',
+    type: "professional",
+    label: "专业频道",
+    subtitle: "听听医生怎么说",
     icon: <ProfessionalIcon />,
   },
   {
-    type: 'experience',
-    label: '经验频道',
-    subtitle: '看看妈妈们的经验',
+    type: "experience",
+    label: "经验频道",
+    subtitle: "看看妈妈们的经验",
     icon: <ExperienceIcon />,
   },
 ];
@@ -40,8 +45,8 @@ export default function ChannelSwitcher({
     <motion.div
       className="relative flex items-center p-1.5 rounded-full"
       style={{
-        background: 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(12px)',
+        background: "rgba(255, 255, 255, 0.7)",
+        backdropFilter: "blur(12px)",
         boxShadow: `
           0 4px 24px rgba(0, 0, 0, 0.06),
           0 0 0 1px rgba(255, 255, 255, 0.8) inset
@@ -55,7 +60,7 @@ export default function ChannelSwitcher({
       <div
         className="absolute inset-0 rounded-full pointer-events-none opacity-40"
         style={{
-          background: `radial-gradient(ellipse at ${activeChannel === 'professional' ? '30%' : '70%'} 50%, ${activeColors.glow}, transparent 70%)`,
+          background: `radial-gradient(ellipse at ${activeChannel === "professional" ? "30%" : "70%"} 50%, ${activeColors.glow}, transparent 70%)`,
         }}
       />
 
@@ -90,7 +95,7 @@ export default function ChannelSwitcher({
               className="relative z-10 mb-1"
               animate={{
                 scale: isActive ? 1.1 : 1,
-                color: isActive ? colors.primary : '#a8a29e',
+                color: isActive ? colors.primary : "#a8a29e",
               }}
               transition={{ duration: 0.2 }}
             >
@@ -100,7 +105,7 @@ export default function ChannelSwitcher({
             {/* 标签 */}
             <span
               className={`relative z-10 text-sm font-medium transition-colors duration-200 ${
-                isActive ? 'text-stone-700' : 'text-stone-400'
+                isActive ? "text-stone-700" : "text-stone-400"
               }`}
             >
               {channel.label}
@@ -112,7 +117,7 @@ export default function ChannelSwitcher({
               initial={false}
               animate={{
                 opacity: isActive ? 1 : 0,
-                height: isActive ? 'auto' : 0,
+                height: isActive ? "auto" : 0,
                 marginTop: isActive ? 2 : 0,
               }}
               transition={{ duration: 0.2 }}

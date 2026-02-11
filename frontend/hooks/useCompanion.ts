@@ -3,9 +3,9 @@
  * Soulful Companion 状态管理 Hook
  */
 
-import { useState, useCallback } from 'react';
-import { sendMessage } from '../lib/api';
-import type { VisualResponse, VisualMetadata } from '../types/companion';
+import { useState, useCallback } from "react";
+import { sendMessage } from "../lib/api";
+import type { VisualResponse, VisualMetadata } from "../types/companion";
 
 interface UseCompanionReturn {
   isLoading: boolean;
@@ -31,33 +31,36 @@ export function useCompanion(): UseCompanionReturn {
     setTimeout(() => setIsRippling(false), 2000);
   }, []);
 
-  const send = useCallback(async (content: string) => {
-    if (!content.trim()) return;
+  const send = useCallback(
+    async (content: string) => {
+      if (!content.trim()) return;
 
-    setIsLoading(true);
-    setError(null);
-    triggerRipple();
+      setIsLoading(true);
+      setError(null);
+      triggerRipple();
 
-    try {
-      const result = await sendMessage({
-        content,
-        session_id: sessionId,
-      });
+      try {
+        const result = await sendMessage({
+          content,
+          session_id: sessionId,
+        });
 
-      setResponse(result);
-      setVisualState(result.visual_metadata);
+        setResponse(result);
+        setVisualState(result.visual_metadata);
 
-      // 首次对话时保存 session_id（后端会生成）
-      if (!sessionId) {
-        // 使用固定 session_id 或从响应中获取
-        setSessionId(`session-${Date.now()}`);
+        // 首次对话时保存 session_id（后端会生成）
+        if (!sessionId) {
+          // 使用固定 session_id 或从响应中获取
+          setSessionId(`session-${Date.now()}`);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "发送失败，请稍后再试");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '发送失败，请稍后再试');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sessionId, triggerRipple]);
+    },
+    [sessionId, triggerRipple],
+  );
 
   return {
     isLoading,

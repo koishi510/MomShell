@@ -1,6 +1,13 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
 import {
   User,
   TokenResponse,
@@ -14,7 +21,7 @@ import {
   clearTokens,
   LoginParams,
   RegisterParams,
-} from '../lib/auth';
+} from "../lib/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -49,7 +56,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const tokens = await refreshToken(currentRefreshToken);
-      const rememberMe = localStorage.getItem('momshell_remember_me') === 'true';
+      const rememberMe =
+        localStorage.getItem("momshell_remember_me") === "true";
       saveTokens(tokens, rememberMe);
       setAccessToken(tokens.access_token);
 
@@ -89,19 +97,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [refreshAuth]);
 
   // Login function
-  const login = useCallback(async (params: LoginParams, rememberMe: boolean) => {
-    const tokens = await apiLogin(params);
-    saveTokens(tokens, rememberMe);
-    setAccessToken(tokens.access_token);
+  const login = useCallback(
+    async (params: LoginParams, rememberMe: boolean) => {
+      const tokens = await apiLogin(params);
+      saveTokens(tokens, rememberMe);
+      setAccessToken(tokens.access_token);
 
-    const userInfo = await getCurrentUser(tokens.access_token);
-    setUser(userInfo);
-  }, []);
+      const userInfo = await getCurrentUser(tokens.access_token);
+      setUser(userInfo);
+    },
+    [],
+  );
 
   // Register function
-  const register = useCallback(async (params: RegisterParams): Promise<User> => {
-    return await apiRegister(params);
-  }, []);
+  const register = useCallback(
+    async (params: RegisterParams): Promise<User> => {
+      return await apiRegister(params);
+    },
+    [],
+  );
 
   // Logout function
   const logout = useCallback(() => {
@@ -127,7 +141,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

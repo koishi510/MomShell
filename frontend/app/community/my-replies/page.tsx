@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // frontend/app/community/my-replies/page.tsx
 /**
@@ -6,21 +6,29 @@
  * 展示用户发布的所有回答
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getMyAnswers, deleteAnswer, toggleLike, toggleCollection, type MyAnswerItem } from '../../../lib/api/community';
-import { type Question } from '../../../types/community';
-import CommunityBackground from '../../../components/community/CommunityBackground';
-import QuestionDetailModal from '../../../components/community/QuestionDetailModal';
-import ReplyCard from '../../../components/community/ReplyCard';
-import { AuthGuard } from '../../../components/AuthGuard';
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  getMyAnswers,
+  deleteAnswer,
+  toggleLike,
+  toggleCollection,
+  type MyAnswerItem,
+} from "../../../lib/api/community";
+import { type Question } from "../../../types/community";
+import CommunityBackground from "../../../components/community/CommunityBackground";
+import QuestionDetailModal from "../../../components/community/QuestionDetailModal";
+import ReplyCard from "../../../components/community/ReplyCard";
+import { AuthGuard } from "../../../components/AuthGuard";
 
 function MyRepliesContent() {
   const [answers, setAnswers] = useState<MyAnswerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+    null,
+  );
   const hasFetched = useRef(false);
 
   // Load answers
@@ -31,8 +39,8 @@ function MyRepliesContent() {
       const response = await getMyAnswers({ page: 1, page_size: 50 });
       setAnswers(response.items);
     } catch (err) {
-      console.error('Failed to load answers:', err);
-      setError('加载失败，请刷新重试');
+      console.error("Failed to load answers:", err);
+      setError("加载失败，请刷新重试");
     } finally {
       setIsLoading(false);
     }
@@ -49,15 +57,15 @@ function MyRepliesContent() {
     const question: Question = {
       id: answer.question.id,
       title: answer.question.title,
-      content: '',
-      content_preview: '',
+      content: "",
+      content_preview: "",
       channel: answer.question.channel as any,
-      status: 'published',
+      status: "published",
       author: {
-        id: 'unknown',
-        nickname: '匿名用户',
+        id: "unknown",
+        nickname: "匿名用户",
         avatar_url: null,
-        role: 'mom',
+        role: "mom",
         is_certified: false,
         certification_title: undefined,
       },
@@ -71,34 +79,40 @@ function MyRepliesContent() {
       is_collected: false,
       professional_answer_count: 0,
       experience_answer_count: 0,
-      created_at: '',
+      created_at: "",
       has_accepted_answer: false,
     };
     setSelectedQuestion(question);
   };
 
   const handleDelete = async (answerId: string) => {
-    if (!confirm('确定要删除这条回答吗？')) return;
+    if (!confirm("确定要删除这条回答吗？")) return;
 
     try {
       await deleteAnswer(answerId);
       setAnswers((prev) => prev.filter((a) => a.id !== answerId));
     } catch (err) {
-      console.error('删除失败:', err);
-      alert('删除失败，请重试');
+      console.error("删除失败:", err);
+      alert("删除失败，请重试");
     }
   };
 
   const handleLike = async (id: string) => {
     try {
-      const result = await toggleLike('question', id);
+      const result = await toggleLike("question", id);
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
-          prev ? { ...prev, is_liked: result.is_liked, like_count: result.like_count } : null
+          prev
+            ? {
+                ...prev,
+                is_liked: result.is_liked,
+                like_count: result.like_count,
+              }
+            : null,
         );
       }
     } catch (err) {
-      console.error('点赞失败:', err);
+      console.error("点赞失败:", err);
     }
   };
 
@@ -107,11 +121,17 @@ function MyRepliesContent() {
       const result = await toggleCollection(id);
       if (selectedQuestion?.id === id) {
         setSelectedQuestion((prev) =>
-          prev ? { ...prev, is_collected: result.is_collected, collection_count: result.collection_count } : null
+          prev
+            ? {
+                ...prev,
+                is_collected: result.is_collected,
+                collection_count: result.collection_count,
+              }
+            : null,
         );
       }
     } catch (err) {
-      console.error('收藏失败:', err);
+      console.error("收藏失败:", err);
     }
   };
 
@@ -123,7 +143,7 @@ function MyRepliesContent() {
   const handleViewCountUpdated = (questionId: string, viewCount: number) => {
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, view_count: viewCount } : null
+        prev ? { ...prev, view_count: viewCount } : null,
       );
     }
   };
@@ -131,15 +151,18 @@ function MyRepliesContent() {
   const handleAnswerCreated = (questionId: string) => {
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, answer_count: prev.answer_count + 1 } : null
+        prev ? { ...prev, answer_count: prev.answer_count + 1 } : null,
       );
     }
   };
 
-  const handleAnswerCountUpdated = (questionId: string, answerCount: number) => {
+  const handleAnswerCountUpdated = (
+    questionId: string,
+    answerCount: number,
+  ) => {
     if (selectedQuestion?.id === questionId) {
       setSelectedQuestion((prev) =>
-        prev ? { ...prev, answer_count: answerCount } : null
+        prev ? { ...prev, answer_count: answerCount } : null,
       );
     }
   };
@@ -172,9 +195,7 @@ function MyRepliesContent() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* 副标题 */}
         <div className="text-center mb-8">
-          <p className="text-stone-500 text-sm">
-            你的每一份回答，都是爱的传递
-          </p>
+          <p className="text-stone-500 text-sm">你的每一份回答，都是爱的传递</p>
         </div>
 
         {/* 加载状态 */}

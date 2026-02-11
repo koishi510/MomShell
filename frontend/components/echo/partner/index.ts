@@ -3,6 +3,6 @@
  * Partner mode 组件导出
  */
 
-export { BlurredMomView } from './BlurredMomView';
-export { ClarityMeter } from './ClarityMeter';
-export { MemoryInjector } from './MemoryInjector';
+export { BlurredMomView } from "./BlurredMomView";
+export { ClarityMeter } from "./ClarityMeter";
+export { MemoryInjector } from "./MemoryInjector";
