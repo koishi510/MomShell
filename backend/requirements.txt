@@ -888,9 +888,9 @@ langchain-anthropic==1.3.1 \
     --hash=sha256:1fc28cf8037c30597ee6172fc2ff9e345efe8149a8c2a39897b1eebba2948322 \
     --hash=sha256:4f3d7a4a7729ab1aeaf62d32c87d4d227c1b5421668ca9e3734562b383470b07
     # via momshell-backend
-langchain-core==1.2.7 \
-    --hash=sha256:452f4fef7a3d883357b22600788d37e3d8854ef29da345b7ac7099f33c31828b \
-    --hash=sha256:e1460639f96c352b4a41c375f25aeb8d16ffc1769499fb1c20503aad59305ced
+langchain-core==1.2.11 \
+    --hash=sha256:ae11ceb8dda60d0b9d09e763116e592f1683327c17be5b715f350fd29aee65d3 \
+    --hash=sha256:f164bb36602dd74a3a50c1334fca75309ad5ed95767acdfdbb9fa95ce28a1e01
     # via
     #   langchain-anthropic
     #   langchain-openai
