@@ -29,6 +29,18 @@ from .enums import (
     UserRole,
 )
 
+# Import UserIdentity from beach module for identity field
+# This is imported here to avoid circular imports
+try:
+    from app.services.beach.enums import UserIdentity
+except ImportError:
+    # Fallback if beach module not yet created
+    from enum import Enum
+
+    class UserIdentity(str, Enum):
+        ORIGIN_SEEKER = "origin_seeker"
+        GUARDIAN = "guardian"
+
 if TYPE_CHECKING:
     pass
 
@@ -44,7 +56,7 @@ def generate_uuid() -> str:
 
 
 class User(Base):
-    """User table - extended to support role certification."""
+    """User table - extended to support role certification and identity."""
 
     __tablename__ = "users"
 
@@ -55,6 +67,13 @@ class User(Base):
     nickname: Mapped[str] = mapped_column(String(50))
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.MOM)
+
+    # Identity (v2.0) - permanent, one-time selection
+    # None means not yet selected (new user)
+    identity: Mapped[UserIdentity | None] = mapped_column(
+        SAEnum(UserIdentity), nullable=True, index=True
+    )
+    identity_locked: Mapped[bool] = mapped_column(Boolean, default=False)  # Once set, cannot change
 
     # Postpartum related info
     baby_birth_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
