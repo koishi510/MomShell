@@ -5,6 +5,143 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-02-11
+
+### Added
+
+#### Shell Beach System - Complete Frontend Rewrite
+
+Complete frontend rewrite based on the Shell Beach metaphor design specification.
+
+**Entry Flow**
+- Landing page with full-screen sea sunrise poster
+- "开启回响" (Open Echo) button to start
+- Auth flow: Login or Register (existing users login directly)
+- Identity selection (溯源者/守护者) shown only after registration
+- Identity is permanent and cannot be changed
+
+**Mom Mode (溯源之境)**
+- Calm-inspired lavender dream theme (#F8F6FF → #EDE7FF)
+- Dusty shells scattered on beach - click to record memories
+- Memory input with preset tags (运动会最后一棒, 旧磁带, 风铃, etc.)
+- AI sticker generation from memory text
+- Drift bottle feature to send wishes
+- View memory injections from partner (golden sparkle effect)
+
+**Dad Mode (守护之滨)**
+- Deep ocean night theme (#0D1B2A → #1F3044) with stars and moonlight
+- Task shells - complete real-world tasks to unlock mom's memories
+- Catch drift bottles (mom's wishes) and fulfill them
+- Conch shell for injecting memories to mom's beach
+
+**Shared Components**
+- Four-tab bottom navigation: 境 (Beach), 圈 (Community), 愈 (Chat), 记 (Gallery)
+- Adaptive theming based on user identity (lavender/ocean)
+- Framer Motion animations throughout
+
+**AI Chat (愈)**
+- 贝壳姐姐 emotional support chat
+- Different welcome messages for mom vs dad
+- Theme-aware styling with glassmorphism
+
+**Pearl Gallery (记)**
+- View all generated memory stickers
+- View wish/bottle history with status tracking
+
+#### Profile Page (`/profile`)
+
+- New user profile page with account information display
+  - Avatar, nickname, username display
+  - Role and identity badges (溯源者/守护者, 妈妈/爸爸, etc.)
+  - Certification status indicator
+  - Account info section (email, postpartum weeks, baby birthday, join date)
+  - Action buttons: change password, edit profile, logout
+  - Logout confirmation modal
+  - Theme-aware styling based on user identity
+
+#### Community System (`/community`)
+
+- Full community Q&A functionality
+  - Latest/Hot tabs with proper API integration
+  - Question list with author info, tags, stats (views, answers, likes)
+  - Create new post modal with title and content input
+  - Post card with animation and interaction feedback
+  - Relative time display (刚刚, X分钟前, X小时前, etc.)
+
+- Question detail page (`/community/[id]`)
+  - View complete question content
+  - List all answers with author info
+  - Write and submit new answers
+  - Theme-aware styling
+
+#### Community API Client (`lib/api/community.ts`)
+
+- New API client for community features
+  - `getQuestions()` - Get paginated question list
+  - `getHotQuestions()` - Get trending questions
+  - `getQuestion()` - Get question details
+  - `createQuestion()` - Create new question
+  - `getQuestionAnswers()` - Get answers for a question
+  - `createAnswer()` - Create answer
+  - `likeQuestion()` / `unlikeQuestion()` - Like interactions
+  - `collectQuestion()` / `uncollectQuestion()` - Collection interactions
+  - `formatRelativeTime()` - Human-readable time formatting
+
+#### Design System - Calm-Inspired Theme
+
+- Mom mode: Lavender Dream
+  - Background gradient: #F8F6FF → #F3EFFF → #EDE7FF
+  - Accent: #B8A9E8 (soft lavender)
+  - Glassmorphism cards with purple glow
+
+- Dad mode: Deep Ocean Night
+  - Background gradient: #0D1B2A → #1B2838 → #1F3044
+  - Accent: #64B5F6 (ocean blue)
+  - Glass cards with blue ambient glow
+
+- Shared utilities:
+  - `.glass-card` / `.glass-card-dark` - Frosted glass effects
+  - `.glow-soft-mom` / `.glow-soft-dad` - Ambient glows
+  - `.btn-primary-mom` / `.btn-primary-dad` - Gradient buttons
+  - Animation classes: float, shimmer, fade-in
+
+### Fixed
+
+- **Chat API 422 Error**: Fixed API request/response format mismatch
+  - Frontend was sending `{ message: ... }` but backend expects `{ content: ... }`
+  - Frontend expected `response.data.message` but backend returns `response.data.text`
+
+- **Hydration Mismatch**: Fixed star positions using random values
+  - Replaced `Math.random()` with deterministic `useMemo` positions
+  - Server and client now render identical star positions
+
+- **Sticker Generation 500 Error**: Made sticker generation resilient
+  - Frontend: Sticker generation failure no longer blocks memory recording
+  - Backend: Returns placeholder image when ModelScope API is unavailable
+
+### Changed
+
+- **Next.js Config**: Removed `output: "export"` to enable dynamic routes
+  - `/community/[id]` now works as server-rendered dynamic route
+  - Other pages remain statically generated
+
+### Removed
+
+- All previous frontend code completely deleted
+- Old auth pages, components, hooks replaced with new implementation
+- Coach module removed (exercises, pose detection, progress tracking)
+- Echo module removed (meditation, identity tags, partner window)
+- Guardian module removed (partner binding, daily tasks)
+
+### Technical
+
+- Simplified project structure with fewer files
+- Shared BottomNav component instead of duplicated code
+- CSS variables for consistent theming
+- Calm/Headspace-inspired design language
+
+---
+
 ## [0.6.0] - 2026-02-09
 
 ### Added
