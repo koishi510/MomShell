@@ -1,6 +1,5 @@
-"""MomShell Recovery Coach - Main FastAPI Application (ModelScope Deploy)."""
+"""MomShell - Shell Beach System Main FastAPI Application."""
 
-import asyncio
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -12,20 +11,17 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.v1 import exercises, progress, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.services.auth import auth_router
 
 # Import models to register them with SQLAlchemy Base
+from app.services.beach import models as beach_models  # noqa: F401
+from app.services.beach.router import router as beach_router
 from app.services.chat import models as chat_models  # noqa: F401
 from app.services.chat import router as companion_router
-from app.services.coach import models as coach_models  # noqa: F401
 from app.services.community import community_router
 from app.services.community import models as community_models  # noqa: F401
-from app.services.echo import echo_router
-from app.services.echo import models as echo_models  # noqa: F401
-from app.services.guardian import guardian_router
 from app.services.guardian import models as guardian_models  # noqa: F401
 
 settings = get_settings()
@@ -52,26 +48,6 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 # Frontend static files (built from Next.js export)
 FRONTEND_DIR = Path("/app/frontend_dist")
-
-
-def preload_mediapipe() -> None:
-    """Preload MediaPipe to avoid blocking during WebSocket handling."""
-    print("[Startup] Preloading MediaPipe...")
-    try:
-        from app.services.coach.pose.detector import PoseDetector
-
-        # Create and close a detector to trigger model download and initialization
-        detector = PoseDetector()
-        detector.close()
-        print("[Startup] MediaPipe loaded successfully")
-    except Exception as e:
-        print(f"[Startup] MediaPipe preload warning: {e}")
-
-
-async def preload_mediapipe_background() -> None:
-    """Preload MediaPipe in background to not block startup."""
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, preload_mediapipe)
 
 
 def ensure_db_directory() -> None:
@@ -139,31 +115,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     check_security_settings()
     ensure_db_directory()
     await init_db()
-    # Seed guardian task templates
-    from app.core.database import async_session_maker
-    from app.services.guardian.seed_data import seed_task_templates
-
-    async with async_session_maker() as session:
-        await seed_task_templates(session)
-    # Seed echo domain data
-    from app.services.echo.seed_data import seed_echo_data
-
-    async with async_session_maker() as session:
-        echo_counts = await seed_echo_data(session)
-        if echo_counts["scenes"] > 0 or echo_counts["audio"] > 0:
-            print(f"[Startup] Echo data seeded: {echo_counts}")
     # Create initial admin if configured
     await ensure_admin()
-    # Start MediaPipe preloading in background (non-blocking)
-    asyncio.create_task(preload_mediapipe_background())
     yield
     # Shutdown
 
 
 app = FastAPI(
     title=settings.app_name,
-    description="AI-powered postpartum recovery coaching application",
-    version="0.1.0",
+    description="AI-powered postpartum recovery platform with Shell Beach system",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -184,14 +145,10 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Include API routers
-app.include_router(websocket.router, prefix="/api/v1")
-app.include_router(exercises.router, prefix="/api/v1")
-app.include_router(progress.router, prefix="/api/v1")
 app.include_router(companion_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
-app.include_router(guardian_router, prefix="/api/v1")
-app.include_router(echo_router, prefix="/api/v1")
+app.include_router(beach_router, prefix="/api/v1")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])
@@ -246,15 +203,6 @@ else:
 
 if __name__ == "__main__":
     import uvicorn
-
-    # Try to use uvloop for better async performance
-    try:
-        import uvloop
-
-        uvloop.install()
-        print("[Startup] uvloop installed for better async performance")
-    except ImportError:
-        pass
 
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)

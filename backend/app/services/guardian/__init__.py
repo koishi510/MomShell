@@ -1,5 +1,5 @@
-"""Guardian Partner service for supporting partners of postpartum mothers."""
+"""Guardian module - provides PartnerBinding model for beach system."""
 
-from .router import router as guardian_router
+from .models import PartnerBinding
 
-__all__ = ["guardian_router"]
+__all__ = ["PartnerBinding"]
