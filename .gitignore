@@ -292,3 +292,4 @@ ehthumbs.db
 *.temp
 tmp/
 temp/
+.aider*

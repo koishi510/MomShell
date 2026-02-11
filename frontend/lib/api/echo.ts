@@ -23,6 +23,25 @@ import type {
   MemoirGenerateRequest,
   Memoir,
   MemoirList,
+  // Dad Mode 2.0
+  TaskShell,
+  TaskShellList,
+  ShellWashResponse,
+  WishBottle,
+  WishBottleList,
+  WishBottleCreate,
+  WishCatchResponse,
+  WishConfirmRequest,
+  MemoryShell,
+  MemoryShellList,
+  MemoryShellCreate,
+  MemoryReactRequest,
+  EchoNotification,
+  NotificationList,
+  ArchiveData,
+  PoolStatus,
+  TaskCreateRequest,
+  TaskAcceptRejectRequest,
 } from '../../types/echo';
 
 const ECHO_API = '/api/v1/echo';
@@ -195,5 +214,179 @@ export async function rateMemoir(
   const response = await apiClient.post(`${ECHO_API}/memoirs/${memoirId}/rate`, {
     rating,
   });
+  return response.data;
+}
+
+// ============================================================
+// Dad Mode 2.0: Task Shells
+// ============================================================
+
+/**
+ * 获取所有任务贝壳
+ */
+export async function getTaskShells(includeArchived = false): Promise<TaskShellList> {
+  const response = await apiClient.get(`${ECHO_API}/shells`, {
+    params: { include_archived: includeArchived },
+  });
+  return response.data;
+}
+
+/**
+ * 开始洗涤贝壳
+ */
+export async function startWashingShell(shellId: string): Promise<TaskShell> {
+  const response = await apiClient.post(`${ECHO_API}/shells/${shellId}/wash`);
+  return response.data;
+}
+
+/**
+ * 确认完成洗涤贝壳
+ */
+export async function confirmShellWashing(shellId: string): Promise<ShellWashResponse> {
+  const response = await apiClient.post(`${ECHO_API}/shells/${shellId}/confirm`);
+  return response.data;
+}
+
+/**
+ * 创建任务（共建）
+ */
+export async function createTask(data: TaskCreateRequest): Promise<TaskShell> {
+  const response = await apiClient.post(`${ECHO_API}/tasks/create`, data);
+  return response.data;
+}
+
+/**
+ * 接受妈妈创建的任务
+ */
+export async function acceptTaskShell(shellId: string): Promise<TaskShell> {
+  const response = await apiClient.post(`${ECHO_API}/tasks/${shellId}/accept`);
+  return response.data;
+}
+
+/**
+ * 拒绝妈妈创建的任务
+ */
+export async function rejectTaskShell(shellId: string): Promise<{ message: string }> {
+  const response = await apiClient.post(`${ECHO_API}/tasks/${shellId}/reject`);
+  return response.data;
+}
+
+// ============================================================
+// Dad Mode 2.0: Wish Bottles
+// ============================================================
+
+/**
+ * 获取所有心愿瓶
+ */
+export async function getWishBottles(): Promise<WishBottleList> {
+  const response = await apiClient.get(`${ECHO_API}/wishes`);
+  return response.data;
+}
+
+/**
+ * 妈妈创建心愿瓶
+ */
+export async function createWishBottle(data: WishBottleCreate): Promise<WishBottle> {
+  const response = await apiClient.post(`${ECHO_API}/wishes`, data);
+  return response.data;
+}
+
+/**
+ * 爸爸接住心愿瓶
+ */
+export async function catchWishBottle(wishId: string): Promise<WishCatchResponse> {
+  const response = await apiClient.post(`${ECHO_API}/wishes/${wishId}/catch`);
+  return response.data;
+}
+
+/**
+ * 妈妈确认心愿完成
+ */
+export async function confirmWishGranted(
+  wishId: string,
+  data: WishConfirmRequest
+): Promise<WishBottle> {
+  const response = await apiClient.post(`${ECHO_API}/wishes/${wishId}/confirm`, data);
+  return response.data;
+}
+
+// ============================================================
+// Dad Mode 2.0: Memory Shells
+// ============================================================
+
+/**
+ * 爸爸创建记忆贝壳
+ */
+export async function createMemoryShell(data: MemoryShellCreate): Promise<MemoryShell> {
+  const response = await apiClient.post(`${ECHO_API}/memories/create`, data);
+  return response.data;
+}
+
+/**
+ * 妈妈打开记忆贝壳
+ */
+export async function openMemoryShell(memoryId: string): Promise<MemoryShell> {
+  const response = await apiClient.post(`${ECHO_API}/memories/${memoryId}/open`);
+  return response.data;
+}
+
+/**
+ * 妈妈对记忆做出反应
+ */
+export async function reactToMemory(
+  memoryId: string,
+  data: MemoryReactRequest
+): Promise<MemoryShell> {
+  const response = await apiClient.post(`${ECHO_API}/memories/${memoryId}/react`, data);
+  return response.data;
+}
+
+// ============================================================
+// Dad Mode 2.0: Notifications
+// ============================================================
+
+/**
+ * 获取通知列表
+ */
+export async function getNotifications(unreadOnly = false): Promise<NotificationList> {
+  const response = await apiClient.get(`${ECHO_API}/notifications`, {
+    params: { unread_only: unreadOnly },
+  });
+  return response.data;
+}
+
+/**
+ * 标记通知为已读
+ */
+export async function markNotificationRead(notificationId: string): Promise<EchoNotification> {
+  const response = await apiClient.post(`${ECHO_API}/notifications/${notificationId}/read`);
+  return response.data;
+}
+
+/**
+ * 标记所有通知为已读
+ */
+export async function markAllNotificationsRead(): Promise<{ marked_count: number }> {
+  const response = await apiClient.post(`${ECHO_API}/notifications/read-all`);
+  return response.data;
+}
+
+// ============================================================
+// Dad Mode 2.0: Archive & Pool Status
+// ============================================================
+
+/**
+ * 获取归档数据（记）
+ */
+export async function getArchive(): Promise<ArchiveData> {
+  const response = await apiClient.get(`${ECHO_API}/archive`);
+  return response.data;
+}
+
+/**
+ * 获取记忆池和任务池状态
+ */
+export async function getPoolStatus(): Promise<PoolStatus> {
+  const response = await apiClient.get(`${ECHO_API}/pools/status`);
   return response.data;
 }

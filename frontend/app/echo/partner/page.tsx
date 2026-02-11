@@ -1,372 +1,613 @@
 // frontend/app/echo/partner/page.tsx
 /**
- * 爸爸模式主页 - 同步守护
+ * Dad Mode 2.0 - 爸爸模式主页
+ *
+ * Beach-themed experience with:
+ * - Task shells to wash
+ * - Wish bottles to catch
+ * - Memory shells to create
+ * - Light string with revealed memories
+ * - 4-tab navigation: 境/圈/愈/记
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { AuthGuard } from '../../../components/AuthGuard';
-import { ECHO_COLORS, GLASS_STYLES, SPRING_CONFIGS } from '../../../lib/design-tokens';
+import {
+  BeachArea,
+  BottomNavigation,
+  TabType,
+  TaskShell,
+  TaskDetailModal,
+  CelebrationAnimation,
+  LightString,
+  WishBottleIcon,
+  WishSeaModal,
+  MemoryConchIcon,
+  MemoryInjectModal,
+  TopBar,
+  type TabConfig,
+} from '../../../components/echo/partner';
 import {
   getEchoStatus,
-  getWindowClarity,
-  injectMemory,
+  getTaskShells,
+  startWashingShell,
+  confirmShellWashing,
+  getWishBottles,
+  catchWishBottle,
+  createMemoryShell,
+  createTask,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getArchive,
 } from '../../../lib/api/echo';
-import { getDailyTasks, completeTask } from '../../../lib/api/guardian';
-import { BlurredMomView } from '../../../components/echo/partner/BlurredMomView';
-import { ClarityMeter } from '../../../components/echo/partner/ClarityMeter';
-import { MemoryInjector } from '../../../components/echo/partner/MemoryInjector';
-import type { EchoStatus, WindowClarity, MemoryInjectRequest } from '../../../types/echo';
-import type { DailyTask } from '../../../types/guardian';
+import type {
+  TaskShell as TaskShellType,
+  WishBottle as WishBottleType,
+  EchoNotification,
+  LightStringPhoto,
+  ShellWashResponse,
+  ArchiveData,
+  StickerStyle,
+} from '../../../types/echo';
 
 function PartnerModePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<EchoStatus | null>(null);
-  const [clarity, setClarity] = useState<WindowClarity | null>(null);
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
-  const [showMemoryInjector, setShowMemoryInjector] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
+  // Data states
+  const [loading, setLoading] = useState(true);
+  const [hasBinding, setHasBinding] = useState(false);
+  const [shells, setShells] = useState<TaskShellType[]>([]);
+  const [wishes, setWishes] = useState<WishBottleType[]>([]);
+  const [notifications, setNotifications] = useState<EchoNotification[]>([]);
+  const [lightStringPhotos, setLightStringPhotos] = useState<LightStringPhoto[]>([]);
+  const [archiveData, setArchiveData] = useState<ArchiveData | null>(null);
+  const [memoryPoolWaiting, setMemoryPoolWaiting] = useState(0);
+
+  // UI states
+  const [activeTab, setActiveTab] = useState<TabType>('beach');
+  const [selectedShell, setSelectedShell] = useState<TaskShellType | null>(null);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showWishModal, setShowWishModal] = useState(false);
+  const [showMemoryModal, setShowMemoryModal] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<{
+    isOpen: boolean;
+    stickerUrl: string;
+    message: string;
+    isEchoFragment: boolean;
+  }>({
+    isOpen: false,
+    stickerUrl: '',
+    message: '',
+    isEchoFragment: false,
+  });
+
+  // Loading states
+  const [washing, setWashing] = useState(false);
+  const [catching, setCatching] = useState(false);
+  const [creatingMemory, setCreatingMemory] = useState(false);
+
+  // Load data on mount
   useEffect(() => {
-    loadData();
+    loadInitialData();
+
+    // Set up polling for notifications
+    const pollInterval = setInterval(() => {
+      loadNotifications();
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(pollInterval);
   }, []);
 
-  const loadData = async () => {
+  const loadInitialData = async () => {
     try {
       const statusData = await getEchoStatus();
-      setStatus(statusData);
+      setHasBinding(statusData.has_binding);
 
       if (!statusData.has_binding) {
-        // 没有绑定，需要先去绑定
+        setLoading(false);
         return;
       }
 
-      // 分别获取数据并处理各自的错误
-      try {
-        const clarityData = await getWindowClarity();
-        setClarity(clarityData);
-      } catch (clarityError) {
-        console.error('Failed to load window clarity:', clarityError);
-        // 使用默认值
-        setClarity({
-          clarity_level: 0,
-          tasks_completed_today: 0,
-          tasks_confirmed_today: 0,
-          streak_bonus: 0,
-          level_bonus: 0,
-          breakdown: {
-            base_clarity: 0,
-            task_clarity: 0,
-            streak_bonus: 0,
-            level_bonus: 0,
-          },
-        });
-      }
+      await Promise.all([
+        loadShells(),
+        loadWishes(),
+        loadNotifications(),
+      ]);
 
-      try {
-        const tasksData = await getDailyTasks();
-        setTasks(tasksData);
-      } catch (tasksError) {
-        console.error('Failed to load daily tasks:', tasksError);
-        // 使用空数组
-        setTasks([]);
-      }
+      setLoading(false);
     } catch (error) {
-      console.error('Failed to load partner mode data:', error);
-    } finally {
+      console.error('Failed to load initial data:', error);
       setLoading(false);
     }
   };
 
-  const handleCompleteTask = async (taskId: string) => {
+  const loadShells = async () => {
     try {
-      await completeTask(taskId);
-      // 重新加载数据
-      await loadData();
+      const data = await getTaskShells();
+      setShells(data.shells);
+      setMemoryPoolWaiting(data.memory_pool_waiting);
     } catch (error) {
-      console.error('Failed to complete task:', error);
+      console.error('Failed to load shells:', error);
     }
   };
 
-  const handleInjectMemory = async (data: MemoryInjectRequest) => {
-    setSubmitting(true);
+  const loadWishes = async () => {
     try {
-      await injectMemory(data);
-      setShowMemoryInjector(false);
-      // 可以显示成功提示
+      const data = await getWishBottles();
+      setWishes(data.bottles);
     } catch (error) {
-      console.error('Failed to inject memory:', error);
+      console.error('Failed to load wishes:', error);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const data = await getNotifications();
+      setNotifications(data.notifications);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  };
+
+  const loadArchive = async () => {
+    try {
+      const data = await getArchive();
+      setArchiveData(data);
+    } catch (error) {
+      console.error('Failed to load archive:', error);
+    }
+  };
+
+  // Task shell handlers
+  const handleShellClick = (shell: TaskShellType) => {
+    if (shell.status === 'muddy') {
+      setSelectedShell(shell);
+      setShowTaskModal(true);
+    }
+  };
+
+  const handleConfirmWash = async () => {
+    if (!selectedShell) return;
+
+    setWashing(true);
+    try {
+      // First start washing
+      await startWashingShell(selectedShell.id);
+
+      // Then confirm completion
+      const result: ShellWashResponse = await confirmShellWashing(selectedShell.id);
+
+      // Show celebration
+      setCelebrationData({
+        isOpen: true,
+        stickerUrl: result.sticker_url,
+        message: result.message,
+        isEchoFragment: result.is_echo_fragment,
+      });
+
+      // Add to light string
+      if (result.light_string_photo) {
+        setLightStringPhotos((prev) => [...prev, result.light_string_photo!]);
+      }
+
+      // Reload shells
+      await loadShells();
+    } catch (error) {
+      console.error('Failed to confirm washing:', error);
     } finally {
-      setSubmitting(false);
+      setWashing(false);
+      setShowTaskModal(false);
+      setSelectedShell(null);
     }
   };
 
+  // Wish handlers
+  const handleCatchWish = async (wishId: string) => {
+    setCatching(true);
+    try {
+      await catchWishBottle(wishId);
+      await Promise.all([loadShells(), loadWishes()]);
+      setShowWishModal(false);
+    } catch (error) {
+      console.error('Failed to catch wish:', error);
+    } finally {
+      setCatching(false);
+    }
+  };
+
+  // Memory creation handlers
+  const handleCreateMemory = async (data: {
+    title: string;
+    content: string;
+    photo_url?: string;
+    sticker_style: StickerStyle;
+  }) => {
+    setCreatingMemory(true);
+    try {
+      await createMemoryShell(data);
+      setShowMemoryModal(false);
+      // Show notification that memory is being generated
+    } catch (error) {
+      console.error('Failed to create memory:', error);
+    } finally {
+      setCreatingMemory(false);
+    }
+  };
+
+  // Notification handlers
+  const handleMarkRead = async (notificationId: string) => {
+    try {
+      await markNotificationRead(notificationId);
+      await loadNotifications();
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      await loadNotifications();
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
+  };
+
+  // Calculate unread counts
+  const unreadNotifications = notifications.filter((n) => !n.is_read).length;
+  const driftingWishes = wishes.filter((w) => w.status === 'drifting').length;
+
+  // Get active shells (not archived)
+  const activeShells = shells.filter((s) => s.status !== 'archived');
+
+  // Loading state
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{
-          background: `linear-gradient(135deg, ${ECHO_COLORS.partner.gradient[0]} 0%, ${ECHO_COLORS.partner.gradient[1]} 100%)`,
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-lg"
-          style={{ color: ECHO_COLORS.partner.text }}
-        >
-          正在连接守护空间...
-        </motion.div>
-      </div>
+      <AuthGuard>
+        <BeachArea>
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-white text-lg">正在连接守护空间...</div>
+          </div>
+        </BeachArea>
+      </AuthGuard>
     );
   }
 
-  // 未绑定状态
-  if (!status?.has_binding) {
+  // No binding state
+  if (!hasBinding) {
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center p-4"
-        style={{
-          background: `linear-gradient(135deg, ${ECHO_COLORS.partner.gradient[0]} 0%, ${ECHO_COLORS.partner.gradient[1]} 100%)`,
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <span className="text-6xl mb-6 block">🔗</span>
-          <h2
-            className="text-2xl font-bold mb-4"
-            style={{ color: ECHO_COLORS.partner.text }}
-          >
-            尚未绑定伴侣
-          </h2>
-          <p
-            className="opacity-80 mb-6"
-            style={{ color: ECHO_COLORS.partner.text }}
-          >
-            请先在 Guardian 页面完成伴侣绑定
+      <AuthGuard>
+        <BeachArea>
+          <div className="min-h-screen flex flex-col items-center justify-center p-4">
+            <div className="text-6xl mb-6">🔗</div>
+            <h2 className="text-2xl font-bold text-white mb-4">尚未绑定伴侣</h2>
+            <p className="text-white/70 mb-6 text-center">
+              请先在 Guardian 页面完成伴侣绑定
+            </p>
+            <button
+              onClick={() => router.push('/guardian')}
+              className="px-6 py-3 rounded-xl font-medium text-white"
+              style={{
+                backgroundColor: 'rgba(255, 215, 0, 0.8)',
+              }}
+            >
+              前往绑定
+            </button>
+          </div>
+        </BeachArea>
+      </AuthGuard>
+    );
+  }
+
+  return (
+    <AuthGuard>
+      <BeachArea className="pb-20">
+        {/* Top Bar */}
+        <TopBar
+          title={getTabTitle(activeTab)}
+          onProfileClick={() => router.push('/profile')}
+          unreadCount={unreadNotifications}
+        />
+
+        {/* Light String (always visible) */}
+        <div className="pt-16 px-4">
+          <LightString
+            photos={lightStringPhotos}
+            maxVisible={5}
+          />
+        </div>
+
+        {/* Tab Content */}
+        <div className="px-4 mt-6">
+          {activeTab === 'beach' && (
+            <BeachTabContent
+              shells={activeShells}
+              wishes={wishes}
+              memoryPoolWaiting={memoryPoolWaiting}
+              onShellClick={handleShellClick}
+              onOpenWishModal={() => setShowWishModal(true)}
+              onOpenMemoryModal={() => setShowMemoryModal(true)}
+            />
+          )}
+
+          {activeTab === 'community' && (
+            <div className="text-white/60 text-center py-12">
+              <div className="text-4xl mb-4">🌊</div>
+              <p>爸爸社区</p>
+              <p className="text-sm mt-2">与其他爸爸交流经验</p>
+            </div>
+          )}
+
+          {activeTab === 'heal' && (
+            <div className="text-white/60 text-center py-12">
+              <div className="text-4xl mb-4">✨</div>
+              <p>AI疗愈</p>
+              <p className="text-sm mt-2">与AI聊天，缓解压力</p>
+            </div>
+          )}
+
+          {activeTab === 'archive' && (
+            <ArchiveTabContent
+              archiveData={archiveData}
+              onLoad={loadArchive}
+            />
+          )}
+        </div>
+
+        {/* Floating Action Buttons */}
+        {activeTab === 'beach' && (
+          <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-30">
+            {/* Wish bottle icon */}
+            {driftingWishes > 0 && (
+              <WishBottleIcon
+                onClick={() => setShowWishModal(true)}
+                unread={driftingWishes > 0}
+              />
+            )}
+            {/* Memory conch icon */}
+            <MemoryConchIcon
+              onClick={() => setShowMemoryModal(true)}
+            />
+          </div>
+        )}
+
+        {/* Bottom Navigation */}
+        <BottomNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          badges={{
+            beach: activeShells.filter((s) => s.status === 'muddy').length,
+            archive: memoryPoolWaiting,
+          }}
+        />
+
+        {/* Task Detail Modal */}
+        <TaskDetailModal
+          shell={selectedShell!}
+          isOpen={showTaskModal}
+          onClose={() => {
+            setShowTaskModal(false);
+            setSelectedShell(null);
+          }}
+          onConfirm={handleConfirmWash}
+          confirming={washing}
+        />
+
+        {/* Wish Sea Modal */}
+        <WishSeaModal
+          isOpen={showWishModal}
+          wishes={wishes}
+          onClose={() => setShowWishModal(false)}
+          onCatch={handleCatchWish}
+          catching={catching}
+        />
+
+        {/* Memory Inject Modal */}
+        <MemoryInjectModal
+          isOpen={showMemoryModal}
+          onClose={() => setShowMemoryModal(false)}
+          onSubmit={handleCreateMemory}
+          submitting={creatingMemory}
+        />
+
+        {/* Celebration Animation */}
+        <CelebrationAnimation
+          isOpen={celebrationData.isOpen}
+          stickerUrl={celebrationData.stickerUrl}
+          message={celebrationData.message}
+          isEchoFragment={celebrationData.isEchoFragment}
+          onComplete={() => {
+            setCelebrationData({
+              isOpen: false,
+              stickerUrl: '',
+              message: '',
+              isEchoFragment: false,
+            });
+          }}
+        />
+      </BeachArea>
+    </AuthGuard>
+  );
+}
+
+// Beach Tab Content
+function BeachTabContent({
+  shells,
+  wishes,
+  memoryPoolWaiting,
+  onShellClick,
+  onOpenWishModal,
+  onOpenMemoryModal,
+}: {
+  shells: TaskShellType[];
+  wishes: WishBottleType[];
+  memoryPoolWaiting: number;
+  onShellClick: (shell: TaskShellType) => void;
+  onOpenWishModal: () => void;
+  onOpenMemoryModal: () => void;
+}) {
+  const muddyShells = shells.filter((s) => s.status === 'muddy');
+
+  return (
+    <div className="space-y-6">
+      {/* Memory pool indicator */}
+      {memoryPoolWaiting > 0 && (
+        <div className="text-center py-4">
+          <p className="text-white/60 text-sm">
+            她的记忆正在积攒，快去洗贝壳吧 ✨
           </p>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/guardian')}
-            className="px-6 py-3 rounded-xl font-medium"
+          <p className="text-white/40 text-xs mt-1">
+            待解锁记忆 {memoryPoolWaiting} 条
+          </p>
+        </div>
+      )}
+
+      {/* Shells grid */}
+      {muddyShells.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🏖️</div>
+          <p className="text-white/60">沙滩平静，暂时没有泥泞的贝壳</p>
+          <button
+            onClick={onOpenMemoryModal}
+            className="mt-4 px-4 py-2 rounded-xl text-sm text-white"
             style={{
-              backgroundColor: ECHO_COLORS.partner.accent,
-              color: ECHO_COLORS.partner.text,
+              backgroundColor: 'rgba(255, 215, 0, 0.2)',
+              border: '1px solid rgba(255, 215, 0, 0.4)',
             }}
           >
-            前往绑定
-          </motion.button>
-        </motion.div>
+            创建回忆贝壳
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-4">
+          {muddyShells.map((shell) => (
+            <div key={shell.id} className="flex justify-center">
+              <TaskShell shell={shell} onClick={() => onShellClick(shell)} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Other shells info */}
+      {shells.some((s) => s.status !== 'muddy') && (
+        <div className="text-center">
+          <p className="text-white/40 text-xs">
+            已处理: {shells.filter((s) => s.status !== 'muddy').length} 个贝壳
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Archive Tab Content
+function ArchiveTabContent({
+  archiveData,
+  onLoad,
+}: {
+  archiveData: ArchiveData | null;
+  onLoad: () => void;
+}) {
+  useEffect(() => {
+    if (!archiveData) {
+      onLoad();
+    }
+  }, [archiveData, onLoad]);
+
+  if (!archiveData) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-white/60">加载中...</div>
       </div>
     );
   }
 
   return (
-    <div
-      className="min-h-screen pb-20"
-      style={{
-        background: `linear-gradient(135deg, ${ECHO_COLORS.partner.gradient[0]} 0%, ${ECHO_COLORS.partner.gradient[1]} 100%)`,
-      }}
-    >
-      {/* 顶部导航 */}
-      <header className="sticky top-0 z-50 px-4 py-4">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={() => router.push('/')}
-            className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            style={{ color: ECHO_COLORS.partner.text }}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1
-            className="text-xl font-bold"
-            style={{ color: ECHO_COLORS.partner.text }}
-          >
-            同步守护
-          </h1>
-          <button
-            onClick={() => setShowMemoryInjector(true)}
-            className="p-2 rounded-full hover:bg-white/20 transition-colors"
-            style={{ color: ECHO_COLORS.partner.text }}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      {/* 窗户视图 */}
-      <section className="px-4 mb-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 backdrop-blur-md rounded-3xl p-4"
-        >
-          <BlurredMomView clarityLevel={clarity?.clarity_level || 0} />
-        </motion.div>
-      </section>
-
-      {/* 清晰度仪表 */}
-      <section className="px-4 mb-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <ClarityMeter clarity={clarity} />
-        </motion.div>
-      </section>
-
-      {/* 今日任务 */}
-      <section className="px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white/10 backdrop-blur-md rounded-2xl p-4"
-        >
-          <h2
-            className="text-lg font-semibold mb-4"
-            style={{ color: ECHO_COLORS.partner.text }}
-          >
-            今日任务
-          </h2>
-
-          {tasks.length === 0 ? (
-            <p
-              className="text-center opacity-70 py-4"
-              style={{ color: ECHO_COLORS.partner.text }}
-            >
-              今天没有待完成的任务
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {tasks.map((task) => (
-                <motion.div
-                  key={task.id}
-                  className={`p-4 rounded-xl transition-colors ${
-                    task.status === 'confirmed'
-                      ? 'bg-green-500/20'
-                      : task.status === 'completed'
-                      ? 'bg-blue-500/20'
-                      : 'bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3
-                        className="font-medium"
-                        style={{ color: ECHO_COLORS.partner.text }}
-                      >
-                        {task.template.title}
-                      </h3>
-                      <p
-                        className="text-sm opacity-70"
-                        style={{ color: ECHO_COLORS.partner.text }}
-                      >
-                        {task.template.description}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            task.template.difficulty === 'easy'
-                              ? 'bg-green-500/30 text-green-200'
-                              : task.template.difficulty === 'medium'
-                              ? 'bg-yellow-500/30 text-yellow-200'
-                              : 'bg-red-500/30 text-red-200'
-                          }`}
-                        >
-                          +{task.template.points}分
-                        </span>
-                        {task.status === 'confirmed' && (
-                          <span className="text-xs text-green-300">
-                            {task.mom_feedback}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {task.status === 'available' && (
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleCompleteTask(task.id)}
-                        className="px-4 py-2 rounded-lg font-medium"
-                        style={{
-                          backgroundColor: ECHO_COLORS.partner.accent,
-                          color: ECHO_COLORS.partner.text,
-                        }}
-                      >
-                        完成
-                      </motion.button>
-                    )}
-
-                    {task.status === 'completed' && (
-                      <span
-                        className="text-sm opacity-70"
-                        style={{ color: ECHO_COLORS.partner.text }}
-                      >
-                        待确认
-                      </span>
-                    )}
-
-                    {task.status === 'confirmed' && (
-                      <span className="text-2xl">✓</span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-
-          <p
-            className="text-center text-sm opacity-60 mt-4"
-            style={{ color: ECHO_COLORS.partner.text }}
-          >
-            完成任务可以提高窗户清晰度
-          </p>
-        </motion.div>
-      </section>
-
-      {/* 记忆注入模态框 */}
-      <AnimatePresence>
-        {showMemoryInjector && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-            onClick={() => setShowMemoryInjector(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MemoryInjector
-                currentClarity={clarity?.clarity_level || 0}
-                onSubmit={handleInjectMemory}
-                onCancel={() => setShowMemoryInjector(false)}
-                submitting={submitting}
+    <div className="space-y-6">
+      {/* Completed shells */}
+      <section>
+        <h3 className="text-lg font-bold text-white mb-3">已完成的贝壳</h3>
+        {archiveData.completed_shells.length === 0 ? (
+          <p className="text-white/40 text-sm">还没有完成的贝壳</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-3">
+            {archiveData.completed_shells.map((shell) => (
+              <div
+                key={shell.id}
+                className="aspect-square rounded-xl overflow-hidden"
+                style={{
+                  backgroundImage: shell.memory_sticker_url
+                    ? `url(${shell.memory_sticker_url})`
+                    : undefined,
+                  backgroundColor: shell.memory_sticker_url
+                    ? undefined
+                    : 'rgba(255, 255, 255, 0.1)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
               />
-            </motion.div>
-          </motion.div>
+            ))}
+          </div>
         )}
-      </AnimatePresence>
+      </section>
+
+      {/* Echo fragments */}
+      {archiveData.echo_fragment_count > 0 && (
+        <section>
+          <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+            <span>✨</span>
+            独自守护勋章
+          </h3>
+          <p className="text-white/60 text-sm">
+            当记忆池为空时，你依然默默守护
+          </p>
+          <div className="mt-2 px-4 py-2 rounded-xl bg-white/5">
+            <p className="text-white/80 text-sm">
+              已获得 {archiveData.echo_fragment_count} 枚回响碎片
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Granted wishes */}
+      {archiveData.granted_wishes.length > 0 && (
+        <section>
+          <h3 className="text-lg font-bold text-white mb-3">达成的心愿</h3>
+          <div className="space-y-2">
+            {archiveData.granted_wishes.map((wish) => (
+              <div
+                key={wish.id}
+                className="p-3 rounded-xl bg-white/5 flex items-center gap-2"
+              >
+                <span className="text-xl">💝</span>
+                <div className="flex-1">
+                  <p className="text-white text-sm">{wish.content}</p>
+                  {wish.mom_reaction && (
+                    <span className="text-sm ml-2">{wish.mom_reaction}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
+}
+
+function getTabTitle(tab: TabType): string {
+  const titles: Record<TabType, string> = {
+    beach: '爸爸模式',
+    community: '爸爸社区',
+    heal: 'AI疗愈',
+    archive: '珍珠馆',
+  };
+  return titles[tab];
 }
 
 export default function EchoPartnerPage() {

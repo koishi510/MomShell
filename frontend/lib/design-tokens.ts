@@ -50,6 +50,48 @@ export const ECHO_COLORS = {
     shadow: 'rgba(63, 81, 181, 0.3)',
     glow: 'rgba(63, 81, 181, 0.5)',
   },
+  // Dad Mode 2.0: Beach Theme
+  beach: {
+    // Sky gradient (top to bottom)
+    skyTop: '#0D1B2A', // 星空黑
+    skyMiddle: '#1A2B4C', // 墨蓝
+    skyBottom: '#2C3E50', // 深灰蓝
+    // Sand
+    sand: '#2C3E50', // 深灰蓝沙滩
+    sandWet: '#34495E', // 湿润沙滩（反光）
+    sandDark: '#1A252F', // 深色沙滩纹理
+    // Moon and stars
+    moon: '#FFFACD', // 柠檬绸色月亮
+    moonGlow: 'rgba(255, 250, 205, 0.3)',
+    stars: '#FFFFFF',
+    starGlow: 'rgba(255, 255, 255, 0.8)',
+    // Ocean
+    ocean: '#1A2B4C',
+    oceanDeep: '#0D1B2A',
+    wave: 'rgba(255, 255, 255, 0.1)',
+    // Light string
+    lightString: {
+      bulb: '#FFD700', // 金色灯泡
+      bulbOff: '#B8860B', // 暗金
+      cord: '#1A1A1A', // 黑色灯绳
+      glow: 'rgba(255, 215, 0, 0.5)', // 金色光晕
+    },
+    // Shells
+    shell: {
+      muddy: '#5D4E37', // 泥泞棕色
+      muddyGlow: 'rgba(93, 78, 55, 0.5)',
+      washed: '#F5DEB3', // 小麦色
+      washedGlow: 'rgba(245, 222, 179, 0.6)',
+      golden: '#FFD700', // 金色
+      goldenGlow: 'rgba(255, 215, 0, 0.7)',
+    },
+    // Navigation
+    nav: {
+      active: '#FFD700',
+      inactive: 'rgba(255, 255, 255, 0.4)',
+    },
+    notificationBadge: '#FF4444',
+  },
   // 窗户效果
   window: {
     blur: {

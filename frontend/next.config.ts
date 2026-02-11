@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  trailingSlash: true,
+  // Removed trailingSlash: true to avoid redirect loops
 };
 
 export default nextConfig;
