@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunset Beach</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  background: #f5e0c8;
+}
+
+body.dragging { cursor: grabbing; }
+
+.scene {
+  position: relative;
+  width: 100%; height: 100vh;
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  will-change: transform;
+}
+
+/* ============================================================
+   LAYER 0 — SKY  (speed 0.05)
+   ============================================================ */
+.sky {
+  width: 300vw;
+  background: linear-gradient(
+    to bottom,
+    #f2b8c8 0%,
+    #f0bcc6 5%,
+    #eebac0 10%,
+    #edb8bc 15%,
+    #ecb4b6 20%,
+    #ebb0b0 25%,
+    #eaaea8 30%,
+    #ebaca2 35%,
+    #eca89c 40%,
+    #eea898 46%,
+    #f0a894 52%,
+    #f2ac92 58%,
+    #f4b490 64%,
+    #f6be90 70%,
+    #f8c890 76%,
+    #fad494 82%,
+    #fce09c 88%,
+    #fdeaa8 94%,
+    #fef0b0 100%
+  );
+  z-index: 1;
+}
+
+
+/* ============================================================
+   SEAGULLS — tiny silhouettes drifting across the sky
+   ============================================================ */
+.seagull-layer {
+  width: 400vw;
+  z-index: 4;
+  top: 0; height: 40%;
+  pointer-events: none;
+}
+.seagull {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform;
+}
+/* Wing shape via two rotated pseudo-elements = simple "m" gull silhouette */
+.seagull::before, .seagull::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 60%;
+  border-top: 1.5px solid currentColor;
+  border-radius: 50% 50% 0 0;
+}
+.seagull::before { right: 50%; transform-origin: right center; transform: rotate(-8deg); }
+.seagull::after  { left: 50%; transform-origin: left center; transform: rotate(8deg); }
+
+/* Per-gull flight paths (gullFly0…gullFlyN) generated in JS for varied trajectories */
+@keyframes gullWing {
+  0%, 100% { transform: rotate(-8deg); }
+  50%      { transform: rotate(-18deg); }
+}
+@keyframes gullWingR {
+  0%, 100% { transform: rotate(8deg); }
+  50%      { transform: rotate(18deg); }
+}
+/* ============================================================
+   LAYER 2 — CLOUDS  (speed 0.15)
+   ============================================================ */
+.clouds {
+  width: 400vw;
+  z-index: 5;
+  top: 0; height: 45%;
+}
+
+.cloud {
+  position: absolute;
+  background: rgba(255, 225, 195, 0.22);
+  border-radius: 60% 60% 40% 40%;
+  filter: blur(6px);
+}
+
+.cloud::before {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+  width: 55%;
+  height: 140%;
+  top: -55%;
+  left: 12%;
+}
+
+.cloud::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+  width: 45%;
+  height: 120%;
+  top: -40%;
+  right: 10%;
+}
+
+.cloud-bright {
+  background: rgba(255, 205, 150, 0.28);
+  filter: blur(5px);
+}
+
+/* ============================================================
+   LAYER 3 — SUN + GLOW  (speed 0.08)
+   ============================================================ */
+.sun-layer {
+  width: 300vw;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.sun-anchor {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.sun {
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff5d0 0%, #ffe8a8 50%, #ffd880 100%);
+}
+
+/* Smooth glow — single radial gradient, no concentric rings */
+.sun-anchor::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 900px; height: 900px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 240, 200, 0.7) 0%,
+    rgba(255, 225, 170, 0.5) 8%,
+    rgba(255, 210, 140, 0.32) 18%,
+    rgba(255, 195, 120, 0.16) 32%,
+    rgba(250, 180, 110, 0.06) 50%,
+    transparent 70%
+  );
+  z-index: -1;
+  pointer-events: none;
+  animation: glowPulse 5s ease-in-out infinite;
+}
+
+/* Broad warm atmospheric wash behind sun */
+.sun-anchor::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1600px; height: 1200px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse,
+    rgba(255, 230, 170, 0.38) 0%,
+    rgba(255, 215, 150, 0.22) 15%,
+    rgba(255, 200, 140, 0.10) 35%,
+    rgba(250, 185, 130, 0.04) 55%,
+    transparent 75%
+  );
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Horizon wisps — thin rose-pink cloud streaks near horizon */
+.horizon-wisp {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: wispDrift 20s ease-in-out infinite alternate;
+}
+@keyframes wispDrift {
+  0%   { opacity: 0.5; transform: translateX(0) scaleX(1); }
+  50%  { opacity: 0.8; transform: translateX(10px) scaleX(1.03); }
+  100% { opacity: 0.5; transform: translateX(-8px) scaleX(0.97); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.92; transform: translate(-50%, -50%) scale(1.04); }
+}
+
+/* ============================================================
+   LAYER 4 — OCEAN  (speed 0.3)
+   ============================================================ */
+.ocean {
+  width: 400vw;
+  z-index: 10;
+  top: 33%;
+  height: 67%;
+}
+
+.ocean-body {
+  position: absolute;
+  width: 100%; height: 100%;
+  background: linear-gradient(
+    to bottom,
+    #2a6ea8 0%,
+    #2d72a4 8%,
+    #3278a8 18%,
+    #3880b0 30%,
+    #4088b4 42%,
+    #4a92b8 55%,
+    #589ec0 68%,
+    #68acc8 80%,
+    #7cbad0 92%,
+    #90c8d8 100%
+  );
+}
+
+.ocean-horizon-glow {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 30%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 195, 140, 0.30) 0%,
+    rgba(245, 175, 130, 0.12) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.shimmer {
+  position: absolute;
+  height: 2px;
+  background: rgba(255, 225, 160, 0.4);
+  border-radius: 50%;
+  filter: blur(1px);
+  animation: shimmerFloat 4s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes shimmerFloat {
+  0%, 100% { opacity: 0; transform: scaleX(0.5); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+.wave-line {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 40px,
+    rgba(140, 195, 215, 0.14) 40px,
+    rgba(140, 195, 215, 0.14) 80px,
+    transparent 80px,
+    transparent 140px
+  );
+  animation: waveLineDrift 8s linear infinite;
+  z-index: 1;
+}
+
+@keyframes waveLineDrift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-140px); }
+}
+
+/* ============================================================
+   LAYER 4.5 — SUN REFLECTION  (speed 0.08, tracks sun)
+   ============================================================ */
+.sun-reflection-layer {
+  width: 300vw;
+  z-index: 11;
+  top: 33%;
+  height: 67%;
+  pointer-events: none;
+}
+
+.reflection-streak {
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+  background: rgba(255, 225, 160, 0.5);
+  border-radius: 50%;
+  filter: blur(1.5px);
+}
+
+@keyframes streakCalm {
+  0% { opacity: 0.3; transform: translateX(-50%) scaleX(0.85); }
+  100% { opacity: 1; transform: translateX(-50%) scaleX(1.15); }
+}
+
+@keyframes streakWaveGentle {
+  0%   { opacity: 0.3; transform: translateX(-50%) scaleX(0.9) translateY(0); }
+  25%  { opacity: 0.65; transform: translateX(-50%) scaleX(1.0) translateY(1.5px); }
+  50%  { opacity: 1; transform: translateX(-50%) scaleX(1.1) translateY(0); }
+  75%  { opacity: 0.5; transform: translateX(-50%) scaleX(1.0) translateY(-1px); }
+  100% { opacity: 0.3; transform: translateX(-50%) scaleX(0.9) translateY(0); }
+}
+
+@keyframes streakWaveMid {
+  0%   { opacity: 0.3; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+  18%  { opacity: 0.7; transform: translateX(-50%) scaleX(1.0) translateY(3px); }
+  38%  { opacity: 1; transform: translateX(-50%) scaleX(1.15) translateY(0.5px); }
+  58%  { opacity: 0.55; transform: translateX(-50%) scaleX(1.05) translateY(-2.5px); }
+  78%  { opacity: 0.4; transform: translateX(-50%) scaleX(0.92) translateY(1.5px); }
+  100% { opacity: 0.3; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+}
+
+@keyframes streakWaveStrong {
+  0%   { opacity: 0.25; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+  14%  { opacity: 0.8; transform: translateX(-50%) scaleX(1.0) translateY(5px); }
+  30%  { opacity: 1; transform: translateX(-50%) scaleX(1.15) translateY(1px); }
+  48%  { opacity: 0.6; transform: translateX(-50%) scaleX(1.08) translateY(-4px); }
+  64%  { opacity: 0.45; transform: translateX(-50%) scaleX(0.95) translateY(3px); }
+  82%  { opacity: 0.35; transform: translateX(-50%) scaleX(0.88) translateY(-1px); }
+  100% { opacity: 0.25; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+}
+
+/* ============================================================
+   LAYER 5 — WAVES  (3 staggered layers: far / mid / near)
+   Watercolor / picture-book aesthetic
+   ============================================================ */
+.wave-layer-far {
+  width: 400vw;
+  z-index: 14;
+  top: 33%; height: 18%;
+  pointer-events: none;
+  filter: url(#watercolor-far) blur(1.5px);
+}
+.wave-layer-mid {
+  width: 400vw;
+  z-index: 17;
+  top: 35%; height: 16%;
+  pointer-events: none;
+  filter: url(#watercolor-mid) blur(0.8px);
+}
+.wave-layer-near {
+  width: 400vw;
+  z-index: 22;
+  top: 36%; height: 16%;
+  pointer-events: none;
+  filter: url(#watercolor-near) blur(0.3px);
+}
+
+/* Paper texture overlay on wave area */
+.wave-layer-far::before,
+.wave-layer-mid::before,
+.wave-layer-near::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(180,160,140,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 30%, rgba(160,150,130,0.03) 0%, transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(170,155,135,0.035) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.wavefront {
+  position: absolute;
+  left: -2%; width: 104%;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  border-radius: 50% 50% 45% 55% / 60% 60% 50% 50%;
+}
+
+/* --- Wave particle sparkles (light reflecting off foam) --- */
+.wave-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+@keyframes particleGlow {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  20%  { opacity: 1; transform: translateY(-2px) scale(1); }
+  50%  { opacity: 0.7; transform: translateY(-4px) scale(0.9); }
+  80%  { opacity: 0.3; transform: translateY(-6px) scale(0.7); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.4); }
+}
+
+/* Wavefront — rush onto shore, linger, pull back */
+@keyframes advanceFar {
+  0%   { transform: translateY(0); opacity: 0; }
+  15%  { opacity: 0.3; }
+  42%  { transform: translateY(5vh); opacity: 0.35; }
+  58%  { transform: translateY(5.5vh); opacity: 0.2; }
+  85%  { transform: translateY(2vh); opacity: 0.06; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+@keyframes advanceMid {
+  0%   { transform: translateY(0); opacity: 0; }
+  12%  { opacity: 0.45; }
+  40%  { transform: translateY(6vh); opacity: 0.5; }
+  55%  { transform: translateY(6.5vh); opacity: 0.3; }
+  82%  { transform: translateY(2vh); opacity: 0.08; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+@keyframes advanceNear {
+  0%   { transform: translateY(0) scaleX(0.98); opacity: 0; }
+  10%  { opacity: 0.6; }
+  38%  { transform: translateY(7vh) scaleX(1.03); opacity: 0.7; }
+  52%  { transform: translateY(7.5vh) scaleX(1.05); opacity: 0.45; }
+  80%  { transform: translateY(2.5vh) scaleX(1.0); opacity: 0.1; }
+  100% { transform: translateY(0) scaleX(0.98); opacity: 0; }
+}
+
+/* --- Shore wash zone --- */
+.shore-wash {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 35%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(155, 200, 195, 0.08) 20%,
+    rgba(150, 195, 190, 0.15) 45%,
+    rgba(145, 190, 185, 0.22) 65%,
+    rgba(140, 188, 180, 0.18) 80%,
+    rgba(180, 210, 200, 0.1) 100%
+  );
+  filter: blur(4px);
+  animation: shoreWashPulse 8s cubic-bezier(0.4, 0.0, 0.2, 1.0) infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes shoreWashPulse {
+  0%   { opacity: 0.5; transform: translateY(0px); }
+  20%  { opacity: 0.75; transform: translateY(-3px); }
+  45%  { opacity: 0.9; transform: translateY(-5px); }
+  65%  { opacity: 0.8; transform: translateY(-3px); }
+  85%  { opacity: 0.55; transform: translateY(1px); }
+  100% { opacity: 0.5; transform: translateY(0px); }
+}
+
+/* --- Background wash blobs (pigment pooling) --- */
+.wash-blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   LAYER 6 — BEACH / SAND  (speed 0.55)
+   ============================================================ */
+.sand-layer {
+  width: 400vw;
+  z-index: 20;
+  top: calc(42% - 2px);
+  height: calc(58% + 2px);
+}
+
+.sand {
+  width: 100%; height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(100, 160, 200, 0) 0%,
+    rgba(110, 165, 198, 0.08) 2%,
+    rgba(130, 175, 192, 0.18) 4.5%,
+    rgba(155, 188, 182, 0.32) 7.5%,
+    rgba(178, 198, 168, 0.48) 11%,
+    rgba(200, 202, 156, 0.62) 15%,
+    rgba(218, 206, 155, 0.78) 19%,
+    rgba(232, 210, 162, 0.92) 23%,
+    #e0cca0 28%,
+    #e6d4ae 38%,
+    #ecdcba 52%,
+    #f0e2c6 70%,
+    #f4e8d0 86%,
+    #f8eed8 100%
+  );
+}
+
+.sand-wet {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 18%;
+  background: linear-gradient(
+    to bottom,
+    rgba(80, 140, 180, 0.15),
+    rgba(110, 158, 178, 0.06),
+    transparent
+  );
+}
+
+/* --- Tidal zone (滩涂) — wet sand transition --- */
+.tidal-zone {
+  position: absolute;
+  top: 22%;
+  width: 100%;
+  height: 74%;
+  pointer-events: none;
+  filter: url(#tidal-distort);
+  background: linear-gradient(
+    to top,
+    rgba(145, 115, 78, 0.30) 0%,
+    rgba(155, 125, 85, 0.24) 15%,
+    rgba(168, 140, 98, 0.18) 30%,
+    rgba(182, 158, 115, 0.10) 46%,
+    rgba(198, 175, 135, 0.05) 60%,
+    rgba(210, 190, 160, 0.02) 76%,
+    rgba(220, 205, 175, 0.008) 88%,
+    transparent 100%
+  );
+}
+.tidal-zone-accent {
+  position: absolute;
+  top: 18%;
+  width: 100%;
+  height: 22%;
+  pointer-events: none;
+  filter: url(#tidal-distort-accent);
+  background: linear-gradient(
+    to top,
+    transparent 0%,
+    rgba(130, 100, 62, 0.06) 8%,
+    rgba(135, 105, 68, 0.16) 22%,
+    rgba(145, 115, 75, 0.28) 40%,
+    rgba(162, 135, 95, 0.16) 62%,
+    rgba(180, 155, 118, 0.05) 82%,
+    transparent 100%
+  );
+}
+
+.sand-grain {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: rgba(210, 195, 170, 0.5);
+  border-radius: 50%;
+}
+
+/* ============================================================
+   HUD / hint
+   ============================================================ */
+.hint {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  color: rgba(180, 130, 80, 0.6);
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  pointer-events: none;
+  transition: opacity 2s ease;
+}
+.hint.hidden { opacity: 0; }
+</style>
+</head>
+<body>
+
+<!-- Inline SVG watercolor filters — one per depth layer -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+  <defs>
+    <!-- Far waves: dreamiest, most dissolved -->
+    <filter id="watercolor-far" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="4" seed="1" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="0.8" result="softened"/>
+    </filter>
+    <!-- Mid waves: moderate watercolor wobble -->
+    <filter id="watercolor-mid" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="0.6" result="softened"/>
+    </filter>
+    <!-- Near waves: most detailed, subtle wobble -->
+    <filter id="watercolor-near" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="5" seed="13" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="0.4" result="softened"/>
+    </filter>
+    <!-- Tidal zone: broad organic distortion for irregular waterline -->
+    <filter id="tidal-distort" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.005 0.014" numOctaves="5" seed="37" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="32" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="1.5" result="softened"/>
+    </filter>
+    <!-- Tidal accent: different seed for layered irregularity -->
+    <filter id="tidal-distort-accent" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.007 0.018" numOctaves="4" seed="91" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="26" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="1.2" result="softened"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="scene" id="scene">
+
+  <!-- L0: SKY -->
+  <div class="layer sky" data-speed="0.05"></div>
+
+  <!-- L2: CLOUDS -->
+  <div class="layer clouds" data-speed="0.15" id="clouds"></div>
+
+
+  <!-- SEAGULLS -->
+  <div class="layer seagull-layer" data-speed="0.10" id="seagullLayer"></div>
+
+  <!-- L3: SUN -->
+  <div class="layer sun-layer" data-speed="0.08" id="sunLayer">
+    <div class="sun-anchor">
+      <div class="sun"></div>
+    </div>
+  </div>
+
+  <!-- L4: OCEAN -->
+  <div class="layer ocean" data-speed="0.3" id="ocean">
+    <div class="ocean-body"></div>
+    <div class="ocean-horizon-glow"></div>
+  </div>
+
+  <!-- L4.5: SUN REFLECTION -->
+  <div class="layer sun-reflection-layer" data-speed="0.08" id="sunReflectionLayer">
+  </div>
+
+  <!-- L5: WAVES (3 staggered layers — watercolor) -->
+  <div class="layer wave-layer-far" data-speed="0.22" id="wavesFar"></div>
+  <div class="layer wave-layer-mid" data-speed="0.35" id="wavesMid"></div>
+  <div class="layer wave-layer-near" data-speed="0.48" id="wavesNear">
+    <div class="shore-wash"></div>
+  </div>
+
+  <!-- L6: SAND -->
+  <div class="layer sand-layer" data-speed="0.55" id="sandLayer">
+    <div class="sand"></div>
+    <div class="sand-wet"></div>
+    <div class="tidal-zone"></div>
+    <div class="tidal-zone-accent"></div>
+  </div>
+
+</div>
+
+<div class="hint" id="hint">Drag or press arrow keys to explore the coastline</div>
+
+<script>
+(function () {
+  'use strict';
+
+  let vw = window.innerWidth;
+
+  /* ---------- Clouds ---------- */
+  const cloudsEl = document.getElementById('clouds');
+  const cloudData = [
+    { x: 5, y: 18, w: 180, h: 40, bright: false },
+    { x: 15, y: 30, w: 240, h: 50, bright: true },
+    { x: 28, y: 12, w: 160, h: 35, bright: false },
+    { x: 38, y: 40, w: 200, h: 45, bright: true },
+    { x: 50, y: 22, w: 280, h: 55, bright: true },
+    { x: 58, y: 8, w: 140, h: 30, bright: false },
+    { x: 68, y: 35, w: 220, h: 48, bright: true },
+    { x: 78, y: 15, w: 190, h: 38, bright: false },
+    { x: 88, y: 28, w: 170, h: 42, bright: true },
+    { x: 95, y: 10, w: 200, h: 40, bright: false },
+  ];
+  cloudData.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'cloud' + (c.bright ? ' cloud-bright' : '');
+    el.style.cssText = `
+      left:${c.x}%;top:${c.y}%;
+      width:${c.w}px;height:${c.h}px;
+      animation: cloudDrift${i % 3} ${20 + i * 3}s ease-in-out infinite alternate;
+    `;
+    cloudsEl.appendChild(el);
+  });
+
+  const cloudStyle = document.createElement('style');
+  cloudStyle.textContent = `
+    @keyframes cloudDrift0 { 0%{transform:translateX(0)} 100%{transform:translateX(30px)} }
+    @keyframes cloudDrift1 { 0%{transform:translateX(0)} 100%{transform:translateX(-25px)} }
+    @keyframes cloudDrift2 { 0%{transform:translateX(0)} 100%{transform:translateX(20px)} }
+  `;
+  document.head.appendChild(cloudStyle);
+
+  /* ---------- Seagulls ---------- */
+  const gullLayer = document.getElementById('seagullLayer');
+  const gulls = [
+    // x: start %, y: % of layer height, s: size, fd: flight duration (s), wd: wing speed
+    { x: 5,  y: 15, s: 7,  c: 'rgba(40,35,30,0.7)',      fd: 30, wd: 1.2 },
+    { x: 22, y: 55, s: 5,  c: 'rgba(50,45,40,0.55)',     fd: 35, wd: 1.5 },
+    { x: 42, y: 25, s: 9,  c: 'rgba(35,30,25,0.65)',     fd: 32, wd: 1.1 },
+    { x: 58, y: 80, s: 5,  c: 'rgba(60,55,50,0.45)',     fd: 38, wd: 1.8 },
+    { x: 70, y: 40, s: 7,  c: 'rgba(255,250,240,0.6)',   fd: 33, wd: 1.3 },
+    { x: 85, y: 12, s: 8,  c: 'rgba(45,40,35,0.6)',      fd: 30, wd: 1.0 },
+    { x: 15, y: 70, s: 6,  c: 'rgba(255,248,235,0.55)',  fd: 36, wd: 1.6 },
+    { x: 50, y: 48, s: 6,  c: 'rgba(40,35,30,0.5)',      fd: 34, wd: 1.4 },
+  ];
+  gulls.forEach((g, i) => {
+    /* Generate unique undulating flight path per gull */
+    const amp = 15 + Math.random() * 30;          // 15-45 px vertical swing
+    const freq = 1.5 + Math.random() * 2;          // 1.5-3.5 wave cycles per flight
+    const phase = Math.random() * Math.PI * 2;     // random phase offset
+    const waypoints = [0, 12, 24, 37, 50, 63, 76, 88, 100];
+    let kf = `@keyframes gullFly${i} {\n`;
+    waypoints.forEach(pct => {
+      const t = pct / 100;
+      const xVw = (t * 133).toFixed(1);
+      const yPx = (pct === 0 || pct === 100) ? 0
+        : Math.round(Math.sin(t * Math.PI * freq * 2 + phase) * amp);
+      const rot = (pct === 0 || pct === 100) ? '0'
+        : (Math.cos(t * Math.PI * freq * 2 + phase) * 1.5).toFixed(1);
+      kf += `  ${pct}% { transform: translateX(${xVw}vw) translateY(${yPx}px) rotate(${rot}deg); }\n`;
+    });
+    kf += `}`;
+
+    const style = document.createElement('style');
+    style.textContent = kf + `
+      #gull${i}::before { animation: gullWing ${g.wd}s ease-in-out infinite; transform-origin: right center; }
+      #gull${i}::after  { animation: gullWingR ${g.wd}s ease-in-out infinite; transform-origin: left center; }
+    `;
+    document.head.appendChild(style);
+
+    const el = document.createElement('div');
+    el.className = 'seagull';
+    el.id = 'gull' + i;
+    const delay = (i * 4 + Math.random() * 3).toFixed(1);
+    el.style.cssText = `
+      left:${g.x}%;top:${g.y}%;
+      width:${g.s * 2}px;height:${g.s}px;
+      color:${g.c};
+      animation:gullFly${i} ${g.fd}s linear ${delay}s infinite;
+    `;
+    gullLayer.appendChild(el);
+  });
+
+  /* ---------- Horizon wisps — rose-pink cloud streaks near sun ---------- */
+  const sunLayerEl = document.getElementById('sunLayer');
+  const wispData = [
+    /* Horizon wisps — scattered rose-pink */
+    { x: 5,  y: 24,   w: 700, h: 4.5, color: 'rgba(215, 135, 125, 0.55)', blur: 6 },
+    { x: 22, y: 27,   w: 550, h: 4,   color: 'rgba(220, 140, 130, 0.50)', blur: 5 },
+    { x: 72, y: 25,   w: 580, h: 4,   color: 'rgba(218, 138, 128, 0.48)', blur: 6 },
+    { x: 85, y: 26,   w: 500, h: 3.5, color: 'rgba(216, 136, 126, 0.45)', blur: 5.5 },
+    { x: 0,  y: 28.5, w: 620, h: 4,   color: 'rgba(222, 142, 132, 0.48)', blur: 7 },
+    { x: 62, y: 29,   w: 450, h: 3.5, color: 'rgba(212, 132, 122, 0.45)', blur: 6 },
+    /* Through-sun wisp — shorter, deepens at sun center */
+    { x: 41, y: 29,   w: 1000, h: 12, color: 'linear-gradient(to right, transparent 0%, rgba(210, 120, 110, 0.80) 35%, rgba(195, 100, 95, 0.95) 50%, rgba(210, 120, 110, 0.80) 65%, transparent 100%)', blur: 5, behind: true },
+    { x: 43, y: 30.5, w: 800,  h: 8,  color: 'linear-gradient(to right, transparent 0%, rgba(215, 128, 118, 0.65) 30%, rgba(205, 110, 105, 0.82) 50%, rgba(215, 128, 118, 0.65) 70%, transparent 100%)', blur: 4, behind: true },
+  ];
+  const sunAnchor = sunLayerEl.querySelector('.sun-anchor');
+  wispData.forEach((w, i) => {
+    const el = document.createElement('div');
+    el.className = 'horizon-wisp';
+    el.style.cssText = `
+      left:${w.x}%;top:${w.y}%;
+      width:${w.w}px;height:${w.h}px;
+      background:${w.color};
+      filter:blur(${w.blur}px);
+      animation-delay:${i * 2.1}s;
+      animation-duration:${18 + i * 1.5}s;
+    `;
+    if (w.behind) {
+      sunLayerEl.insertBefore(el, sunAnchor);
+    } else {
+      sunLayerEl.appendChild(el);
+    }
+  });
+
+  /* ---------- Ocean shimmer streaks ---------- */
+  const oceanEl = document.getElementById('ocean');
+  for (let i = 0; i < 25; i++) {
+    const sh = document.createElement('div');
+    sh.className = 'shimmer';
+    sh.style.cssText = `
+      top:${10 + Math.random() * 80}%;
+      left:${Math.random() * 100}%;
+      width:${30 + Math.random() * 80}px;
+      animation-delay:${Math.random() * 5}s;
+      animation-duration:${3 + Math.random() * 4}s;
+    `;
+    oceanEl.appendChild(sh);
+  }
+
+  /* ---------- Ocean wave-lines ---------- */
+  for (let i = 0; i < 12; i++) {
+    const wl = document.createElement('div');
+    wl.className = 'wave-line';
+    wl.style.cssText = `
+      top:${5 + i * 8}%;
+      animation-delay:${i * 0.5}s;
+      opacity:${0.2 + Math.random() * 0.3};
+    `;
+    oceanEl.appendChild(wl);
+  }
+
+  /* ---------- Sun reflection streaks (wave-synced where overlapping) ---------- */
+  const reflLayer = document.getElementById('sunReflectionLayer');
+  const widthCurve = [9,8,7,6,5,3,3,5,4,7,2,4,4,6,3,3,3,5,4,2,2,3,3,5,6,6,7,7,8];
+  for (let i = 0; i < 45; i++) {
+    const t = i / 45;
+    const streak = document.createElement('div');
+    streak.className = 'reflection-streak';
+    const ci = t * (widthCurve.length - 1);
+    const lo = Math.floor(ci), hi = Math.min(lo + 1, widthCurve.length - 1);
+    const wFactor = widthCurve[lo] + (widthCurve[hi] - widthCurve[lo]) * (ci - lo);
+    const w = 30 + wFactor * 27 + Math.random() * 20;
+    const h = 1.5 + t * 3.5 + Math.random() * 1.5;
+    const offsetX = (Math.random() - 0.5) * (8 + wFactor * 5);
+    const brightness = 0.72 - t * 0.52;
+    const r = 255, g = 190 + Math.floor(Math.random() * 30), b = 80 + Math.floor(Math.random() * 40);
+
+    let animName, animDur, animDir;
+    if (t > 0.55) {
+      animName = 'streakWaveStrong';
+      animDur = (4 + Math.random() * 3).toFixed(1);
+      animDir = 'normal';
+    } else if (t > 0.3) {
+      animName = 'streakWaveMid';
+      animDur = (5 + Math.random() * 3).toFixed(1);
+      animDir = 'normal';
+    } else if (t > 0.12) {
+      animName = 'streakWaveGentle';
+      animDur = (6 + Math.random() * 3).toFixed(1);
+      animDir = 'normal';
+    } else {
+      animName = 'streakCalm';
+      animDur = (2.5 + Math.random() * 2.5).toFixed(1);
+      animDir = 'alternate';
+    }
+
+    streak.style.cssText = `
+      top:${1 + t * 72}%;
+      margin-left:${offsetX}px;
+      width:${w}px;
+      height:${h}px;
+      background:rgba(${r},${g},${b},${brightness.toFixed(2)});
+      animation:${animName} ${animDur}s ease-in-out infinite ${animDir};
+      animation-delay:${(Math.random() * 4).toFixed(1)}s;
+    `;
+    reflLayer.appendChild(streak);
+  }
+
+  /* ---------- WAVE SYSTEM — wavefront rows advancing to shore ---------- */
+
+  /* Helper: random float in [lo, hi] */
+  function rf(lo, hi) { return lo + Math.random() * (hi - lo); }
+
+  function createWavefronts(container, config) {
+    for (var i = 0; i < config.rows; i++) {
+      var baseDelay = (i * config.cycle / config.rows) + rf(-0.8, 0.8);
+      if (baseDelay < 0) baseDelay += config.cycle;
+
+      var segs = config.segs;
+      var segBase = 100 / segs;
+
+      for (var s = 0; s < segs; s++) {
+        /* 1-2 sub-layers per segment for organic mass */
+        var layers = 1 + (Math.random() > 0.6 ? 1 : 0);
+        for (var j = 0; j < layers; j++) {
+          var el = document.createElement('div');
+          el.className = 'wavefront';
+
+          /* Segment horizontal placement — generous overlap for smooth blending */
+          var overlap = segBase * 0.85;
+          var left = s * segBase - overlap / 2 + rf(-2, 2);
+          var width = segBase + overlap + rf(-2, 4);
+
+          /* Phase offset from horizontal position — creates wave curvature.
+             Dual-sine produces natural, non-uniform bending so the
+             waveline curves organically rather than in a single arc. */
+          var nx = segs > 1 ? s / (segs - 1) : 0.5;
+          var phaseOffset = config.phaseSpread * (
+            0.6 * Math.sin(nx * Math.PI * 4 + config.phaseSeed) +
+            0.4 * Math.sin(nx * Math.PI * 9 + config.phaseSeed * 1.7)
+          ) + rf(-0.3, 0.3);
+
+          /* Vertical offset — some segments reach further onto sand,
+             others stay closer to ocean. Creates varied wash distance. */
+          var vertOffset = config.vertSpread * (
+            0.5 * Math.sin(nx * Math.PI * 6 + config.phaseSeed * 0.8) +
+            0.5 * Math.sin(nx * Math.PI * 13 + config.phaseSeed * 2.3)
+          ) + rf(-1.5, 1.5);
+          var segTop = config.startTop + vertOffset;
+
+          var segDelay = baseDelay + phaseOffset + j * rf(0.2, 0.5);
+          /* Wrap into positive range */
+          segDelay = ((segDelay % config.cycle) + config.cycle) % config.cycle;
+
+          var h = config.hMin + rf(0, config.hVar);
+          var alpha = config.alphaMin + rf(0, config.alphaVar);
+          var blur = config.blur + rf(-0.4, 0.6);
+          var cycleJitter = config.cycle + rf(-1.2, 1.2);
+
+          /* Radial gradient ellipse — thick soft body for SVG filter to warp */
+          var cx = 30 + rf(0, 40);
+          var r = config.r, g = config.g, b = config.b;
+          var bg = 'radial-gradient(ellipse at ' + cx.toFixed(0) + '% 50%, ' +
+            'rgba(' + r + ',' + g + ',' + b + ',' + alpha.toFixed(3) + ') 0%, ' +
+            'rgba(' + r + ',' + g + ',' + b + ',' + (alpha * 0.4).toFixed(3) + ') 55%, ' +
+            'transparent 100%)';
+
+          /* Randomized border-radius for organic curved shape */
+          var br = [
+            (35 + rf(0, 30)).toFixed(0) + '%',
+            (35 + rf(0, 30)).toFixed(0) + '%',
+            (30 + rf(0, 25)).toFixed(0) + '%',
+            (30 + rf(0, 25)).toFixed(0) + '%'
+          ];
+          var brV = [
+            (50 + rf(0, 30)).toFixed(0) + '%',
+            (50 + rf(0, 30)).toFixed(0) + '%',
+            (40 + rf(0, 25)).toFixed(0) + '%',
+            (40 + rf(0, 25)).toFixed(0) + '%'
+          ];
+
+          el.style.cssText =
+            'top:' + segTop.toFixed(1) + '%;' +
+            'left:' + left.toFixed(1) + '%;' +
+            'width:' + width.toFixed(1) + '%;' +
+            'height:' + h.toFixed(1) + 'px;' +
+            'border-radius:' + br.join(' ') + ' / ' + brV.join(' ') + ';' +
+            'background:' + bg + ';' +
+            'filter:blur(' + blur.toFixed(1) + 'px);' +
+            'animation:' + config.anim + ' ' + cycleJitter.toFixed(1) + 's ease-in-out ' + segDelay.toFixed(1) + 's infinite;';
+          container.appendChild(el);
+        }
+      }
+    }
+  }
+
+  /* Far: dreamy, faint — 6 segments with smooth curvature */
+  createWavefronts(document.getElementById('wavesFar'), {
+    rows: 3, cycle: 34, segs: 16,
+    phaseSpread: 5, phaseSeed: 0.7,
+    vertSpread: 6,
+    startTop: 55,
+    hMin: 6, hVar: 6,
+    r: 170, g: 205, b: 215,
+    alphaMin: 0.12, alphaVar: 0.15,
+    blur: 2, anim: 'advanceFar'
+  });
+
+  /* Mid: moderate — 8 segments for visible smooth curvature */
+  createWavefronts(document.getElementById('wavesMid'), {
+    rows: 3, cycle: 26, segs: 20,
+    phaseSpread: 4.5, phaseSeed: 2.1,
+    vertSpread: 7,
+    startTop: 65,
+    hMin: 8, hVar: 7,
+    r: 155, g: 198, b: 210,
+    alphaMin: 0.15, alphaVar: 0.20,
+    blur: 1.2, anim: 'advanceMid'
+  });
+
+  /* Near: strongest — 10 segments for detailed smooth curvature */
+  createWavefronts(document.getElementById('wavesNear'), {
+    rows: 3, cycle: 20, segs: 24,
+    phaseSpread: 4, phaseSeed: 4.3,
+    vertSpread: 8,
+    startTop: 72,
+    hMin: 10, hVar: 8,
+    r: 185, g: 220, b: 230,
+    alphaMin: 0.20, alphaVar: 0.24,
+    blur: 0.6, anim: 'advanceNear'
+  });
+
+  /* ---------- Wave particle sparkles ---------- */
+  function createWaveParticles(container, count, topMin, topMax) {
+    for (var i = 0; i < count; i++) {
+      var p = document.createElement('div');
+      p.className = 'wave-particle';
+      var size = 2 + Math.random() * 3;
+      var x = Math.random() * 100;
+      var y = topMin + Math.random() * (topMax - topMin);
+      var dur = 3 + Math.random() * 5;
+      var delay = Math.random() * dur;
+      /* Warm white / golden tones to match sunset light */
+      var colors = [
+        'rgba(255,245,220,' + (0.3 + Math.random() * 0.5).toFixed(2) + ')',
+        'rgba(255,235,200,' + (0.25 + Math.random() * 0.45).toFixed(2) + ')',
+        'rgba(255,225,180,' + (0.2 + Math.random() * 0.4).toFixed(2) + ')',
+        'rgba(255,255,240,' + (0.35 + Math.random() * 0.45).toFixed(2) + ')'
+      ];
+      var color = colors[Math.floor(Math.random() * colors.length)];
+      p.style.cssText =
+        'left:' + x.toFixed(1) + '%;' +
+        'top:' + y.toFixed(1) + '%;' +
+        'width:' + size.toFixed(1) + 'px;' +
+        'height:' + size.toFixed(1) + 'px;' +
+        'background:radial-gradient(circle,' + color + ' 0%,transparent 70%);' +
+        'box-shadow:0 0 ' + (size * 1.5).toFixed(0) + 'px ' + color + ';' +
+        'animation:particleGlow ' + dur.toFixed(1) + 's ease-in-out ' + delay.toFixed(1) + 's infinite;';
+      container.appendChild(p);
+    }
+  }
+
+
+  /* ---------- Sand grains ---------- */
+  const sandLayer = document.getElementById('sandLayer');
+
+  /* Sparkles on wet sand zone */
+  createWaveParticles(sandLayer, 35, 1, 16);
+  for (let i = 0; i < 80; i++) {
+    const g = document.createElement('div');
+    g.className = 'sand-grain';
+    g.style.cssText = `
+      left:${Math.random() * 100}%;
+      top:${22 + Math.random() * 78}%;
+      opacity:${0.2 + Math.random() * 0.4};
+      width:${1 + Math.random() * 2}px;
+      height:${1 + Math.random() * 2}px;
+    `;
+    sandLayer.appendChild(g);
+  }
+  /* ========== PARALLAX ENGINE ========== */
+  const layers = document.querySelectorAll('.layer[data-speed]');
+  let targetOffset = 0;
+  let currentOffset = 0;
+  let maxOffset = vw * 1.5;
+  const scrollSpeed = 8;
+  const ease = 0.08;
+
+  const keys = { ArrowLeft: false, ArrowRight: false };
+
+  const layerMeta = [];
+  layers.forEach(layer => {
+    layerMeta.push({
+      el: layer,
+      speed: parseFloat(layer.dataset.speed),
+      centerShift: -(layer.offsetWidth - vw) / 2
+    });
+  });
+
+  function recalcParallax() {
+    vw = window.innerWidth;
+    maxOffset = vw * 1.5;
+    layerMeta.forEach(m => {
+      m.centerShift = -(m.el.offsetWidth - vw) / 2;
+    });
+    targetOffset = Math.max(-maxOffset, Math.min(maxOffset, targetOffset));
+    currentOffset = Math.max(-maxOffset, Math.min(maxOffset, currentOffset));
+  }
+
+  let resizeRaf = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(recalcParallax);
+  });
+
+  function applyParallax() {
+    layerMeta.forEach(m => {
+      m.el.style.transform = `translateX(${m.centerShift - currentOffset * m.speed}px)`;
+    });
+  }
+
+  let prevT = performance.now();
+  function loop(now) {
+    const dt = Math.min((now - prevT) / 1000, 0.1);
+    prevT = now;
+
+    if (keys.ArrowLeft) targetOffset -= scrollSpeed;
+    if (keys.ArrowRight) targetOffset += scrollSpeed;
+    targetOffset = Math.max(-maxOffset, Math.min(maxOffset, targetOffset));
+    currentOffset += (targetOffset - currentOffset) * ease;
+    applyParallax();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  /* ---------- KEYBOARD ---------- */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      keys[e.key] = true;
+      hideHint();
+    }
+  });
+  document.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      keys[e.key] = false;
+    }
+  });
+
+  /* ---------- MOUSE DRAG ---------- */
+  let dragging = false;
+  let dragStartX = 0;
+  let offsetAtDragStart = 0;
+
+  document.addEventListener('mousedown', e => {
+    dragging = true;
+    dragStartX = e.clientX;
+    offsetAtDragStart = targetOffset;
+    document.body.classList.add('dragging');
+    hideHint();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - dragStartX;
+    targetOffset = offsetAtDragStart - dx * 1.8;
+  });
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    document.body.classList.remove('dragging');
+  });
+  window.addEventListener('blur', () => {
+    dragging = false;
+    document.body.classList.remove('dragging');
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+  });
+
+  /* ---------- TOUCH ---------- */
+  let touchStartX = 0;
+  let touchOffsetStart = 0;
+
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchOffsetStart = targetOffset;
+    hideHint();
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    const dx = e.touches[0].clientX - touchStartX;
+    targetOffset = touchOffsetStart - dx * 1.8;
+  }, { passive: true });
+
+  /* ---------- HINT ---------- */
+  const hint = document.getElementById('hint');
+  function hideHint() {
+    hint.classList.add('hidden');
+  }
+  setTimeout(() => { hint.classList.add('hidden'); }, 6000);
+
+})();
+</script>
+</body>
+</html>
