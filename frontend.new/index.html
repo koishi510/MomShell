@@ -439,31 +439,83 @@ body.dragging { cursor: grabbing; }
   100% { opacity: 0; transform: translateY(-8px) scale(0.4); }
 }
 
-/* Wavefront — rush onto shore, linger, pull back */
-@keyframes advanceFar {
-  0%   { transform: translateY(0); opacity: 0; }
-  15%  { opacity: 0.3; }
-  42%  { transform: translateY(5vh); opacity: 0.35; }
-  58%  { transform: translateY(5.5vh); opacity: 0.2; }
-  85%  { transform: translateY(2vh); opacity: 0.06; }
+/* Wavefront — rush onto shore, immediately retreat (3 reach variants per layer)
+   Timing per segment:
+     rush-in  → cubic-bezier(0.25,0.6,0.35,1)  smooth deceleration to zero
+     retreat  → cubic-bezier(0.35,0.1,0.7,0.5)  brief hesitation then crisp pull-back
+*/
+@keyframes advanceFarS {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  28%  { transform: translateY(3.2vh); opacity: 0.45;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  56%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceFarM {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  28%  { transform: translateY(4.5vh); opacity: 0.5;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  56%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceFarL {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  28%  { transform: translateY(5vh); opacity: 0.55;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  56%  { transform: translateY(0); opacity: 0; }
   100% { transform: translateY(0); opacity: 0; }
 }
 
-@keyframes advanceMid {
-  0%   { transform: translateY(0); opacity: 0; }
-  12%  { opacity: 0.45; }
-  40%  { transform: translateY(6vh); opacity: 0.5; }
-  55%  { transform: translateY(6.5vh); opacity: 0.3; }
-  82%  { transform: translateY(2vh); opacity: 0.08; }
+@keyframes advanceMidS {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  26%  { transform: translateY(3.6vh); opacity: 0.55;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  54%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceMidM {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  26%  { transform: translateY(5.2vh); opacity: 0.65;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  54%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceMidL {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  26%  { transform: translateY(6vh); opacity: 0.7;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  54%  { transform: translateY(0); opacity: 0; }
   100% { transform: translateY(0); opacity: 0; }
 }
 
-@keyframes advanceNear {
-  0%   { transform: translateY(0) scaleX(0.98); opacity: 0; }
-  10%  { opacity: 0.6; }
-  38%  { transform: translateY(7vh) scaleX(1.03); opacity: 0.7; }
-  52%  { transform: translateY(7.5vh) scaleX(1.05); opacity: 0.45; }
-  80%  { transform: translateY(2.5vh) scaleX(1.0); opacity: 0.1; }
+@keyframes advanceNearS {
+  0%   { transform: translateY(0) scaleX(0.98); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  24%  { transform: translateY(4.5vh) scaleX(1.03); opacity: 0.75;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  52%  { transform: translateY(0) scaleX(0.98); opacity: 0; }
+  100% { transform: translateY(0) scaleX(0.98); opacity: 0; }
+}
+@keyframes advanceNearM {
+  0%   { transform: translateY(0) scaleX(0.98); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  24%  { transform: translateY(6vh) scaleX(1.05); opacity: 0.85;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  52%  { transform: translateY(0) scaleX(0.98); opacity: 0; }
+  100% { transform: translateY(0) scaleX(0.98); opacity: 0; }
+}
+@keyframes advanceNearL {
+  0%   { transform: translateY(0) scaleX(0.98); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  24%  { transform: translateY(7vh) scaleX(1.05); opacity: 0.9;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  52%  { transform: translateY(0) scaleX(0.98); opacity: 0; }
   100% { transform: translateY(0) scaleX(0.98); opacity: 0; }
 }
 
@@ -545,22 +597,19 @@ body.dragging { cursor: grabbing; }
 </head>
 <body>
 
-<!-- Inline SVG watercolor filters — one per depth layer -->
+<!-- Inline SVG watercolor filters -->
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
   <defs>
-    <!-- Far waves: dreamiest, most dissolved -->
     <filter id="watercolor-far" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="4" seed="1" result="noise"/>
       <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
       <feGaussianBlur in="displaced" stdDeviation="0.8" result="softened"/>
     </filter>
-    <!-- Mid waves: moderate watercolor wobble -->
     <filter id="watercolor-mid" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="7" result="noise"/>
       <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
       <feGaussianBlur in="displaced" stdDeviation="0.6" result="softened"/>
     </filter>
-    <!-- Near waves: most detailed, subtle wobble -->
     <filter id="watercolor-near" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="5" seed="13" result="noise"/>
       <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
@@ -925,7 +974,7 @@ body.dragging { cursor: grabbing; }
             'border-radius:' + br.join(' ') + ' / ' + brV.join(' ') + ';' +
             'background:' + bg + ';' +
             'filter:blur(' + blur.toFixed(1) + 'px);' +
-            'animation:' + config.anim + ' ' + cycleJitter.toFixed(1) + 's ease-in-out ' + segDelay.toFixed(1) + 's infinite;';
+            'animation:' + config.anims[Math.floor(Math.random() * config.anims.length)] + ' ' + cycleJitter.toFixed(1) + 's ease-in-out ' + segDelay.toFixed(1) + 's infinite;';
           frag.appendChild(el);
         }
       }
@@ -935,38 +984,38 @@ body.dragging { cursor: grabbing; }
 
   /* Far: dreamy, faint — 6 segments with smooth curvature */
   createWavefronts(document.getElementById('wavesFar'), {
-    rows: 3, cycle: 34, segs: 16,
+    rows: 2, cycle: 34, segs: 12,
     phaseSpread: 5, phaseSeed: 0.7,
     vertSpread: 6,
     startTop: 55,
     hMin: 6, hVar: 6,
     r: 170, g: 205, b: 215,
-    alphaMin: 0.12, alphaVar: 0.15,
-    blur: 2, anim: 'advanceFar'
+    alphaMin: 0.22, alphaVar: 0.18,
+    blur: 2, anims: ['advanceFarS','advanceFarM','advanceFarL']
   });
 
   /* Mid: moderate — 8 segments for visible smooth curvature */
   createWavefronts(document.getElementById('wavesMid'), {
-    rows: 3, cycle: 26, segs: 20,
+    rows: 2, cycle: 26, segs: 14,
     phaseSpread: 4.5, phaseSeed: 2.1,
     vertSpread: 7,
     startTop: 65,
     hMin: 8, hVar: 7,
     r: 155, g: 198, b: 210,
-    alphaMin: 0.15, alphaVar: 0.20,
-    blur: 1.2, anim: 'advanceMid'
+    alphaMin: 0.28, alphaVar: 0.22,
+    blur: 1.2, anims: ['advanceMidS','advanceMidM','advanceMidL']
   });
 
   /* Near: strongest — 10 segments for detailed smooth curvature */
   createWavefronts(document.getElementById('wavesNear'), {
-    rows: 3, cycle: 20, segs: 24,
+    rows: 2, cycle: 20, segs: 16,
     phaseSpread: 4, phaseSeed: 4.3,
     vertSpread: 8,
     startTop: 72,
     hMin: 10, hVar: 8,
     r: 185, g: 220, b: 230,
-    alphaMin: 0.20, alphaVar: 0.24,
-    blur: 0.6, anim: 'advanceNear'
+    alphaMin: 0.35, alphaVar: 0.28,
+    blur: 0.6, anims: ['advanceNearS','advanceNearM','advanceNearL']
   });
 
   /* ---------- Wave particle sparkles ---------- */
