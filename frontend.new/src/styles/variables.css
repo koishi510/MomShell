@@ -1,0 +1,30 @@
+:root {
+  /* Sky gradient stops */
+  --sky-top: #f2b8c8;
+  --sky-bottom: #fef0b0;
+
+  /* Ocean gradient */
+  --ocean-top: #2a6ea8;
+  --ocean-bottom: #90c8d8;
+
+  /* Sand */
+  --sand-bg: #f5e0c8;
+
+  /* Sun */
+  --sun-center: #fff5d0;
+  --sun-mid: #ffe8a8;
+  --sun-edge: #ffd880;
+
+  /* Cloud */
+  --cloud-base: rgba(255, 225, 195, 0.22);
+  --cloud-bright: rgba(255, 205, 150, 0.28);
+
+  /* Hint */
+  --hint-color: rgba(180, 130, 80, 0.6);
+
+  /* Shimmer */
+  --shimmer-color: rgba(255, 225, 160, 0.4);
+
+  /* Reflection */
+  --reflection-streak: rgba(255, 225, 160, 0.5);
+}
