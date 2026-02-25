@@ -29,7 +29,6 @@
     <SunReflectionLayer />
     <WaveLayer v-for="(wl, i) in waveLayers" :key="i" :variant="wl" />
     <SandLayer />
-    <SpritesLayer />
   </div>
 
   <HintOverlay :is-hidden="hintHidden" />
@@ -46,7 +45,6 @@ import OceanLayer from './OceanLayer.vue'
 import SunReflectionLayer from './SunReflectionLayer.vue'
 import WaveLayer from './WaveLayer.vue'
 import SandLayer from './SandLayer.vue'
-import SpritesLayer from './SpritesLayer.vue'
 import HintOverlay from './HintOverlay.vue'
 
 const { hintHidden } = useParallax()
