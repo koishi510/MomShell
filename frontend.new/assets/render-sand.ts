@@ -1,20 +1,23 @@
-#!/usr/bin/env node
+#!/usr/bin/env npx tsx
 /**
- * render-sand.js — 用 Puppeteer 将沙滩 CSS 渲染为 sand.png
+ * render-sand.ts — 用 Puppeteer 将沙滩 CSS 渲染为 sand.png
  *
- * 用法: node assets/render-sand.js
+ * 用法: npx tsx assets/render-sand.ts [输出文件名]
  *
  * 可调参数在下方 CONFIG 区域，改完后重新运行即可。
  * 生成: assets/sand.png  (7680×630, RGBA, 透明顶部渐变到 #f8eed8)
  */
 
-const puppeteer = require('puppeteer');
-const path = require('path');
+import puppeteer from 'puppeteer'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // ============ CONFIG ============
-const WIDTH = 7680;
-const HEIGHT = 630;
-const OUTPUT = path.join(__dirname, process.argv[2] || 'sand.png');
+const WIDTH = 7680
+const HEIGHT = 630
+const OUTPUT = path.join(__dirname, process.argv[2] || 'sand.png')
 // ================================
 
 const html = `<!DOCTYPE html>
@@ -157,33 +160,35 @@ html, body { width: ${WIDTH}px; height: ${HEIGHT}px; overflow: hidden; backgroun
   }
 </script>
 </body>
-</html>`;
+</html>`
 
-(async () => {
+async function main(): Promise<void> {
   const browser = await puppeteer.launch({
-    headless: 'new',
+    headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--default-background-color=00000000',   // transparent
+      '--default-background-color=00000000',
       `--window-size=${WIDTH},${HEIGHT}`,
     ],
-  });
+  })
 
-  const page = await browser.newPage();
-  await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 1 });
-  await page.setContent(html, { waitUntil: 'networkidle0' });
+  const page = await browser.newPage()
+  await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 1 })
+  await page.setContent(html, { waitUntil: 'networkidle0' })
 
   // 等待 SVG filter 渲染完成
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise<void>(r => setTimeout(r, 500))
 
   await page.screenshot({
     path: OUTPUT,
     type: 'png',
     omitBackground: true,
     clip: { x: 0, y: 0, width: WIDTH, height: HEIGHT },
-  });
+  })
 
-  await browser.close();
-  console.log('sand.png saved to', OUTPUT, `(${WIDTH}x${HEIGHT})`);
-})();
+  await browser.close()
+  console.log('sand.png saved to', OUTPUT, `(${WIDTH}x${HEIGHT})`)
+}
+
+main()
