@@ -1,0 +1,214 @@
+/* ============================================================
+   Cloud drift animations
+   ============================================================ */
+@keyframes cloudDrift0 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(30px); }
+}
+@keyframes cloudDrift1 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25px); }
+}
+@keyframes cloudDrift2 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(20px); }
+}
+
+/* ============================================================
+   Seagull wing flap animations
+   ============================================================ */
+@keyframes gullWing {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(-18deg); }
+}
+@keyframes gullWingR {
+  0%, 100% { transform: rotate(8deg); }
+  50% { transform: rotate(18deg); }
+}
+
+/* ============================================================
+   Sun glow pulse
+   ============================================================ */
+@keyframes glowPulse {
+  0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.92; transform: translate(-50%, -50%) scale(1.04); }
+}
+
+/* ============================================================
+   Horizon wisp drift
+   ============================================================ */
+@keyframes wispDrift {
+  0%   { opacity: 0.5; transform: translateX(0) scaleX(1); }
+  50%  { opacity: 0.8; transform: translateX(10px) scaleX(1.03); }
+  100% { opacity: 0.5; transform: translateX(-8px) scaleX(0.97); }
+}
+
+/* ============================================================
+   Ocean shimmer
+   ============================================================ */
+@keyframes shimmerFloat {
+  0%, 100% { opacity: 0; transform: scaleX(0.5); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+/* ============================================================
+   Ocean wave line drift
+   ============================================================ */
+@keyframes waveLineDrift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-140px); }
+}
+
+/* ============================================================
+   Sun reflection streak animations
+   ============================================================ */
+@keyframes streakCalm {
+  0% { opacity: 0.3; transform: translateX(-50%) scaleX(0.85); }
+  100% { opacity: 1; transform: translateX(-50%) scaleX(1.15); }
+}
+
+@keyframes streakWaveGentle {
+  0%   { opacity: 0.3; transform: translateX(-50%) scaleX(0.9) translateY(0); }
+  25%  { opacity: 0.65; transform: translateX(-50%) scaleX(1.0) translateY(1.5px); }
+  50%  { opacity: 1; transform: translateX(-50%) scaleX(1.1) translateY(0); }
+  75%  { opacity: 0.5; transform: translateX(-50%) scaleX(1.0) translateY(-1px); }
+  100% { opacity: 0.3; transform: translateX(-50%) scaleX(0.9) translateY(0); }
+}
+
+@keyframes streakWaveMid {
+  0%   { opacity: 0.3; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+  18%  { opacity: 0.7; transform: translateX(-50%) scaleX(1.0) translateY(3px); }
+  38%  { opacity: 1; transform: translateX(-50%) scaleX(1.15) translateY(0.5px); }
+  58%  { opacity: 0.55; transform: translateX(-50%) scaleX(1.05) translateY(-2.5px); }
+  78%  { opacity: 0.4; transform: translateX(-50%) scaleX(0.92) translateY(1.5px); }
+  100% { opacity: 0.3; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+}
+
+@keyframes streakWaveStrong {
+  0%   { opacity: 0.25; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+  14%  { opacity: 0.8; transform: translateX(-50%) scaleX(1.0) translateY(5px); }
+  30%  { opacity: 1; transform: translateX(-50%) scaleX(1.15) translateY(1px); }
+  48%  { opacity: 0.6; transform: translateX(-50%) scaleX(1.08) translateY(-4px); }
+  64%  { opacity: 0.45; transform: translateX(-50%) scaleX(0.95) translateY(3px); }
+  82%  { opacity: 0.35; transform: translateX(-50%) scaleX(0.88) translateY(-1px); }
+  100% { opacity: 0.25; transform: translateX(-50%) scaleX(0.85) translateY(0); }
+}
+
+/* ============================================================
+   Reflection glow shimmer
+   ============================================================ */
+@keyframes glowShimmer {
+  0%   { opacity: 0.35; transform: translateX(-50%) scaleX(0.92) translateY(0); }
+  20%  { opacity: 0.7;  transform: translateX(-50%) scaleX(1.06) translateY(3px); }
+  45%  { opacity: 0.5;  transform: translateX(-50%) scaleX(0.96) translateY(-2px); }
+  65%  { opacity: 0.8;  transform: translateX(-50%) scaleX(1.03) translateY(2px); }
+  85%  { opacity: 0.45; transform: translateX(-50%) scaleX(0.98) translateY(-1px); }
+  100% { opacity: 0.35; transform: translateX(-50%) scaleX(0.92) translateY(0); }
+}
+
+/* ============================================================
+   Wave advance animations — Far layer
+   ============================================================ */
+@keyframes advanceFarS {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  28%  { transform: translateY(3.2vh); opacity: 0.45;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  56%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceFarM {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  28%  { transform: translateY(4.5vh); opacity: 0.5;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  56%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceFarL {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  28%  { transform: translateY(5vh); opacity: 0.55;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  56%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+/* ============================================================
+   Wave advance animations — Mid layer
+   ============================================================ */
+@keyframes advanceMidS {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  26%  { transform: translateY(3.6vh); opacity: 0.55;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  54%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceMidM {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  26%  { transform: translateY(5.2vh); opacity: 0.65;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  54%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes advanceMidL {
+  0%   { transform: translateY(0); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  26%  { transform: translateY(6vh); opacity: 0.7;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  54%  { transform: translateY(0); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+/* ============================================================
+   Wave advance animations — Near layer
+   ============================================================ */
+@keyframes advanceNearS {
+  0%   { transform: translateY(0) scaleX(0.98); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  24%  { transform: translateY(4.5vh) scaleX(1.03); opacity: 0.75;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  52%  { transform: translateY(0) scaleX(0.98); opacity: 0; }
+  100% { transform: translateY(0) scaleX(0.98); opacity: 0; }
+}
+@keyframes advanceNearM {
+  0%   { transform: translateY(0) scaleX(0.98); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  24%  { transform: translateY(6vh) scaleX(1.05); opacity: 0.85;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  52%  { transform: translateY(0) scaleX(0.98); opacity: 0; }
+  100% { transform: translateY(0) scaleX(0.98); opacity: 0; }
+}
+@keyframes advanceNearL {
+  0%   { transform: translateY(0) scaleX(0.98); opacity: 0;
+         animation-timing-function: cubic-bezier(0.25, 0.6, 0.35, 1); }
+  24%  { transform: translateY(7vh) scaleX(1.05); opacity: 0.9;
+         animation-timing-function: cubic-bezier(0.35, 0.1, 0.7, 0.5); }
+  52%  { transform: translateY(0) scaleX(0.98); opacity: 0; }
+  100% { transform: translateY(0) scaleX(0.98); opacity: 0; }
+}
+
+/* ============================================================
+   Wave particle glow
+   ============================================================ */
+@keyframes particleGlow {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  20%  { opacity: 1; transform: translateY(-2px) scale(1); }
+  50%  { opacity: 0.7; transform: translateY(-4px) scale(0.9); }
+  80%  { opacity: 0.3; transform: translateY(-6px) scale(0.7); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.4); }
+}
+
+/* ============================================================
+   Shore wash pulse
+   ============================================================ */
+@keyframes shoreWashPulse {
+  0%   { opacity: 0.5; transform: translateY(0px); }
+  20%  { opacity: 0.75; transform: translateY(-3px); }
+  45%  { opacity: 0.9; transform: translateY(-5px); }
+  65%  { opacity: 0.8; transform: translateY(-3px); }
+  85%  { opacity: 0.55; transform: translateY(1px); }
+  100% { opacity: 0.5; transform: translateY(0px); }
+}
