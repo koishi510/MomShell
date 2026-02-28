@@ -11,6 +11,7 @@ export const LAYERS: Record<string, LayerConfig> = {
   waveMid:        { speed: 0.35, zIndex: 26, width: '400vw', top: '35%', height: '16%' },
   waveNear:       { speed: 0.48, zIndex: 28, width: '400vw', top: '36%', height: '16%' },
   sand:           { speed: 0.55, zIndex: 20, width: '400vw' },
+  sprites:        { speed: 0.55, zIndex: 22, width: '400vw' },
 }
 
 export const PARALLAX_EASE = 0.14
