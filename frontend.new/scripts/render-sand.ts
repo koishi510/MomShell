@@ -2,10 +2,10 @@
 /**
  * render-sand.ts — 用 Puppeteer 将沙滩 CSS 渲染为 sand.png
  *
- * 用法: npx tsx assets/render-sand.ts [输出文件名]
+ * 用法: npx tsx scripts/render-sand.ts [输出文件名]
  *
  * 可调参数在下方 CONFIG 区域，改完后重新运行即可。
- * 生成: assets/sand.png  (7680×630, RGBA, 透明顶部渐变到 #f8eed8)
+ * 生成: src/assets/sand.png  (7680×630, RGBA, 透明顶部渐变到 #f8eed8)
  */
 
 import puppeteer from 'puppeteer'
@@ -17,7 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // ============ CONFIG ============
 const WIDTH = 7680
 const HEIGHT = 630
-const OUTPUT = path.join(__dirname, process.argv[2] || 'sand.png')
+const OUTPUT = path.join(__dirname, '..', 'src', 'assets', process.argv[2] || 'sand.png')
 // ================================
 
 const html = `<!DOCTYPE html>
