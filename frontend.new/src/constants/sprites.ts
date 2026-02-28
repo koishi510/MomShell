@@ -7,17 +7,17 @@ export interface SpriteData {
   rotate?: number
 }
 
-import carImg from '@assets/car.png'
-import jishiImg from '@assets/jishi.png'
-import stoneImg from '@assets/stone.png'
-import crabImg from '@assets/crab.png'
-import shellImg from '@assets/shell_2d.png'
+import carImg from '@/assets/car.png'
+import barImg from '@/assets/bar.png'
+import stoneImg from '@/assets/stone.png'
+import crabImg from '@/assets/crab.png'
+import shellImg from '@/assets/shell.png'
 
 export const SPRITES: SpriteData[] = [
   // car: 往右移一点 50→54%，大小翻倍 18→36vw
   { id: 'car',   src: carImg,   left: '38%', top: '10%', width: '45vw' },
-  // jishi: 往右移一点 18→24%，大小翻倍 22→44vw
-  { id: 'jishi', src: jishiImg, left: '24%', top: '28%', width: '44vw' },
+  // bar: 往右移一点 18→24%，大小翻倍 22→44vw
+  { id: 'bar', src: barImg, left: '24%', top: '28%', width: '44vw' },
   // stone: 往左移一点 80→72%
   { id: 'stone', src: stoneImg, left: '72%', top: '5%',  width: '14vw' },
   // crab: 放在 car 左边，位置再往下一点点
@@ -38,7 +38,7 @@ export const SPRITES: SpriteData[] = [
   { id: 'shell-7',  src: shellImg, left: '68%', top: '38%', width: '4vw',   rotate: -10 },
   { id: 'shell-8',  src: shellImg, left: '53%', top: '60%', width: '4.3vw', rotate: 50 },
 
-  // --- jishi 旁边的贝壳 ---
+  // --- bar 旁边的贝壳 ---
   { id: 'shell-9',  src: shellImg, left: '22%', top: '32%', width: '4vw',   rotate: 15 },
   { id: 'shell-10', src: shellImg, left: '30%', top: '45%', width: '3.5vw', rotate: -40 },
   { id: 'shell-11', src: shellImg, left: '26%', top: '55%', width: '4.2vw', rotate: 25 },
