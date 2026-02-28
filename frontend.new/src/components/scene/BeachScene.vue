@@ -29,10 +29,7 @@
     <SunReflectionLayer />
     <WaveLayer v-for="(wl, i) in waveLayers" :key="i" :variant="wl" />
     <SandLayer />
-<<<<<<< HEAD
     <SpritesLayer />
-=======
->>>>>>> 227d7bc (refactor: restructure beach scene into Vue 3 + Vite + TypeScript)
   </div>
 
   <HintOverlay :is-hidden="hintHidden" />
@@ -49,10 +46,7 @@ import OceanLayer from './OceanLayer.vue'
 import SunReflectionLayer from './SunReflectionLayer.vue'
 import WaveLayer from './WaveLayer.vue'
 import SandLayer from './SandLayer.vue'
-<<<<<<< HEAD
 import SpritesLayer from './SpritesLayer.vue'
-=======
->>>>>>> 227d7bc (refactor: restructure beach scene into Vue 3 + Vite + TypeScript)
 import HintOverlay from './HintOverlay.vue'
 
 const { hintHidden } = useParallax()
