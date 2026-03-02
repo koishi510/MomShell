@@ -17,9 +17,9 @@ import shellImg from '@/assets/shell.png'
 
 export const SPRITES: SpriteData[] = [
 
-  { id: 'car',   src: carImg,   left: '38%', top: '9%', width: '48vw' },
+  { id: 'car',   src: carImg,   left: '38%', top: '-2.5%', width: '50vw' },
 
-  { id: 'bar', src: barImg, left: '18%', top: '6.5%', width: '44vw' },
+  { id: 'bar', src: barImg, left: '18%', top: '-15%', width: '60vw' },
 
   { id: 'stone', src: stoneImg, left: '75%', top: '0.5%',  width: '20vw' },
 
