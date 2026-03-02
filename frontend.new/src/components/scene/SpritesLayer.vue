@@ -10,7 +10,11 @@
         left: s.left,
         top: s.top,
         width: s.width,
-        transform: s.rotate ? `rotate(${s.rotate}deg)` : undefined,
+        transform: [
+          s.rotate ? `rotate(${s.rotate}deg)` : '',
+          s.scaleX ? `scaleX(${s.scaleX})` : '',
+          s.scaleY ? `scaleY(${s.scaleY})` : '',
+        ].filter(Boolean).join(' ') || undefined,
       }"
     />
   </div>
@@ -35,7 +39,7 @@ onMounted(() => {
 <style scoped>
 .sprites-layer {
   width: 400vw;
-  z-index: 22;
+  z-index: 30;
   top: calc(42% - 2px);
   height: calc(58% + 2px);
 }
