@@ -56,6 +56,15 @@ class User(Base):
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.MOM)
 
+    # Shell pairing
+    shell_code: Mapped[str | None] = mapped_column(
+        String(8), unique=True, nullable=True
+    )
+    is_guest: Mapped[bool] = mapped_column(Boolean, default=False)
+    partner_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
     # Postpartum related info
     baby_birth_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     postpartum_weeks: Mapped[int | None] = mapped_column(Integer, nullable=True)

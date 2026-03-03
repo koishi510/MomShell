@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MomShell Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/static/admin/admin.css">
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800" x-data="adminApp()" x-init="init()">
+
+  <!-- ============ Login Screen ============ -->
+  <div x-show="!token" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm">
+      <h1 class="text-2xl font-bold text-center mb-1">MomShell</h1>
+      <p class="text-gray-400 text-center text-sm mb-6">Admin Panel</p>
+      <form @submit.prevent="login()">
+        <label class="block text-sm font-medium text-gray-600 mb-1">Username / Email</label>
+        <input x-model="loginForm.login" type="text" required
+               class="w-full px-3 py-2 border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <label class="block text-sm font-medium text-gray-600 mb-1">Password</label>
+        <input x-model="loginForm.password" type="password" required
+               class="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <p x-show="loginError" x-text="loginError" class="text-red-500 text-sm mb-3"></p>
+        <button type="submit"
+                class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
+          Log In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ Admin Layout ============ -->
+  <div x-show="token" x-cloak class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-56 bg-slate-800 text-white flex flex-col flex-shrink-0">
+      <div class="px-5 py-5 border-b border-slate-700">
+        <h1 class="text-lg font-bold tracking-wide">MomShell</h1>
+        <p class="text-xs text-slate-400">Admin Panel</p>
+      </div>
+      <nav class="flex-1 p-3 space-y-1">
+        <button @click="switchView('dashboard')"
+                :class="view==='dashboard' ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700/50'"
+                class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition">
+          Dashboard
+        </button>
+        <button @click="switchView('users')"
+                :class="view==='users' ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700/50'"
+                class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition">
+          Users
+        </button>
+        <button @click="switchView('config')"
+                :class="view==='config' ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700/50'"
+                class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition">
+          Config
+        </button>
+      </nav>
+      <div class="p-3 border-t border-slate-700">
+        <button @click="logout()" class="w-full text-left px-3 py-2 text-slate-400 hover:text-white text-sm transition">
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 overflow-y-auto">
+
+      <!-- ======== Dashboard ======== -->
+      <div x-show="view==='dashboard'">
+        <h2 class="text-xl font-bold mb-5">Dashboard</h2>
+        <template x-if="stats">
+          <div>
+            <!-- Stat Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Total Users</p>
+                <p class="text-2xl font-bold" x-text="stats.total_users"></p>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Active Users</p>
+                <p class="text-2xl font-bold text-green-600" x-text="stats.active_users"></p>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Banned Users</p>
+                <p class="text-2xl font-bold text-red-600" x-text="stats.banned_users"></p>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Guest Users</p>
+                <p class="text-2xl font-bold text-gray-500" x-text="stats.guest_users"></p>
+              </div>
+            </div>
+
+            <!-- Users by Role -->
+            <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+              <h3 class="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Users by Role</h3>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <template x-for="(count, role) in stats.users_by_role" :key="role">
+                  <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <p class="text-lg font-bold" x-text="count"></p>
+                    <p class="text-xs text-gray-500" x-text="role"></p>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Content Stats -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Questions</p>
+                <p class="text-2xl font-bold" x-text="stats.total_questions"></p>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Pending Review</p>
+                <p class="text-2xl font-bold text-amber-600" x-text="stats.pending_questions"></p>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Answers</p>
+                <p class="text-2xl font-bold" x-text="stats.total_answers"></p>
+              </div>
+              <div class="bg-white rounded-xl shadow-sm p-4">
+                <p class="text-sm text-gray-500">Certifications</p>
+                <p class="text-2xl font-bold" x-text="stats.total_certifications"></p>
+                <p class="text-xs text-amber-600" x-show="stats.pending_certifications > 0"
+                   x-text="stats.pending_certifications + ' pending'"></p>
+              </div>
+            </div>
+          </div>
+        </template>
+        <p x-show="!stats" class="text-gray-400">Loading...</p>
+      </div>
+
+      <!-- ======== Users ======== -->
+      <div x-show="view==='users'">
+        <h2 class="text-xl font-bold mb-5">Users</h2>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-3 mb-4">
+          <input x-model="usersSearch" @input.debounce.400ms="loadUsers()"
+                 type="text" placeholder="Search username, email, nickname..."
+                 class="px-3 py-2 border rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <select x-model="usersRoleFilter" @change="usersPag.page=1; loadUsers()"
+                  class="px-3 py-2 border rounded-lg text-sm bg-white">
+            <option value="">All Roles</option>
+            <option value="guest">Guest</option>
+            <option value="mom">Mom</option>
+            <option value="dad">Dad</option>
+            <option value="family">Family</option>
+            <option value="certified_doctor">Doctor</option>
+            <option value="certified_therapist">Therapist</option>
+            <option value="certified_nurse">Nurse</option>
+            <option value="admin">Admin</option>
+          </select>
+          <select x-model="usersStatusFilter" @change="usersPag.page=1; loadUsers()"
+                  class="px-3 py-2 border rounded-lg text-sm bg-white">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 uppercase text-xs tracking-wide">
+              <tr>
+                <th class="px-4 py-3 text-left">User</th>
+                <th class="px-4 py-3 text-left">Email</th>
+                <th class="px-4 py-3 text-left">Role</th>
+                <th class="px-4 py-3 text-center">Status</th>
+                <th class="px-4 py-3 text-left">Created</th>
+                <th class="px-4 py-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="u in users" :key="u.id">
+                <tr class="border-t hover:bg-gray-50 transition">
+                  <td class="px-4 py-3">
+                    <p class="font-medium" x-text="u.nickname"></p>
+                    <p class="text-xs text-gray-400" x-text="'@' + u.username"></p>
+                  </td>
+                  <td class="px-4 py-3 text-gray-600" x-text="u.email"></td>
+                  <td class="px-4 py-3">
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                          :class="u.role==='admin' ? 'bg-purple-100 text-purple-700' : u.role.startsWith('certified') ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
+                          x-text="u.role"></span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span x-show="u.is_banned" class="inline-block px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-medium">Banned</span>
+                    <span x-show="!u.is_active && !u.is_banned" class="inline-block px-2 py-0.5 bg-gray-200 text-gray-500 rounded-full text-xs font-medium">Inactive</span>
+                    <span x-show="u.is_active && !u.is_banned" class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-500 text-xs" x-text="fmtDate(u.created_at)"></td>
+                  <td class="px-4 py-3 text-center">
+                    <button @click="selectUser(u.id)" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="users.length === 0">
+                <td colspan="6" class="px-4 py-8 text-center text-gray-400">No users found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex items-center justify-between mt-4 text-sm text-gray-500">
+          <p>
+            Showing <span x-text="(usersPag.page - 1) * usersPag.page_size + 1"></span>
+            - <span x-text="Math.min(usersPag.page * usersPag.page_size, usersPag.total)"></span>
+            of <span x-text="usersPag.total"></span>
+          </p>
+          <div class="flex gap-2">
+            <button @click="usersPag.page--; loadUsers()" :disabled="usersPag.page <= 1"
+                    class="px-3 py-1 border rounded-lg disabled:opacity-30 hover:bg-gray-100 transition">Prev</button>
+            <button @click="usersPag.page++; loadUsers()" :disabled="usersPag.page >= usersPag.total_pages"
+                    class="px-3 py-1 border rounded-lg disabled:opacity-30 hover:bg-gray-100 transition">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== User Detail Modal ======== -->
+      <div x-show="selectedUser" x-cloak
+           class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="selectedUser=null">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" @click.stop>
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-lg font-bold" x-text="selectedUser?.nickname"></h3>
+              <p class="text-sm text-gray-400" x-text="'@' + selectedUser?.username"></p>
+            </div>
+            <button @click="selectedUser=null" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          </div>
+
+          <div class="space-y-3 text-sm mb-5">
+            <div class="flex justify-between">
+              <span class="text-gray-500">Email</span>
+              <span x-text="selectedUser?.email"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">ID</span>
+              <span class="text-xs text-gray-400 font-mono" x-text="selectedUser?.id"></span>
+            </div>
+            <div class="flex justify-between" x-show="selectedUser?.shell_code">
+              <span class="text-gray-500">Shell Code</span>
+              <span x-text="selectedUser?.shell_code"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Guest</span>
+              <span x-text="selectedUser?.is_guest ? 'Yes' : 'No'"></span>
+            </div>
+            <div class="flex justify-between" x-show="selectedUser?.has_certification">
+              <span class="text-gray-500">Certification</span>
+              <span x-text="selectedUser?.certification_status"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Created</span>
+              <span x-text="fmtDate(selectedUser?.created_at)"></span>
+            </div>
+          </div>
+
+          <div class="border-t pt-4 space-y-3">
+            <div>
+              <label class="text-sm font-medium text-gray-600 block mb-1">Role</label>
+              <select x-model="editForm.role" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                <option value="guest">Guest</option>
+                <option value="mom">Mom</option>
+                <option value="dad">Dad</option>
+                <option value="family">Family</option>
+                <option value="certified_doctor">Certified Doctor</option>
+                <option value="certified_therapist">Certified Therapist</option>
+                <option value="certified_nurse">Certified Nurse</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="flex gap-6">
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" x-model="editForm.is_active" class="rounded" />
+                Active
+              </label>
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" x-model="editForm.is_banned" class="rounded" />
+                Banned
+              </label>
+            </div>
+            <p x-show="editError" x-text="editError" class="text-red-500 text-sm"></p>
+            <div class="flex gap-2 pt-2">
+              <button @click="saveUser()" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                Save Changes
+              </button>
+              <button @click="confirmDeleteUser()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition">
+                Delete
+              </button>
+              <button @click="selectedUser=null" class="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== Config ======== -->
+      <div x-show="view==='config'">
+        <h2 class="text-xl font-bold mb-5">Configuration</h2>
+        <template x-if="config">
+          <div class="space-y-6">
+
+            <!-- Read-only info -->
+            <div class="bg-white rounded-xl shadow-sm p-5">
+              <h3 class="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Application</h3>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <label class="text-gray-500 block mb-1">App Name</label>
+                  <p class="font-medium" x-text="config.app_name"></p>
+                </div>
+                <div>
+                  <label class="text-gray-500 block mb-1">Database</label>
+                  <p class="font-mono text-xs text-gray-400" x-text="config.database_url"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Editable: API Keys -->
+            <div class="bg-white rounded-xl shadow-sm p-5">
+              <h3 class="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">API Keys</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">ModelScope Key</label>
+                  <input x-model="configForm.modelscope_key" type="text"
+                         class="w-full px-3 py-2 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">Firecrawl Key</label>
+                  <input x-model="configForm.firecrawl_api_key" type="text"
+                         class="w-full px-3 py-2 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Editable: Model -->
+            <div class="bg-white rounded-xl shadow-sm p-5">
+              <h3 class="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Model</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">ModelScope Base URL</label>
+                  <input x-model="configForm.modelscope_base_url" type="text"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">ModelScope Model</label>
+                  <input x-model="configForm.modelscope_model" type="text"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">Image Model</label>
+                  <input x-model="configForm.modelscope_image_model" type="text"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Editable: JWT -->
+            <div class="bg-white rounded-xl shadow-sm p-5">
+              <h3 class="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">JWT Settings</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">Algorithm</label>
+                  <p class="px-3 py-2 bg-gray-50 rounded-lg text-sm" x-text="config.jwt_algorithm"></p>
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">Access Token Expiry (min)</label>
+                  <input x-model.number="configForm.jwt_access_token_expire_minutes" type="number" min="1"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">Refresh Token Expiry (days)</label>
+                  <input x-model.number="configForm.jwt_refresh_token_expire_days" type="number" min="1"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Editable: TTS -->
+            <div class="bg-white rounded-xl shadow-sm p-5">
+              <h3 class="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">TTS Settings</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">Voice</label>
+                  <input x-model="configForm.tts_voice" type="text"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 block mb-1">Rate</label>
+                  <input x-model="configForm.tts_rate" type="text"
+                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Editable: Debug -->
+            <div class="bg-white rounded-xl shadow-sm p-5">
+              <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" x-model="configForm.debug" class="rounded" />
+                <span class="font-medium">Debug Mode</span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <button @click="saveConfig()"
+                      class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                Save Config
+              </button>
+              <p x-show="configSaved" x-transition class="text-green-600 text-sm font-medium">Saved successfully!</p>
+              <p x-show="configError" x-text="configError" class="text-red-500 text-sm"></p>
+            </div>
+            <p class="text-xs text-gray-400">
+              Note: Changes to database URL and JWT secret key require a server restart.
+              Masked values (****) are not sent on save unless you replace them with new values.
+            </p>
+          </div>
+        </template>
+        <p x-show="!config" class="text-gray-400">Loading...</p>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/static/admin/admin.js"></script>
+</body>
+</html>

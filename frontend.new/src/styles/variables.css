@@ -27,4 +27,30 @@
 
   /* Reflection */
   --reflection-streak: rgba(255, 225, 160, 0.5);
+
+  /* ── Liquid Glass (Apple-style) ── */
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-heavy: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-border-strong: rgba(255, 255, 255, 0.35);
+  --glass-blur: 48px;
+  --glass-saturate: 1.9;
+  --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --glass-inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  --glass-radius: 28px;
+
+  /* Overlay */
+  --overlay-backdrop: rgba(0, 0, 0, 0.25);
+
+  /* Accent colors */
+  --accent-warm: #e8a4b8;
+  --accent-warm-hover: #d88a9f;
+  --accent-blue: #1A2B4C;
+  --accent-cream: #F9F4E8;
+
+  /* Text on glass */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-dark: rgba(30, 30, 30, 0.9);
+  --text-dark-secondary: rgba(30, 30, 30, 0.55);
 }
