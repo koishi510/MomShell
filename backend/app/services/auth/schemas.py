@@ -77,6 +77,12 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class SetRoleRequest(BaseModel):
+    """Request body for setting user role after registration."""
+
+    role: Literal["mom", "dad", "family"]
+
+
 class MessageResponse(BaseModel):
     """Simple message response."""
 

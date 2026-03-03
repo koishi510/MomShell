@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from app.api.v1 import exercises, progress, websocket
 from app.core.config import get_settings
 from app.core.database import init_db
+from app.services.admin import admin_router
 from app.services.auth import auth_router
 
 # Import models to register them with SQLAlchemy Base
@@ -124,6 +125,7 @@ async def ensure_admin() -> None:
                 password_hash=get_password_hash(settings.admin_password),
                 nickname="管理员",
                 role=UserRole.ADMIN,
+                is_guest=False,
                 is_active=True,
                 is_banned=False,
             )
@@ -192,12 +194,19 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(community_router, prefix="/api/v1/community")
 app.include_router(guardian_router, prefix="/api/v1")
 app.include_router(echo_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_page(request: Request) -> HTMLResponse:
+    """Serve the admin panel SPA."""
+    return templates.TemplateResponse("admin.html", {"request": request})
 
 
 # Mount frontend static files if exists
