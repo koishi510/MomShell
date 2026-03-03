@@ -939,9 +939,9 @@ langchain-openai==1.1.7 \
     --hash=sha256:34e9cd686aac1a120d6472804422792bf8080a2103b5d21ee450c9e42d053815 \
     --hash=sha256:f5ec31961ed24777548b63a5fe313548bc6e0eb9730d6552b8c6418765254c81
     # via momshell-backend
-langgraph==1.0.7 \
-    --hash=sha256:0cfdfee51e6e8cfe503ecc7367c73933437c505b03fa10a85c710975c8182d9a \
-    --hash=sha256:9d68e8f8dd8f3de2fec45f9a06de05766d9b075b78fb03171779893b7a52c4d2
+langgraph==1.0.10 \
+    --hash=sha256:73bd10ee14a8020f31ef07e9cd4c1a70c35cc07b9c2b9cd637509a10d9d51e29 \
+    --hash=sha256:7c298bef4f6ea292fcf9824d6088fe41a6727e2904ad6066f240c4095af12247
     # via momshell-backend
 langgraph-checkpoint==4.0.1 \
     --hash=sha256:b433123735df11ade28829e40ce25b9be614930cd50245ff2af60629234befd9 \
