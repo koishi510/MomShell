@@ -43,9 +43,9 @@ dev-backend: ## Start backend development server
 	@echo "$(CYAN)Starting backend server on http://localhost:8000$(RESET)"
 	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-dev-frontend: ## Start frontend development server
+dev-frontend: ## Start frontend development server (frontend.new)
 	@echo "$(CYAN)Starting frontend server on http://localhost:3000$(RESET)"
-	cd frontend && npm run dev
+	cd frontend.new && npx vite
 
 ##@ Code Quality
 
