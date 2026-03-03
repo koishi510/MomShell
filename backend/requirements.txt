@@ -449,9 +449,9 @@ email-validator==2.3.0 \
     --hash=sha256:80f13f623413e6b197ae73bb10bf4eb0908faf509ad8362c5edeb0be7fd450b4 \
     --hash=sha256:9fc05c37f2f6cf439ff414f8fc46d917929974a82244c20eb10231ba60c54426
     # via momshell-backend
-fastapi==0.128.0 \
-    --hash=sha256:1cc179e1cef10a6be60ffe429f79b829dce99d8de32d7acb7e6c8dfdf7f2645a \
-    --hash=sha256:aebd93f9716ee3b4f4fcfe13ffb7cf308d99c9f3ab5622d8877441072561582d
+fastapi==0.135.1 \
+    --hash=sha256:46e2fc5745924b7c840f71ddd277382af29ce1cdb7d5eab5bf697e3fb9999c9e \
+    --hash=sha256:d04115b508d936d254cea545b7312ecaa58a7b3a0f84952535b4c9afae7668cd
     # via momshell-backend
 flatbuffers==25.12.19 \
     --hash=sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4
@@ -925,9 +925,9 @@ langchain-anthropic==1.3.1 \
     --hash=sha256:1fc28cf8037c30597ee6172fc2ff9e345efe8149a8c2a39897b1eebba2948322 \
     --hash=sha256:4f3d7a4a7729ab1aeaf62d32c87d4d227c1b5421668ca9e3734562b383470b07
     # via momshell-backend
-langchain-core==1.2.11 \
-    --hash=sha256:ae11ceb8dda60d0b9d09e763116e592f1683327c17be5b715f350fd29aee65d3 \
-    --hash=sha256:f164bb36602dd74a3a50c1334fca75309ad5ed95767acdfdbb9fa95ce28a1e01
+langchain-core==1.2.16 \
+    --hash=sha256:055a4bfe7d62f4ac45ed49fd759ee2e6bdd15abf998fbeea695fda5da2de6413 \
+    --hash=sha256:2768add9aa97232a7712580f678e0ba045ee1036c71fe471355be0434fcb6e30
     # via
     #   langchain-anthropic
     #   langchain-openai
@@ -939,13 +939,13 @@ langchain-openai==1.1.7 \
     --hash=sha256:34e9cd686aac1a120d6472804422792bf8080a2103b5d21ee450c9e42d053815 \
     --hash=sha256:f5ec31961ed24777548b63a5fe313548bc6e0eb9730d6552b8c6418765254c81
     # via momshell-backend
-langgraph==1.0.7 \
-    --hash=sha256:0cfdfee51e6e8cfe503ecc7367c73933437c505b03fa10a85c710975c8182d9a \
-    --hash=sha256:9d68e8f8dd8f3de2fec45f9a06de05766d9b075b78fb03171779893b7a52c4d2
+langgraph==1.0.10 \
+    --hash=sha256:73bd10ee14a8020f31ef07e9cd4c1a70c35cc07b9c2b9cd637509a10d9d51e29 \
+    --hash=sha256:7c298bef4f6ea292fcf9824d6088fe41a6727e2904ad6066f240c4095af12247
     # via momshell-backend
-langgraph-checkpoint==4.0.0 \
-    --hash=sha256:3fa9b2635a7c5ac28b338f631abf6a030c3b508b7b9ce17c22611513b589c784 \
-    --hash=sha256:814d1bd050fac029476558d8e68d87bce9009a0262d04a2c14b918255954a624
+langgraph-checkpoint==4.0.1 \
+    --hash=sha256:b433123735df11ade28829e40ce25b9be614930cd50245ff2af60629234befd9 \
+    --hash=sha256:e3adcd7a0e0166f3b48b8cf508ce0ea366e7420b5a73aa81289888727769b034
     # via
     #   langgraph
     #   langgraph-prebuilt
@@ -2074,9 +2074,9 @@ tiktoken==0.12.0 \
     --hash=sha256:fc530a28591a2d74bce821d10b418b26a094bf33839e69042a6e86ddb7a7fb27 \
     --hash=sha256:ffc5288f34a8bc02e1ea7047b8d041104791d2ddbf42d1e5fa07822cbffe16bd
     # via langchain-openai
-tqdm==4.67.1 \
-    --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2 \
-    --hash=sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2
+tqdm==4.67.3 \
+    --hash=sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb \
+    --hash=sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf
     # via openai
 typing-extensions==4.15.0 \
     --hash=sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466 \

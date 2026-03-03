@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
   },
   "dependencies": {
-    "axios": "^1.13.5",
+    "axios": "^1.13.6",
     "framer-motion": "^12.34.3",
     "next": "16.1.6",
     "react": "19.2.4",
