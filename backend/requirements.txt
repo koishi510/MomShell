@@ -943,9 +943,9 @@ langgraph==1.0.7 \
     --hash=sha256:0cfdfee51e6e8cfe503ecc7367c73933437c505b03fa10a85c710975c8182d9a \
     --hash=sha256:9d68e8f8dd8f3de2fec45f9a06de05766d9b075b78fb03171779893b7a52c4d2
     # via momshell-backend
-langgraph-checkpoint==4.0.0 \
-    --hash=sha256:3fa9b2635a7c5ac28b338f631abf6a030c3b508b7b9ce17c22611513b589c784 \
-    --hash=sha256:814d1bd050fac029476558d8e68d87bce9009a0262d04a2c14b918255954a624
+langgraph-checkpoint==4.0.1 \
+    --hash=sha256:b433123735df11ade28829e40ce25b9be614930cd50245ff2af60629234befd9 \
+    --hash=sha256:e3adcd7a0e0166f3b48b8cf508ce0ea366e7420b5a73aa81289888727769b034
     # via
     #   langgraph
     #   langgraph-prebuilt
