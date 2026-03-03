@@ -16,6 +16,7 @@ from .schemas import (
     RefreshRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    SetRoleRequest,
     TokenResponse,
     UserResponse,
 )
@@ -168,3 +169,25 @@ async def get_current_user_info(
         postpartum_weeks=current_user.postpartum_weeks,
         created_at=current_user.created_at,
     )
+
+
+@router.patch("/me/role", response_model=UserResponse)
+async def set_role(
+    request: SetRoleRequest,
+    current_user: CurrentUserJWT,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> UserResponse:
+    """Set user role (for post-registration role selection)."""
+    from app.services.community.enums import UserRole
+
+    allowed = {UserRole.MOM, UserRole.DAD, UserRole.FAMILY}
+    new_role = UserRole(request.role)
+    if new_role not in allowed:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    current_user.role = new_role
+    await db.commit()
+    await db.refresh(current_user)
+
+    service = AuthService(db)
+    return service._build_user_response(current_user, certification_loaded=False)

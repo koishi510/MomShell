@@ -94,6 +94,7 @@ async def get_current_user(
                 password_hash="",
                 nickname="新用户",
                 role=UserRole.MOM,
+                is_guest=False,
                 is_active=True,
                 is_banned=False,
             )
@@ -164,6 +165,7 @@ async def get_current_user_optional(
                 password_hash="",
                 nickname="新用户",
                 role=UserRole.MOM,
+                is_guest=False,
                 is_active=True,
                 is_banned=False,
             )
