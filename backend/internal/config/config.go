@@ -33,8 +33,9 @@ type Config struct {
 }
 
 func Load() *Config {
-	// Try loading .env file (ignore error if not found)
-	_ = godotenv.Load()
+	// Load .env file, overriding any existing env vars
+	// (ensures local .env is the source of truth for dev)
+	_ = godotenv.Overload()
 
 	cfg := &Config{
 		DatabaseURL:               getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/momshell?sslmode=disable"),
