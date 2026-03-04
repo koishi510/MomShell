@@ -16,25 +16,29 @@
 
 ### Self-Check Checklist
 
+> Run `make check` to execute all checks at once.
+
 **Backend (Go)**:
 - [ ] `go build ./...` passes
 - [ ] `go vet ./...` passes
 - [ ] `gofmt` produces no diff
+- [ ] `golangci-lint run` passes (or no new issues)
 
 **Frontend (Vue)**:
 - [ ] `npm run lint` passes
 - [ ] `npm run typecheck` passes
+- [ ] `npm run build` succeeds
 
 **General**:
 - [ ] Removed all temporary debug output
 - [ ] No sensitive data in the code
+- [ ] CI checks pass
 
 ### Test Steps
 
 1. Pull branch and install dependencies:
    ```bash
-   cd backend && go mod download
-   cd ../frontend && npm install
+   make install
    ```
 2. Start the application:
    ```bash
