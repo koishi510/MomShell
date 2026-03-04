@@ -1,0 +1,175 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772864046229,
+  "projectRoot": "/home/koishi/MomShell",
+  "techStack": {
+    "languages": [
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "make test",
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1772864046226,
+      "keyFiles": [
+        "Dockerfile",
+        "Makefile",
+        "go.mod",
+        "go.sum"
+      ]
+    },
+    "deploy": {
+      "path": "deploy",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1772864046226,
+      "keyFiles": [
+        "docker-compose.yml",
+        "entrypoint.sh"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 7,
+      "lastAccessed": 1772864046226,
+      "keyFiles": [
+        "README.md",
+        "architecture.md",
+        "configuration.md",
+        "deployment.md",
+        "development.md"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 13,
+      "lastAccessed": 1772864046227,
+      "keyFiles": [
+        "Dockerfile",
+        "Makefile",
+        "env.d.ts",
+        "eslint.config.js",
+        "index.html"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1772864046227,
+      "keyFiles": [
+        "dev-setup.sh"
+      ]
+    },
+    "frontend/node_modules": {
+      "path": "frontend/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1772864046228,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "Makefile",
+      "accessCount": 12,
+      "lastAccessed": 1772866776159,
+      "type": "file"
+    },
+    {
+      "path": "backend/internal/handler/user.go",
+      "accessCount": 3,
+      "lastAccessed": 1772865446991,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/index.html",
+      "accessCount": 3,
+      "lastAccessed": 1772866237144,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/src/components/scene/BeachScene.vue",
+      "accessCount": 3,
+      "lastAccessed": 1772866568274,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/src/components/scene/SpritesLayer.vue",
+      "accessCount": 3,
+      "lastAccessed": 1772866568701,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1772866301332,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/src/constants/sprites.ts",
+      "accessCount": 2,
+      "lastAccessed": 1772866604699,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/package-lock.json",
+      "accessCount": 1,
+      "lastAccessed": 1772866278002,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/src/constants/layers.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772866606389,
+      "type": "file"
+    },
+    {
+      "path": "frontend.new/vite.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772866607979,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
