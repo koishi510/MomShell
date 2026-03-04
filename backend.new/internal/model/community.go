@@ -118,8 +118,8 @@ type Comment struct {
 	AuthorID string `gorm:"type:varchar(36);index;not null" json:"author_id"`
 
 	// Nested reply
-	ParentID       *string `gorm:"type:varchar(36)" json:"parent_id"`
-	ReplyToUserID  *string `gorm:"type:varchar(36)" json:"reply_to_user_id"`
+	ParentID      *string `gorm:"type:varchar(36)" json:"parent_id"`
+	ReplyToUserID *string `gorm:"type:varchar(36)" json:"reply_to_user_id"`
 
 	// Content
 	Content string `gorm:"type:text;not null" json:"content"`
@@ -135,7 +135,7 @@ type Comment struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// Relationships
-	Author      User  `gorm:"foreignKey:AuthorID" json:"author,omitempty"`
+	Author      User   `gorm:"foreignKey:AuthorID" json:"author,omitempty"`
 	Answer      Answer `gorm:"foreignKey:AnswerID" json:"-"`
 	ReplyToUser *User  `gorm:"foreignKey:ReplyToUserID" json:"reply_to_user,omitempty"`
 }
