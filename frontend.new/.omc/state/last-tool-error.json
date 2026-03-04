@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /home/koishi/MomShell && git add frontend.new/src/components/scene/BeachScene.vue frontend.new/src/constants/layers.ts frontend.new/vite.config.ts && git rebase --continue\",\"description...",
+  "error": "Exit code 1\n[detached HEAD cc7ec54] refactor: restructure beach scene into Vue 3 + Vite + TypeScript\n 5 files changed, 2174 insertions(+), 1221 deletions(-)\n rename frontend.new/assets/{render-sand.js => render-sand.ts} (87%)\nRebasing (16/58)\rAuto-merging frontend.new/src/components/scene/BeachScene.vue\nCONFLICT (content): Merge conflict in frontend.new/src/components/scene/BeachScene.vue\nAuto-merging frontend.new/src/components/scene/SpritesLayer.vue\nCONFLICT (add/add): Merge conflict in fronte...",
+  "timestamp": "2026-03-07T06:54:53.196Z",
+  "retry_count": 1
+}
