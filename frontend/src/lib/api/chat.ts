@@ -17,6 +17,21 @@ export interface ChatResponse {
   memory_updated: boolean
 }
 
+export interface ChatProfile {
+  preferred_name: string | null
+  has_pets: boolean
+  pet_details: string | null
+  interests: string[]
+  concerns: string[]
+  important_dates: string[]
+  baby_age_weeks: number | null
+  community_interactions: string[]
+}
+
 export function sendChatMessage(data: ChatRequest): Promise<ChatResponse> {
   return apiClient.post('/api/v1/companion/chat', data).then((r) => r.data)
+}
+
+export function getChatProfile(): Promise<ChatProfile> {
+  return apiClient.get('/api/v1/companion/profile').then((r) => r.data)
 }
