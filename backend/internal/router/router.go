@@ -17,6 +17,7 @@ func Setup(
 	interactionHandler *handler.InteractionHandler,
 	tagHandler *handler.TagHandler,
 	chatHandler *handler.ChatHandler,
+	echoHandler *handler.EchoHandler,
 	userHandler *handler.UserHandler,
 	adminHandler *handler.AdminHandler,
 ) {
@@ -125,6 +126,17 @@ func Setup(
 	{
 		companion.POST("/chat", middleware.AuthOptional(cfg), chatHandler.Chat)
 		companion.GET("/profile", middleware.AuthOptional(cfg), chatHandler.GetProfile)
+	}
+
+	echo := api.Group("/echo", middleware.AuthRequired(cfg))
+	{
+		echo.GET("/identity-tags", echoHandler.GetIdentityTags)
+		echo.POST("/identity-tags", echoHandler.CreateIdentityTag)
+		echo.DELETE("/identity-tags/:id", echoHandler.DeleteIdentityTag)
+
+		echo.GET("/memoirs", echoHandler.GetMemoirs)
+		echo.POST("/memoirs/generate", echoHandler.GenerateMemoir)
+		echo.POST("/memoirs/:id/rate", echoHandler.RateMemoir)
 	}
 
 	// ==================== Admin ====================
