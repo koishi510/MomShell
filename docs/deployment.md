@@ -13,62 +13,27 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-## Quick Start
+## Backend Deployment
+
+The Go backend has its own Dockerfile (`backend/Dockerfile`):
 
 ```bash
-# 1. Configure environment
-cp .env.example .env
-# Edit .env: uncomment the Docker DATABASE_URL line (postgres host)
-# Set JWT_SECRET_KEY, OPENAI_API_KEY, etc.
+# Build
+make docker-build-backend
+# or: docker build -t momshell-backend backend/
 
-# 2. Start all services
-make docker-up
-
-# 3. Access
-# App:          http://localhost
-# Admin panel:  http://localhost/admin
+# Run
+docker run -d -p 8000:8000 --env-file .env momshell-backend
 ```
-
-## Architecture
-
-A single Docker image contains both frontend and backend:
-
-```
-Browser → Nginx (:80)
-            ├── /            → static files (Vue SPA)
-            ├── /api/        → proxy → Go backend (:8000)
-            └── /admin       → proxy → Go backend (:8000)
-```
-
-`docker-compose.yml` runs two containers:
-
-| Service | Image | Port |
-|---------|-------|------|
-| **app** | Nginx + Go binary (single image) | 80 (exposed) |
-| **postgres** | PostgreSQL 16 | 5432 (internal) |
-
-The root `Dockerfile` uses multi-stage builds:
-1. **frontend-builder** — Node 24, `npm ci && npm run build` → `dist/`
-2. **backend-builder** — Go 1.23, `go build` → binary
-3. **final** — Nginx Alpine + Go binary + entrypoint script
 
 ## Make Commands
 
 ```bash
-make docker-build    # Build Docker image
-make docker-up       # Start all services (app + postgres)
-make docker-down     # Stop all services
-make docker-logs     # View logs
-```
-
-## Standalone Run
-
-```bash
-# Build
-docker build -t momshell .
-
-# Run (requires external PostgreSQL)
-docker run -d -p 80:80 --env-file .env momshell
+make docker-up               # Start all services (docker compose)
+make docker-down             # Stop all services
+make docker-logs             # View logs
+make docker-build-backend    # Build backend image
+make docker-build-frontend   # Build frontend image
 ```
 
 ## Configuration
@@ -77,27 +42,13 @@ Key environment variables for deployment:
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | `postgres://momshell:momshell@postgres:5432/momshell?sslmode=disable` |
-| `POSTGRES_USER` | PostgreSQL container user (default: momshell) |
-| `POSTGRES_PASSWORD` | PostgreSQL container password (default: momshell) |
-| `POSTGRES_DB` | PostgreSQL container database (default: momshell) |
+| `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET_KEY` | Secure random secret |
 | `OPENAI_API_KEY` | LLM API key |
-| `PORT` | Backend server port (default: 8000, internal) |
-
-`VITE_API_BASE_URL` is not needed in Docker — Nginx proxies `/api/` to the backend within the same container.
+| `PORT` | Server port (default: 8000) |
+| `VITE_API_BASE_URL` | Leave empty when using Nginx proxy |
 
 See [Configuration](configuration.md) for the full reference.
-
-## Data Persistence
-
-PostgreSQL data is stored in a Docker named volume `pgdata`. To reset:
-
-```bash
-make docker-down
-docker volume rm deploy_pgdata
-make docker-up
-```
 
 ---
 
