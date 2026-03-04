@@ -219,7 +219,7 @@ func parseMemoirLLMResponse(content string) map[string]interface{} {
 		}
 	}
 
-	re2 := regexp.MustCompile("(?s)\\{.*\\}")
+	re2 := regexp.MustCompile(`(?s)\{.*\}`)
 	if match := re2.FindString(content); match != "" {
 		if err := json.Unmarshal([]byte(match), &result); err == nil {
 			return result
