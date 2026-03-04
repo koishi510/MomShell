@@ -44,7 +44,7 @@ dev-backend: postgres-up ## Start backend development server
 	cd backend && go run cmd/server/main.go
 
 dev-frontend: ## Start frontend development server
-	@echo "$(CYAN)Starting frontend server on http://localhost:3000$(RESET)"
+	@echo "$(CYAN)Starting frontend server on http://localhost:5173$(RESET)"
 	cd frontend && npx vite
 
 ##@ Code Quality
