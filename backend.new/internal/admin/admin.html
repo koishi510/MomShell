@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MomShell 管理面板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .fade-in { animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen" x-data="app()" x-cloak>
+
+    <!-- Login Page -->
+    <template x-if="!token">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800">MomShell</h1>
+                    <p class="text-gray-500 mt-2">管理员登录</p>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名 / 邮箱</label>
+                        <input type="text" x-model="loginForm.login"
+                               @keydown.enter="login()"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                               placeholder="输入用户名或邮箱">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input type="password" x-model="loginForm.password"
+                               @keydown.enter="login()"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                               placeholder="输入密码">
+                    </div>
+                    <template x-if="loginError">
+                        <p class="text-red-500 text-sm" x-text="loginError"></p>
+                    </template>
+                    <button @click="login()" :disabled="loginLoading"
+                            class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium">
+                        <span x-show="!loginLoading">登 录</span>
+                        <span x-show="loginLoading">登录中...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Main Layout -->
+    <template x-if="token">
+        <div class="flex min-h-screen">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+                <div class="p-6 border-b border-gray-200">
+                    <h1 class="text-xl font-bold text-gray-800">MomShell</h1>
+                    <p class="text-xs text-gray-400 mt-1">管理面板</p>
+                </div>
+                <nav class="flex-1 p-4 space-y-1">
+                    <button @click="currentPage = 'dashboard'; loadDashboard()"
+                            :class="currentPage === 'dashboard' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'"
+                            class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition">
+                        📊 仪表盘
+                    </button>
+                    <button @click="currentPage = 'users'; loadUsers()"
+                            :class="currentPage === 'users' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'"
+                            class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition">
+                        👥 用户管理
+                    </button>
+                    <button @click="currentPage = 'config'; loadConfig()"
+                            :class="currentPage === 'config' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'"
+                            class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition">
+                        ⚙️ 系统配置
+                    </button>
+                </nav>
+                <div class="p-4 border-t border-gray-200">
+                    <button @click="logout()" class="w-full text-left px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition">
+                        🚪 退出登录
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 overflow-auto">
+                <!-- Dashboard -->
+                <div x-show="currentPage === 'dashboard'" class="p-8 fade-in">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">仪表盘</h2>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">总用户数</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-1" x-text="stats.total_users || 0"></p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">活跃用户</p>
+                            <p class="text-3xl font-bold text-green-600 mt-1" x-text="stats.active_users || 0"></p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">封禁用户</p>
+                            <p class="text-3xl font-bold text-red-600 mt-1" x-text="stats.banned_users || 0"></p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">游客用户</p>
+                            <p class="text-3xl font-bold text-yellow-600 mt-1" x-text="stats.guest_users || 0"></p>
+                        </div>
+                    </div>
+
+                    <!-- Content Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">问题总数</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1" x-text="stats.total_questions || 0"></p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">回答总数</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1" x-text="stats.total_answers || 0"></p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">认证总数</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-1" x-text="stats.total_certifications || 0"></p>
+                        </div>
+                    </div>
+
+                    <!-- Role Distribution -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">角色分布</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <template x-for="(count, role) in (stats.role_distribution || {})" :key="role">
+                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                    <p class="text-sm text-gray-500" x-text="roleLabel(role)"></p>
+                                    <p class="text-xl font-bold text-gray-800 mt-1" x-text="count"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Page -->
+                <div x-show="currentPage === 'users'" class="p-8 fade-in">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">用户管理</h2>
+                        <button @click="openCreateUserModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                            + 创建用户
+                        </button>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <input type="text" x-model="userFilters.search"
+                                   @input.debounce.300ms="loadUsers()"
+                                   placeholder="搜索用户名、邮箱、昵称..."
+                                   class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-64">
+                            <select x-model="userFilters.role" @change="userFilters.page = 1; loadUsers()"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                <option value="">全部角色</option>
+                                <option value="admin">管理员</option>
+                                <option value="mom">妈妈</option>
+                                <option value="dad">爸爸</option>
+                                <option value="family">家人</option>
+                                <option value="guest">游客</option>
+                                <option value="certified_doctor">认证医生</option>
+                                <option value="certified_therapist">认证治疗师</option>
+                                <option value="certified_nurse">认证护士</option>
+                                <option value="ai_assistant">AI 助手</option>
+                            </select>
+                            <select x-model="userFilters.status" @change="userFilters.page = 1; loadUsers()"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                <option value="">全部状态</option>
+                                <option value="active">活跃</option>
+                                <option value="banned">封禁</option>
+                                <option value="inactive">停用</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">用户名</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">邮箱</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">昵称</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">角色</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">状态</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">创建时间</th>
+                                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <template x-for="user in users" :key="user.id">
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-800" x-text="user.username"></td>
+                                        <td class="px-6 py-4 text-sm text-gray-600" x-text="user.email"></td>
+                                        <td class="px-6 py-4 text-sm text-gray-600" x-text="user.nickname"></td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                                  :class="roleBadgeClass(user.role)"
+                                                  x-text="roleLabel(user.role)"></span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span x-show="user.is_banned" class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">封禁</span>
+                                            <span x-show="!user.is_active && !user.is_banned" class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">停用</span>
+                                            <span x-show="user.is_active && !user.is_banned" class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">活跃</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500" x-text="formatDate(user.created_at)"></td>
+                                        <td class="px-6 py-4 text-right space-x-2">
+                                            <button @click="openEditUserModal(user.id)" class="text-blue-600 hover:text-blue-800 text-sm font-medium">编辑</button>
+                                            <button @click="confirmDeleteUser(user)" class="text-red-600 hover:text-red-800 text-sm font-medium">删除</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="users.length === 0">
+                                    <tr><td colspan="7" class="px-6 py-12 text-center text-gray-400">暂无数据</td></tr>
+                                </template>
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination -->
+                        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+                            <p class="text-sm text-gray-500">共 <span x-text="userPagination.total"></span> 条</p>
+                            <div class="flex items-center gap-2">
+                                <button @click="userFilters.page--; loadUsers()" :disabled="userFilters.page <= 1"
+                                        class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-white transition">上一页</button>
+                                <span class="text-sm text-gray-600" x-text="userFilters.page + ' / ' + userPagination.totalPages"></span>
+                                <button @click="userFilters.page++; loadUsers()" :disabled="userFilters.page >= userPagination.totalPages"
+                                        class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-white transition">下一页</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Config Page -->
+                <div x-show="currentPage === 'config'" class="p-8 fade-in">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">系统配置</h2>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase w-1/3">配置项</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">值</th>
+                                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase w-24">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <template x-for="item in configItems" :key="item.key">
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-6 py-4 text-sm font-mono font-medium text-gray-800" x-text="item.key"></td>
+                                        <td class="px-6 py-4">
+                                            <template x-if="item.editable">
+                                                <input type="text" x-model="configEdits[item.key]"
+                                                       class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                            </template>
+                                            <template x-if="!item.editable">
+                                                <span class="text-sm font-mono text-gray-600" x-text="item.value"></span>
+                                            </template>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <span x-show="item.editable" class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">可编辑</span>
+                                            <span x-show="!item.editable" class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">只读</span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                            <button @click="saveConfig()" :disabled="configSaving"
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium disabled:opacity-50">
+                                <span x-show="!configSaving">保存配置</span>
+                                <span x-show="configSaving">保存中...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </template>
+
+    <!-- Create / Edit User Modal -->
+    <template x-if="showUserModal">
+        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showUserModal = false">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 fade-in">
+                <h3 class="text-lg font-bold text-gray-800 mb-4" x-text="editingUserId ? '编辑用户' : '创建用户'"></h3>
+                <div class="space-y-4">
+                    <template x-if="!editingUserId">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <input type="text" x-model="userForm.username"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        </div>
+                    </template>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                        <input type="email" x-model="userForm.email"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                    </div>
+                    <template x-if="!editingUserId">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <input type="password" x-model="userForm.password"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        </div>
+                    </template>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">昵称</label>
+                        <input type="text" x-model="userForm.nickname"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                        <select x-model="userForm.role"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                            <option value="admin">管理员</option>
+                            <option value="mom">妈妈</option>
+                            <option value="dad">爸爸</option>
+                            <option value="family">家人</option>
+                            <option value="guest">游客</option>
+                            <option value="certified_doctor">认证医生</option>
+                            <option value="certified_therapist">认证治疗师</option>
+                            <option value="certified_nurse">认证护士</option>
+                            <option value="ai_assistant">AI 助手</option>
+                        </select>
+                    </div>
+                    <template x-if="editingUserId">
+                        <div class="flex gap-6">
+                            <label class="flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" x-model="userForm.is_active" class="rounded"> 启用
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" x-model="userForm.is_banned" class="rounded"> 封禁
+                            </label>
+                        </div>
+                    </template>
+                    <template x-if="userModalError">
+                        <p class="text-red-500 text-sm" x-text="userModalError"></p>
+                    </template>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button @click="showUserModal = false"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">取消</button>
+                    <button @click="saveUser()" :disabled="userSaving"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50">
+                        <span x-show="!userSaving">保存</span>
+                        <span x-show="userSaving">保存中...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Delete Confirm Modal -->
+    <template x-if="showDeleteModal">
+        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showDeleteModal = false">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 fade-in">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">确认删除</h3>
+                <p class="text-sm text-gray-600 mb-6">确定要删除用户 <strong x-text="deletingUser?.username"></strong> 吗？此操作不可恢复。</p>
+                <template x-if="deleteError">
+                    <p class="text-red-500 text-sm mb-4" x-text="deleteError"></p>
+                </template>
+                <div class="flex justify-end gap-3">
+                    <button @click="showDeleteModal = false"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">取消</button>
+                    <button @click="deleteUser()" :disabled="deleteLoading"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition disabled:opacity-50">
+                        <span x-show="!deleteLoading">删除</span>
+                        <span x-show="deleteLoading">删除中...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Toast -->
+    <template x-if="toast.show">
+        <div class="fixed top-6 right-6 z-50 fade-in">
+            <div class="px-6 py-3 rounded-lg shadow-lg text-sm font-medium"
+                 :class="toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'"
+                 x-text="toast.message"></div>
+        </div>
+    </template>
+
+<script>
+function app() {
+    return {
+        // Auth
+        token: localStorage.getItem('admin_token') || '',
+        loginForm: { login: '', password: '' },
+        loginError: '',
+        loginLoading: false,
+
+        // Navigation
+        currentPage: 'dashboard',
+
+        // Dashboard
+        stats: {},
+
+        // Users
+        users: [],
+        userFilters: { search: '', role: '', status: '', page: 1, page_size: 20 },
+        userPagination: { total: 0, totalPages: 0 },
+
+        // User Modal
+        showUserModal: false,
+        editingUserId: null,
+        userForm: { username: '', email: '', password: '', nickname: '', role: 'mom', is_active: true, is_banned: false },
+        userModalError: '',
+        userSaving: false,
+
+        // Delete Modal
+        showDeleteModal: false,
+        deletingUser: null,
+        deleteError: '',
+        deleteLoading: false,
+
+        // Config
+        configItems: [],
+        configEdits: {},
+        configSaving: false,
+
+        // Toast
+        toast: { show: false, message: '', type: 'success' },
+
+        init() {
+            if (this.token) {
+                this.loadDashboard();
+            }
+        },
+
+        // --- API Helper ---
+        async api(method, path, body) {
+            const opts = {
+                method,
+                headers: { 'Content-Type': 'application/json' }
+            };
+            if (this.token) {
+                opts.headers['Authorization'] = 'Bearer ' + this.token;
+            }
+            if (body) {
+                opts.body = JSON.stringify(body);
+            }
+            const resp = await fetch('/api/v1' + path, opts);
+            const data = await resp.json();
+            if (!resp.ok) {
+                throw new Error(data.error || '请求失败');
+            }
+            return data;
+        },
+
+        showToast(message, type = 'success') {
+            this.toast = { show: true, message, type };
+            setTimeout(() => { this.toast.show = false; }, 3000);
+        },
+
+        // --- Auth ---
+        async login() {
+            this.loginError = '';
+            this.loginLoading = true;
+            try {
+                const resp = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.loginForm)
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || '登录失败');
+
+                // Verify admin role
+                const meResp = await fetch('/api/v1/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + data.access_token }
+                });
+                const meData = await meResp.json();
+                if (!meResp.ok || meData.role !== 'admin') {
+                    throw new Error('需要管理员权限');
+                }
+
+                this.token = data.access_token;
+                localStorage.setItem('admin_token', data.access_token);
+                this.loadDashboard();
+            } catch (e) {
+                this.loginError = e.message;
+            } finally {
+                this.loginLoading = false;
+            }
+        },
+
+        logout() {
+            this.token = '';
+            localStorage.removeItem('admin_token');
+            this.stats = {};
+            this.users = [];
+        },
+
+        // --- Dashboard ---
+        async loadDashboard() {
+            try {
+                this.stats = await this.api('GET', '/admin/stats');
+            } catch (e) {
+                if (e.message.includes('未授权') || e.message.includes('权限')) {
+                    this.logout();
+                }
+            }
+        },
+
+        // --- Users ---
+        async loadUsers() {
+            try {
+                const params = new URLSearchParams();
+                params.set('page', this.userFilters.page);
+                params.set('page_size', this.userFilters.page_size);
+                if (this.userFilters.search) params.set('search', this.userFilters.search);
+                if (this.userFilters.role) params.set('role', this.userFilters.role);
+                if (this.userFilters.status) params.set('status', this.userFilters.status);
+
+                const data = await this.api('GET', '/admin/users?' + params.toString());
+                this.users = data.items || [];
+                this.userPagination.total = data.total;
+                this.userPagination.totalPages = data.total_pages;
+            } catch (e) {
+                if (e.message.includes('未授权') || e.message.includes('权限')) {
+                    this.logout();
+                }
+            }
+        },
+
+        openCreateUserModal() {
+            this.editingUserId = null;
+            this.userForm = { username: '', email: '', password: '', nickname: '', role: 'mom', is_active: true, is_banned: false };
+            this.userModalError = '';
+            this.showUserModal = true;
+        },
+
+        async openEditUserModal(id) {
+            try {
+                const user = await this.api('GET', '/admin/users/' + id);
+                this.editingUserId = id;
+                this.userForm = {
+                    username: user.username,
+                    email: user.email,
+                    password: '',
+                    nickname: user.nickname,
+                    role: user.role,
+                    is_active: user.is_active,
+                    is_banned: user.is_banned
+                };
+                this.userModalError = '';
+                this.showUserModal = true;
+            } catch (e) {
+                this.showToast(e.message, 'error');
+            }
+        },
+
+        async saveUser() {
+            this.userModalError = '';
+            this.userSaving = true;
+            try {
+                if (this.editingUserId) {
+                    await this.api('PATCH', '/admin/users/' + this.editingUserId, {
+                        role: this.userForm.role,
+                        is_active: this.userForm.is_active,
+                        is_banned: this.userForm.is_banned,
+                        nickname: this.userForm.nickname,
+                        email: this.userForm.email
+                    });
+                    this.showToast('用户已更新');
+                } else {
+                    await this.api('POST', '/admin/users', {
+                        username: this.userForm.username,
+                        email: this.userForm.email,
+                        password: this.userForm.password,
+                        nickname: this.userForm.nickname,
+                        role: this.userForm.role
+                    });
+                    this.showToast('用户已创建');
+                }
+                this.showUserModal = false;
+                this.loadUsers();
+            } catch (e) {
+                this.userModalError = e.message;
+            } finally {
+                this.userSaving = false;
+            }
+        },
+
+        confirmDeleteUser(user) {
+            this.deletingUser = user;
+            this.deleteError = '';
+            this.showDeleteModal = true;
+        },
+
+        async deleteUser() {
+            this.deleteError = '';
+            this.deleteLoading = true;
+            try {
+                await this.api('DELETE', '/admin/users/' + this.deletingUser.id);
+                this.showToast('用户已删除');
+                this.showDeleteModal = false;
+                this.loadUsers();
+            } catch (e) {
+                this.deleteError = e.message;
+            } finally {
+                this.deleteLoading = false;
+            }
+        },
+
+        // --- Config ---
+        async loadConfig() {
+            try {
+                const data = await this.api('GET', '/admin/config');
+                this.configItems = data.items || [];
+                this.configEdits = {};
+                for (const item of this.configItems) {
+                    if (item.editable) {
+                        this.configEdits[item.key] = item.value;
+                    }
+                }
+            } catch (e) {
+                if (e.message.includes('未授权') || e.message.includes('权限')) {
+                    this.logout();
+                }
+            }
+        },
+
+        async saveConfig() {
+            this.configSaving = true;
+            try {
+                // Only send changed values
+                const items = {};
+                for (const item of this.configItems) {
+                    if (item.editable && this.configEdits[item.key] !== item.value) {
+                        items[item.key] = this.configEdits[item.key];
+                    }
+                }
+                if (Object.keys(items).length === 0) {
+                    this.showToast('没有需要保存的更改', 'error');
+                    return;
+                }
+                await this.api('PATCH', '/admin/config', { items });
+                this.showToast('配置已保存');
+                this.loadConfig();
+            } catch (e) {
+                this.showToast(e.message, 'error');
+            } finally {
+                this.configSaving = false;
+            }
+        },
+
+        // --- Helpers ---
+        roleLabel(role) {
+            const map = {
+                admin: '管理员', mom: '妈妈', dad: '爸爸', family: '家人',
+                guest: '游客', certified_doctor: '认证医生',
+                certified_therapist: '认证治疗师', certified_nurse: '认证护士',
+                ai_assistant: 'AI 助手'
+            };
+            return map[role] || role;
+        },
+
+        roleBadgeClass(role) {
+            const map = {
+                admin: 'bg-purple-100 text-purple-700',
+                mom: 'bg-pink-100 text-pink-700',
+                dad: 'bg-blue-100 text-blue-700',
+                family: 'bg-green-100 text-green-700',
+                guest: 'bg-gray-100 text-gray-600',
+                certified_doctor: 'bg-teal-100 text-teal-700',
+                certified_therapist: 'bg-indigo-100 text-indigo-700',
+                certified_nurse: 'bg-cyan-100 text-cyan-700',
+                ai_assistant: 'bg-yellow-100 text-yellow-700'
+            };
+            return map[role] || 'bg-gray-100 text-gray-600';
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.getFullYear() + '-' +
+                   String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(d.getDate()).padStart(2, '0') + ' ' +
+                   String(d.getHours()).padStart(2, '0') + ':' +
+                   String(d.getMinutes()).padStart(2, '0');
+        }
+    };
+}
+</script>
+</body>
+</html>
