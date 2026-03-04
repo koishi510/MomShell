@@ -38,7 +38,7 @@ pre-commit install
 
 ```bash
 make dev-backend    # Terminal 1 — Go server on :8000
-make dev-frontend   # Terminal 2 — Vite dev server on :3000
+make dev-frontend   # Terminal 2 — Vite dev server on :5173
 make dev-tmux       # Or both in tmux
 ```
 
