@@ -46,19 +46,19 @@ var sensitiveKeywords = map[string]SensitiveCategory{
 	"神奇疗法": CatPseudoscience,
 	"祖传秘方": CatPseudoscience,
 	// Spam
-	"加微信": CatSpam,
-	"免费领": CatSpam,
+	"加微信":  CatSpam,
+	"免费领":  CatSpam,
 	"点击链接": CatSpam,
 	// Violence
 	"打死": CatViolence,
 	"杀了": CatViolence,
 	// Self harm
-	"不想活":  CatSelfHarm,
-	"自杀":   CatSelfHarm,
-	"自残":   CatSelfHarm,
+	"不想活":   CatSelfHarm,
+	"自杀":    CatSelfHarm,
+	"自残":    CatSelfHarm,
 	"活着没意思": CatSelfHarm,
 	// Harassment
-	"废物": CatHarassment,
+	"废物":  CatHarassment,
 	"垃圾人": CatHarassment,
 }
 

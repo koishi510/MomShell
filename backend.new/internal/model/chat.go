@@ -11,8 +11,8 @@ import (
 type ChatMemory struct {
 	ID                string `gorm:"type:varchar(36);primaryKey" json:"id"`
 	UserID            string `gorm:"type:varchar(36);uniqueIndex;not null" json:"user_id"`
-	ProfileData       string `gorm:"type:text" json:"profile_data"`        // JSON
-	ConversationTurns string `gorm:"type:text" json:"conversation_turns"`  // JSON array
+	ProfileData       string `gorm:"type:text" json:"profile_data"`       // JSON
+	ConversationTurns string `gorm:"type:text" json:"conversation_turns"` // JSON array
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
