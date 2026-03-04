@@ -1,7 +1,7 @@
 .PHONY: install install-backend install-frontend dev dev-backend dev-frontend \
         lint lint-backend lint-frontend format format-backend format-frontend \
-        typecheck typecheck-backend typecheck-frontend check build-frontend \
-        docker-up docker-down docker-logs docker-build docker-build-backend docker-build-frontend \
+        typecheck typecheck-backend typecheck-frontend check build-frontend build-backend \
+        docker-up docker-down docker-logs docker-build \
         postgres-up postgres-down postgres-logs db-reset deps-lock deps-update clean clean-all help
 
 # Colors for terminal output
@@ -93,24 +93,20 @@ build-backend: ## Build backend binary
 
 ##@ Docker
 
-docker-up: ## Start Docker containers (multi-container)
+docker-up: ## Start all services (app + postgres)
 	@echo "$(CYAN)Starting Docker containers...$(RESET)"
 	cd deploy && docker compose up -d --build
 
-docker-down: ## Stop Docker containers
+docker-down: ## Stop all services
 	@echo "$(CYAN)Stopping Docker containers...$(RESET)"
 	cd deploy && docker compose down
 
 docker-logs: ## Show Docker logs
 	cd deploy && docker compose logs -f
 
-docker-build-backend: ## Build backend Docker image
-	@echo "$(CYAN)Building backend Docker image...$(RESET)"
-	docker build -t momshell-backend backend/
-
-docker-build-frontend: ## Build frontend Docker image
-	@echo "$(CYAN)Building frontend Docker image...$(RESET)"
-	docker build -t momshell-frontend frontend/
+docker-build: ## Build application Docker image
+	@echo "$(CYAN)Building Docker image...$(RESET)"
+	docker build -t momshell .
 
 ##@ Database
 
