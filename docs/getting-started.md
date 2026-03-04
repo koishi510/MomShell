@@ -1,59 +1,34 @@
 # Getting Started
 
-Get MomShell up and running in minutes.
-
 ## Prerequisites
 
-Before you begin, ensure you have:
-
-- [uv](https://docs.astral.sh/uv/) - Python package manager
-- [nvm](https://github.com/nvm-sh/nvm) - Node.js version manager
-
-### Install uv
-
-```bash
-# Linux / macOS
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows (PowerShell)
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-### Install nvm
-
-```bash
-# Linux / macOS
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-
-# Windows: use nvm-windows
-# https://github.com/coreybutler/nvm-windows
-```
+- [Go 1.23+](https://go.dev/dl/)
+- [Node.js 24+](https://nodejs.org/) (or via [nvm](https://github.com/nvm-sh/nvm))
+- [PostgreSQL](https://www.postgresql.org/)
+- Git
 
 ## Quick Install
 
 ```bash
-# Clone the repository
 git clone https://github.com/koishi510/MomShell.git
 cd MomShell
-
-# Run the setup script (recommended)
 ./scripts/dev-setup.sh
 ```
 
-The setup script automatically:
-- Checks prerequisites
-- Creates `.env` from template
-- Installs backend/frontend dependencies
-- Sets up Git hooks
+The setup script:
+- Checks prerequisites (Go, Node, npm, git)
+- Creates `.env` from template with auto-generated JWT secret
+- Downloads Go dependencies
+- Installs npm packages
+- Installs pre-commit hooks
 
 ## Start the Application
 
 ```bash
-# Using Make (recommended) - run in separate terminals
-make dev-backend   # Terminal 1
-make dev-frontend  # Terminal 2
+make dev-backend    # Terminal 1 — http://localhost:8000
+make dev-frontend   # Terminal 2 — http://localhost:3000
 
-# Or use tmux to start both
+# Or use tmux
 make dev-tmux
 ```
 
@@ -63,19 +38,19 @@ make dev-tmux
 |---------|-----|
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:8000 |
-| API Docs | http://localhost:8000/docs |
+| Admin Panel | http://localhost:8000/admin |
 
 ## Create Admin Account
 
-To manage certifications and other admin tasks:
+Set these in `.env` before first startup:
 
-```bash
-cd backend
-uv run python -m scripts.create_admin <username> <email> <password> [nickname]
-
-# Example
-uv run python -m scripts.create_admin admin admin@example.com mypassword Admin
 ```
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your_secure_password
+```
+
+Or create additional admins via the admin panel after login.
 
 ## Next Steps
 

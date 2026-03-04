@@ -1,18 +1,18 @@
 # Development Guide
 
-Set up your development environment for contributing to MomShell.
-
 ## Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) - Python package manager
-- [nvm](https://github.com/nvm-sh/nvm) - Node.js version manager
+- Go 1.23+
+- Node.js 24+
+- PostgreSQL
 - Git
+- pre-commit (optional, for git hooks)
 
-See [Getting Started](getting-started.md) for installation instructions.
+See [Getting Started](getting-started.md) for installation links.
 
 ## Setup
 
-### Automated Setup (Recommended)
+### Automated (Recommended)
 
 ```bash
 git clone https://github.com/koishi510/MomShell.git
@@ -20,37 +20,16 @@ cd MomShell
 ./scripts/dev-setup.sh
 ```
 
-### Manual Setup
-
-1. **Environment variables**
+### Manual
 
 ```bash
-# Backend environment (API keys, database, etc.)
-cp .env.example .env
-# Edit .env and fill in your API keys
+cp .env.example .env   # Edit with your config
 
-# Frontend environment (required for local development)
-cp frontend/.env.example frontend/.env.local
-```
+cd backend && go mod download && cd ..
+cd frontend && npm install && cd ..
 
-> **Note:** In Docker deployment, the frontend uses relative paths via Nginx. But for local development with separate frontend/backend servers, the frontend needs `NEXT_PUBLIC_API_URL` to point to the backend at `http://localhost:8000`.
-
-2. **Backend dependencies**
-
-```bash
-cd backend
-uv sync
-cd ..
-```
-
-3. **Frontend dependencies**
-
-```bash
-cd frontend
-nvm install
-nvm use
-npm install
-cd ..
+# Optional: install git hooks
+pre-commit install
 ```
 
 ## Running Locally
@@ -58,51 +37,36 @@ cd ..
 ### Using Make
 
 ```bash
-# Start backend and frontend in separate terminals
-make dev-backend   # Terminal 1
-make dev-frontend  # Terminal 2
-
-# Or use tmux to start both
-make dev-tmux
+make dev-backend    # Terminal 1 — Go server on :8000
+make dev-frontend   # Terminal 2 — Vite dev server on :3000
+make dev-tmux       # Or both in tmux
 ```
 
 ### Manual Commands
 
-**Backend (FastAPI)**
-
 ```bash
-cd backend
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
+# Backend
+cd backend && go run cmd/server/main.go
 
-**Frontend (Next.js)**
-
-```bash
-cd frontend
-npm run dev
+# Frontend
+cd frontend && npx vite
 ```
 
 ## Common Commands
 
 ```bash
-# Backend
-make lint          # Run linters (ruff)
-make test          # Run backend tests
+make lint          # go vet + eslint
+make format        # go fmt
+make typecheck     # go build + vue-tsc
+make check         # lint + typecheck
 
-# Frontend
-cd frontend
-npm run lint       # ESLint
-npm run build      # Production build
+make build-backend   # Build Go binary
+make build-frontend  # Vite production build
 ```
 
 ## Contributing
 
-Please read the full [Contributing Guide](../CONTRIBUTING.md) for:
-
-- Code standards and quality checks
-- Branch management and PR process
-- Commit message conventions
-- Testing requirements
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for code standards, commit conventions, and PR workflow.
 
 ---
 
