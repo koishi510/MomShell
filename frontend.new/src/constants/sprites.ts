@@ -21,7 +21,7 @@ export const SPRITES: SpriteData[] = [
 
   { id: 'bar', src: barImg, left: '18%', top: '-15%', width: '60vw' },
 
-  { id: 'stone', src: stoneImg, left: '75%', top: '0.5%',  width: '20vw' },
+  { id: 'stone', src: stoneImg, left: '68%', top: '-10%',  width: '30vw' },
 
   { id: 'crab',  src: crabImg,  left: '60%', top: '12%', width: '6vw' },
 
