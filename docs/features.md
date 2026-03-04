@@ -1,123 +1,32 @@
 # Features
 
-MomShell provides five integrated modules designed to support new mothers through the postpartum recovery journey.
+MomShell provides integrated modules designed to support new mothers through postpartum recovery.
 
 ## Soul Companion
 
-An AI-powered emotional support companion that understands the unique challenges of new motherhood.
+AI-powered emotional support companion.
 
-### What It Does
-
-- **Empathetic Conversations**: Warm, validating, non-judgmental dialogue designed specifically for postpartum emotional support
-- **Memory & Personalization**: Remembers your conversations for a personalized experience
-- **Fact-Checked Responses**: Integrates web search (Firecrawl) for medical and factual questions to reduce AI hallucinations
-- **Healing Atmosphere**: Visual ambient effects and calming UI design
-
-### Use Cases
-
-- When you need someone to talk to at 3am during a feeding
-- When you're feeling overwhelmed and need validation
-- When you have questions about postpartum recovery
-- When you just need a moment of calm connection
-
----
+- **Empathetic conversations** designed for postpartum emotional support
+- **Conversation memory** for personalized experience across sessions
+- **Content moderation** with crisis keyword detection
 
 ## Sisterhood Bond
 
-A supportive community connecting new mothers with each other and verified healthcare professionals.
+Community Q&A connecting mothers with verified healthcare professionals.
 
-### What It Does
+- **Dual channels**: Professional advice and peer experience sharing
+- **Verified professionals**: Doctors, therapists, and nurses with credential verification
+- **Engagement**: Q&A, likes, collections, comments
+- **Content moderation**: Keyword-based filtering with manual review queue
 
-- **Dual-Channel System**:
-  - **Professional Channel**: Advice from verified doctors, therapists, and nurses
-  - **Experience Channel**: Stories and tips from fellow mothers
-- **Verified Professionals**: Healthcare providers with credential verification
-- **Engagement Features**: Q&A with likes, collections, and content moderation
-- **Daily Resonance**: Curated topics and Shell Picks collections
+## Admin Panel
 
-### Use Cases
+Embedded management interface at `/admin`.
 
-- Ask questions and get answers from verified healthcare professionals
-- Share your experiences and learn from other mothers
-- Find solidarity in shared challenges
-- Discover curated content relevant to your stage of recovery
-
----
-
-## Recovery Coach
-
-AI-powered postpartum exercise coaching with real-time pose detection and voice feedback.
-
-### What It Does
-
-- **Real-Time Pose Detection**: Uses MediaPipe with 33 body landmarks for accurate movement tracking
-- **Postpartum-Specific Exercises**: 9 exercises across 5 categories:
-  - Breathing exercises
-  - Pelvic floor strengthening
-  - Diastasis recti recovery
-  - Posture correction
-  - Strength building
-- **Voice Guidance**: LLM-powered feedback with gentle, encouraging tone via Edge TTS
-- **Progress Tracking**: Achievements, streaks, and strength metrics
-- **Safety Monitoring**: Fatigue detection with automatic rest prompts
-
-### Use Cases
-
-- Guided postpartum exercise sessions at home
-- Safe return to physical activity with proper form guidance
-- Track your recovery progress over time
-- Exercise at your own pace with personalized encouragement
-
----
-
-## Guardian Partner
-
-A gamified system to engage partners in the postpartum recovery journey.
-
-### What It Does
-
-- **Partner Binding**: Connect with your partner via invite codes
-- **Daily Status Recording**: Track mood, energy, health conditions, feeding, and sleep
-- **Smart Suggestions**: Partners receive personalized suggestions based on the mother's status
-- **Task System**: Three difficulty levels with point rewards
-- **Level Progression**: Advance from Intern → Trainee → Regular → Gold
-- **Time Recorder**: Capture and preserve baby milestone photos
-
-### Use Cases
-
-- Help partners understand how to support the new mother
-- Gamify the division of responsibilities
-- Track and celebrate partner involvement
-- Preserve precious moments with milestone photos
-
----
-
-## Echo Domain
-
-A meditative space where mothers reconnect with their pre-motherhood identity, while partners observe and support through a symbolic glass window.
-
-### What It Does
-
-- **Mom Mode (The Origin)**:
-  - **Identity Tags**: Record personal preferences across music, sounds, literature, and youth memories
-  - **Meditation Sessions**: Guided breathing with 4-4-6 rhythm (inhale-hold-exhale) and matched scenes/audio
-  - **Youth Memoirs**: AI-generated nostalgic stories based on your identity tags
-  - **Scene & Audio Matching**: Personalized visuals and ambient sounds based on your preferences
-
-- **Partner Mode (The Guardian)**:
-  - **Window Clarity**: Glass window that clears as mom meditates (0-100% clarity)
-  - **Blurred View**: See mom's meditation status through a frosted glass effect
-  - **Memory Injection**: Prepare heartwarming memories that unlock at clarity thresholds
-  - **Revealed Memories**: Memories automatically appear as clarity increases
-
-- **Dual-Color Nebula UI**: Beautiful split-screen with warm amber (mom) and cool indigo (partner) themes
-
-### Use Cases
-
-- Reconnect with your identity beyond motherhood during quiet meditation
-- Find peace through personalized scenes and sounds that resonate with your memories
-- Allow your partner to participate in your healing journey in a supportive, non-intrusive way
-- Receive surprise memories from your partner as rewards for self-care
+- **Dashboard**: User statistics, content counts, role distribution
+- **User management**: Search, filter, paginate, create, edit (role/status), delete
+- **Config management**: View and edit runtime configuration (API keys, token expiration)
+- **Single-file UI**: Tailwind CSS + Alpine.js, embedded via `go:embed`
 
 ---
 
