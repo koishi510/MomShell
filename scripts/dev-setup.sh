@@ -23,6 +23,47 @@ fail()    { echo -e "${RED}[FAIL]${NC} $1"; }
 
 check() { command -v "$1" &>/dev/null; }
 
+# Detect package manager
+detect_pm() {
+    if check pacman; then
+        PM="pacman"; PM_INSTALL="sudo pacman -S --noconfirm"
+    elif check apt-get; then
+        PM="apt"; PM_INSTALL="sudo apt-get install -y"
+    elif check dnf; then
+        PM="dnf"; PM_INSTALL="sudo dnf install -y"
+    elif check brew; then
+        PM="brew"; PM_INSTALL="brew install"
+    else
+        PM=""; PM_INSTALL=""
+    fi
+}
+
+# Ask to install a package; $1=command to verify, $2=package name(s), $3=display name
+try_install() {
+    local cmd="$1" pkg="$2" name="${3:-$1}"
+    if [ -n "$PM_INSTALL" ]; then
+        echo -en "  Install ${name} via ${PM}? ${YELLOW}[Y/n]${NC}: "
+        read -r ans
+        case "$ans" in
+            [nN]*) return 1 ;;
+        esac
+        info "Installing ${name}..."
+        $PM_INSTALL $pkg
+        if check "$cmd"; then
+            success "${name} installed"
+            return 0
+        else
+            fail "Installation failed"
+            return 1
+        fi
+    else
+        warn "No supported package manager found"
+        return 1
+    fi
+}
+
+detect_pm
+
 echo -e "${BLUE}"
 echo "╔════════════════════════════════════════════╗"
 echo "║       MomShell Development Setup           ║"
@@ -34,44 +75,87 @@ echo -e "${NC}"
 # ============================================
 echo -e "${BLUE}=== 1. Check System Dependencies ===${NC}"
 
-MISSING=()
+FAILED=0
 
+# --- Go ---
 if check go; then
     success "Go $(go version | awk '{print $3}')"
 else
-    fail "Go not installed"; MISSING+=("go")
-    echo "  Install: https://go.dev/dl/"
+    fail "Go not installed"
+    case "$PM" in
+        pacman) try_install "go" "go" "Go" || FAILED=1 ;;
+        apt)    try_install "go" "golang-go" "Go" || FAILED=1 ;;
+        dnf)    try_install "go" "golang" "Go" || FAILED=1 ;;
+        brew)   try_install "go" "go" "Go" || FAILED=1 ;;
+        *)      echo "  Install manually: https://go.dev/dl/"; FAILED=1 ;;
+    esac
 fi
 
+# --- Node + npm (via nvm or package manager) ---
 if check node; then
     success "Node $(node -v)"
 else
-    fail "Node not installed"; MISSING+=("node")
-    echo "  Install: nvm install (reads frontend/.nvmrc)"
+    fail "Node not installed"
+    if check nvm; then
+        echo -en "  Install Node via nvm? ${YELLOW}[Y/n]${NC}: "
+        read -r ans
+        case "$ans" in
+            [nN]*) FAILED=1 ;;
+            *)
+                info "Installing Node via nvm..."
+                nvm install
+                check node && success "Node $(node -v) installed" || FAILED=1
+                ;;
+        esac
+    else
+        case "$PM" in
+            pacman) try_install "node" "nodejs npm" "Node.js" || FAILED=1 ;;
+            apt)    try_install "node" "nodejs npm" "Node.js" || FAILED=1 ;;
+            dnf)    try_install "node" "nodejs npm" "Node.js" || FAILED=1 ;;
+            brew)   try_install "node" "node" "Node.js" || FAILED=1 ;;
+            *)      echo "  Install manually: https://nodejs.org/ or use nvm"; FAILED=1 ;;
+        esac
+    fi
 fi
 
 if check npm; then
     success "npm $(npm -v)"
 else
-    fail "npm not installed"; MISSING+=("npm")
+    fail "npm not installed (should come with Node)"
+    FAILED=1
 fi
 
+# --- git ---
 if check git; then
     success "git $(git --version | awk '{print $3}')"
 else
-    fail "git not installed"; MISSING+=("git")
+    fail "git not installed"
+    case "$PM" in
+        pacman) try_install "git" "git" || FAILED=1 ;;
+        apt)    try_install "git" "git" || FAILED=1 ;;
+        dnf)    try_install "git" "git" || FAILED=1 ;;
+        brew)   try_install "git" "git" || FAILED=1 ;;
+        *)      echo "  Install manually: https://git-scm.com/"; FAILED=1 ;;
+    esac
 fi
 
+# --- PostgreSQL ---
 if check psql; then
     success "PostgreSQL client installed"
 else
-    fail "psql not installed"; MISSING+=("postgresql")
-    echo "  Install: sudo pacman -S postgresql (Arch) / sudo apt install postgresql (Debian)"
+    fail "psql not installed"
+    case "$PM" in
+        pacman) try_install "psql" "postgresql" "PostgreSQL" || FAILED=1 ;;
+        apt)    try_install "psql" "postgresql postgresql-client" "PostgreSQL" || FAILED=1 ;;
+        dnf)    try_install "psql" "postgresql-server postgresql" "PostgreSQL" || FAILED=1 ;;
+        brew)   try_install "psql" "postgresql" "PostgreSQL" || FAILED=1 ;;
+        *)      echo "  Install manually: https://www.postgresql.org/download/"; FAILED=1 ;;
+    esac
 fi
 
-if [ ${#MISSING[@]} -gt 0 ]; then
+if [ "$FAILED" -ne 0 ]; then
     echo ""
-    fail "Missing required dependencies: ${MISSING[*]}"
+    fail "Some required dependencies are missing. Please install them and re-run this script."
     exit 1
 fi
 
@@ -142,7 +226,7 @@ ask() {
         echo -en "  ${prompt}: "
     fi
     read -r REPLY
-    [ -z "$REPLY" ] && REPLY="$default"
+    [ -z "$REPLY" ] && REPLY="$default" || true
 }
 
 if [ -f .env ]; then
@@ -264,8 +348,27 @@ if check pre-commit; then
     pre-commit install
     success "Pre-commit hooks installed"
 else
-    warn "pre-commit not installed, skipping hook setup"
-    echo "  Install: pip install pre-commit && pre-commit install"
+    warn "pre-commit not installed"
+    if check pip; then
+        echo -en "  Install pre-commit via pip? ${YELLOW}[Y/n]${NC}: "
+        read -r ans
+        case "$ans" in
+            [nN]*) warn "Skipping hook setup" ;;
+            *)
+                info "Installing pre-commit..."
+                pip install --break-system-packages pre-commit 2>/dev/null || pip install pre-commit
+                if check pre-commit; then
+                    pre-commit install
+                    success "Pre-commit hooks installed"
+                else
+                    warn "Installation failed, skipping hook setup"
+                fi
+                ;;
+        esac
+    else
+        warn "pip not found, skipping hook setup"
+        echo "  Install: pip install pre-commit && pre-commit install"
+    fi
 fi
 
 # ============================================
