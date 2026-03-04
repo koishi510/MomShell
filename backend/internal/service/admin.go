@@ -289,7 +289,7 @@ func (s *AdminService) UpdateConfig(req dto.ConfigUpdateRequest) error {
 			s.cfg.JWTRefreshTokenExpireDays = v
 		}
 
-		os.Setenv(key, value)
+		_ = os.Setenv(key, value)
 	}
 
 	return nil
