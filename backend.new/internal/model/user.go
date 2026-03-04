@@ -11,15 +11,15 @@ import (
 type UserRole string
 
 const (
-	RoleGuest             UserRole = "guest"
-	RoleMom               UserRole = "mom"
-	RoleDad               UserRole = "dad"
-	RoleFamily            UserRole = "family"
-	RoleCertifiedDoctor   UserRole = "certified_doctor"
+	RoleGuest              UserRole = "guest"
+	RoleMom                UserRole = "mom"
+	RoleDad                UserRole = "dad"
+	RoleFamily             UserRole = "family"
+	RoleCertifiedDoctor    UserRole = "certified_doctor"
 	RoleCertifiedTherapist UserRole = "certified_therapist"
-	RoleCertifiedNurse    UserRole = "certified_nurse"
-	RoleAdmin             UserRole = "admin"
-	RoleAIAssistant       UserRole = "ai_assistant"
+	RoleCertifiedNurse     UserRole = "certified_nurse"
+	RoleAdmin              UserRole = "admin"
+	RoleAIAssistant        UserRole = "ai_assistant"
 )
 
 var ProfessionalRoles = map[UserRole]bool{
@@ -46,20 +46,20 @@ const (
 )
 
 type User struct {
-	ID           string    `gorm:"type:varchar(36);primaryKey" json:"id"`
-	Username     string    `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
-	Email        string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string    `gorm:"type:varchar(255);not null" json:"-"`
-	Nickname     string    `gorm:"type:varchar(50);not null" json:"nickname"`
-	AvatarURL    *string   `gorm:"type:varchar(500)" json:"avatar_url"`
-	Role         UserRole  `gorm:"type:varchar(30);default:'mom'" json:"role"`
-	ShellCode    *string   `gorm:"type:varchar(8);uniqueIndex" json:"shell_code"`
-	IsGuest      bool      `gorm:"default:false" json:"is_guest"`
-	PartnerID    *string   `gorm:"type:varchar(36)" json:"partner_id"`
+	ID           string   `gorm:"type:varchar(36);primaryKey" json:"id"`
+	Username     string   `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
+	Email        string   `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	PasswordHash string   `gorm:"type:varchar(255);not null" json:"-"`
+	Nickname     string   `gorm:"type:varchar(50);not null" json:"nickname"`
+	AvatarURL    *string  `gorm:"type:varchar(500)" json:"avatar_url"`
+	Role         UserRole `gorm:"type:varchar(30);default:'mom'" json:"role"`
+	ShellCode    *string  `gorm:"type:varchar(8);uniqueIndex" json:"shell_code"`
+	IsGuest      bool     `gorm:"default:false" json:"is_guest"`
+	PartnerID    *string  `gorm:"type:varchar(36)" json:"partner_id"`
 
 	// Postpartum info
-	BabyBirthDate  *time.Time `json:"baby_birth_date"`
-	PostpartumWeeks *int      `json:"postpartum_weeks"`
+	BabyBirthDate   *time.Time `json:"baby_birth_date"`
+	PostpartumWeeks *int       `json:"postpartum_weeks"`
 
 	// Status
 	IsActive bool `gorm:"default:true" json:"is_active"`
@@ -82,8 +82,8 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 }
 
 type UserCertification struct {
-	ID     string   `gorm:"type:varchar(36);primaryKey" json:"id"`
-	UserID string   `gorm:"type:varchar(36);uniqueIndex;not null" json:"user_id"`
+	ID     string `gorm:"type:varchar(36);primaryKey" json:"id"`
+	UserID string `gorm:"type:varchar(36);uniqueIndex;not null" json:"user_id"`
 
 	// Certification info
 	CertificationType     UserRole `gorm:"type:varchar(30)" json:"certification_type"`

@@ -4,15 +4,15 @@ import "time"
 
 // UserProfile is the response for user profile
 type UserProfile struct {
-	ID                 string     `json:"id"`
-	Nickname           string     `json:"nickname"`
-	Email              string     `json:"email"`
-	AvatarURL          *string    `json:"avatar_url"`
-	Role               string     `json:"role"`
-	IsCertified        bool       `json:"is_certified"`
-	CertificationTitle *string    `json:"certification_title"`
-	Stats              UserStats  `json:"stats"`
-	CreatedAt          time.Time  `json:"created_at"`
+	ID                 string    `json:"id"`
+	Nickname           string    `json:"nickname"`
+	Email              string    `json:"email"`
+	AvatarURL          *string   `json:"avatar_url"`
+	Role               string    `json:"role"`
+	IsCertified        bool      `json:"is_certified"`
+	CertificationTitle *string   `json:"certification_title"`
+	Stats              UserStats `json:"stats"`
+	CreatedAt          time.Time `json:"created_at"`
 }
 
 // UserStats holds user statistics

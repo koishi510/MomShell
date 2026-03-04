@@ -34,7 +34,7 @@
         />
         <button type="submit" class="send-btn" :disabled="!input.trim() || sending">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M3 10L17 3L10 17L9 11L3 10Z" fill="currentColor"/>
+            <path d="M3 10L17 3L10 17L9 11L3 10Z" fill="currentColor" />
           </svg>
         </button>
       </form>
