@@ -8,9 +8,9 @@ import (
 )
 
 type Tag struct {
-	ID          string `gorm:"type:varchar(36);primaryKey" json:"id"`
-	Name        string `gorm:"type:varchar(50);uniqueIndex;not null" json:"name"`
-	Slug        string `gorm:"type:varchar(50);uniqueIndex;not null" json:"slug"`
+	ID          string  `gorm:"type:varchar(36);primaryKey" json:"id"`
+	Name        string  `gorm:"type:varchar(50);uniqueIndex;not null" json:"name"`
+	Slug        string  `gorm:"type:varchar(50);uniqueIndex;not null" json:"slug"`
 	Description *string `gorm:"type:varchar(200)" json:"description"`
 
 	// Statistics

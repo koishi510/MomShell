@@ -12,49 +12,39 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=10000"]
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-        files: ^backend/
-      - id: ruff-format
-        files: ^backend/
-
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
-        entry: bash -c 'cd backend && uv run mypy app/'
+      - id: vue-eslint
+        name: Vue ESLint
+        entry: bash -c 'cd frontend.new && npm run lint'
         language: system
-        types: [python]
-        require_serial: true
-        files: ^backend/
-
-      - id: uv-export
-        name: Export requirements.txt
-        entry: bash -c 'cd backend && uv export --no-dev --no-emit-project --output-file requirements.txt'
-        language: system
-        files: ^backend/uv\.lock$
+        files: ^frontend\.new/.*\.(ts|vue|js)$
         pass_filenames: false
 
-      - id: uv-lock-check
-        name: Check uv.lock consistency
-        entry: bash -c 'cd backend && uv lock --check'
+      - id: vue-typecheck
+        name: Vue typecheck
+        entry: bash -c 'cd frontend.new && npm run typecheck'
         language: system
-        files: ^backend/pyproject\.toml$
+        files: ^frontend\.new/.*\.(ts|vue)$
         pass_filenames: false
 
-      - id: frontend-eslint
-        name: Frontend ESLint
-        entry: bash -c 'cd frontend && npm run lint'
+      - id: go-fmt-check
+        name: Go format check
+        entry: bash -c 'cd backend.new && test -z "$(gofmt -l .)"'
         language: system
-        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        files: ^backend\.new/.*\.go$
         pass_filenames: false
 
-      - id: frontend-typecheck
-        name: Frontend TypeScript check
-        entry: bash -c 'cd frontend && npm run typecheck'
+      - id: go-vet
+        name: Go vet
+        entry: bash -c 'cd backend.new && go vet ./...'
         language: system
-        files: ^frontend/.*\.(ts|tsx)$
+        files: ^backend\.new/.*\.go$
+        pass_filenames: false
+
+      - id: go-build
+        name: Go build
+        entry: bash -c 'cd backend.new && go build ./...'
+        language: system
+        files: ^backend\.new/.*\.go$
         pass_filenames: false

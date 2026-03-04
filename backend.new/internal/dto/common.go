@@ -58,8 +58,8 @@ type AuthorInfo struct {
 
 // ErrorResponse is a standard error response
 type ErrorResponse struct {
-	Error   string      `json:"error"`
-	Detail  interface{} `json:"detail,omitempty"`
+	Error  string      `json:"error"`
+	Detail interface{} `json:"detail,omitempty"`
 }
 
 // SuccessResponse is a standard success response

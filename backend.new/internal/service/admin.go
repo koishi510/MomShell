@@ -232,11 +232,11 @@ func maskString(s string, showPrefix, showSuffix int) string {
 
 // editableKeys defines which config keys can be edited at runtime
 var editableKeys = map[string]bool{
-	"OPENAI_API_KEY":                   true,
-	"OPENAI_BASE_URL":                  true,
-	"OPENAI_MODEL":                     true,
-	"JWT_ACCESS_TOKEN_EXPIRE_MINUTES":  true,
-	"JWT_REFRESH_TOKEN_EXPIRE_DAYS":    true,
+	"OPENAI_API_KEY":                  true,
+	"OPENAI_BASE_URL":                 true,
+	"OPENAI_MODEL":                    true,
+	"JWT_ACCESS_TOKEN_EXPIRE_MINUTES": true,
+	"JWT_REFRESH_TOKEN_EXPIRE_DAYS":   true,
 }
 
 // GetConfig returns configuration items with sensitive values masked
