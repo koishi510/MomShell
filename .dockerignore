@@ -1,82 +1,44 @@
-# =============================================================================
-# Git
-# =============================================================================
 .git
-.gitignore
-.gitattributes
 .github
+.gitignore
+.pre-commit-config.yaml
+.dockerignore
+.claude
 
-# =============================================================================
+# Archives
+archive-legacy-*.tar.gz
+
 # Environment & Secrets
-# =============================================================================
 .env
 .env.*
-**/.env
-**/.env.*
-*.key
-*.pem
 
-# =============================================================================
-# Python
-# =============================================================================
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.ruff_cache
-.mypy_cache
-.pytest_cache
-.coverage
-htmlcov
-.venv
-venv
-env
-*.egg-info
-
-# =============================================================================
-# Node.js / Frontend
-# =============================================================================
-node_modules
-.next
-out
-.pnp
-.pnp.js
-.pnp.cjs
-.yarn
-*.tsbuildinfo
-.eslintcache
-.turbo
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# =============================================================================
-# Docker
-# =============================================================================
-Dockerfile
-Dockerfile.*
-docker-compose*.yml
-.dockerignore
-
-# =============================================================================
-# IDE & Editor
-# =============================================================================
+# IDE
 .idea
 .vscode
 *.swp
 *.swo
-.claude
 
-# =============================================================================
-# Documentation & Tests
-# =============================================================================
-docs/
-tests/
+# Node.js
+node_modules
+*.tsbuildinfo
+.eslintcache
+npm-debug.log*
+
+# Go build artifacts
+backend/bin
+
+# Frontend build output
+frontend/dist
+
+# Documentation
 *.md
 !README.md
 
-# =============================================================================
-# CI/CD & Config
-# =============================================================================
-.pre-commit-config.yaml
-.github/
+# Docker
+Dockerfile
+docker-compose*.yml
+deploy/
+
+# Scripts & Config
+scripts/
+Makefile
