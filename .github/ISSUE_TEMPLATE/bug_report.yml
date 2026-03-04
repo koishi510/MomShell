@@ -14,13 +14,15 @@ body:
       label: Affected Component
       description: Which part of MomShell is affected?
       options:
-        - Soulful Companion (Chat)
-        - Recovery Coach (Exercise/Pose Detection)
-        - Community (Q&A/Posts)
-        - Frontend/UI
-        - Backend/API
+        - Soul Companion (Chat)
+        - Sisterhood Bond (Community)
+        - Echo / Memoir
+        - Admin Panel
+        - Auth / Login / Registration
+        - Frontend / UI
+        - Backend / API
         - Database
-        - Deployment/Docker
+        - Deployment / Docker
         - Other
     validations:
       required: true
@@ -61,7 +63,7 @@ body:
       label: Error Logs / Screenshots
       description: |
         If applicable, add error logs or screenshots to help explain the problem.
-        - For backend errors: Check terminal/Docker logs
+        - For backend errors: Check terminal or `make docker-logs`
         - For frontend errors: Check browser console (F12 → Console)
       placeholder: Paste logs or drag-and-drop screenshots here...
 
@@ -71,9 +73,8 @@ body:
       label: Deployment Method
       description: How is MomShell deployed?
       options:
-        - Local Development (uvicorn + npm run dev)
-        - Docker Compose
-        - Single Container
+        - Local Development (make dev-backend + make dev-frontend)
+        - Docker Compose (make docker-up)
         - Other
     validations:
       required: true
@@ -83,7 +84,7 @@ body:
     attributes:
       label: Operating System
       description: What OS are you running on?
-      placeholder: "e.g., Ubuntu 22.04, Windows 11, macOS 14"
+      placeholder: "e.g., Ubuntu 22.04, Arch Linux, Windows 11, macOS 14"
     validations:
       required: true
 

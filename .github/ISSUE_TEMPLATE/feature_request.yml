@@ -14,11 +14,13 @@ body:
       label: Related Component
       description: Which part of MomShell would this feature affect?
       options:
-        - Soulful Companion (Chat)
-        - Recovery Coach (Exercise/Pose Detection)
-        - Community (Q&A/Posts)
-        - Frontend/UI
-        - Backend/API
+        - Soul Companion (Chat)
+        - Sisterhood Bond (Community)
+        - Echo / Memoir
+        - Admin Panel
+        - Auth / User System
+        - Frontend / UI
+        - Backend / API
         - New Component
         - Other
     validations:

@@ -1,12 +1,12 @@
 name: AI Provider Issue
-description: Report issues with AI responses, ModelScope API, or LLM behavior
+description: Report issues with AI responses, LLM API, or content moderation
 title: "[AI]: "
 labels: ["ai", "triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        This template is for issues related to AI/LLM functionality, including the Soulful Companion chat and AI-powered coaching feedback.
+        This template is for issues related to AI/LLM functionality, including the Soul Companion chat, Echo memoir generation, and content moderation.
 
   - type: dropdown
     id: feature
@@ -14,8 +14,8 @@ body:
       label: Affected AI Feature
       description: Which AI-powered feature is affected?
       options:
-        - Soulful Companion (Chat responses)
-        - Recovery Coach (Voice feedback)
+        - Soul Companion (Chat responses)
+        - Echo (Memoir generation)
         - Content moderation
         - Other
     validations:
@@ -29,10 +29,9 @@ body:
       options:
         - API connection failed
         - No response / timeout
-        - Incorrect/inappropriate response
+        - Incorrect / inappropriate response
         - Response parsing error (malformed JSON)
         - Conversation memory not working
-        - TTS (Text-to-Speech) not working
         - Other
     validations:
       required: true
@@ -66,7 +65,7 @@ body:
       label: Error Logs
       description: |
         Please provide backend logs showing the API error.
-        Look for errors related to ModelScope, OpenAI client, or JSON parsing.
+        Look for errors related to OpenAI client or JSON parsing.
       placeholder: Paste relevant logs here...
 
   - type: checkboxes
@@ -75,9 +74,9 @@ body:
       label: API Configuration Checklist
       description: Please confirm the following
       options:
-        - label: MODELSCOPE_SDK_TOKEN environment variable is set
+        - label: OPENAI_API_KEY environment variable is set
+        - label: OPENAI_BASE_URL is correct
         - label: API endpoint is accessible from my network
-        - label: I have verified my API token is valid
 
   - type: textarea
     id: additional
