@@ -18,11 +18,15 @@ func Setup(
 	tagHandler *handler.TagHandler,
 	chatHandler *handler.ChatHandler,
 	userHandler *handler.UserHandler,
+	adminHandler *handler.AdminHandler,
 ) {
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	// Admin panel (HTML page, no auth required for serving the page)
+	r.GET("/admin", adminHandler.ServeAdminPage)
 
 	api := r.Group("/api/v1")
 
@@ -121,5 +125,18 @@ func Setup(
 	{
 		companion.POST("/chat", middleware.AuthOptional(cfg), chatHandler.Chat)
 		companion.GET("/profile", middleware.AuthOptional(cfg), chatHandler.GetProfile)
+	}
+
+	// ==================== Admin ====================
+	adminAPI := api.Group("/admin", middleware.AdminRequired(cfg))
+	{
+		adminAPI.GET("/stats", adminHandler.GetStats)
+		adminAPI.GET("/users", adminHandler.ListUsers)
+		adminAPI.GET("/users/:id", adminHandler.GetUser)
+		adminAPI.POST("/users", adminHandler.CreateUser)
+		adminAPI.PATCH("/users/:id", adminHandler.UpdateUser)
+		adminAPI.DELETE("/users/:id", adminHandler.DeleteUser)
+		adminAPI.GET("/config", adminHandler.GetConfig)
+		adminAPI.PATCH("/config", adminHandler.UpdateConfig)
 	}
 }
