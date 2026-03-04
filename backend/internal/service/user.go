@@ -195,11 +195,11 @@ func (s *UserService) getUserStats(userID string) (*dto.UserStats, error) {
 
 	// Sum likes received
 	var questionLikes, answerLikes int64
-	s.db.Model(&model.Question{}).
+	_ = s.db.Model(&model.Question{}).
 		Where("author_id = ?", userID).
 		Select("COALESCE(SUM(like_count), 0)").
 		Row().Scan(&questionLikes)
-	s.db.Model(&model.Answer{}).
+	_ = s.db.Model(&model.Answer{}).
 		Where("author_id = ?", userID).
 		Select("COALESCE(SUM(like_count), 0)").
 		Row().Scan(&answerLikes)
