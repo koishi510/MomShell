@@ -26,7 +26,7 @@ cd MomShell
 
 # Start (in separate terminals)
 make dev-backend    # http://localhost:8000
-make dev-frontend   # http://localhost:3000
+make dev-frontend   # http://localhost:5173
 ```
 
 [Full getting started guide](docs/getting-started.md)

@@ -1,7 +1,7 @@
 .PHONY: install install-backend install-frontend dev dev-backend dev-frontend \
         lint lint-backend lint-frontend format format-backend format-frontend \
-        typecheck typecheck-backend typecheck-frontend check build-frontend build-backend \
-        docker-up docker-down docker-logs docker-build \
+        typecheck typecheck-backend typecheck-frontend check build-frontend \
+        docker-up docker-down docker-logs docker-build docker-build-backend docker-build-frontend \
         postgres-up postgres-down postgres-logs db-reset deps-lock deps-update clean clean-all help
 
 # Colors for terminal output
@@ -43,9 +43,9 @@ dev-backend: postgres-up ## Start backend development server
 	@echo "$(CYAN)Starting backend server on http://localhost:8000$(RESET)"
 	cd backend && go run cmd/server/main.go
 
-dev-frontend: ## Start frontend development server (frontend.new)
-	@echo "$(CYAN)Starting frontend server on http://localhost:3000$(RESET)"
-	cd frontend.new && npx vite
+dev-frontend: ## Start frontend development server
+	@echo "$(CYAN)Starting frontend server on http://localhost:5173$(RESET)"
+	cd frontend && npx vite
 
 ##@ Code Quality
 
@@ -93,20 +93,24 @@ build-backend: ## Build backend binary
 
 ##@ Docker
 
-docker-up: ## Start all services (app + postgres)
+docker-up: ## Start Docker containers (multi-container)
 	@echo "$(CYAN)Starting Docker containers...$(RESET)"
 	cd deploy && docker compose up -d --build
 
-docker-down: ## Stop all services
+docker-down: ## Stop Docker containers
 	@echo "$(CYAN)Stopping Docker containers...$(RESET)"
 	cd deploy && docker compose down
 
 docker-logs: ## Show Docker logs
 	cd deploy && docker compose logs -f
 
-docker-build: ## Build application Docker image
-	@echo "$(CYAN)Building Docker image...$(RESET)"
-	docker build -t momshell .
+docker-build-backend: ## Build backend Docker image
+	@echo "$(CYAN)Building backend Docker image...$(RESET)"
+	docker build -t momshell-backend backend/
+
+docker-build-frontend: ## Build frontend Docker image
+	@echo "$(CYAN)Building frontend Docker image...$(RESET)"
+	docker build -t momshell-frontend frontend/
 
 ##@ Database
 
