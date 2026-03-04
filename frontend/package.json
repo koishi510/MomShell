@@ -1,29 +1,32 @@
 {
-  "name": "momshell-frontend",
-  "version": "0.5.3",
+  "name": "beach-scene",
+  "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+    "typecheck": "vue-tsc --noEmit -p tsconfig.node.json",
+    "render-sand": "tsx assets/render-sand.ts"
   },
   "dependencies": {
     "axios": "^1.13.6",
-    "framer-motion": "^12.34.3",
-    "next": "16.1.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "pinia": "^3.0.4",
+    "vue": "^3.5.13"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^25",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.3.0",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "eslint": "^10.0.2",
+    "eslint-plugin-vue": "^10.8.0",
+    "puppeteer": "^24.37.5",
+    "tsx": "^4.21.0",
+    "typescript": "~5.7.3",
+    "typescript-eslint": "^8.56.1",
+    "vite": "^6.2.4",
+    "vue-tsc": "^2.2.8"
   }
 }

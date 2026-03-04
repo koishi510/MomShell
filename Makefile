@@ -1,6 +1,6 @@
 .PHONY: install install-backend install-frontend dev dev-backend dev-frontend \
         lint lint-backend lint-frontend format format-backend format-frontend \
-        typecheck typecheck-backend typecheck-frontend build build-frontend \
+        typecheck typecheck-backend typecheck-frontend check build-frontend \
         docker-up docker-down docker-logs docker-build docker-build-backend docker-build-frontend \
         postgres-up postgres-down postgres-logs db-reset deps-lock deps-update clean clean-all help
 
@@ -17,7 +17,7 @@ install: install-backend install-frontend ## Install all dependencies
 
 install-backend: ## Install backend dependencies
 	@echo "$(CYAN)Installing backend dependencies...$(RESET)"
-	cd backend.new && go mod download
+	cd backend && go mod download
 
 install-frontend: ## Install frontend dependencies
 	@echo "$(CYAN)Installing frontend dependencies...$(RESET)"
@@ -41,11 +41,11 @@ dev-tmux: ## Start both servers in tmux split panes
 
 dev-backend: postgres-up ## Start backend development server
 	@echo "$(CYAN)Starting backend server on http://localhost:8000$(RESET)"
-	cd backend.new && go run cmd/server/main.go
+	cd backend && go run cmd/server/main.go
 
-dev-frontend: ## Start frontend development server (frontend.new)
+dev-frontend: ## Start frontend development server
 	@echo "$(CYAN)Starting frontend server on http://localhost:3000$(RESET)"
-	cd frontend.new && npx vite
+	cd frontend && npx vite
 
 ##@ Code Quality
 
@@ -54,33 +54,29 @@ lint: lint-backend lint-frontend ## Run all linters
 
 lint-backend: ## Run backend linter (go vet)
 	@echo "$(CYAN)Linting backend...$(RESET)"
-	cd backend.new && go vet ./...
+	cd backend && go vet ./...
 
 lint-frontend: ## Run frontend linter (eslint)
 	@echo "$(CYAN)Linting frontend...$(RESET)"
 	cd frontend && npm run lint
 
-format: format-backend format-frontend ## Format all code
+format: format-backend ## Format all code
 	@echo "$(GREEN)All code formatted$(RESET)"
 
 format-backend: ## Format backend code (go fmt)
 	@echo "$(CYAN)Formatting backend...$(RESET)"
-	cd backend.new && go fmt ./...
-
-format-frontend: ## Format frontend code (prettier)
-	@echo "$(CYAN)Formatting frontend...$(RESET)"
-	cd frontend && npx prettier --write "**/*.{ts,tsx,js,jsx,json,css,md}"
+	cd backend && go fmt ./...
 
 typecheck: typecheck-backend typecheck-frontend ## Run all type checkers
 	@echo "$(GREEN)All type checks passed$(RESET)"
 
-typecheck-backend: ## Run backend checks (compile test only)
+typecheck-backend: ## Run backend type check (compile)
 	@echo "$(CYAN)Type checking backend...$(RESET)"
-	cd backend.new && go test ./... -run '^$$'
+	cd backend && go build ./...
 
-typecheck-frontend: ## Run frontend type checker (tsc)
+typecheck-frontend: ## Run frontend type checker (vue-tsc)
 	@echo "$(CYAN)Type checking frontend...$(RESET)"
-	cd frontend && npx tsc --noEmit
+	cd frontend && npm run typecheck
 
 check: lint typecheck ## Run all checks (lint + typecheck)
 	@echo "$(GREEN)All checks passed$(RESET)"
@@ -90,6 +86,10 @@ check: lint typecheck ## Run all checks (lint + typecheck)
 build-frontend: ## Build frontend for production
 	@echo "$(CYAN)Building frontend...$(RESET)"
 	cd frontend && npm run build
+
+build-backend: ## Build backend binary
+	@echo "$(CYAN)Building backend...$(RESET)"
+	cd backend && go build -o bin/server cmd/server/main.go
 
 ##@ Docker
 
@@ -104,13 +104,9 @@ docker-down: ## Stop Docker containers
 docker-logs: ## Show Docker logs
 	cd deploy && docker compose logs -f
 
-docker-build: ## Build combined Docker image (single container)
-	@echo "$(CYAN)Building combined Docker image...$(RESET)"
-	docker build -t momshell .
-
 docker-build-backend: ## Build backend Docker image
 	@echo "$(CYAN)Building backend Docker image...$(RESET)"
-	docker build -t momshell-backend backend.new/
+	docker build -t momshell-backend backend/
 
 docker-build-frontend: ## Build frontend Docker image
 	@echo "$(CYAN)Building frontend Docker image...$(RESET)"
@@ -146,13 +142,13 @@ db-reset: postgres-up ## Reset PostgreSQL schema (drop and recreate public schem
 
 deps-lock: ## Sync backend dependencies
 	@echo "$(CYAN)Locking dependencies...$(RESET)"
-	cd backend.new && go mod tidy
+	cd backend && go mod tidy
 	@echo "$(GREEN)Dependencies locked$(RESET)"
 
 deps-update: ## Update all dependencies
 	@echo "$(CYAN)Updating backend dependencies...$(RESET)"
-	cd backend.new && go get -u ./...
-	cd backend.new && go mod tidy
+	cd backend && go get -u ./...
+	cd backend && go mod tidy
 	@echo "$(CYAN)Updating frontend dependencies...$(RESET)"
 	cd frontend && npm update
 	@echo "$(GREEN)All dependencies updated$(RESET)"
@@ -161,10 +157,8 @@ deps-update: ## Update all dependencies
 
 clean: ## Clean all caches and temporary files
 	@echo "$(CYAN)Cleaning caches...$(RESET)"
-	rm -rf backend.new/bin backend.new/.cache
-	rm -rf frontend/.next frontend/node_modules/.cache
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	rm -rf backend/bin backend/.cache
+	rm -rf frontend/node_modules/.cache
 	@echo "$(GREEN)Caches cleaned$(RESET)"
 
 clean-all: clean ## Clean everything including node_modules
