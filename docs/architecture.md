@@ -6,168 +6,106 @@ Technical architecture overview of MomShell.
 
 ### Backend
 
-| Technology              | Purpose                                   |
-| ----------------------- | ----------------------------------------- |
-| **FastAPI**             | High-performance async web framework      |
-| **MediaPipe**           | Real-time pose detection (33 landmarks)   |
-| **LangGraph**           | Workflow orchestration for coaching logic |
-| **Edge TTS**            | Microsoft neural voice synthesis          |
-| **SQLite + SQLAlchemy** | Lightweight async database                |
+| Technology | Purpose |
+|------------|---------|
+| **Go 1.23** | Backend language |
+| **Gin** | HTTP framework |
+| **GORM** | ORM (PostgreSQL) |
+| **JWT (golang-jwt)** | Authentication |
+| **OpenAI SDK** | LLM integration |
+| **go:embed** | Embedded admin panel |
 
 ### Frontend
 
-| Technology       | Purpose                         |
-| ---------------- | ------------------------------- |
-| **Next.js 14**   | React framework with App Router |
-| **TypeScript**   | Type-safe development           |
-| **Tailwind CSS** | Utility-first styling           |
+| Technology | Purpose |
+|------------|---------|
+| **Vue 3** | UI framework |
+| **Vite** | Build tool |
+| **TypeScript** | Type safety |
+| **Pinia** | State management |
+| **Axios** | HTTP client |
 
 ## Project Structure
 
 ```
 MomShell/
-├── backend/                    # FastAPI backend
-│   ├── app/
-│   │   ├── api/v1/             # REST + WebSocket routes
-│   │   ├── core/               # Configuration and database
-│   │   ├── models/             # ML models dir (gitignored)
-│   │   ├── schemas/            # Pydantic schemas (coach)
-│   │   ├── services/           # Business logic
-│   │   │   ├── auth/           # JWT, OAuth authentication
-│   │   │   ├── chat/           # Soul Companion service
-│   │   │   ├── coach/          # Recovery Coach service
-│   │   │   │   ├── analysis/   # Pose analysis & scoring
-│   │   │   │   ├── exercises/  # Exercise library
-│   │   │   │   ├── feedback/   # LLM feedback & TTS
-│   │   │   │   ├── pose/       # MediaPipe detection
-│   │   │   │   ├── progress/   # Progress tracking
-│   │   │   │   └── workflow/   # LangGraph workflow
-│   │   │   ├── community/      # Sisterhood Bond service
-│   │   │   │   ├── moderation/ # Content moderation
-│   │   │   │   ├── router/     # Community API routes
-│   │   │   │   └── schemas/    # Community schemas
-│   │   │   └── guardian/       # Guardian Partner service
-│   │   ├── static/             # Static assets
-│   │   │   ├── css/
-│   │   │   └── js/
-│   │   └── templates/          # HTML templates
-│   ├── data/                   # Database storage (gitignored)
-│   ├── models/                 # ML models (gitignored)
-│   ├── scripts/                # CLI scripts (create_admin, etc.)
-│   └── tests/                  # Backend tests
+├── backend/                    # Go backend
+│   ├── cmd/server/main.go      # Entry point & dependency wiring
+│   ├── internal/
+│   │   ├── admin/              # Embedded admin panel (go:embed HTML)
+│   │   ├── config/             # Environment config loader
+│   │   ├── database/           # DB connection & auto-migration
+│   │   ├── dto/                # Request/response data transfer objects
+│   │   ├── handler/            # HTTP handlers (Gin)
+│   │   ├── middleware/         # Auth, CORS, recovery middleware
+│   │   ├── model/              # GORM models (User, Question, Answer, etc.)
+│   │   ├── repository/         # Data access layer
+│   │   ├── router/             # Route registration
+│   │   └── service/            # Business logic
+│   └── pkg/
+│       ├── jwt/                # JWT generation & validation
+│       ├── openai/             # OpenAI-compatible client
+│       └── password/           # bcrypt hashing
 │
-├── frontend/                   # Next.js frontend
-│   ├── app/                    # App router pages
-│   │   ├── auth/               # Auth pages
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   │   ├── forgot-password/
-│   │   │   └── reset-password/
-│   │   ├── chat/               # Soul Companion
-│   │   ├── coach/              # Recovery Coach
-│   │   ├── community/          # Sisterhood Bond
-│   │   │   ├── admin/          # Admin pages (certification review)
-│   │   │   ├── certification/  # Professional certification
-│   │   │   ├── collections/    # Shell Picks
-│   │   │   ├── my-posts/       # My questions
-│   │   │   ├── my-replies/     # My answers
-│   │   │   └── profile/        # User profile
-│   │   └── guardian/           # Guardian Partner
-│   ├── components/             # React components
-│   │   ├── auth/
-│   │   ├── coach/
-│   │   ├── community/
-│   │   ├── guardian/
-│   │   └── home/
-│   ├── contexts/               # React contexts (AuthContext)
-│   ├── hooks/                  # Custom hooks
-│   ├── lib/                    # Utilities & API clients
-│   │   └── api/                # API client modules
-│   ├── public/                 # Public assets
-│   └── types/                  # TypeScript definitions
+├── frontend/                   # Vue 3 frontend
+│   └── src/
+│       ├── components/
+│       │   ├── overlay/        # Auth, chat, community, profile panels
+│       │   └── scene/          # Beach scene layers (sky, ocean, sand, etc.)
+│       ├── composables/        # Vue composables (animation, parallax, waves)
+│       ├── constants/          # Scene configuration
+│       ├── lib/                # API client, auth utilities
+│       ├── stores/             # Pinia stores (auth, UI)
+│       └── styles/             # CSS
 │
-├── deploy/                     # Deployment configs
-│   ├── docker-compose.yml
-│   └── nginx.conf
-│
+├── deploy/                     # Docker Compose + Nginx config
 ├── docs/                       # Documentation
-│   ├── README.md               # Documentation index
-│   ├── features.md             # Feature descriptions
-│   ├── getting-started.md      # Quick start guide
-│   ├── development.md          # Development guide
-│   ├── deployment.md           # Docker deployment
-│   ├── configuration.md        # Environment variables
-│   └── architecture.md         # This file
-│
-├── scripts/                    # Project-level scripts
-│   └── dev-setup.sh            # Development setup script
-│
-├── .github/                    # GitHub configs
-│   ├── ISSUE_TEMPLATE/         # Issue templates
-│   └── workflows/              # CI/CD workflows
-│
+├── scripts/dev-setup.sh        # Development setup script
 ├── .env.example                # Environment template
-├── Dockerfile                  # Combined container (ModelScope)
-├── Makefile                    # Build commands
-├── CONTRIBUTING.md             # Contribution guidelines
-└── README.md                   # Project README
+├── Makefile                    # Build & dev commands
+└── .pre-commit-config.yaml     # Git hooks
 ```
 
-## Architecture Highlights
+## Architecture Layers
 
-### Real-time Pose Detection
-
-- Uses MediaPipe Pose Landmarker with VIDEO mode for tracking
-- LITE model by default for better performance (configurable via `MEDIAPIPE_MODEL`)
-- Client-side skeleton rendering for minimal latency
-- WebSocket protocol for real-time bidirectional communication
-
-### Non-blocking Feedback Pipeline
-
-```mermaid
-flowchart TD
-    A[Video Frame] --> B[Pose Detection]
-    B --> C[Analysis]
-    C -.-> D[Background Process]
-    D --> E[LLM Feedback]
-    E --> F[TTS Synthesis]
-    F --> G[Audio Response]
+```
+Handler (HTTP) → Service (Business Logic) → Repository (Data Access) → GORM → PostgreSQL
 ```
 
-- LLM feedback generation runs in background
-- TTS synthesis is fire-and-forget
-- No blocking of the frame processing pipeline
+- **Handler**: Parses HTTP requests, validates input, calls service, returns JSON
+- **Service**: Business rules, authorization checks, cross-cutting concerns
+- **Repository**: Database queries via GORM, no business logic
+- **Model**: GORM structs with table mappings and relationships
+- **DTO**: Request/response types, decoupled from models
 
-### WebSocket Protocol
+## Key Design Decisions
 
-- Client sends video frames
-- Server returns keypoints
-- Skeleton drawn on client side for smooth 20+ FPS experience
+### Embedded Admin Panel
 
-### Data Flow
+The admin panel is a single HTML file (`internal/admin/admin.html`) using Tailwind CSS CDN and Alpine.js. It's embedded into the Go binary via `go:embed`, requiring no separate frontend build or deployment.
 
-```mermaid
-flowchart TB
-    subgraph Frontend[Frontend - Next.js]
-        UI[Web App]
-    end
+### Authentication
 
-    subgraph Backend[Backend - FastAPI]
-        Auth
-        Chat
-        Community
-        Coach
-        Guardian
-    end
+- JWT access tokens (30 min) + refresh tokens (7 days)
+- Tokens extracted from `Authorization: Bearer`, `X-Access-Token` header, or `access_token` cookie
+- Admin role verified per-request in handler via `authService.GetUserByID`
 
-    subgraph External[External Services]
-        DB[(SQLite)]
-        LLM[ModelScope]
-        Search[Firecrawl]
-    end
+### Content Moderation
 
-    Frontend <-->|REST / WebSocket| Backend
-    Backend <-->|SQL / HTTP API| External
+- Keyword-based detection with categories (pseudoscience, violence, self-harm, spam)
+- Crisis keywords trigger auto-rejection
+- Results: Passed / Rejected / NeedManualReview
+
+## Data Flow
+
+```
+Frontend (Vue 3 / Vite)
+    ↕ REST API (JSON)
+Backend (Go / Gin)
+    ↕ GORM
+PostgreSQL
+    ↕ HTTP
+OpenAI-compatible LLM
 ```
 
 ---
