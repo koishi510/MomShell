@@ -2,7 +2,7 @@
         lint lint-backend lint-frontend format format-backend format-frontend \
         typecheck typecheck-backend typecheck-frontend build build-frontend \
         docker-up docker-down docker-logs docker-build docker-build-backend docker-build-frontend \
-        db-reset deps-lock deps-update clean clean-all help
+        postgres-up postgres-down postgres-logs db-reset deps-lock deps-update clean clean-all help
 
 # Colors for terminal output
 CYAN := \033[36m
@@ -17,7 +17,7 @@ install: install-backend install-frontend ## Install all dependencies
 
 install-backend: ## Install backend dependencies
 	@echo "$(CYAN)Installing backend dependencies...$(RESET)"
-	cd backend && uv sync
+	cd backend.new && go mod download
 
 install-frontend: ## Install frontend dependencies
 	@echo "$(CYAN)Installing frontend dependencies...$(RESET)"
@@ -39,9 +39,9 @@ dev-tmux: ## Start both servers in tmux split panes
 		split-window -h 'make dev-frontend' \; \
 		attach
 
-dev-backend: ## Start backend development server
+dev-backend: postgres-up ## Start backend development server
 	@echo "$(CYAN)Starting backend server on http://localhost:8000$(RESET)"
-	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend.new && go run cmd/server/main.go
 
 dev-frontend: ## Start frontend development server (frontend.new)
 	@echo "$(CYAN)Starting frontend server on http://localhost:3000$(RESET)"
@@ -52,9 +52,9 @@ dev-frontend: ## Start frontend development server (frontend.new)
 lint: lint-backend lint-frontend ## Run all linters
 	@echo "$(GREEN)All linting passed$(RESET)"
 
-lint-backend: ## Run backend linter (ruff)
+lint-backend: ## Run backend linter (go vet)
 	@echo "$(CYAN)Linting backend...$(RESET)"
-	cd backend && uv run ruff check .
+	cd backend.new && go vet ./...
 
 lint-frontend: ## Run frontend linter (eslint)
 	@echo "$(CYAN)Linting frontend...$(RESET)"
@@ -63,10 +63,9 @@ lint-frontend: ## Run frontend linter (eslint)
 format: format-backend format-frontend ## Format all code
 	@echo "$(GREEN)All code formatted$(RESET)"
 
-format-backend: ## Format backend code (ruff)
+format-backend: ## Format backend code (go fmt)
 	@echo "$(CYAN)Formatting backend...$(RESET)"
-	cd backend && uv run ruff format .
-	cd backend && uv run ruff check . --fix
+	cd backend.new && go fmt ./...
 
 format-frontend: ## Format frontend code (prettier)
 	@echo "$(CYAN)Formatting frontend...$(RESET)"
@@ -75,9 +74,9 @@ format-frontend: ## Format frontend code (prettier)
 typecheck: typecheck-backend typecheck-frontend ## Run all type checkers
 	@echo "$(GREEN)All type checks passed$(RESET)"
 
-typecheck-backend: ## Run backend type checker (mypy)
+typecheck-backend: ## Run backend checks (compile test only)
 	@echo "$(CYAN)Type checking backend...$(RESET)"
-	cd backend && uv run mypy app/
+	cd backend.new && go test ./... -run '^$$'
 
 typecheck-frontend: ## Run frontend type checker (tsc)
 	@echo "$(CYAN)Type checking frontend...$(RESET)"
@@ -111,7 +110,7 @@ docker-build: ## Build combined Docker image (single container)
 
 docker-build-backend: ## Build backend Docker image
 	@echo "$(CYAN)Building backend Docker image...$(RESET)"
-	docker build -t momshell-backend backend/
+	docker build -t momshell-backend backend.new/
 
 docker-build-frontend: ## Build frontend Docker image
 	@echo "$(CYAN)Building frontend Docker image...$(RESET)"
@@ -119,23 +118,41 @@ docker-build-frontend: ## Build frontend Docker image
 
 ##@ Database
 
-db-reset: ## Reset database (delete and recreate)
+postgres-up: ## Start local PostgreSQL (systemd)
+	@echo "$(CYAN)Ensuring local PostgreSQL is running on localhost:5432...$(RESET)"
+	@if pg_isready -q 2>/dev/null; then \
+		echo "$(GREEN)PostgreSQL is already running$(RESET)"; \
+	else \
+		echo "$(YELLOW)Starting PostgreSQL via systemctl...$(RESET)"; \
+		sudo systemctl start postgresql; \
+		until pg_isready -q 2>/dev/null; do sleep 1; done; \
+		echo "$(GREEN)PostgreSQL is ready$(RESET)"; \
+	fi
+
+postgres-down: ## Stop local PostgreSQL (systemd)
+	@echo "$(CYAN)Stopping local PostgreSQL...$(RESET)"
+	@sudo systemctl stop postgresql
+	@echo "$(GREEN)PostgreSQL stopped$(RESET)"
+
+postgres-logs: ## Show local PostgreSQL logs
+	@journalctl -u postgresql -f
+
+db-reset: postgres-up ## Reset PostgreSQL schema (drop and recreate public schema)
 	@echo "$(YELLOW)Resetting database...$(RESET)"
-	rm -f backend/data/momshell.db
+	psql -U user -d momshell -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
 	@echo "$(GREEN)Database reset. It will be recreated on next server start.$(RESET)"
 
 ##@ Dependencies
 
-deps-lock: ## Lock backend dependencies and export requirements.txt
+deps-lock: ## Sync backend dependencies
 	@echo "$(CYAN)Locking dependencies...$(RESET)"
-	cd backend && uv lock
-	cd backend && uv export > requirements.txt
+	cd backend.new && go mod tidy
 	@echo "$(GREEN)Dependencies locked$(RESET)"
 
 deps-update: ## Update all dependencies
 	@echo "$(CYAN)Updating backend dependencies...$(RESET)"
-	cd backend && uv lock --upgrade
-	cd backend && uv export > requirements.txt
+	cd backend.new && go get -u ./...
+	cd backend.new && go mod tidy
 	@echo "$(CYAN)Updating frontend dependencies...$(RESET)"
 	cd frontend && npm update
 	@echo "$(GREEN)All dependencies updated$(RESET)"
@@ -144,15 +161,15 @@ deps-update: ## Update all dependencies
 
 clean: ## Clean all caches and temporary files
 	@echo "$(CYAN)Cleaning caches...$(RESET)"
-	rm -rf backend/.mypy_cache backend/.ruff_cache backend/.pytest_cache backend/__pycache__
+	rm -rf backend.new/bin backend.new/.cache
 	rm -rf frontend/.next frontend/node_modules/.cache
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@echo "$(GREEN)Caches cleaned$(RESET)"
 
-clean-all: clean ## Clean everything including node_modules and .venv
-	@echo "$(YELLOW)Removing node_modules and .venv...$(RESET)"
-	rm -rf frontend/node_modules backend/.venv
+clean-all: clean ## Clean everything including node_modules
+	@echo "$(YELLOW)Removing node_modules...$(RESET)"
+	rm -rf frontend/node_modules
 	@echo "$(GREEN)All cleaned$(RESET)"
 
 ##@ Help
