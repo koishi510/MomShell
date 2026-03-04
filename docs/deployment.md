@@ -1,10 +1,6 @@
 # Docker Deployment
 
-Deploy MomShell with Docker for production environments.
-
 ## Prerequisites
-
-### Install Docker
 
 ```bash
 # Arch Linux
@@ -13,94 +9,46 @@ sudo pacman -S docker docker-compose
 # Ubuntu/Debian
 sudo apt install docker.io docker-compose
 
-# Start Docker daemon
 sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-## Quick Start
+## Backend Deployment
+
+The Go backend has its own Dockerfile (`backend/Dockerfile`):
 
 ```bash
-# 1. Configure environment
-cp .env.example .env
-# Edit .env, fill in MODELSCOPE_KEY (required)
+# Build
+make docker-build-backend
+# or: docker build -t momshell-backend backend/
 
-# 2. Start services
-cd deploy
-docker compose up -d --build
-
-# 3. Access the application
-open http://localhost:7860
-```
-
-## Docker Compose Deployment
-
-The recommended deployment method using `deploy/docker-compose.yml`:
-
-```bash
-cd deploy
-
-# Start all services
-docker compose up -d --build
-
-# View logs
-docker compose logs -f
-
-# Stop services
-docker compose down
+# Run
+docker run -d -p 8000:8000 --env-file .env momshell-backend
 ```
 
 ## Make Commands
 
-From the project root:
-
 ```bash
-make docker-up               # Build and start all containers
-make docker-down             # Stop all containers
-make docker-logs             # View container logs
-make docker-build-backend    # Build backend image only
-make docker-build-frontend   # Build frontend image only
+make docker-up               # Start all services (docker compose)
+make docker-down             # Stop all services
+make docker-logs             # View logs
+make docker-build-backend    # Build backend image
+make docker-build-frontend   # Build frontend image
 ```
-
-## Single Container Deployment
-
-For platforms like ModelScope or simpler deployments:
-
-```bash
-# Build combined image
-docker build -t momshell .
-
-# Run container
-docker run -d -p 7860:7860 --env-file .env momshell
-
-# Or use Make
-make docker-build
-```
-
-**Note**: Ensure `PORT` is commented out in `.env` (or not set) so the Dockerfile's `PORT=7860` takes effect.
-
-## Container Architecture
-
-### Multi-Container (docker-compose)
-
-- **backend**: FastAPI application
-- **frontend**: Next.js application
-- **nginx**: Reverse proxy
-
-### Single Container
-
-- Combined backend and frontend
-- Suitable for platforms with single-container requirements
-- Uses port 7860 by default
 
 ## Configuration
 
-See [Configuration](configuration.md) for environment variables.
+Key environment variables for deployment:
 
-Key variables for Docker:
-- `MODELSCOPE_KEY` - Required for AI services
-- `PORT` - Container port (default: 7860 for Docker)
-- `DATABASE_URL` - Database connection string
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET_KEY` | Secure random secret |
+| `OPENAI_API_KEY` | LLM API key |
+| `PORT` | Server port (default: 8000) |
+| `VITE_API_BASE_URL` | Leave empty when using Nginx proxy |
+
+See [Configuration](configuration.md) for the full reference.
 
 ---
 

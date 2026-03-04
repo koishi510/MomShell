@@ -1,127 +1,67 @@
 # Configuration
 
-Environment variables for configuring MomShell.
+Environment variables for configuring MomShell. Copy `.env.example` to `.env` and edit.
 
-## Environment Variables
-
-### Core Settings
+## Database
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `APP_NAME` | Application name | No | `MomShell` |
-| `DEBUG` | Enable debug mode | No | `false` |
-| `HOST` | Server host | No | `0.0.0.0` |
-| `PORT` | Server port | No | `8000` (local) / `7860` (Docker) |
+| `DATABASE_URL` | PostgreSQL connection string | **Yes** | — |
 
-### Database
+Format: `postgres://user:password@host:5432/dbname?sslmode=disable`
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `DATABASE_URL` | Database connection URL | No | `sqlite+aiosqlite:///./data/momshell.db` |
-
-Supported formats:
-- SQLite (local): `sqlite+aiosqlite:///./data/momshell.db`
-- SQLite (Docker): `sqlite+aiosqlite:////mnt/workspace/momshell.db`
-- PostgreSQL: `postgresql+asyncpg://user:pass@host:5432/dbname`
-
-### AI Services (ModelScope)
+## JWT Authentication
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `MODELSCOPE_KEY` | ModelScope API key | **Yes** | - |
-| `MODELSCOPE_MODEL` | Model for chat and feedback | No | `Qwen/Qwen2.5-72B-Instruct` |
-| `MODELSCOPE_IMAGE_MODEL` | Model for image generation | No | - |
+| `JWT_SECRET_KEY` | Secret key for JWT signing | **Yes** | — |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime | No | `30` |
+| `JWT_REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime | No | `7` |
 
-Get your API key from: https://modelscope.cn/
+The setup script auto-generates `JWT_SECRET_KEY`. Change it manually for production.
 
-### MediaPipe (Pose Detection)
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `MEDIAPIPE_MODEL` | Pose model type (`lite` or `full`) | No | `lite` |
-| `POSE_MODEL_COMPLEXITY` | Model complexity (0-2) | No | `1` |
-| `MIN_DETECTION_CONFIDENCE` | Detection confidence threshold | No | `0.5` |
-| `MIN_TRACKING_CONFIDENCE` | Tracking confidence threshold | No | `0.3` |
-
-### TTS (Text-to-Speech)
+## OpenAI Compatible API
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `TTS_VOICE` | Microsoft Edge TTS voice | No | `zh-CN-XiaoxiaoNeural` |
-| `TTS_RATE` | Speech rate adjustment | No | `-10%` |
+| `OPENAI_API_KEY` | API key for LLM service | **Yes** | — |
+| `OPENAI_BASE_URL` | API base URL | No | `https://api-inference.modelscope.cn/v1` |
+| `OPENAI_MODEL` | Model name | No | `Qwen/Qwen2.5-72B-Instruct` |
 
-Common Chinese voices:
-- `zh-CN-XiaoxiaoNeural` (default, female)
-- `zh-CN-YunxiNeural` (male)
-- `zh-CN-YunyangNeural` (male, news style)
+Any OpenAI-compatible API is supported (ModelScope, OpenAI, local Ollama, etc.).
 
-See [Edge TTS documentation](https://github.com/rany2/edge-tts) for all available voices.
-
-### Safety Thresholds
+## Server
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `MAX_DEVIATION_ANGLE` | Maximum allowed pose deviation (degrees) | No | `30.0` |
-| `FATIGUE_DETECTION_THRESHOLD` | Fatigue detection sensitivity | No | `0.7` |
-| `REST_PROMPT_INTERVAL` | Interval between rest prompts (seconds) | No | `300` |
+| `PORT` | HTTP server port | No | `8000` |
 
-### JWT Authentication
+## Frontend
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `JWT_SECRET_KEY` | Secret key for JWT signing | **Yes** (production) | `your-secret-key-change-in-production` |
-| `JWT_ALGORITHM` | JWT signing algorithm | No | `HS256` |
-| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Access token expiration | No | `30` |
-| `JWT_REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token expiration | No | `7` |
+| `VITE_API_BASE_URL` | Backend API URL for frontend | No | `http://localhost:8000` |
 
-**Important**: Change `JWT_SECRET_KEY` to a secure random value in production.
+Leave empty in production when using Nginx reverse proxy.
 
-### Web Search (Firecrawl)
+## Initial Admin Account
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `FIRECRAWL_API_KEY` | Firecrawl API key for web search | No | - |
+| `ADMIN_USERNAME` | Admin username | No | — |
+| `ADMIN_EMAIL` | Admin email | No | — |
+| `ADMIN_PASSWORD` | Admin password | No | — |
 
-Enables web search for fact-checked responses. Get your API key from: https://www.firecrawl.dev/
+Set all three to auto-create an admin on first startup. Skipped if the username or email already exists.
 
-### Initial Admin Account
+## Runtime Configuration
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `ADMIN_USERNAME` | Admin username | No | - |
-| `ADMIN_EMAIL` | Admin email | No | - |
-| `ADMIN_PASSWORD` | Admin password | No | - |
+The following can also be changed at runtime via the admin panel (`/admin` → System Config):
 
-Set these to automatically create an admin account on first startup.
+- `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`
+- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`, `JWT_REFRESH_TOKEN_EXPIRE_DAYS`
 
-## Setup
-
-1. Copy the example file:
-
-```bash
-cp .env.example .env
-```
-
-2. Edit `.env` and fill in required values:
-
-```bash
-# Required
-MODELSCOPE_KEY=your_modelscope_api_key_here
-
-# Required for production
-JWT_SECRET_KEY=your_secure_random_secret_key
-
-# Optional - customize as needed
-MODELSCOPE_MODEL=Qwen/Qwen2.5-72B-Instruct
-TTS_VOICE=zh-CN-XiaoxiaoNeural
-```
-
-## Important Notes
-
-- **Do not use quotes** around values in `.env` - Docker `--env-file` includes quotes literally
-- `MODELSCOPE_KEY` is required for Soul Companion and Recovery Coach features
-- For Docker deployment, leave `PORT` unset or commented out to use the default 7860
-- Always change `JWT_SECRET_KEY` in production environments
+Read-only in admin panel (requires restart): `DATABASE_URL`, `JWT_ALGORITHM`, `PORT`.
 
 ---
 
