@@ -66,14 +66,14 @@ type AdminUserUpdate struct {
 
 // DashboardStats holds statistics for the admin dashboard
 type DashboardStats struct {
-	TotalUsers      int64            `json:"total_users"`
-	ActiveUsers     int64            `json:"active_users"`
-	BannedUsers     int64            `json:"banned_users"`
-	GuestUsers      int64            `json:"guest_users"`
-	RoleDistribution map[string]int64 `json:"role_distribution"`
-	TotalQuestions  int64            `json:"total_questions"`
-	TotalAnswers    int64            `json:"total_answers"`
-	TotalCertifications int64        `json:"total_certifications"`
+	TotalUsers          int64            `json:"total_users"`
+	ActiveUsers         int64            `json:"active_users"`
+	BannedUsers         int64            `json:"banned_users"`
+	GuestUsers          int64            `json:"guest_users"`
+	RoleDistribution    map[string]int64 `json:"role_distribution"`
+	TotalQuestions      int64            `json:"total_questions"`
+	TotalAnswers        int64            `json:"total_answers"`
+	TotalCertifications int64            `json:"total_certifications"`
 }
 
 // ConfigItem represents a single configuration item

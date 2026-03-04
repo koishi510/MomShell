@@ -9,59 +9,13 @@ on:
       - "**"
 
 jobs:
-  python-cq:
-    name: Python Code Quality
-    runs-on: ubuntu-latest
-
-    if: |
-      (github.event_name == 'push' &&
-       !contains(github.event.head_commit.message, 'docs:') &&
-       !contains(github.event.head_commit.message, 'chore:') &&
-       !contains(github.event.head_commit.message, '[skip ci]')) ||
-      (github.event_name == 'pull_request' &&
-       !contains(github.event.pull_request.title, 'docs:') &&
-       !contains(github.event.pull_request.title, 'chore:') &&
-       !contains(github.event.pull_request.title, '[skip ci]'))
-
-    defaults:
-      run:
-        working-directory: backend
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: "backend/uv.lock"
-
-      - run: uv python install 3.11
-
-      - run: uv sync --frozen
-
-      - run: uv run ruff format --check .
-
-      - run: uv run ruff check . --output-format=github
-
-      - run: uv run mypy app/
-
   frontend-cq:
     name: Frontend Code Quality
     runs-on: ubuntu-latest
 
-    if: |
-      (github.event_name == 'push' &&
-       !contains(github.event.head_commit.message, 'docs:') &&
-       !contains(github.event.head_commit.message, 'chore:') &&
-       !contains(github.event.head_commit.message, '[skip ci]')) ||
-      (github.event_name == 'pull_request' &&
-       !contains(github.event.pull_request.title, 'docs:') &&
-       !contains(github.event.pull_request.title, 'chore:') &&
-       !contains(github.event.pull_request.title, '[skip ci]'))
-
     defaults:
       run:
-        working-directory: frontend
+        working-directory: frontend.new
 
     steps:
       - uses: actions/checkout@v6
@@ -74,15 +28,49 @@ jobs:
         with:
           node-version: ${{ steps.nvmrc.outputs.node_version }}
           cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: frontend.new/package-lock.json
 
       - run: npm ci
 
       - name: ESLint
         run: npm run lint
 
-      - name: TypeScript type check
+      - name: Type check
         run: npm run typecheck
 
       - name: Build
         run: npm run build
+
+  go-cq:
+    name: Go Code Quality
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend.new
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend.new/go.mod
+          cache-dependency-path: backend.new/go.sum
+
+      - name: Format check
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: backend.new
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...
