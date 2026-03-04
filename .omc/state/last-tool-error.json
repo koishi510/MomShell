@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"git checkout --ours .github/workflows/ci.yml .pre-commit-config.yaml && git add .github/workflows/ci.yml .pre-commit-config.yaml && git rebase --continue\",\"description\":\"Accept HEAD versio...",
+  "error": "Exit code 1\nUpdated 2 paths from the index\n[detached HEAD 0c9ded9] chore: update CI and hooks to target new frontend/backend only\n 24 files changed, 1448 insertions(+), 163 deletions(-)\n create mode 100644 frontend.new/.nvmrc\n create mode 100644 frontend.new/eslint.config.js\nRebasing (28/58)\rRebasing (29/58)\rAuto-merging .github/workflows/ci.yml\nCONFLICT (modify/delete): Dockerfile deleted in 80d65b5 (chore: remove legacy frontend/backend, rename .new dirs, rewrite config) and modified in HEAD. ...",
+  "timestamp": "2026-03-07T07:00:47.144Z",
+  "retry_count": 2
+}
