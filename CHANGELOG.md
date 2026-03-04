@@ -26,13 +26,16 @@ Complete rewrite of the backend (Python → Go) and frontend (Next.js → Vue 3)
   - Self-protection: prevents admin from demoting/banning/deleting themselves
 - **Community (Sisterhood Bond)**: Q&A with dual channels, verified professionals, likes, collections, comments
 - **Soul Companion**: AI chat with session persistence and conversation memory
+- **Echo / Memoir module**: Identity tags (music, sound, literature, memory) and AI-generated memoir stickers using Qwen3, SVG gradient covers, full CRUD with auth
 
 #### Vue 3 Frontend
 
 - **Tech stack**: Vue 3, Vite, TypeScript, Pinia, Axios
 - **Beach scene UI**: Parallax layers (sky, ocean, sand), wave animations, interactive elements
 - **Overlay system**: Auth, chat, community, profile panels
-- **User center**: Profile, stats, and settings
+- **Community panel**: Full backend API integration — question detail fetch, question/answer likes, bookmarks, nested comments, pagination, tag selection, hot posts tab
+- **Chat panel**: Session-based conversation continuity, visual effects from `visual_metadata` (5 animations + 7 color tones), memory update toast, personalized greeting from companion profile
+- **User center**: Inline nickname editing, 4-stat grid, tabbed my-questions/my-answers with pagination and status badges, change password form
 - **ESLint + vue-tsc**: Full lint and type checking configured
 
 #### Docker Deployment
@@ -80,6 +83,8 @@ Complete rewrite of the backend (Python → Go) and frontend (Next.js → Vue 3)
 - **Package name**: `beach-scene` → `momshell-frontend` v1.0.0
 - **Frontend port**: 3000 → 5173 (Vite default)
 - **API base URL**: Hardcoded → `import.meta.env.VITE_API_BASE_URL` with fallback
+- **Env loading**: `godotenv.Load()` → `godotenv.Overload()` so `.env` overrides shell environment
+- **OpenAI client**: Replaced go-openai library with raw HTTP client supporting Qwen3 `enable_thinking` field
 
 ### Removed
 
@@ -87,7 +92,6 @@ Complete rewrite of the backend (Python → Go) and frontend (Next.js → Vue 3)
 - Next.js frontend (React, Framer Motion)
 - Recovery Coach module (pose estimation, exercise library)
 - Guardian Partner module
-- Echo Domain module
 - Web search / Firecrawl integration
 - Chain-of-Verification (CoVe) service
 - Slider CAPTCHA
