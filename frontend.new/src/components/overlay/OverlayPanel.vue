@@ -4,7 +4,7 @@
       <div :class="['overlay-panel', `overlay-${position}`]">
         <button v-if="showClose" class="overlay-close" @click="$emit('close')" aria-label="关闭">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
           </svg>
         </button>
         <div class="overlay-content">

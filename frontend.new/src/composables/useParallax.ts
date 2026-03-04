@@ -44,7 +44,7 @@ export function useParallax() {
     })
   }
 
-  const { start: startLoop } = useAnimationLoop((_dt: number) => {
+  const { start: startLoop } = useAnimationLoop(() => {
     if (keys.ArrowLeft) targetOffset.value -= SCROLL_SPEED
     if (keys.ArrowRight) targetOffset.value += SCROLL_SPEED
     targetOffset.value = Math.max(-maxOffset.value, Math.min(maxOffset.value, targetOffset.value))

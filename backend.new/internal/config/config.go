@@ -48,7 +48,7 @@ func Load() *Config {
 		Port:                      getEnv("PORT", "8000"),
 		AdminUsername:             getEnv("ADMIN_USERNAME", ""),
 		AdminEmail:                getEnv("ADMIN_EMAIL", ""),
-		AdminPassword:            getEnv("ADMIN_PASSWORD", ""),
+		AdminPassword:             getEnv("ADMIN_PASSWORD", ""),
 	}
 
 	if cfg.JWTSecretKey == "change-me-in-production" {

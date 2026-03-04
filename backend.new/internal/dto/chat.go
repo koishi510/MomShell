@@ -22,12 +22,12 @@ type VisualResponse struct {
 
 // ChatProfile is the response body for chat profile
 type ChatProfile struct {
-	PreferredName        *string  `json:"preferred_name"`
-	HasPets              bool     `json:"has_pets"`
-	PetDetails           *string  `json:"pet_details"`
-	Interests            []string `json:"interests"`
-	Concerns             []string `json:"concerns"`
-	ImportantDates       []string `json:"important_dates"`
-	BabyAgeWeeks         *int     `json:"baby_age_weeks"`
+	PreferredName         *string  `json:"preferred_name"`
+	HasPets               bool     `json:"has_pets"`
+	PetDetails            *string  `json:"pet_details"`
+	Interests             []string `json:"interests"`
+	Concerns              []string `json:"concerns"`
+	ImportantDates        []string `json:"important_dates"`
+	BabyAgeWeeks          *int     `json:"baby_age_weeks"`
 	CommunityInteractions []string `json:"community_interactions"`
 }
