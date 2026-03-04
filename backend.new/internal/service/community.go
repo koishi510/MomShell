@@ -52,10 +52,10 @@ func (s *CommunityService) IsCertifiedProfessional(user *model.User) bool {
 
 func (s *CommunityService) BuildAuthorInfo(user *model.User) dto.AuthorInfo {
 	info := dto.AuthorInfo{
-		ID:       user.ID,
-		Nickname: user.Nickname,
+		ID:        user.ID,
+		Nickname:  user.Nickname,
 		AvatarURL: user.AvatarURL,
-		Role:     string(user.Role),
+		Role:      string(user.Role),
 	}
 
 	if user.Certification != nil && user.Certification.Status == model.CertApproved {

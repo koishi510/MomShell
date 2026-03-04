@@ -1,4 +1,4 @@
-import { inject, onMounted, type Ref } from 'vue'
+import { inject } from 'vue'
 import { PARALLAX_KEY, type ParallaxContext } from './useParallax'
 
 export function useInputHandler() {

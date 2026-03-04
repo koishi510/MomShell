@@ -43,50 +43,50 @@ func (p *QuestionListParams) GetOrder() string {
 
 // QuestionListItem is a single question in list responses
 type QuestionListItem struct {
-	ID                string      `json:"id"`
-	Title             string      `json:"title"`
-	ContentPreview    string      `json:"content_preview"`
-	Channel           string      `json:"channel"`
-	Author            AuthorInfo  `json:"author"`
-	Tags              []TagInfo   `json:"tags"`
-	ViewCount         int         `json:"view_count"`
-	AnswerCount       int         `json:"answer_count"`
-	LikeCount         int         `json:"like_count"`
-	CollectionCount   int         `json:"collection_count"`
-	IsPinned          bool        `json:"is_pinned"`
-	IsFeatured        bool        `json:"is_featured"`
-	HasAcceptedAnswer bool        `json:"has_accepted_answer"`
-	IsLiked           bool        `json:"is_liked"`
-	IsCollected       bool        `json:"is_collected"`
-	CreatedAt         time.Time   `json:"created_at"`
+	ID                string     `json:"id"`
+	Title             string     `json:"title"`
+	ContentPreview    string     `json:"content_preview"`
+	Channel           string     `json:"channel"`
+	Author            AuthorInfo `json:"author"`
+	Tags              []TagInfo  `json:"tags"`
+	ViewCount         int        `json:"view_count"`
+	AnswerCount       int        `json:"answer_count"`
+	LikeCount         int        `json:"like_count"`
+	CollectionCount   int        `json:"collection_count"`
+	IsPinned          bool       `json:"is_pinned"`
+	IsFeatured        bool       `json:"is_featured"`
+	HasAcceptedAnswer bool       `json:"has_accepted_answer"`
+	IsLiked           bool       `json:"is_liked"`
+	IsCollected       bool       `json:"is_collected"`
+	CreatedAt         time.Time  `json:"created_at"`
 }
 
 // QuestionDetail is the full question detail
 type QuestionDetail struct {
-	ID                      string      `json:"id"`
-	Title                   string      `json:"title"`
-	Content                 string      `json:"content"`
-	ContentPreview          string      `json:"content_preview"`
-	Channel                 string      `json:"channel"`
-	Status                  string      `json:"status"`
-	Author                  AuthorInfo  `json:"author"`
-	Tags                    []TagInfo   `json:"tags"`
-	ImageURLs               []string    `json:"image_urls"`
-	ViewCount               int         `json:"view_count"`
-	AnswerCount             int         `json:"answer_count"`
-	LikeCount               int         `json:"like_count"`
-	CollectionCount         int         `json:"collection_count"`
-	IsPinned                bool        `json:"is_pinned"`
-	IsFeatured              bool        `json:"is_featured"`
-	HasAcceptedAnswer       bool        `json:"has_accepted_answer"`
-	AcceptedAnswerID        *string     `json:"accepted_answer_id"`
-	IsLiked                 bool        `json:"is_liked"`
-	IsCollected             bool        `json:"is_collected"`
-	ProfessionalAnswerCount int         `json:"professional_answer_count"`
-	ExperienceAnswerCount   int         `json:"experience_answer_count"`
-	CreatedAt               time.Time   `json:"created_at"`
-	UpdatedAt               time.Time   `json:"updated_at"`
-	PublishedAt             *time.Time  `json:"published_at"`
+	ID                      string     `json:"id"`
+	Title                   string     `json:"title"`
+	Content                 string     `json:"content"`
+	ContentPreview          string     `json:"content_preview"`
+	Channel                 string     `json:"channel"`
+	Status                  string     `json:"status"`
+	Author                  AuthorInfo `json:"author"`
+	Tags                    []TagInfo  `json:"tags"`
+	ImageURLs               []string   `json:"image_urls"`
+	ViewCount               int        `json:"view_count"`
+	AnswerCount             int        `json:"answer_count"`
+	LikeCount               int        `json:"like_count"`
+	CollectionCount         int        `json:"collection_count"`
+	IsPinned                bool       `json:"is_pinned"`
+	IsFeatured              bool       `json:"is_featured"`
+	HasAcceptedAnswer       bool       `json:"has_accepted_answer"`
+	AcceptedAnswerID        *string    `json:"accepted_answer_id"`
+	IsLiked                 bool       `json:"is_liked"`
+	IsCollected             bool       `json:"is_collected"`
+	ProfessionalAnswerCount int        `json:"professional_answer_count"`
+	ExperienceAnswerCount   int        `json:"experience_answer_count"`
+	CreatedAt               time.Time  `json:"created_at"`
+	UpdatedAt               time.Time  `json:"updated_at"`
+	PublishedAt             *time.Time `json:"published_at"`
 }
 
 // MyQuestionListItem is for the user's own questions list (includes status)

@@ -57,9 +57,9 @@ type ChatService struct {
 	client   *openai.Client
 	chatRepo *repository.ChatRepo
 	// In-memory storage for guest sessions
-	mu             sync.RWMutex
-	guestMemory    map[string][]map[string]interface{}
-	guestProfiles  map[string]map[string]interface{}
+	mu            sync.RWMutex
+	guestMemory   map[string][]map[string]interface{}
+	guestProfiles map[string]map[string]interface{}
 }
 
 func NewChatService(client *openai.Client, chatRepo *repository.ChatRepo) *ChatService {
@@ -173,9 +173,9 @@ func (s *ChatService) GetProfile(userID string) (*dto.ChatProfile, error) {
 	mem, err := s.chatRepo.FindByUserID(userID)
 	if err != nil {
 		return &dto.ChatProfile{
-			Interests:            []string{},
-			Concerns:             []string{},
-			ImportantDates:       []string{},
+			Interests:             []string{},
+			Concerns:              []string{},
+			ImportantDates:        []string{},
 			CommunityInteractions: []string{},
 		}, nil
 	}
@@ -190,9 +190,9 @@ func (s *ChatService) GetGuestProfile(sessionID string) *dto.ChatProfile {
 	s.mu.RUnlock()
 	if !ok {
 		return &dto.ChatProfile{
-			Interests:            []string{},
-			Concerns:             []string{},
-			ImportantDates:       []string{},
+			Interests:             []string{},
+			Concerns:              []string{},
+			ImportantDates:        []string{},
 			CommunityInteractions: []string{},
 		}
 	}
@@ -378,9 +378,9 @@ func buildVisualResponse(parsed map[string]interface{}, memoryUpdated bool) *dto
 
 func profileToDTO(profile map[string]interface{}) *dto.ChatProfile {
 	cp := &dto.ChatProfile{
-		Interests:            []string{},
-		Concerns:             []string{},
-		ImportantDates:       []string{},
+		Interests:             []string{},
+		Concerns:              []string{},
+		ImportantDates:        []string{},
 		CommunityInteractions: []string{},
 	}
 
