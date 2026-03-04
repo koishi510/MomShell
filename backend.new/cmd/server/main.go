@@ -69,6 +69,10 @@ func main() {
 		interactionRepo, communityService,
 	)
 
+	// Initialize admin layer
+	adminRepo := repository.NewAdminRepo(db)
+	adminService := service.NewAdminService(cfg, adminRepo, userRepo)
+
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
 	questionHandler := handler.NewQuestionHandler(communityService, authService)
@@ -78,6 +82,7 @@ func main() {
 	tagHandler := handler.NewTagHandler(communityService)
 	chatHandler := handler.NewChatHandler(chatService)
 	userHandler := handler.NewUserHandler(userService)
+	adminHandler := handler.NewAdminHandler(adminService, authService)
 
 	// Setup Gin
 	r := gin.New()
@@ -90,7 +95,7 @@ func main() {
 		r, cfg,
 		authHandler, questionHandler, answerHandler,
 		commentHandler, interactionHandler, tagHandler,
-		chatHandler, userHandler,
+		chatHandler, userHandler, adminHandler,
 	)
 
 	// Start server
