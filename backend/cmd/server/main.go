@@ -45,6 +45,7 @@ func main() {
 	interactionRepo := repository.NewInteractionRepo(db)
 	tagRepo := repository.NewTagRepo(db)
 	chatRepo := repository.NewChatRepo(db)
+	echoRepo := repository.NewEchoRepo(db)
 
 	// Initialize services
 	moderationService := service.NewModerationService()
@@ -63,6 +64,7 @@ func main() {
 		chatClient = openai.NewClient("dummy", cfg.OpenAIBaseURL, cfg.OpenAIModel)
 	}
 	chatService := service.NewChatService(chatClient, chatRepo)
+	echoService := service.NewEchoService(chatClient, echoRepo)
 
 	userService := service.NewUserService(
 		db, userRepo, questionRepo, answerRepo,
@@ -81,6 +83,7 @@ func main() {
 	interactionHandler := handler.NewInteractionHandler(communityService)
 	tagHandler := handler.NewTagHandler(communityService)
 	chatHandler := handler.NewChatHandler(chatService)
+	echoHandler := handler.NewEchoHandler(echoService)
 	userHandler := handler.NewUserHandler(userService)
 	adminHandler := handler.NewAdminHandler(adminService, authService)
 
@@ -95,7 +98,7 @@ func main() {
 		r, cfg,
 		authHandler, questionHandler, answerHandler,
 		commentHandler, interactionHandler, tagHandler,
-		chatHandler, userHandler, adminHandler,
+		chatHandler, echoHandler, userHandler, adminHandler,
 	)
 
 	// Start server
