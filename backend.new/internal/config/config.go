@@ -1,0 +1,78 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	// Database
+	DatabaseURL string
+
+	// JWT
+	JWTSecretKey              string
+	JWTAlgorithm              string
+	JWTAccessTokenExpireMin   int
+	JWTRefreshTokenExpireDays int
+
+	// OpenAI compatible API
+	OpenAIAPIKey  string
+	OpenAIBaseURL string
+	OpenAIModel   string
+
+	// Server
+	Port string
+
+	// Admin
+	AdminUsername string
+	AdminEmail    string
+	AdminPassword string
+}
+
+func Load() *Config {
+	// Try loading .env file (ignore error if not found)
+	_ = godotenv.Load()
+
+	cfg := &Config{
+		DatabaseURL:               getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/momshell?sslmode=disable"),
+		JWTSecretKey:              getEnv("JWT_SECRET_KEY", "change-me-in-production"),
+		JWTAlgorithm:              "HS256",
+		JWTAccessTokenExpireMin:   getEnvInt("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 30),
+		JWTRefreshTokenExpireDays: getEnvInt("JWT_REFRESH_TOKEN_EXPIRE_DAYS", 7),
+		OpenAIAPIKey:              getEnv("OPENAI_API_KEY", ""),
+		OpenAIBaseURL:             getEnv("OPENAI_BASE_URL", "https://api-inference.modelscope.cn/v1"),
+		OpenAIModel:               getEnv("OPENAI_MODEL", "Qwen/Qwen2.5-72B-Instruct"),
+		Port:                      getEnv("PORT", "8000"),
+		AdminUsername:             getEnv("ADMIN_USERNAME", ""),
+		AdminEmail:                getEnv("ADMIN_EMAIL", ""),
+		AdminPassword:            getEnv("ADMIN_PASSWORD", ""),
+	}
+
+	if cfg.JWTSecretKey == "change-me-in-production" {
+		fmt.Println("[WARN] Using default JWT secret key. Set JWT_SECRET_KEY in production!")
+	}
+
+	return cfg
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return i
+}
