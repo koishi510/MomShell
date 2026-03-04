@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# MomShell 开发环境初始化脚本
-# 用法: ./scripts/dev-setup.sh
+# MomShell Development Environment Setup
+# Usage: ./scripts/dev-setup.sh
 #
 
 set -e
@@ -25,141 +25,141 @@ check() { command -v "$1" &>/dev/null; }
 
 echo -e "${BLUE}"
 echo "╔════════════════════════════════════════════╗"
-echo "║         MomShell 开发环境初始化            ║"
+echo "║       MomShell Development Setup           ║"
 echo "╚════════════════════════════════════════════╝"
 echo -e "${NC}"
 
 # ============================================
-# 1. 检查依赖
+# 1. Check dependencies
 # ============================================
-echo -e "${BLUE}=== 1. 检查系统依赖 ===${NC}"
+echo -e "${BLUE}=== 1. Check System Dependencies ===${NC}"
 
 MISSING=()
 
 if check go; then
     success "Go $(go version | awk '{print $3}')"
 else
-    fail "Go 未安装"; MISSING+=("go")
-    echo "  安装: https://go.dev/dl/"
+    fail "Go not installed"; MISSING+=("go")
+    echo "  Install: https://go.dev/dl/"
 fi
 
 if check node; then
     success "Node $(node -v)"
 else
-    fail "Node 未安装"; MISSING+=("node")
-    echo "  安装: nvm install (读取 frontend/.nvmrc)"
+    fail "Node not installed"; MISSING+=("node")
+    echo "  Install: nvm install (reads frontend/.nvmrc)"
 fi
 
 if check npm; then
     success "npm $(npm -v)"
 else
-    fail "npm 未安装"; MISSING+=("npm")
+    fail "npm not installed"; MISSING+=("npm")
 fi
 
 if check git; then
     success "git $(git --version | awk '{print $3}')"
 else
-    fail "git 未安装"; MISSING+=("git")
+    fail "git not installed"; MISSING+=("git")
 fi
 
 if check psql; then
-    success "PostgreSQL 客户端已安装"
+    success "PostgreSQL client installed"
 else
-    warn "psql 未安装（可选，用于数据库管理）"
+    warn "psql not installed (optional, for database management)"
 fi
 
 if [ ${#MISSING[@]} -gt 0 ]; then
     echo ""
-    fail "缺少必要依赖: ${MISSING[*]}"
+    fail "Missing required dependencies: ${MISSING[*]}"
     exit 1
 fi
 
 # ============================================
-# 2. 环境变量
+# 2. Environment variables
 # ============================================
 echo ""
-echo -e "${BLUE}=== 2. 配置环境变量 ===${NC}"
+echo -e "${BLUE}=== 2. Configure Environment Variables ===${NC}"
 
 if [ -f .env ]; then
-    success ".env 已存在"
+    success ".env already exists"
 else
     cp .env.example .env
     JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
     sed -i "s/change-me-in-production/$JWT_SECRET/" .env
-    success "已从 .env.example 创建 .env（JWT 密钥已自动生成）"
-    warn "请编辑 .env 填入 OPENAI_API_KEY 和数据库配置"
+    success "Created .env from .env.example (JWT secret auto-generated)"
+    warn "Please edit .env to set OPENAI_API_KEY and database config"
 fi
 
 # ============================================
-# 3. 后端 (Go)
+# 3. Backend (Go)
 # ============================================
 echo ""
-echo -e "${BLUE}=== 3. 初始化后端 (Go) ===${NC}"
+echo -e "${BLUE}=== 3. Initialize Backend (Go) ===${NC}"
 
-info "下载 Go 依赖..."
+info "Downloading Go dependencies..."
 cd backend && go mod download && cd "$PROJECT_ROOT"
-success "后端依赖已安装"
+success "Backend dependencies installed"
 
 # ============================================
-# 4. 前端 (Vue)
+# 4. Frontend (Vue)
 # ============================================
 echo ""
-echo -e "${BLUE}=== 4. 初始化前端 (Vue) ===${NC}"
+echo -e "${BLUE}=== 4. Initialize Frontend (Vue) ===${NC}"
 
-info "安装 npm 依赖..."
+info "Installing npm dependencies..."
 cd frontend && npm install && cd "$PROJECT_ROOT"
-success "前端依赖已安装"
+success "Frontend dependencies installed"
 
 # ============================================
-# 5. Pre-commit 钩子
+# 5. Pre-commit hooks
 # ============================================
 echo ""
-echo -e "${BLUE}=== 5. 安装 pre-commit 钩子 ===${NC}"
+echo -e "${BLUE}=== 5. Install Pre-commit Hooks ===${NC}"
 
 if check pre-commit; then
     pre-commit install
-    success "pre-commit 钩子已安装"
+    success "Pre-commit hooks installed"
 else
-    warn "pre-commit 未安装，跳过钩子安装"
-    echo "  安装: pip install pre-commit && pre-commit install"
+    warn "pre-commit not installed, skipping hook setup"
+    echo "  Install: pip install pre-commit && pre-commit install"
 fi
 
 # ============================================
-# 6. 验证
+# 6. Verify
 # ============================================
 echo ""
-echo -e "${BLUE}=== 6. 验证 ===${NC}"
+echo -e "${BLUE}=== 6. Verify ===${NC}"
 
 if cd backend && go build ./... 2>/dev/null; then
-    success "后端编译通过"
+    success "Backend build passed"
 else
-    warn "后端编译失败（可能缺少数据库配置）"
+    warn "Backend build failed (database config may be missing)"
 fi
 cd "$PROJECT_ROOT"
 
 if [ -d frontend/node_modules ]; then
-    success "前端 node_modules 已安装"
+    success "Frontend node_modules installed"
 else
-    warn "前端 node_modules 未找到"
+    warn "Frontend node_modules not found"
 fi
 
 # ============================================
-# 完成
+# Done
 # ============================================
 echo ""
 echo -e "${GREEN}"
 echo "╔════════════════════════════════════════════╗"
-echo "║              初始化完成!                   ║"
+echo "║            Setup Complete!                 ║"
 echo "╚════════════════════════════════════════════╝"
 echo -e "${NC}"
-echo "后续步骤:"
+echo "Next steps:"
 echo ""
-echo "  1. 编辑 .env 配置数据库和 API 密钥"
+echo "  1. Edit .env to configure database and API keys"
 echo ""
-echo "  2. 启动开发服务器:"
-echo "     make dev-backend    # 后端  http://localhost:8000"
-echo "     make dev-frontend   # 前端  http://localhost:3000"
-echo "     make dev-tmux       # 或用 tmux 同时启动"
+echo "  2. Start development servers:"
+echo "     make dev-backend    # Backend  http://localhost:8000"
+echo "     make dev-frontend   # Frontend http://localhost:5173"
+echo "     make dev-tmux       # Or both in tmux"
 echo ""
-echo "  3. 访问管理面板: http://localhost:8000/admin"
+echo "  3. Admin panel: http://localhost:8000/admin"
 echo ""
