@@ -5,6 +5,95 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-03-05
+
+### Major Rewrite
+
+Complete rewrite of the backend (Python → Go) and frontend (Next.js → Vue 3). The old codebase has been archived.
+
+### Added
+
+#### Go Backend
+
+- **Tech stack**: Go 1.23, Gin, GORM, PostgreSQL, JWT (golang-jwt), OpenAI SDK
+- **Architecture**: Handler → Service → Repository layered design
+- **Authentication**: JWT access tokens (30 min) + refresh tokens (7 days), multi-source token extraction (header, cookie)
+- **Content moderation**: Keyword-based detection with categories (pseudoscience, violence, self-harm, spam), crisis keyword auto-rejection
+- **Embedded admin panel** (`/admin`): Single-file HTML (Tailwind CSS + Alpine.js) via `go:embed`
+  - Dashboard with user stats and role distribution
+  - User management: search, filter, paginate, create, edit (role/status), delete
+  - Runtime config management: view and edit API keys, token expiration (mutex-protected)
+  - Self-protection: prevents admin from demoting/banning/deleting themselves
+- **Community (Sisterhood Bond)**: Q&A with dual channels, verified professionals, likes, collections, comments
+- **Soul Companion**: AI chat with session persistence and conversation memory
+
+#### Vue 3 Frontend
+
+- **Tech stack**: Vue 3, Vite, TypeScript, Pinia, Axios
+- **Beach scene UI**: Parallax layers (sky, ocean, sand), wave animations, interactive elements
+- **Overlay system**: Auth, chat, community, profile panels
+- **User center**: Profile, stats, and settings
+- **ESLint + vue-tsc**: Full lint and type checking configured
+
+#### Docker Deployment
+
+- **Root Dockerfile**: Multi-stage build (Node → Go → Nginx Alpine), frontend + backend in single image
+- **docker-compose**: App container (Nginx + Go) + PostgreSQL 16 with health checks and data volume
+- **Nginx config**: SPA fallback, gzip, static asset caching, `/api/` and `/admin` reverse proxy to backend
+- **Entrypoint script**: Starts Go backend in background + Nginx in foreground
+
+#### Developer Experience
+
+- **dev-setup.sh**: Interactive setup script
+  - Auto-detects package manager (pacman/apt/dnf/brew) and offers to install missing dependencies
+  - PostgreSQL setup: start service, create user and database, verify connection
+  - Interactive environment variable configuration with sensible defaults
+  - Auto-generates JWT secret, auto-fills DATABASE_URL from PostgreSQL step
+  - Installs Go/npm dependencies, pre-commit hooks, verifies build
+- **Pre-commit hooks**: gofmt, go vet, go build, ESLint, vue-tsc, trailing whitespace, YAML validation
+- **GitHub Actions CI**: Go (gofmt, vet, golangci-lint, build, test) + Vue (ESLint, typecheck, build)
+- **Makefile**: Unified commands for dev, lint, typecheck, build, docker, postgres, deps, clean
+- **Frontend Makefile**: Standalone dev/build/lint/typecheck/docker commands
+
+#### Configuration
+
+- **`.env.example`**: Full environment template with English comments
+  - Database, JWT, OpenAI, server, frontend, Docker Postgres, initial admin settings
+  - Separate local/Docker DATABASE_URL examples
+- **`.env` auto-generation**: dev-setup.sh creates `.env` interactively with all variables
+
+#### Documentation
+
+- **README.md**: Project overview with Go/Vue/TypeScript badges
+- **docs/architecture.md**: Tech stack, project structure, architecture layers, design decisions
+- **docs/getting-started.md**: Prerequisites, setup, first run
+- **docs/development.md**: Dev workflow, make commands
+- **docs/configuration.md**: All environment variables with descriptions
+- **docs/deployment.md**: Docker quick start, architecture diagram, compose setup
+- **docs/features.md**: Soul Companion, Sisterhood Bond, Admin Panel
+- **CONTRIBUTING.md**: Go/Vue code standards, hooks, commit conventions, branch workflow
+
+### Changed
+
+- **Backend language**: Python (FastAPI/SQLAlchemy) → Go (Gin/GORM)
+- **Frontend framework**: Next.js (React) → Vue 3 (Vite)
+- **Package name**: `beach-scene` → `momshell-frontend` v1.0.0
+- **Frontend port**: 3000 → 5173 (Vite default)
+- **API base URL**: Hardcoded → `import.meta.env.VITE_API_BASE_URL` with fallback
+
+### Removed
+
+- Python backend (FastAPI, SQLAlchemy, LangGraph, MediaPipe)
+- Next.js frontend (React, Framer Motion)
+- Recovery Coach module (pose estimation, exercise library)
+- Guardian Partner module
+- Echo Domain module
+- Web search / Firecrawl integration
+- Chain-of-Verification (CoVe) service
+- Slider CAPTCHA
+
+---
+
 ## [0.6.0] - 2026-02-09
 
 ### Added
