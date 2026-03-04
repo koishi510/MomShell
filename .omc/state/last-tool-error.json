@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"git rm -f deploy/docker-compose.yml && git rebase --continue\",\"description\":\"Remove deploy file and continue rebase\"}",
-  "error": "Exit code 1\nrm 'deploy/docker-compose.yml'\nYou must edit all merge conflicts and then\nmark them as resolved using git add\n\nrm 'deploy/docker-compose.yml'\nYou must edit all merge conflicts and then\nmark them as resolved using git add",
-  "timestamp": "2026-03-07T07:01:59.256Z",
-  "retry_count": 4
+  "tool_input_preview": "{\"command\":\"git add -A && git rebase --continue\",\"description\":\"Stage all and continue rebase\"}",
+  "error": "Exit code 1\n[detached HEAD fed810d] chore: remove deploy\n 3 files changed, 5 insertions(+), 39 deletions(-)\n delete mode 100644 deploy/docker-compose.yml\nRebasing (31/58)\rAuto-merging .env.example\nCONFLICT (content): Merge conflict in .env.example\nAuto-merging scripts/dev-setup.sh\nCONFLICT (content): Merge conflict in scripts/dev-setup.sh\nerror: could not apply 723b991... chore: rewrite .dockerignore, .env.example, dev-setup.sh for Go + Vue\nhint: Resolve all conflicts manually, mark them as reso...",
+  "timestamp": "2026-03-07T07:02:40.449Z",
+  "retry_count": 5
 }
