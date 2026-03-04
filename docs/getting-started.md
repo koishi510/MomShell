@@ -26,7 +26,7 @@ The setup script:
 
 ```bash
 make dev-backend    # Terminal 1 — http://localhost:8000
-make dev-frontend   # Terminal 2 — http://localhost:5173
+make dev-frontend   # Terminal 2 — http://localhost:3000
 
 # Or use tmux
 make dev-tmux
@@ -36,7 +36,7 @@ make dev-tmux
 
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost:5173 |
+| Frontend | http://localhost:3000 |
 | Backend API | http://localhost:8000 |
 | Admin Panel | http://localhost:8000/admin |
 
