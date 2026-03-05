@@ -16,6 +16,7 @@
           s.scaleY ? `scaleY(${s.scaleY})` : '',
         ].filter(Boolean).join(' ') || undefined,
       }"
+      draggable="false"
       @click="onSpriteClick(s.id)"
     />
   </div>
@@ -39,7 +40,8 @@ function isSpriteClickable(id: string): boolean {
 }
 
 function onSpriteClick(id: string) {
-  if (id === 'car') uiStore.openFeature('profile')
+  if (ctx.wasDrag()) return
+  if (id === 'car') uiStore.openFeature('car')
   else if (id.startsWith('shell')) uiStore.openFeature('memory')
   else if (id === 'bar') uiStore.openFeature('community')
   else if (id === 'stone') uiStore.openFeature('chat')
