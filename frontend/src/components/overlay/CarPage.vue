@@ -37,30 +37,24 @@
           <button class="profile-entry" @click="openProfile">
             个人资料
           </button>
+
+          <!-- Box 现在是 right-section 的一部分 -->
+          <div ref="boxRef" class="overflow-box" @click="openModal">
+            <img :src="boxImg" class="box-icon" alt="overflow box" />
+            <span v-if="overflowPhotos.length > 0" class="box-badge">{{ overflowPhotos.length }}</span>
+          </div>
         </div>
       </div>
 
-      <!-- BOTTOM: Overflow Box -->
-      <div
-        v-if="overflowPhotos.length > 0"
-        class="overflow-box"
-        @click="showOverflow = !showOverflow"
-      >
-        <img :src="boxImg" class="box-icon" alt="overflow box" />
-        <span class="box-badge">{{ overflowPhotos.length }}</span>
-      </div>
-
-      <!-- Overflow drawer -->
-      <Transition name="drawer">
-        <div v-if="showOverflow" class="overflow-drawer">
-          <div class="overflow-grid">
-            <img
-              v-for="p in overflowPhotos"
-              :key="p.id"
-              :src="p.cover_image_url!"
-              alt="memoir cover"
-              class="overflow-photo"
-            />
+      <!-- Modal 相册 -->
+      <Transition name="modal-zoom">
+        <div v-if="showOverflow" class="modal-overlay" @click.self="showOverflow = false">
+          <div class="modal-content" :style="modalOrigin">
+            <button class="modal-close" @click="showOverflow = false">✕</button>
+            <div v-if="overflowPhotos.length > 0" class="overflow-grid">
+              <img v-for="p in overflowPhotos" :key="p.id" :src="p.cover_image_url!" alt="memoir cover" class="overflow-photo" />
+            </div>
+            <div v-else class="modal-empty">暂无更多照片</div>
           </div>
         </div>
       </Transition>
@@ -81,6 +75,8 @@ const uiStore = useUiStore()
 
 const memoirs = ref<Memoir[]>([])
 const showOverflow = ref(false)
+const boxRef = ref<HTMLElement | null>(null)
+const modalOrigin = ref<Record<string, string>>({})
 
 const visible = computed(() => uiStore.activePanel === 'car')
 
@@ -100,6 +96,16 @@ function close() {
 
 function openProfile() {
   uiStore.openPanel('profile')
+}
+
+function openModal() {
+  if (boxRef.value) {
+    const rect = boxRef.value.getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + rect.height / 2
+    modalOrigin.value = { transformOrigin: `${x}px ${y}px` }
+  }
+  showOverflow.value = !showOverflow.value
 }
 
 watch(visible, async (isVisible) => {
@@ -262,26 +268,24 @@ watch(visible, async (isVisible) => {
   transform: scale(1.04);
 }
 
-/* ── Overflow Box (Bottom) ── */
+/* ── Overflow Box ── */
 .overflow-box {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  margin-top: 55px;
   cursor: pointer;
   transition: transform 0.2s;
 }
 
 .overflow-box:hover {
-  transform: translateX(-50%) scale(1.08);
+  transform: scale(1.08);
 }
 
 .box-icon {
-  width: 56px;
-  height: 56px;
+  width: 360px;
+  height: 360px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
@@ -304,23 +308,59 @@ watch(visible, async (isVisible) => {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* ── Overflow Drawer ── */
-.overflow-drawer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  max-height: 45vh;
-  background: rgba(30, 25, 20, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px 20px 0 0;
-  padding: 24px;
+/* ── Modal Overlay ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  position: relative;
+  width: 70vw;
+  max-height: 75vh;
+  background: rgba(40, 34, 28, 0.95);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px;
   overflow-y: auto;
-  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  padding: 48px 0;
 }
 
 .overflow-grid {
@@ -361,21 +401,22 @@ watch(visible, async (isVisible) => {
   transform: scale(0.97);
 }
 
-.drawer-enter-active {
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+/* macOS-like zoom animation */
+.modal-zoom-enter-active {
+  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.drawer-leave-active {
-  transition: transform 0.25s ease, opacity 0.2s ease;
+.modal-zoom-leave-active {
+  transition: opacity 0.2s ease, transform 0.25s ease;
 }
 
-.drawer-enter-from {
-  transform: translateY(100%);
+.modal-zoom-enter-from {
   opacity: 0;
+  transform: scale(0.15);
 }
 
-.drawer-leave-to {
-  transform: translateY(100%);
+.modal-zoom-leave-to {
   opacity: 0;
+  transform: scale(0.15);
 }
 </style>
