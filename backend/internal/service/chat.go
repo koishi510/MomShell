@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -13,6 +14,7 @@ import (
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
 	"github.com/momshell/backend/pkg/openai"
+	"gorm.io/gorm"
 )
 
 const companionSystemPrompt = `你是「贝壳姐姐」，一位「曾走过这段路的朋友」，专为产后恢复期女性设计的情感陪伴者。
@@ -172,12 +174,15 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 func (s *ChatService) GetProfile(userID string) (*dto.ChatProfile, error) {
 	mem, err := s.chatRepo.FindByUserID(userID)
 	if err != nil {
-		return &dto.ChatProfile{
-			Interests:             []string{},
-			Concerns:              []string{},
-			ImportantDates:        []string{},
-			CommunityInteractions: []string{},
-		}, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &dto.ChatProfile{
+				Interests:             []string{},
+				Concerns:              []string{},
+				ImportantDates:        []string{},
+				CommunityInteractions: []string{},
+			}, nil
+		}
+		return nil, err
 	}
 
 	profile := mem.GetProfile()

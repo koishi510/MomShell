@@ -16,9 +16,12 @@ func NewChatRepo(db *gorm.DB) *ChatRepo {
 
 func (r *ChatRepo) FindByUserID(userID string) (*model.ChatMemory, error) {
 	var m model.ChatMemory
-	err := r.db.Where("user_id = ?", userID).First(&m).Error
-	if err != nil {
-		return nil, err
+	result := r.db.Where("user_id = ?", userID).Limit(1).Find(&m)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 	return &m, nil
 }
