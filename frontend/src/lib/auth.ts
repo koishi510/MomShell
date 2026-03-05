@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 const AUTH_API = `${API_BASE}/api/v1/auth`;
 
 export interface User {
@@ -48,13 +48,17 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
     headers: mergedHeaders,
   });
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ detail: "请求失败" }));
+    const err = await response.json().catch(() => ({}));
+    // Gin backend returns { "error": "..." }
+    if (typeof err.error === "string") {
+      throw new Error(err.error);
+    }
+    // FastAPI-style { "detail": "..." }
     const detail = err.detail;
     if (typeof detail === "string") {
       throw new Error(detail);
     }
     if (Array.isArray(detail) && detail.length > 0) {
-      // FastAPI 422 validation errors: [{loc, msg, type}, ...]
       throw new Error(
         detail.map((e: { msg?: string }) => e.msg || "").join("; "),
       );
