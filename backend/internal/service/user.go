@@ -54,6 +54,7 @@ func (s *UserService) GetProfile(userID string) (*dto.UserProfile, error) {
 
 	return &dto.UserProfile{
 		ID:                 user.ID,
+		Username:           user.Username,
 		Nickname:           user.Nickname,
 		Email:              user.Email,
 		AvatarURL:          user.AvatarURL,
@@ -71,12 +72,20 @@ func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*
 		return nil, errors.New("用户不存在")
 	}
 
+	if req.Username != nil && *req.Username != user.Username {
+		exists, _ := s.userRepo.ExistsByUsername(*req.Username, userID)
+		if exists {
+			return nil, errors.New("该用户名已被使用")
+		}
+		user.Username = *req.Username
+	}
+
 	if req.Nickname != nil {
 		user.Nickname = *req.Nickname
 	}
 
 	if req.Email != nil && *req.Email != user.Email {
-		exists, _ := s.userRepo.ExistsByUsernameOrEmail("", *req.Email)
+		exists, _ := s.userRepo.ExistsByEmail(*req.Email, userID)
 		if exists {
 			return nil, errors.New("该邮箱已被使用")
 		}

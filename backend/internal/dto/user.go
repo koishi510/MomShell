@@ -5,6 +5,7 @@ import "time"
 // UserProfile is the response for user profile
 type UserProfile struct {
 	ID                 string    `json:"id"`
+	Username           string    `json:"username"`
 	Nickname           string    `json:"nickname"`
 	Email              string    `json:"email"`
 	AvatarURL          *string   `json:"avatar_url"`
@@ -25,6 +26,7 @@ type UserStats struct {
 
 // UserProfileUpdate is the request body for updating user profile
 type UserProfileUpdate struct {
+	Username  *string `json:"username" binding:"omitempty,min=3,max=50"`
 	Nickname  *string `json:"nickname" binding:"omitempty,min=1,max=50"`
 	Email     *string `json:"email" binding:"omitempty,email"`
 	AvatarURL *string `json:"avatar_url"`

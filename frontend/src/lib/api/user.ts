@@ -3,6 +3,7 @@ import type { PaginatedResponse } from './community'
 
 export interface UserProfile {
   id: string
+  username: string
   nickname: string
   email: string
   avatar_url: string | null
@@ -55,6 +56,7 @@ export function getUserProfile(): Promise<UserProfile> {
 }
 
 export function updateUserProfile(data: {
+  username?: string
   nickname?: string
   email?: string
   avatar_url?: string
@@ -87,5 +89,13 @@ export function changePassword(data: {
 }): Promise<{ message: string }> {
   return apiClient
     .post('/api/v1/auth/change-password', data)
+    .then((r) => r.data)
+}
+
+export function uploadAvatar(file: File): Promise<UserProfile> {
+  const form = new FormData()
+  form.append('avatar', file)
+  return apiClient
+    .post('/api/v1/community/users/me/avatar', form)
     .then((r) => r.data)
 }
