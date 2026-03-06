@@ -19,11 +19,17 @@
       draggable="false"
       @click="onSpriteClick(s.id)"
     />
+
+    <Transition name="bubble-fade">
+      <div v-if="showBubble" class="speech-bubble" :style="bubblePosition">
+        去吧台买点饮料，谈天说地吧
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { PARALLAX_KEY } from '@/composables/useParallax'
 import { LAYERS } from '@/constants/layers'
 import { SPRITES } from '@/constants/sprites'
@@ -33,11 +39,20 @@ const layerEl = ref<HTMLElement | null>(null)
 const ctx = inject(PARALLAX_KEY)!
 const uiStore = useUiStore()
 
-const CLICKABLE_SPRITES = new Set(['car', 'shell1', 'shell2', 'shell3', 'shell4', 'bar', 'stone'])
+const showBubble = ref(false)
+
+const CLICKABLE_SPRITES = new Set(['car', 'shell1', 'shell3', 'shell4', 'bar', 'stone', 'community'])
 
 function isSpriteClickable(id: string): boolean {
   return CLICKABLE_SPRITES.has(id)
 }
+
+const communitySprite = SPRITES.find(s => s.id === 'community')!
+
+const bubblePosition = computed(() => ({
+  left: `calc(${communitySprite.left} + 12vw)`,
+  top: `calc(${communitySprite.top} - 3em)`,
+}))
 
 function onSpriteClick(id: string) {
   if (ctx.wasDrag()) return
@@ -45,6 +60,15 @@ function onSpriteClick(id: string) {
   else if (id.startsWith('shell')) uiStore.openFeature('memory')
   else if (id === 'bar') uiStore.openFeature('community')
   else if (id === 'stone') uiStore.openFeature('chat')
+  else if (id === 'community') {
+    showBubble.value = true
+    setTimeout(() => {
+      showBubble.value = false
+      // Scroll to make bar visible (bar is at left:18% of a 400vw layer)
+      // With speed 0.55 and centerShift centering 400vw, offset ≈ -(vw * 0.82)
+      ctx.scrollTo(-(window.innerWidth * 1.5))
+    }, 2000)
+  }
 }
 
 onMounted(() => {
@@ -80,5 +104,38 @@ onMounted(() => {
 
 .sprite.clickable:active {
   filter: brightness(0.9);
+}
+
+.speech-bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.92);
+  color: #5a3e2b;
+  font-size: 1rem;
+  padding: 0.6em 1em;
+  border-radius: 1em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 2em;
+  border-width: 8px 6px 0;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.92) transparent transparent;
+}
+
+.bubble-fade-enter-active,
+.bubble-fade-leave-active {
+  transition: opacity 0.35s ease;
+}
+
+.bubble-fade-enter-from,
+.bubble-fade-leave-to {
+  opacity: 0;
 }
 </style>

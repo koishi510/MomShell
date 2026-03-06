@@ -7,6 +7,8 @@ export interface ParallaxContext {
   registerLayer: (el: HTMLElement, speed: number) => void
   startLoop: () => void
   hideHint: () => void
+  wasDrag: () => boolean
+  scrollTo: (offset: number) => void
 }
 
 export const PARALLAX_KEY: InjectionKey<ParallaxContext> = Symbol('parallax')
@@ -19,6 +21,8 @@ export function useParallax() {
 
   const keys = reactive({ ArrowLeft: false, ArrowRight: false })
   let dragging = false
+  let totalDragDistance = 0
+  const DRAG_THRESHOLD = 5
 
   interface LayerMeta {
     el: HTMLElement
@@ -96,16 +100,24 @@ export function useParallax() {
   let offsetAtDragStart = 0
 
   function onMouseDown(e: MouseEvent) {
+    const target = e.target as HTMLElement
+    if (target.closest('button, input, textarea, select, a, [contenteditable]')) {
+      return
+    }
     dragging = true
+    totalDragDistance = 0
     dragStartX = e.clientX
     offsetAtDragStart = targetOffset.value
-    document.body.classList.add('dragging')
     startLoop()
     hideHint()
   }
   function onMouseMove(e: MouseEvent) {
     if (!dragging) return
     const dx = e.clientX - dragStartX
+    totalDragDistance += Math.abs(e.movementX)
+    if (totalDragDistance > DRAG_THRESHOLD && !document.body.classList.contains('dragging')) {
+      document.body.classList.add('dragging')
+    }
     targetOffset.value = offsetAtDragStart - dx * 1.8
   }
   function onMouseUp() {
@@ -167,14 +179,27 @@ export function useParallax() {
     document.removeEventListener('touchmove', onTouchMove)
   })
 
+  function wasDrag(): boolean {
+    return totalDragDistance > DRAG_THRESHOLD
+  }
+
+  function scrollTo(offset: number) {
+    targetOffset.value = Math.max(-maxOffset.value, Math.min(maxOffset.value, offset))
+    // Jump halfway to target so the animation feels faster
+    currentOffset.value += (targetOffset.value - currentOffset.value) * 0.5
+    startLoop()
+  }
+
   const ctx: ParallaxContext = {
     currentOffset,
     registerLayer,
     startLoop,
     hideHint,
+    wasDrag,
+    scrollTo,
   }
 
   provide(PARALLAX_KEY, ctx)
 
-  return { currentOffset, hintHidden, registerLayer, startLoop, hideHint }
+  return { currentOffset, hintHidden, registerLayer, startLoop, hideHint, scrollTo }
 }
