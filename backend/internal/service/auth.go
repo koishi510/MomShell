@@ -159,12 +159,9 @@ func (s *AuthService) UpdateRole(userID, role string) (*dto.UserResponse, error)
 		return nil, errors.New("用户不存在")
 	}
 
-	// Check if user is a professional or admin
+	// Check if user is a professional
 	if model.ProfessionalRoles[user.Role] {
 		return nil, errors.New("认证专业人员不能修改角色")
-	}
-	if user.Role == model.RoleAdmin {
-		return nil, errors.New("管理员不能通过此接口修改角色")
 	}
 	if user.PartnerID != nil {
 		return nil, errors.New("已绑定伴侣，无法更改身份")
@@ -213,6 +210,7 @@ func (s *AuthService) buildUserResponse(user *model.User) *dto.UserResponse {
 		Nickname:        user.Nickname,
 		AvatarURL:       user.AvatarURL,
 		Role:            string(user.Role),
+		IsAdmin:         user.IsAdmin,
 		BabyBirthDate:   user.BabyBirthDate,
 		PostpartumWeeks: user.PostpartumWeeks,
 		CreatedAt:       user.CreatedAt,

@@ -87,6 +87,7 @@ func (s *AdminService) ListUsers(params dto.AdminUserListParams) (*dto.Paginated
 			Email:     u.Email,
 			Nickname:  u.Nickname,
 			Role:      string(u.Role),
+			IsAdmin:   u.IsAdmin,
 			IsActive:  u.IsActive,
 			IsBanned:  u.IsBanned,
 			IsGuest:   u.IsGuest,
@@ -112,6 +113,7 @@ func (s *AdminService) GetUser(id string) (*dto.AdminUserDetail, error) {
 		Nickname:      user.Nickname,
 		AvatarURL:     user.AvatarURL,
 		Role:          string(user.Role),
+		IsAdmin:       user.IsAdmin,
 		ShellCode:     user.ShellCode,
 		IsGuest:       user.IsGuest,
 		IsActive:      user.IsActive,
@@ -169,8 +171,8 @@ func (s *AdminService) CreateUser(req dto.AdminCreateUser) (*dto.AdminUserDetail
 func (s *AdminService) UpdateUser(id, adminID string, req dto.AdminUserUpdate) (*dto.AdminUserDetail, error) {
 	if id == adminID {
 		// Prevent self-demotion / self-ban
-		if req.Role != nil && *req.Role != string(model.RoleAdmin) {
-			return nil, errors.New("不能降低自己的管理员角色")
+		if req.IsAdmin != nil && !*req.IsAdmin {
+			return nil, errors.New("不能取消自己的管理员权限")
 		}
 		if req.IsActive != nil && !*req.IsActive {
 			return nil, errors.New("不能停用自己的账号")
@@ -187,6 +189,9 @@ func (s *AdminService) UpdateUser(id, adminID string, req dto.AdminUserUpdate) (
 
 	if req.Role != nil {
 		user.Role = model.UserRole(*req.Role)
+	}
+	if req.IsAdmin != nil {
+		user.IsAdmin = *req.IsAdmin
 	}
 	if req.IsActive != nil {
 		user.IsActive = *req.IsActive

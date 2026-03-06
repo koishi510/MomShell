@@ -7,6 +7,7 @@ export interface Author {
   nickname: string
   avatar_url: string | null
   role: string
+  display_tag: string
   is_certified: boolean
   certification_title: string | null
 }
