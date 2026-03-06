@@ -4,6 +4,11 @@
         docker-up docker-down docker-logs docker-build \
         postgres-up postgres-down postgres-logs db-reset deps-lock deps-update clean clean-all help
 
+# Database config (must match dev-setup.sh / .env)
+DB_USER ?= momshell
+DB_PASS ?= momshell
+DB_NAME ?= momshell
+
 # Colors for terminal output
 CYAN := \033[36m
 GREEN := \033[32m
