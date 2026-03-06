@@ -27,7 +27,7 @@ export interface RegisterParams {
   email: string;
   password: string;
   nickname: string;
-  role?: "mom" | "dad" | "family";
+  role?: "mom" | "dad";
 }
 
 export interface LoginParams {
@@ -101,7 +101,7 @@ export function apiGetMe(accessToken: string): Promise<User> {
 
 export function apiSetRole(
   accessToken: string,
-  role: "mom" | "dad" | "family",
+  role: "mom" | "dad",
 ): Promise<User> {
   return fetchJson<User>(`${AUTH_API}/me/role`, {
     method: "PATCH",

@@ -166,10 +166,13 @@ func (s *AuthService) UpdateRole(userID, role string) (*dto.UserResponse, error)
 	if user.Role == model.RoleAdmin {
 		return nil, errors.New("管理员不能通过此接口修改角色")
 	}
+	if user.PartnerID != nil {
+		return nil, errors.New("已绑定伴侣，无法更改身份")
+	}
 
 	newRole := model.UserRole(role)
 	if !model.FamilyRoles[newRole] {
-		return nil, errors.New("角色只能是: mom, dad, family")
+		return nil, errors.New("角色只能是: mom, dad")
 	}
 
 	user.Role = newRole

@@ -1,7 +1,9 @@
 package service
 
 import (
+	"crypto/rand"
 	"errors"
+	"math/big"
 
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/model"
@@ -52,18 +54,33 @@ func (s *UserService) GetProfile(userID string) (*dto.UserProfile, error) {
 
 	info := s.community.BuildAuthorInfo(user)
 
-	return &dto.UserProfile{
+	profile := &dto.UserProfile{
 		ID:                 user.ID,
 		Username:           user.Username,
 		Nickname:           user.Nickname,
 		Email:              user.Email,
 		AvatarURL:          user.AvatarURL,
 		Role:               string(user.Role),
+		ShellCode:          user.ShellCode,
 		IsCertified:        info.IsCertified,
 		CertificationTitle: info.CertificationTitle,
 		Stats:              *stats,
 		CreatedAt:          user.CreatedAt,
-	}, nil
+	}
+
+	if user.PartnerID != nil {
+		partner, err := s.userRepo.FindByID(*user.PartnerID)
+		if err == nil {
+			profile.Partner = &dto.PartnerInfo{
+				ID:        partner.ID,
+				Nickname:  partner.Nickname,
+				AvatarURL: partner.AvatarURL,
+				Role:      string(partner.Role),
+			}
+		}
+	}
+
+	return profile, nil
 }
 
 func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*dto.UserProfile, error) {
@@ -99,13 +116,16 @@ func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*
 	if req.Role != nil {
 		newRole := model.UserRole(*req.Role)
 		if !model.FamilyRoles[newRole] {
-			return nil, errors.New("角色只能是: mom, dad, family")
+			return nil, errors.New("角色只能是: mom, dad")
 		}
 		if model.ProfessionalRoles[user.Role] {
 			return nil, errors.New("认证专业人员不能修改角色")
 		}
 		if user.Role == model.RoleAdmin {
 			return nil, errors.New("管理员不能通过此接口修改角色")
+		}
+		if user.PartnerID != nil {
+			return nil, errors.New("已绑定伴侣，无法更改身份")
 		}
 		user.Role = newRole
 	}
@@ -115,6 +135,134 @@ func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*
 	}
 
 	return s.GetProfile(userID)
+}
+
+// GenerateShellCode generates a shell code for 溯源者 (mom) to share with their partner.
+func (s *UserService) GenerateShellCode(userID string) (*dto.UserProfile, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	if user.Role != model.RoleMom {
+		return nil, errors.New("只有溯源者可以生成贝壳码")
+	}
+
+	if user.PartnerID != nil {
+		return nil, errors.New("已绑定伴侣，无法重新生成贝壳码")
+	}
+
+	// Generate if not already present
+	if user.ShellCode == nil {
+		code, err := generateRandomCode(8)
+		if err != nil {
+			return nil, errors.New("生成贝壳码失败")
+		}
+		user.ShellCode = &code
+		if err := s.userRepo.Update(user); err != nil {
+			return nil, err
+		}
+	}
+
+	return s.GetProfile(userID)
+}
+
+// BindPartner binds a 守护者 (dad) to a 溯源者 (mom) via shell code.
+func (s *UserService) BindPartner(userID string, shellCode string) (*dto.UserProfile, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	if user.Role != model.RoleDad {
+		return nil, errors.New("只有守护者可以填写贝壳码")
+	}
+
+	if user.PartnerID != nil {
+		return nil, errors.New("您已绑定伴侣")
+	}
+
+	partner, err := s.userRepo.FindByShellCode(shellCode)
+	if err != nil {
+		return nil, errors.New("贝壳码无效")
+	}
+
+	if partner.Role != model.RoleMom {
+		return nil, errors.New("贝壳码无效")
+	}
+
+	if partner.PartnerID != nil {
+		return nil, errors.New("对方已绑定其他伴侣")
+	}
+
+	if partner.ID == userID {
+		return nil, errors.New("不能绑定自己")
+	}
+
+	// Bind both sides in a transaction
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.User{}).Where("id = ?", user.ID).Update("partner_id", partner.ID).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&model.User{}).Where("id = ?", partner.ID).Update("partner_id", user.ID).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.New("绑定失败")
+	}
+
+	return s.GetProfile(userID)
+}
+
+// UnbindPartner removes the partner relationship for the current user.
+func (s *UserService) UnbindPartner(userID string) (*dto.UserProfile, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	if user.PartnerID == nil {
+		return nil, errors.New("您尚未绑定伴侣")
+	}
+
+	partnerID := *user.PartnerID
+
+	// Unbind both sides, clear shell code
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+			"partner_id": nil,
+			"shell_code": nil,
+		}).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&model.User{}).Where("id = ?", partnerID).Updates(map[string]interface{}{
+			"partner_id": nil,
+			"shell_code": nil,
+		}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.New("解绑失败")
+	}
+
+	return s.GetProfile(userID)
+}
+
+func generateRandomCode(length int) (string, error) {
+	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	code := make([]byte, length)
+	for i := range code {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		code[i] = charset[n.Int64()]
+	}
+	return string(code), nil
 }
 
 func (s *UserService) GetUserQuestions(userID string, page, pageSize int) (*dto.PaginatedResponse, error) {

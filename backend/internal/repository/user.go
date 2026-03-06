@@ -62,6 +62,15 @@ func (r *UserRepo) ExistsByEmail(email, excludeUserID string) (bool, error) {
 	return count > 0, err
 }
 
+func (r *UserRepo) FindByShellCode(code string) (*model.User, error) {
+	var user model.User
+	err := r.db.Where("shell_code = ?", code).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *UserRepo) Create(user *model.User) error {
 	return r.db.Create(user).Error
 }

@@ -26,12 +26,12 @@
         <div class="right-section">
           <div class="avatars">
             <div class="avatar-wrapper">
-              <img class="avatar-photo" :src="avatarDefault" alt="dad avatar" />
-              <img class="avatar-frame" :src="avatarFrame" alt="dad frame" />
+              <img class="avatar-photo" :class="{ 'avatar-custom': hasPartnerCustomAvatar }" :src="partnerAvatarUrl" alt="partner avatar" />
+              <img class="avatar-frame" :src="avatarFrame" alt="partner frame" />
             </div>
             <div class="avatar-wrapper">
-              <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="mom avatar" />
-              <img class="avatar-frame" :src="avatarFrame" alt="mom frame" />
+              <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="my avatar" />
+              <img class="avatar-frame" :src="avatarFrame" alt="my frame" />
             </div>
           </div>
           <button class="profile-entry" @click="openProfile">
@@ -245,11 +245,13 @@
                 <!-- Identity Role -->
                 <div class="settings-section">
                   <h3 class="settings-heading">身份标签</h3>
+                  <div v-if="isBound" class="bound-hint">已绑定伴侣，身份不可更改</div>
                   <div class="role-selector">
                     <button
                       v-for="opt in roleOptions"
                       :key="opt.key"
                       :class="['role-option', { active: selectedRole === opt.key }]"
+                      :disabled="isBound"
                       @click="selectedRole = opt.key"
                     >
                       {{ opt.label }}
@@ -258,12 +260,58 @@
                   <div v-if="roleError" class="form-error">{{ roleError }}</div>
                   <div v-if="roleSuccess" class="form-success">{{ roleSuccess }}</div>
                   <button
+                    v-if="!isBound"
                     class="submit-btn"
                     :disabled="roleLoading || selectedRole === (profile?.role || auth.user?.role)"
                     @click="onSaveRole"
                   >
                     {{ roleLoading ? '保存中...' : '保存身份' }}
                   </button>
+                </div>
+
+                <!-- Shell Code / Partner Binding -->
+                <div class="settings-section">
+                  <h3 class="settings-heading">贝壳码</h3>
+
+                  <!-- Already bound: show partner info + unbind -->
+                  <template v-if="isBound">
+                    <div class="partner-card">
+                      <span class="partner-label">已绑定：</span>
+                      <span class="partner-name">{{ profile?.partner?.nickname }}</span>
+                      <span class="partner-role">（{{ profile?.partner?.role === 'mom' ? '溯源者' : '守护者' }}）</span>
+                    </div>
+                    <button class="submit-btn danger-btn" :disabled="unbindLoading" @click="onUnbindPartner">
+                      {{ unbindLoading ? '解绑中...' : '解除绑定' }}
+                    </button>
+                  </template>
+
+                  <!-- Mom (溯源者): generate shell code -->
+                  <template v-else-if="isMom">
+                    <p class="shell-hint">生成贝壳码分享给守护者，完成伴侣绑定。</p>
+                    <div v-if="profile?.shell_code" class="shell-code-display">
+                      {{ profile.shell_code }}
+                    </div>
+                    <button class="submit-btn" :disabled="shellCodeLoading || !!profile?.shell_code" @click="onGenerateShellCode">
+                      {{ shellCodeLoading ? '生成中...' : profile?.shell_code ? '已生成' : '生成贝壳码' }}
+                    </button>
+                    <div v-if="shellCodeError" class="form-error">{{ shellCodeError }}</div>
+                  </template>
+
+                  <!-- Dad (守护者): enter shell code to bind -->
+                  <template v-else>
+                    <p class="shell-hint">输入溯源者分享的贝壳码，完成伴侣绑定。</p>
+                    <input
+                      v-model="bindCode"
+                      class="form-input"
+                      placeholder="请输入贝壳码"
+                      maxlength="8"
+                    />
+                    <div v-if="bindError" class="form-error">{{ bindError }}</div>
+                    <div v-if="bindSuccess" class="form-success">{{ bindSuccess }}</div>
+                    <button class="submit-btn" :disabled="bindLoading || !bindCode.trim()" @click="onBindPartner">
+                      {{ bindLoading ? '绑定中...' : '绑定' }}
+                    </button>
+                  </template>
                 </div>
 
                 <!-- Change Password -->
@@ -325,6 +373,9 @@ import {
   getUserProfile,
   updateUserProfile,
   uploadAvatar,
+  generateShellCode,
+  bindPartner,
+  unbindPartner,
   getMyQuestions,
   getMyAnswers,
   changePassword,
@@ -401,10 +452,21 @@ const roleLoading = ref(false)
 const roleError = ref('')
 const roleSuccess = ref('')
 const roleOptions = [
-  { key: 'mom', label: '妈妈' },
-  { key: 'dad', label: '爸爸' },
-  { key: 'family', label: '家人' },
+  { key: 'mom', label: '溯源者' },
+  { key: 'dad', label: '守护者' },
 ]
+
+// Shell code / partner binding
+const shellCodeLoading = ref(false)
+const shellCodeError = ref('')
+const bindCode = ref('')
+const bindLoading = ref(false)
+const bindError = ref('')
+const bindSuccess = ref('')
+const unbindLoading = ref(false)
+
+const isBound = computed(() => !!profile.value?.partner)
+const isMom = computed(() => (profile.value?.role || auth.user?.role) === 'mom')
 
 const profileTabs = [
   { key: 'questions' as const, label: '我的提问' },
@@ -413,9 +475,8 @@ const profileTabs = [
 ]
 
 const roleMap: Record<string, string> = {
-  mom: '妈妈',
-  dad: '爸爸',
-  family: '家人',
+  mom: '溯源者',
+  dad: '守护者',
   professional: '专业认证',
 }
 
@@ -423,7 +484,9 @@ const displayNickname = computed(() => profile.value?.nickname || auth.user?.nic
 const displayInitial = computed(() => displayNickname.value.charAt(0))
 const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || avatarDefault)
 const hasCustomAvatar = computed(() => !!(profile.value?.avatar_url || auth.user?.avatar_url))
-const roleName = computed(() => roleMap[auth.user?.role || 'mom'] || '妈妈')
+const partnerAvatarUrl = computed(() => profile.value?.partner?.avatar_url || avatarDefault)
+const hasPartnerCustomAvatar = computed(() => !!profile.value?.partner?.avatar_url)
+const roleName = computed(() => roleMap[auth.user?.role || 'mom'] || '溯源者')
 
 // ── Car page methods ──
 function close() {
@@ -664,6 +727,48 @@ async function onSaveRole() {
   }
 }
 
+async function onGenerateShellCode() {
+  shellCodeError.value = ''
+  shellCodeLoading.value = true
+  try {
+    const updated = await generateShellCode()
+    profile.value = updated
+  } catch (e) {
+    shellCodeError.value = getErrorMessage(e)
+  } finally {
+    shellCodeLoading.value = false
+  }
+}
+
+async function onBindPartner() {
+  if (!bindCode.value.trim()) return
+  bindError.value = ''
+  bindSuccess.value = ''
+  bindLoading.value = true
+  try {
+    const updated = await bindPartner(bindCode.value.trim())
+    profile.value = updated
+    bindSuccess.value = '绑定成功'
+    bindCode.value = ''
+  } catch (e) {
+    bindError.value = getErrorMessage(e)
+  } finally {
+    bindLoading.value = false
+  }
+}
+
+async function onUnbindPartner() {
+  unbindLoading.value = true
+  try {
+    const updated = await unbindPartner()
+    profile.value = updated
+  } catch (e) {
+    bindError.value = getErrorMessage(e)
+  } finally {
+    unbindLoading.value = false
+  }
+}
+
 async function onChangePassword() {
   pwError.value = ''
   pwSuccess.value = ''
@@ -701,7 +806,10 @@ watch(visible, async (isVisible) => {
     showOverflow.value = false
     showProfile.value = false
     try {
-      const res = await getMemoirs(50, 0)
+      const [res] = await Promise.all([
+        getMemoirs(50, 0),
+        fetchProfile(),
+      ])
       memoirs.value = res.memoirs
     } catch {
       // silent
@@ -1534,6 +1642,73 @@ watch(activeTab, (tab) => {
   background: rgba(255, 182, 193, 0.2);
   border-color: rgba(255, 182, 193, 0.4);
   color: var(--text-primary);
+}
+
+.role-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bound-hint {
+  font-size: 12px;
+  color: rgba(180, 130, 80, 0.6);
+  margin-bottom: 8px;
+}
+
+.shell-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.shell-code-display {
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-align: center;
+  padding: 16px;
+  margin-bottom: 10px;
+  background: rgba(255, 182, 193, 0.1);
+  border: 1px dashed rgba(255, 182, 193, 0.4);
+  border-radius: 8px;
+  color: var(--text-primary);
+  user-select: all;
+}
+
+.partner-card {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: rgba(255, 182, 193, 0.08);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.partner-label {
+  color: var(--text-secondary);
+}
+
+.partner-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.partner-role {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.danger-btn {
+  background: rgba(220, 80, 80, 0.15) !important;
+  color: #c44 !important;
+}
+
+.danger-btn:hover:not(:disabled) {
+  background: rgba(220, 80, 80, 0.25) !important;
 }
 
 /* ── Transitions ── */

@@ -63,5 +63,5 @@ type ResetPasswordRequest struct {
 
 // UpdateRoleRequest is the request body for updating user role
 type UpdateRoleRequest struct {
-	Role string `json:"role" binding:"required,oneof=mom dad family"`
+	Role string `json:"role" binding:"required,oneof=mom dad"`
 }

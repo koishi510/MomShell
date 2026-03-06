@@ -306,9 +306,8 @@ const roleLoading = ref(false)
 const roleError = ref('')
 const roleSuccess = ref('')
 const roleOptions = [
-  { key: 'mom', label: '妈妈' },
-  { key: 'dad', label: '爸爸' },
-  { key: 'family', label: '家人' },
+  { key: 'mom', label: '溯源者' },
+  { key: 'dad', label: '守护者' },
 ]
 
 // Password
@@ -324,16 +323,15 @@ const tabs = [
 ]
 
 const roleMap: Record<string, string> = {
-  mom: '妈妈',
-  dad: '爸爸',
-  family: '家人',
+  mom: '溯源者',
+  dad: '守护者',
   professional: '专业认证',
 }
 
 const displayNickname = computed(() => profile.value?.nickname || auth.user?.nickname || '用户')
 const displayInitial = computed(() => displayNickname.value.charAt(0))
 const avatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || avatarDefault)
-const roleName = computed(() => roleMap[auth.user?.role || 'mom'] || '妈妈')
+const roleName = computed(() => roleMap[auth.user?.role || 'mom'] || '溯源者')
 
 function statusText(status: string): string {
   const map: Record<string, string> = {
