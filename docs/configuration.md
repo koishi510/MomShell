@@ -26,7 +26,7 @@ The setup script auto-generates `JWT_SECRET_KEY`. Change it manually for product
 |----------|-------------|----------|---------|
 | `OPENAI_API_KEY` | API key for LLM service | **Yes** | — |
 | `OPENAI_BASE_URL` | API base URL | No | `https://api-inference.modelscope.cn/v1` |
-| `OPENAI_MODEL` | Model name | No | `Qwen/Qwen2.5-72B-Instruct` |
+| `OPENAI_MODEL` | Model name | No | `Qwen/Qwen3-235B-A22B` |
 
 Any OpenAI-compatible API is supported (ModelScope, OpenAI, local Ollama, etc.).
 

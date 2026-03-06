@@ -33,9 +33,9 @@ type Config struct {
 }
 
 func Load() *Config {
-	// Load .env file, overriding any existing env vars
-	// (ensures local .env is the source of truth for dev)
+	// Load .env file from project root and backend dir (project root takes precedence)
 	_ = godotenv.Overload()
+	_ = godotenv.Overload("../.env")
 
 	cfg := &Config{
 		DatabaseURL:               getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/momshell?sslmode=disable"),
