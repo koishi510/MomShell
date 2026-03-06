@@ -261,7 +261,7 @@ else
     ask "OPENAI_BASE_URL" "https://api-inference.modelscope.cn/v1"
     OPENAI_BASE_URL="$REPLY"
 
-    ask "OPENAI_MODEL" "Qwen/Qwen2.5-72B-Instruct"
+    ask "OPENAI_MODEL" "Qwen/Qwen3-235B-A22B"
     OPENAI_MODEL="$REPLY"
 
     # Server
