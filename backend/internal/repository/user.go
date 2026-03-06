@@ -50,6 +50,18 @@ func (r *UserRepo) ExistsByUsernameOrEmail(username, email string) (bool, error)
 	return count > 0, err
 }
 
+func (r *UserRepo) ExistsByUsername(username, excludeUserID string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.User{}).Where("username = ? AND id != ?", username, excludeUserID).Count(&count).Error
+	return count > 0, err
+}
+
+func (r *UserRepo) ExistsByEmail(email, excludeUserID string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.User{}).Where("email = ? AND id != ?", email, excludeUserID).Count(&count).Error
+	return count > 0, err
+}
+
 func (r *UserRepo) Create(user *model.User) error {
 	return r.db.Create(user).Error
 }

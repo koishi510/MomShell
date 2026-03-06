@@ -30,7 +30,7 @@
               <img class="avatar-frame" :src="avatarFrame" alt="dad frame" />
             </div>
             <div class="avatar-wrapper">
-              <img class="avatar-photo" :src="avatarDefault" alt="mom avatar" />
+              <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="mom avatar" />
               <img class="avatar-frame" :src="avatarFrame" alt="mom frame" />
             </div>
           </div>
@@ -66,9 +66,17 @@
             <button class="modal-close" @click="closeProfile">✕</button>
 
             <div class="profile-header">
-              <div class="profile-avatar">
+              <div class="profile-avatar" @click="triggerAvatarUpload">
                 <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" />
                 <span v-else class="avatar-placeholder">{{ displayInitial }}</span>
+                <span class="avatar-edit-hint">{{ avatarUploading ? '...' : '✎' }}</span>
+                <input
+                  ref="avatarInput"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  style="display: none"
+                  @change="onAvatarChange"
+                />
               </div>
               <div class="profile-info">
                 <div v-if="!editingNickname" class="nickname-row" @click="startEditNickname">
@@ -85,7 +93,7 @@
                     @blur="saveNickname"
                   />
                 </div>
-                <p class="profile-username">@{{ auth.user?.username }}</p>
+                <p class="profile-username">@{{ profile?.username || auth.user?.username }}</p>
                 <span class="role-badge" :class="'role-' + (auth.user?.role || 'mom')">{{ roleName }}</span>
               </div>
             </div>
@@ -182,6 +190,83 @@
               </template>
 
               <template v-if="activeTab === 'settings'">
+                <!-- Profile Info -->
+                <div class="settings-section">
+                  <h3 class="settings-heading">个人资料</h3>
+                  <div class="profile-form">
+                    <label class="form-label">头像</label>
+                    <div class="avatar-upload-row">
+                      <div class="avatar-preview-small">
+                        <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" />
+                        <span v-else class="avatar-placeholder-small">{{ displayInitial }}</span>
+                      </div>
+                      <button class="upload-btn" :disabled="avatarUploading" @click="triggerAvatarUpload">
+                        {{ avatarUploading ? '上传中...' : '更换头像' }}
+                      </button>
+                      <span class="upload-hint">JPG/PNG/GIF/WebP, 最大 2MB</span>
+                    </div>
+                    <div v-if="avatarError" class="form-error">{{ avatarError }}</div>
+                    <label class="form-label">用户名</label>
+                    <input
+                      v-model="profileForm.username"
+                      type="text"
+                      class="form-input"
+                      placeholder="用户名"
+                      maxlength="50"
+                      minlength="3"
+                    />
+                    <label class="form-label">昵称</label>
+                    <input
+                      v-model="profileForm.nickname"
+                      type="text"
+                      class="form-input"
+                      placeholder="昵称"
+                      maxlength="50"
+                    />
+                    <label class="form-label">邮箱</label>
+                    <input
+                      v-model="profileForm.email"
+                      type="email"
+                      class="form-input"
+                      placeholder="email@example.com"
+                    />
+                    <div v-if="profileFormError" class="form-error">{{ profileFormError }}</div>
+                    <div v-if="profileFormSuccess" class="form-success">{{ profileFormSuccess }}</div>
+                    <button
+                      class="submit-btn"
+                      :disabled="profileFormLoading"
+                      @click="onSaveProfile"
+                    >
+                      {{ profileFormLoading ? '保存中...' : '保存资料' }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Identity Role -->
+                <div class="settings-section">
+                  <h3 class="settings-heading">身份标签</h3>
+                  <div class="role-selector">
+                    <button
+                      v-for="opt in roleOptions"
+                      :key="opt.key"
+                      :class="['role-option', { active: selectedRole === opt.key }]"
+                      @click="selectedRole = opt.key"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  </div>
+                  <div v-if="roleError" class="form-error">{{ roleError }}</div>
+                  <div v-if="roleSuccess" class="form-success">{{ roleSuccess }}</div>
+                  <button
+                    class="submit-btn"
+                    :disabled="roleLoading || selectedRole === (profile?.role || auth.user?.role)"
+                    @click="onSaveRole"
+                  >
+                    {{ roleLoading ? '保存中...' : '保存身份' }}
+                  </button>
+                </div>
+
+                <!-- Change Password -->
                 <div class="settings-section">
                   <h3 class="settings-heading">修改密码</h3>
                   <form class="password-form" @submit.prevent="onChangePassword">
@@ -232,13 +317,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, reactive } from 'vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { getMemoirs, type Memoir } from '@/lib/api/echo'
 import {
   getUserProfile,
   updateUserProfile,
+  uploadAvatar,
   getMyQuestions,
   getMyAnswers,
   changePassword,
@@ -298,6 +384,28 @@ const pwError = ref('')
 const pwSuccess = ref('')
 const pwLoading = ref(false)
 
+// Profile form
+const profileForm = reactive({ username: '', nickname: '', email: '' })
+const profileFormError = ref('')
+const profileFormSuccess = ref('')
+const profileFormLoading = ref(false)
+
+// Avatar upload
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarUploading = ref(false)
+const avatarError = ref('')
+
+// Identity role
+const selectedRole = ref('')
+const roleLoading = ref(false)
+const roleError = ref('')
+const roleSuccess = ref('')
+const roleOptions = [
+  { key: 'mom', label: '妈妈' },
+  { key: 'dad', label: '爸爸' },
+  { key: 'family', label: '家人' },
+]
+
 const profileTabs = [
   { key: 'questions' as const, label: '我的提问' },
   { key: 'answers' as const, label: '我的回答' },
@@ -313,7 +421,8 @@ const roleMap: Record<string, string> = {
 
 const displayNickname = computed(() => profile.value?.nickname || auth.user?.nickname || '用户')
 const displayInitial = computed(() => displayNickname.value.charAt(0))
-const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || null)
+const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || avatarDefault)
+const hasCustomAvatar = computed(() => !!(profile.value?.avatar_url || auth.user?.avatar_url))
 const roleName = computed(() => roleMap[auth.user?.role || 'mom'] || '妈妈')
 
 // ── Car page methods ──
@@ -387,6 +496,7 @@ async function saveNickname() {
     if (auth.user) {
       auth.user.nickname = updated.nickname
     }
+    profileForm.nickname = updated.nickname
     nicknameError.value = ''
   } catch (e) {
     nicknameError.value = getErrorMessage(e)
@@ -394,11 +504,18 @@ async function saveNickname() {
   editingNickname.value = false
 }
 
+function syncProfileForm() {
+  profileForm.username = profile.value?.username || auth.user?.username || ''
+  profileForm.nickname = profile.value?.nickname || auth.user?.nickname || ''
+  profileForm.email = profile.value?.email || auth.user?.email || ''
+}
+
 async function fetchProfile() {
   try {
     profile.value = await getUserProfile()
+    syncProfileForm()
   } catch {
-    // use auth.user as fallback
+    syncProfileForm()
   }
 }
 
@@ -444,6 +561,107 @@ function loadMoreQuestions() {
 
 function loadMoreAnswers() {
   fetchAnswers(answersPage.value + 1)
+}
+
+function triggerAvatarUpload() {
+  avatarInput.value?.click()
+}
+
+async function onAvatarChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  input.value = ''
+
+  if (file.size > 2 * 1024 * 1024) {
+    avatarError.value = '图片大小不能超过 2MB'
+    return
+  }
+  if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+    avatarError.value = '仅支持 JPG、PNG、GIF、WebP 格式'
+    return
+  }
+
+  avatarError.value = ''
+  avatarUploading.value = true
+  try {
+    const updated = await uploadAvatar(file)
+    profile.value = updated
+    if (auth.user) {
+      auth.user.avatar_url = updated.avatar_url
+    }
+  } catch (e) {
+    avatarError.value = getErrorMessage(e)
+  } finally {
+    avatarUploading.value = false
+  }
+}
+
+async function onSaveProfile() {
+  profileFormError.value = ''
+  profileFormSuccess.value = ''
+
+  const data: Record<string, string> = {}
+  const p = profile.value
+  const trimmedUsername = profileForm.username.trim()
+  const trimmedNickname = profileForm.nickname.trim()
+  const trimmedEmail = profileForm.email.trim()
+
+  if (trimmedUsername && trimmedUsername !== (p?.username || auth.user?.username)) {
+    if (trimmedUsername.length < 3) {
+      profileFormError.value = '用户名至少3个字符'
+      return
+    }
+    data.username = trimmedUsername
+  }
+  if (trimmedNickname && trimmedNickname !== (p?.nickname || auth.user?.nickname)) {
+    data.nickname = trimmedNickname
+  }
+  if (trimmedEmail && trimmedEmail !== (p?.email || auth.user?.email)) {
+    data.email = trimmedEmail
+  }
+
+  if (Object.keys(data).length === 0) {
+    profileFormSuccess.value = '没有需要更新的内容'
+    return
+  }
+
+  profileFormLoading.value = true
+  try {
+    const updated = await updateUserProfile(data)
+    profile.value = updated
+    if (auth.user) {
+      auth.user.username = updated.username
+      auth.user.nickname = updated.nickname
+      auth.user.email = updated.email
+      auth.user.avatar_url = updated.avatar_url
+    }
+    syncProfileForm()
+    profileFormSuccess.value = '资料已更新'
+  } catch (e) {
+    profileFormError.value = getErrorMessage(e)
+  } finally {
+    profileFormLoading.value = false
+  }
+}
+
+async function onSaveRole() {
+  if (!selectedRole.value) return
+  roleError.value = ''
+  roleSuccess.value = ''
+  roleLoading.value = true
+  try {
+    const updated = await updateUserProfile({ role: selectedRole.value })
+    profile.value = updated
+    if (auth.user) {
+      auth.user.role = updated.role
+    }
+    roleSuccess.value = '身份已更新'
+  } catch (e) {
+    roleError.value = getErrorMessage(e)
+  } finally {
+    roleLoading.value = false
+  }
 }
 
 async function onChangePassword() {
@@ -494,6 +712,14 @@ watch(visible, async (isVisible) => {
 watch(activeTab, (tab) => {
   if (tab === 'answers' && myAnswers.value.length === 0) {
     fetchAnswers(1)
+  }
+  if (tab === 'settings') {
+    syncProfileForm()
+    profileFormError.value = ''
+    profileFormSuccess.value = ''
+    selectedRole.value = profile.value?.role || auth.user?.role || 'mom'
+    roleError.value = ''
+    roleSuccess.value = ''
   }
 })
 </script>
@@ -615,6 +841,11 @@ watch(activeTab, (tab) => {
   height: 70%;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.avatar-photo.avatar-custom {
+  width: 40%;
+  height: 40%;
 }
 
 .avatar-frame {
@@ -776,6 +1007,7 @@ watch(activeTab, (tab) => {
 }
 
 .profile-avatar {
+  position: relative;
   width: 68px;
   height: 68px;
   border-radius: 50%;
@@ -783,6 +1015,7 @@ watch(activeTab, (tab) => {
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgba(255, 255, 255, 0.15);
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .profile-avatar img {
@@ -800,6 +1033,83 @@ watch(activeTab, (tab) => {
   font-size: 28px;
   font-weight: 600;
   color: var(--accent-warm);
+}
+
+.avatar-edit-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 18px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.profile-avatar:hover .avatar-edit-hint {
+  opacity: 1;
+}
+
+/* Avatar Upload */
+.avatar-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-preview-small {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.avatar-preview-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder-small {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-warm);
+}
+
+.upload-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.upload-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.upload-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
 .profile-info {
@@ -1111,6 +1421,18 @@ watch(activeTab, (tab) => {
   gap: 12px;
 }
 
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: -6px;
+}
+
 .form-input {
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.08);
@@ -1182,6 +1504,36 @@ watch(activeTab, (tab) => {
 
 .logout-btn:hover {
   background: rgba(255, 100, 100, 0.18);
+}
+
+/* Role Selector */
+.role-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.role-option {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.role-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.role-option.active {
+  background: rgba(255, 182, 193, 0.2);
+  border-color: rgba(255, 182, 193, 0.4);
+  color: var(--text-primary);
 }
 
 /* ── Transitions ── */

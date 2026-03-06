@@ -26,6 +26,9 @@ func Setup(
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	// Serve uploaded files
+	r.Static("/uploads", "./uploads")
+
 	// Admin panel (HTML page, no auth required for serving the page)
 	r.GET("/admin", adminHandler.ServeAdminPage)
 
@@ -116,6 +119,7 @@ func Setup(
 		{
 			users.GET("/me", userHandler.GetMe)
 			users.PUT("/me", userHandler.UpdateMe)
+			users.POST("/me/avatar", userHandler.UploadAvatar)
 			users.GET("/me/questions", userHandler.GetMyQuestions)
 			users.GET("/me/answers", userHandler.GetMyAnswers)
 		}
