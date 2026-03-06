@@ -131,7 +131,8 @@ func createInitialAdmin(cfg *config.Config, userRepo *repository.UserRepo) {
 		Email:        cfg.AdminEmail,
 		PasswordHash: hash,
 		Nickname:     "Admin",
-		Role:         model.RoleAdmin,
+		Role:         model.RoleMom,
+		IsAdmin:      true,
 		IsActive:     true,
 	}
 

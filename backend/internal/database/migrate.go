@@ -6,7 +6,7 @@ import (
 )
 
 func Migrate(db *gorm.DB) error {
-	return db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&model.User{},
 		&model.UserCertification{},
 		&model.Tag{},
@@ -20,5 +20,15 @@ func Migrate(db *gorm.DB) error {
 		&model.ChatMemory{},
 		&model.IdentityTag{},
 		&model.Memoir{},
-	)
+	); err != nil {
+		return err
+	}
+
+	// Migrate legacy role='admin' users to is_admin flag
+	db.Model(&model.User{}).Where("role = ?", "admin").Updates(map[string]interface{}{
+		"is_admin": true,
+		"role":     "mom",
+	})
+
+	return nil
 }

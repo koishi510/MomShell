@@ -15,6 +15,7 @@ export interface UserProfile {
   email: string
   avatar_url: string | null
   role: string
+  is_admin: boolean
   shell_code: string | null
   partner: PartnerInfo | null
   is_certified: boolean

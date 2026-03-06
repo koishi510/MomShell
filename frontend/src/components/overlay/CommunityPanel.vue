@@ -44,12 +44,16 @@
               <span v-for="tag in q.tags" :key="tag.id" class="q-tag">{{ tag.name }}</span>
             </div>
             <div class="q-meta">
+              <img :src="q.author.avatar_url || avatarDefault" class="meta-avatar" />
               <span>{{ q.author.nickname }}</span>
+              <span class="author-tag">{{ q.author.display_tag }}</span>
               <span>· {{ q.answer_count }} 回答</span>
               <span class="q-like-action" @click.stop="onLikeQuestion(q)">
-                {{ q.is_liked ? '❤️' : '🤍' }} {{ q.like_count }}
+                <span :class="['icon-like', { active: q.is_liked }]">&#9829;</span> {{ q.like_count }}
               </span>
-              <span>· 📑 {{ q.collection_count }}</span>
+              <span class="q-collect-action" @click.stop="onCollectListQuestion(q)">
+                <span :class="['icon-collect', { active: q.is_collected }]">{{ q.is_collected ? '&#9733;' : '&#9734;' }}</span> {{ q.collection_count }}
+              </span>
             </div>
           </button>
         </div>
@@ -99,91 +103,87 @@
 
       <div v-if="selectedDetail" class="detail-overlay" @click.self="closeDetail">
         <div class="detail-card">
-          <button class="detail-close" @click="closeDetail">×</button>
-          <h2 class="detail-title">{{ selectedDetail.title }}</h2>
-          <p class="detail-author">{{ selectedDetail.author.nickname }}</p>
-          <div v-if="selectedDetail.tags && selectedDetail.tags.length" class="detail-tags">
-            <span v-for="tag in selectedDetail.tags" :key="tag.id" class="q-tag">{{ tag.name }}</span>
-          </div>
-          <div class="detail-content">{{ selectedDetail.content }}</div>
+          <div class="detail-scroll">
+            <button class="detail-close" @click="closeDetail">×</button>
+            <h2 class="detail-title">{{ selectedDetail.title }}</h2>
+            <div class="detail-author">
+              <img :src="selectedDetail.author.avatar_url || avatarDefault" class="author-avatar" />
+              <span>{{ selectedDetail.author.nickname }}</span>
+              <span class="author-tag">{{ selectedDetail.author.display_tag }}</span>
+            </div>
+            <div v-if="selectedDetail.tags && selectedDetail.tags.length" class="detail-tags">
+              <span v-for="tag in selectedDetail.tags" :key="tag.id" class="q-tag">{{ tag.name }}</span>
+            </div>
+            <div class="detail-content">{{ selectedDetail.content }}</div>
 
-          <div class="detail-actions-bar">
-            <button class="detail-action-btn" @click="onLikeDetailQuestion">
-              {{ selectedDetail.is_liked ? '❤️' : '🤍' }}
-              <span>{{ selectedDetail.like_count }}</span>
-            </button>
-            <button class="detail-action-btn" @click="onCollectQuestion">
-              {{ selectedDetail.is_collected ? '🔖' : '📑' }}
-              <span>{{ selectedDetail.collection_count }}</span>
-            </button>
-          </div>
+            <div class="detail-actions-bar">
+              <button class="detail-action-btn" @click="onLikeDetailQuestion">
+                <span :class="['icon-like', { active: selectedDetail.is_liked }]">&#9829;</span>
+                <span>{{ selectedDetail.like_count }}</span>
+              </button>
+              <button class="detail-action-btn" @click="onCollectQuestion">
+                <span :class="['icon-collect', { active: selectedDetail.is_collected }]">{{ selectedDetail.is_collected ? '&#9733;' : '&#9734;' }}</span>
+                <span>{{ selectedDetail.collection_count }}</span>
+              </button>
+            </div>
 
-          <div class="answers-section">
-            <h3 class="answers-title">回答 ({{ selectedDetail.answer_count }})</h3>
-            <div v-if="loadingAnswers" class="loading-state">加载中...</div>
-            <div v-for="a in answers" :key="a.id" class="answer-card">
-              <p class="answer-author">
-                {{ a.author.nickname }}
-                <span v-if="a.is_professional" class="pro-badge">专业</span>
-              </p>
-              <p class="answer-content">{{ a.content }}</p>
-              <div class="answer-meta">
-                <button class="like-btn" @click="onLikeAnswer(a)">
-                  {{ a.is_liked ? '❤️' : '🤍' }} {{ a.like_count }}
-                </button>
-                <button class="comment-toggle-btn" @click="toggleComments(a.id)">
-                  评论 ({{ a.comment_count }})
-                </button>
-              </div>
+            <div class="answers-section">
+              <h3 class="answers-title">回答 ({{ selectedDetail.answer_count }})</h3>
+              <div v-if="loadingAnswers" class="loading-state">加载中...</div>
+              <div v-for="a in answers" :key="a.id" class="answer-card">
+                <div class="answer-author">
+                  <img :src="a.author.avatar_url || avatarDefault" class="author-avatar" />
+                  <span>{{ a.author.nickname }}</span>
+                  <span class="author-tag">{{ a.author.display_tag }}</span>
+                </div>
+                <p class="answer-content">{{ a.content }}</p>
+                <div class="answer-meta">
+                  <button class="like-btn" @click="onLikeAnswer(a)">
+                    <span :class="['icon-like', { active: a.is_liked }]">&#9829;</span> {{ a.like_count }}
+                  </button>
+                  <button class="comment-toggle-btn" @click="onToggleComments(a)">
+                    评论 ({{ a.comment_count }})
+                  </button>
+                </div>
 
-              <div v-if="expandedComments[a.id]" class="comments-section">
-                <div v-if="loadingComments[a.id]" class="loading-state comment-loading">加载中...</div>
-                <template v-else>
-                  <div
-                    v-for="c in commentsMap[a.id] || []"
-                    :key="c.id"
-                    class="comment-item"
-                  >
-                    <span class="comment-author">{{ c.author.nickname }}</span>
-                    <span class="comment-text">{{ c.content }}</span>
-                    <div v-if="c.replies && c.replies.length" class="comment-replies">
-                      <div v-for="r in c.replies" :key="r.id" class="comment-item reply-item">
-                        <span class="comment-author">{{ r.author.nickname }}</span>
-                        <span v-if="r.reply_to_user" class="reply-to">
-                          回复 {{ r.reply_to_user.nickname }}
-                        </span>
-                        <span class="comment-text">{{ r.content }}</span>
+                <div v-if="expandedComments[a.id]" class="comments-section">
+                  <div v-if="loadingComments[a.id]" class="loading-state comment-loading">加载中...</div>
+                  <template v-else>
+                    <div v-for="c in commentsMap[a.id] || []" :key="c.id" class="comment-item">
+                      <div class="comment-header">
+                        <img :src="c.author.avatar_url || avatarDefault" class="comment-avatar" />
+                        <span class="comment-author">{{ c.author.nickname }}</span>
+                        <span v-if="c.reply_to_user" class="reply-to">@{{ c.reply_to_user.nickname }}</span>
+                      </div>
+                      <div class="comment-body">{{ c.content }}</div>
+                      <div class="comment-actions">
+                        <button class="comment-action-btn" @click="onLikeComment(c)">
+                          <span :class="['icon-like', { active: c.is_liked }]">&#9829;</span> {{ c.like_count }}
+                        </button>
+                        <button class="comment-action-btn" @click="setCommentTarget(a.id, c)">回复</button>
                       </div>
                     </div>
-                  </div>
-                </template>
-                <div class="comment-input-area">
-                  <input
-                    v-model="commentInputs[a.id]"
-                    class="comment-input"
-                    placeholder="写评论..."
-                    @keydown.enter="onPostComment(a.id)"
-                  />
-                  <button
-                    class="comment-send-btn"
-                    :disabled="!commentInputs[a.id]?.trim()"
-                    @click="onPostComment(a.id)"
-                  >
-                    发送
-                  </button>
+                  </template>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="reply-area">
-            <input
-              v-model="replyText"
-              class="reply-input"
-              placeholder="写下你的回答..."
-              @keydown.enter="onReply"
-            />
-            <button class="reply-btn" :disabled="!replyText.trim()" @click="onReply">发送</button>
+            <div v-if="commentTarget" class="reply-target-hint">
+              {{ commentTarget.nickname ? `回复 @${commentTarget.nickname}` : '写评论' }}
+              <button class="cancel-reply-btn" @click="clearCommentTarget">×</button>
+            </div>
+            <div class="reply-input-row">
+              <input
+                ref="replyInputRef"
+                v-model="replyText"
+                class="reply-input"
+                :placeholder="commentTarget ? (commentTarget.nickname ? `回复 @${commentTarget.nickname}...` : '写评论...') : '写下你的回答...'"
+                @keydown.enter="onSubmitReply"
+              />
+              <button class="reply-btn" :disabled="!replyText.trim()" @click="onSubmitReply">发送</button>
+            </div>
           </div>
         </div>
       </div>
@@ -192,9 +192,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
+import avatarDefault from '@/assets/avatar.png'
 import {
   getQuestions,
   getHotQuestions,
@@ -235,11 +236,11 @@ const answers = ref<AnswerListItem[]>([])
 const loadingAnswers = ref(false)
 const replyText = ref('')
 
-const expandedComments = reactive<Record<string, boolean>>({})
-const commentsMap = reactive<Record<string, CommentListItem[]>>({})
-const loadingComments = reactive<Record<string, boolean>>({})
-const commentInputs = reactive<Record<string, string>>({})
-
+const expandedComments = ref<Record<string, boolean>>({})
+const commentsMap = ref<Record<string, CommentListItem[]>>({})
+const loadingComments = ref<Record<string, boolean>>({})
+const commentTarget = ref<{ answerId: string; parentId?: string; nickname?: string } | null>(null)
+const replyInputRef = ref<HTMLInputElement | null>(null)
 const PAGE_SIZE = 15
 
 async function fetchQuestions(page = 1) {
@@ -290,10 +291,10 @@ watch(
 async function openDetail(q: QuestionListItem) {
   selectedDetail.value = null
   answers.value = []
-  Object.keys(expandedComments).forEach((k) => delete expandedComments[k])
-  Object.keys(commentsMap).forEach((k) => delete commentsMap[k])
-  Object.keys(loadingComments).forEach((k) => delete loadingComments[k])
-  Object.keys(commentInputs).forEach((k) => delete commentInputs[k])
+  expandedComments.value = {}
+  commentsMap.value = {}
+  loadingComments.value = {}
+  commentTarget.value = null
   try {
     const [detail, answerRes] = await Promise.all([
       getQuestion(q.id),
@@ -310,6 +311,7 @@ function closeDetail() {
   selectedDetail.value = null
   answers.value = []
   replyText.value = ''
+  commentTarget.value = null
 }
 
 async function openCompose() {
@@ -357,6 +359,17 @@ async function onLikeQuestion(q: QuestionListItem) {
     const res = await toggleLike('question', q.id, q.is_liked)
     questions.value = questions.value.map((item) =>
       item.id === q.id ? { ...item, is_liked: res.is_liked, like_count: res.new_count } : item,
+    )
+  } catch {
+    // silent
+  }
+}
+
+async function onCollectListQuestion(q: QuestionListItem) {
+  try {
+    const res = await toggleCollection(q.id, q.is_collected)
+    questions.value = questions.value.map((item) =>
+      item.id === q.id ? { ...item, is_collected: res.is_collected, collection_count: res.new_count } : item,
     )
   } catch {
     // silent
@@ -412,15 +425,30 @@ async function onLikeAnswer(a: AnswerListItem) {
   }
 }
 
-async function onReply() {
+async function onSubmitReply() {
   if (!replyText.value.trim() || !selectedDetail.value) return
   try {
-    const answer = await createAnswer(selectedDetail.value.id, replyText.value)
-    answers.value = [...answers.value, answer]
-    replyText.value = ''
-    selectedDetail.value = {
-      ...selectedDetail.value,
-      answer_count: selectedDetail.value.answer_count + 1,
+    if (commentTarget.value) {
+      // Posting a comment reply
+      const { answerId, parentId } = commentTarget.value
+      await createComment(answerId, { content: replyText.value, parent_id: parentId })
+      replyText.value = ''
+      commentTarget.value = null
+      const updated = await getComments(answerId)
+      commentsMap.value = { ...commentsMap.value, [answerId]: updated }
+      answers.value = answers.value.map((a) =>
+        a.id === answerId ? { ...a, comment_count: a.comment_count + 1 } : a,
+      )
+    } else {
+      // Posting an answer
+      await createAnswer(selectedDetail.value.id, replyText.value)
+      replyText.value = ''
+      const answerRes = await getAnswers(selectedDetail.value.id, { page: 1, page_size: 50 })
+      answers.value = answerRes.items
+      selectedDetail.value = {
+        ...selectedDetail.value,
+        answer_count: selectedDetail.value.answer_count + 1,
+      }
     }
   } catch (e) {
     alert(getErrorMessage(e))
@@ -428,35 +456,60 @@ async function onReply() {
 }
 
 async function toggleComments(answerId: string) {
-  if (expandedComments[answerId]) {
-    expandedComments[answerId] = false
+  if (expandedComments.value[answerId]) {
+    expandedComments.value = { ...expandedComments.value, [answerId]: false }
     return
   }
-  expandedComments[answerId] = true
-  if (commentsMap[answerId]) return
-  loadingComments[answerId] = true
+  expandedComments.value = { ...expandedComments.value, [answerId]: true }
+  if (commentsMap.value[answerId]) return
+  loadingComments.value = { ...loadingComments.value, [answerId]: true }
   try {
-    commentsMap[answerId] = await getComments(answerId)
+    commentsMap.value = { ...commentsMap.value, [answerId]: await getComments(answerId) }
   } catch {
-    commentsMap[answerId] = []
+    commentsMap.value = { ...commentsMap.value, [answerId]: [] }
   } finally {
-    loadingComments[answerId] = false
+    loadingComments.value = { ...loadingComments.value, [answerId]: false }
   }
 }
 
-async function onPostComment(answerId: string) {
-  const text = commentInputs[answerId]?.trim()
-  if (!text) return
+function onToggleComments(a: AnswerListItem) {
+  toggleComments(a.id)
+  commentTarget.value = { answerId: a.id }
+  nextTick(() => {
+    replyInputRef.value?.focus()
+  })
+}
+
+async function onLikeComment(c: CommentListItem) {
   try {
-    const comment = await createComment(answerId, { content: text })
-    commentsMap[answerId] = [...(commentsMap[answerId] || []), comment]
-    commentInputs[answerId] = ''
-    answers.value = answers.value.map((a) =>
-      a.id === answerId ? { ...a, comment_count: a.comment_count + 1 } : a,
-    )
-  } catch (e) {
-    alert(getErrorMessage(e))
+    const res = await toggleLike('comment', c.id, c.is_liked)
+    for (const [aid, comments] of Object.entries(commentsMap.value)) {
+      const idx = comments.findIndex((item) => item.id === c.id)
+      if (idx !== -1) {
+        const updated = [...comments]
+        updated[idx] = { ...updated[idx], is_liked: res.is_liked, like_count: res.new_count }
+        commentsMap.value = { ...commentsMap.value, [aid]: updated }
+        break
+      }
+    }
+  } catch {
+    // silent
   }
+}
+
+function setCommentTarget(answerId: string, comment: CommentListItem) {
+  commentTarget.value = {
+    answerId,
+    parentId: comment.id,
+    nickname: comment.author.nickname,
+  }
+  nextTick(() => {
+    replyInputRef.value?.focus()
+  })
+}
+
+function clearCommentTarget() {
+  commentTarget.value = null
 }
 </script>
 
@@ -578,6 +631,14 @@ async function onPostComment(answerId: string) {
   gap: 4px;
 }
 
+.meta-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 2px;
+}
+
 .q-like-action {
   cursor: pointer;
   margin-left: 4px;
@@ -585,6 +646,16 @@ async function onPostComment(answerId: string) {
 }
 
 .q-like-action:hover {
+  opacity: 0.8;
+}
+
+.q-collect-action {
+  cursor: pointer;
+  margin-left: 4px;
+  transition: opacity 0.15s;
+}
+
+.q-collect-action:hover {
   opacity: 0.8;
 }
 
@@ -740,14 +811,20 @@ async function onPostComment(answerId: string) {
   position: relative;
   width: min(520px, 92vw);
   max-height: 85vh;
-  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
   background: var(--glass-bg-heavy);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
   border-radius: var(--glass-radius);
   box-shadow: var(--glass-shadow);
+}
+
+.detail-scroll {
+  flex: 1;
   overflow-y: auto;
+  padding: 28px 24px 0;
 }
 
 .detail-close {
@@ -773,6 +850,16 @@ async function onPostComment(answerId: string) {
   font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.author-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .detail-tags {
@@ -835,16 +922,19 @@ async function onPostComment(answerId: string) {
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.pro-badge {
+.author-tag {
   display: inline-block;
   padding: 2px 8px;
-  background: rgba(100, 180, 255, 0.2);
+  background: rgba(180, 130, 80, 0.15);
   border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
-  color: #8ac4ff;
+  color: rgba(180, 130, 80, 0.8);
   margin-left: 6px;
 }
 
@@ -898,10 +988,49 @@ async function onPostComment(answerId: string) {
   color: var(--text-secondary);
 }
 
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.comment-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .comment-author {
   font-weight: 600;
   color: var(--text-primary);
-  margin-right: 6px;
+}
+
+.comment-body {
+  color: var(--text-secondary);
+  padding-left: 26px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 12px;
+  padding-left: 26px;
+  margin-top: 2px;
+}
+
+.comment-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.comment-action-btn:hover {
+  color: var(--text-primary);
 }
 
 .comment-text {
@@ -911,56 +1040,55 @@ async function onPostComment(answerId: string) {
 .reply-to {
   color: var(--accent-warm);
   font-size: 12px;
-  margin-right: 4px;
 }
 
-.comment-replies {
-  padding-left: 14px;
-  border-left: 1px solid rgba(255, 255, 255, 0.04);
-  margin-top: 4px;
-}
-
-.comment-input-area {
+.reply-target-hint {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--accent-warm);
+  margin-bottom: 6px;
 }
 
-.comment-input {
-  flex: 1;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  color: var(--text-primary);
-  font-size: 13px;
-  outline: none;
-}
-
-.comment-input::placeholder {
-  color: var(--text-secondary);
-}
-
-.comment-send-btn {
-  padding: 8px 14px;
-  background: var(--accent-warm);
+.cancel-reply-btn {
+  background: none;
   border: none;
-  border-radius: 10px;
-  color: #fff;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 14px;
   cursor: pointer;
+  padding: 0 2px;
 }
 
-.comment-send-btn:disabled {
-  opacity: 0.5;
+.icon-like {
+  color: var(--text-secondary);
+  transition: color 0.15s;
+}
+
+.icon-like.active {
+  color: #e74c5e;
+}
+
+.icon-collect {
+  font-size: 14px;
+}
+
+.icon-collect.active {
+  color: #e7a84c;
 }
 
 .reply-area {
   display: flex;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 16px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.reply-input-row {
+  display: flex;
+  gap: 10px;
 }
 
 .reply-input {
