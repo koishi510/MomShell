@@ -49,6 +49,19 @@ func (r *EchoRepo) FindMemoirsByUserID(userID string, limit, offset int) ([]mode
 	return memoirs, total, err
 }
 
+func (r *EchoRepo) FindMemoirsByUserIDs(userIDs []string, limit, offset int) ([]model.Memoir, int64, error) {
+	query := r.db.Model(&model.Memoir{}).Where("user_id IN ?", userIDs)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var memoirs []model.Memoir
+	err := query.Order("created_at desc").Offset(offset).Limit(limit).Find(&memoirs).Error
+	return memoirs, total, err
+}
+
 func (r *EchoRepo) CreateMemoir(memoir *model.Memoir) error {
 	return r.db.Create(memoir).Error
 }

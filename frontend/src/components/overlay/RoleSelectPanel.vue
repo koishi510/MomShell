@@ -34,7 +34,7 @@
 
     <ConfirmDialog
       :visible="showConfirm"
-      :message="`一旦选定身份，App 将为您锁定专属视角，身份选定后不可更改。确定选择「${pendingRole === 'mom' ? '溯源者' : '守护者'}」吗？`"
+      :message="`确定选择「${pendingRole === 'mom' ? '溯源者' : '守护者'}」吗？之后可以在个人设置中更改。`"
       @confirm="onConfirm"
       @cancel="showConfirm = false"
     />

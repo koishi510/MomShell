@@ -1,6 +1,13 @@
 import apiClient from '@/lib/apiClient'
 import type { PaginatedResponse } from './community'
 
+export interface PartnerInfo {
+  id: string
+  nickname: string
+  avatar_url: string | null
+  role: string
+}
+
 export interface UserProfile {
   id: string
   username: string
@@ -8,6 +15,8 @@ export interface UserProfile {
   email: string
   avatar_url: string | null
   role: string
+  shell_code: string | null
+  partner: PartnerInfo | null
   is_certified: boolean
   certification_title: string | null
   stats: UserStats
@@ -97,5 +106,23 @@ export function uploadAvatar(file: File): Promise<UserProfile> {
   form.append('avatar', file)
   return apiClient
     .post('/api/v1/community/users/me/avatar', form)
+    .then((r) => r.data)
+}
+
+export function generateShellCode(): Promise<UserProfile> {
+  return apiClient
+    .post('/api/v1/community/users/me/shell-code')
+    .then((r) => r.data)
+}
+
+export function bindPartner(shellCode: string): Promise<UserProfile> {
+  return apiClient
+    .post('/api/v1/community/users/me/bind', { shell_code: shellCode })
+    .then((r) => r.data)
+}
+
+export function unbindPartner(): Promise<UserProfile> {
+  return apiClient
+    .delete('/api/v1/community/users/me/bind')
     .then((r) => r.data)
 }

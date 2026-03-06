@@ -64,7 +64,7 @@ func main() {
 		chatClient = openai.NewClient("dummy", cfg.OpenAIBaseURL, cfg.OpenAIModel)
 	}
 	chatService := service.NewChatService(chatClient, chatRepo)
-	echoService := service.NewEchoService(chatClient, echoRepo)
+	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
 
 	userService := service.NewUserService(
 		db, userRepo, questionRepo, answerRepo,

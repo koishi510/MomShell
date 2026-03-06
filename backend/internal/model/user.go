@@ -29,9 +29,8 @@ var ProfessionalRoles = map[UserRole]bool{
 }
 
 var FamilyRoles = map[UserRole]bool{
-	RoleMom:    true,
-	RoleDad:    true,
-	RoleFamily: true,
+	RoleMom: true,
+	RoleDad: true,
 }
 
 // CertificationStatus enum
