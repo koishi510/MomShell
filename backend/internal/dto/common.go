@@ -52,6 +52,7 @@ type AuthorInfo struct {
 	Nickname           string  `json:"nickname"`
 	AvatarURL          *string `json:"avatar_url"`
 	Role               string  `json:"role"`
+	DisplayTag         string  `json:"display_tag"`
 	IsCertified        bool    `json:"is_certified"`
 	CertificationTitle *string `json:"certification_title"`
 }

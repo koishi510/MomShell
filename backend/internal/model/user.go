@@ -14,11 +14,9 @@ const (
 	RoleGuest              UserRole = "guest"
 	RoleMom                UserRole = "mom"
 	RoleDad                UserRole = "dad"
-	RoleFamily             UserRole = "family"
 	RoleCertifiedDoctor    UserRole = "certified_doctor"
 	RoleCertifiedTherapist UserRole = "certified_therapist"
 	RoleCertifiedNurse     UserRole = "certified_nurse"
-	RoleAdmin              UserRole = "admin"
 	RoleAIAssistant        UserRole = "ai_assistant"
 )
 
@@ -54,6 +52,7 @@ type User struct {
 	Role         UserRole `gorm:"type:varchar(30);default:'mom'" json:"role"`
 	ShellCode    *string  `gorm:"type:varchar(8);uniqueIndex" json:"shell_code"`
 	IsGuest      bool     `gorm:"default:false" json:"is_guest"`
+	IsAdmin      bool     `gorm:"default:false" json:"is_admin"`
 	PartnerID    *string  `gorm:"type:varchar(36)" json:"partner_id"`
 
 	// Postpartum info

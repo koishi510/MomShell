@@ -10,6 +10,7 @@ type UserProfile struct {
 	Email              string       `json:"email"`
 	AvatarURL          *string      `json:"avatar_url"`
 	Role               string       `json:"role"`
+	IsAdmin            bool         `json:"is_admin"`
 	ShellCode          *string      `json:"shell_code"`
 	Partner            *PartnerInfo `json:"partner"`
 	IsCertified        bool         `json:"is_certified"`

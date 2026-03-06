@@ -8,6 +8,7 @@ export interface User {
   nickname: string;
   avatar_url: string | null;
   role: string;
+  is_admin: boolean;
   is_certified: boolean;
   certification_title: string | null;
   baby_birth_date: string | null;

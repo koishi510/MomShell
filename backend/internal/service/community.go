@@ -75,7 +75,36 @@ func (s *CommunityService) BuildAuthorInfo(user *model.User) dto.AuthorInfo {
 		}
 	}
 
+	// Compute display tag: additional tag takes priority over base tag
+	info.DisplayTag = displayTag(user)
+
 	return info
+}
+
+// displayTag returns the tag to show in community.
+// Additional tags (admin, certified, ai_assistant) override the base tag (溯源者/守护者).
+func displayTag(user *model.User) string {
+	if user.Certification != nil && user.Certification.Status == model.CertApproved {
+		switch user.Certification.CertificationType {
+		case model.RoleCertifiedDoctor:
+			return "认证医师"
+		case model.RoleCertifiedTherapist:
+			return "认证心理师"
+		case model.RoleCertifiedNurse:
+			return "认证护士"
+		}
+	}
+	if user.IsAdmin {
+		return "管理员"
+	}
+	if user.Role == model.RoleAIAssistant {
+		return "AI 助手"
+	}
+	// Base tag
+	if user.Role == model.RoleDad {
+		return "守护者"
+	}
+	return "溯源者"
 }
 
 func buildTagInfo(tag model.Tag) dto.TagInfo {
@@ -285,7 +314,7 @@ func (s *CommunityService) UpdateQuestion(questionID string, req dto.QuestionUpd
 		return nil, err
 	}
 
-	if q.AuthorID != user.ID && user.Role != model.RoleAdmin {
+	if q.AuthorID != user.ID && !user.IsAdmin {
 		return nil, errors.New("无权修改此问题")
 	}
 
@@ -338,7 +367,7 @@ func (s *CommunityService) DeleteQuestion(questionID string, user *model.User) e
 		return err
 	}
 
-	if q.AuthorID != user.ID && user.Role != model.RoleAdmin {
+	if q.AuthorID != user.ID && !user.IsAdmin {
 		return errors.New("无权删除此问题")
 	}
 
@@ -408,7 +437,7 @@ func (s *CommunityService) CreateAnswer(questionID string, req dto.AnswerCreate,
 	// Check permission for professional channel
 	if q.Channel == model.ChannelProfessional {
 		isAuthor := q.AuthorID == author.ID
-		if !s.IsCertifiedProfessional(author) && author.Role != model.RoleAdmin && !isAuthor {
+		if !s.IsCertifiedProfessional(author) && !author.IsAdmin && !isAuthor {
 			return nil, errors.New("专业频道仅限认证专业人士回答")
 		}
 	}
@@ -459,7 +488,7 @@ func (s *CommunityService) UpdateAnswer(answerID string, req dto.AnswerUpdate, u
 		return nil, err
 	}
 
-	if a.AuthorID != user.ID && user.Role != model.RoleAdmin {
+	if a.AuthorID != user.ID && !user.IsAdmin {
 		return nil, errors.New("无权修改此回答")
 	}
 
@@ -493,7 +522,7 @@ func (s *CommunityService) DeleteAnswer(answerID string, user *model.User) error
 
 	isAnswerAuthor := a.AuthorID == user.ID
 	isQuestionAuthor := a.Question.AuthorID == user.ID
-	isAdmin := user.Role == model.RoleAdmin
+	isAdmin := user.IsAdmin
 
 	if !isAnswerAuthor && !isQuestionAuthor && !isAdmin {
 		return errors.New("无权删除此回答")
@@ -523,69 +552,26 @@ func (s *CommunityService) GetComments(answerID, currentUserID string) ([]dto.Co
 		likedIDs, _ = s.interactionRepo.FindLikedTargetIDs(currentUserID, "comment", commentIDs)
 	}
 
-	// Build map for nested structure
-	commentMap := make(map[string]*model.Comment)
-	for i := range comments {
-		commentMap[comments[i].ID] = &comments[i]
-	}
-
-	// Find root ancestor
-	var findRootID func(string) string
-	findRootID = func(id string) string {
-		c, ok := commentMap[id]
-		if !ok || c.ParentID == nil {
-			return id
-		}
-		return findRootID(*c.ParentID)
-	}
-
-	rootItems := make(map[string]*dto.CommentListItem)
+	// Build flat list in chronological order, with reply_to_user resolved
 	var result []dto.CommentListItem
-
-	// First pass: root comments
 	for _, c := range comments {
-		if c.ParentID == nil {
-			item := dto.CommentListItem{
-				ID:        c.ID,
-				AnswerID:  c.AnswerID,
-				Author:    s.BuildAuthorInfo(&c.Author),
-				Content:   c.Content,
-				ParentID:  nil,
-				LikeCount: c.LikeCount,
-				IsLiked:   likedIDs[c.ID],
-				CreatedAt: c.CreatedAt,
-				Replies:   []dto.CommentListItem{},
-			}
-			result = append(result, item)
-			rootItems[c.ID] = &result[len(result)-1]
+		var replyToUser *dto.AuthorInfo
+		if c.ReplyToUser != nil {
+			info := s.BuildAuthorInfo(c.ReplyToUser)
+			replyToUser = &info
 		}
-	}
-
-	// Second pass: replies
-	for _, c := range comments {
-		if c.ParentID != nil {
-			rootID := findRootID(c.ID)
-			if root, ok := rootItems[rootID]; ok {
-				var replyToUser *dto.AuthorInfo
-				if c.ReplyToUser != nil {
-					info := s.BuildAuthorInfo(c.ReplyToUser)
-					replyToUser = &info
-				}
-				reply := dto.CommentListItem{
-					ID:          c.ID,
-					AnswerID:    c.AnswerID,
-					Author:      s.BuildAuthorInfo(&c.Author),
-					Content:     c.Content,
-					ParentID:    &rootID,
-					ReplyToUser: replyToUser,
-					LikeCount:   c.LikeCount,
-					IsLiked:     likedIDs[c.ID],
-					CreatedAt:   c.CreatedAt,
-					Replies:     []dto.CommentListItem{},
-				}
-				root.Replies = append(root.Replies, reply)
-			}
-		}
+		result = append(result, dto.CommentListItem{
+			ID:          c.ID,
+			AnswerID:    c.AnswerID,
+			Author:      s.BuildAuthorInfo(&c.Author),
+			Content:     c.Content,
+			ParentID:    c.ParentID,
+			ReplyToUser: replyToUser,
+			LikeCount:   c.LikeCount,
+			IsLiked:     likedIDs[c.ID],
+			CreatedAt:   c.CreatedAt,
+			Replies:     []dto.CommentListItem{},
+		})
 	}
 
 	if result == nil {
@@ -659,7 +645,7 @@ func (s *CommunityService) DeleteComment(commentID string, user *model.User) err
 		return err
 	}
 
-	if comment.AuthorID != user.ID && user.Role != model.RoleAdmin {
+	if comment.AuthorID != user.ID && !user.IsAdmin {
 		return errors.New("无权删除此评论")
 	}
 

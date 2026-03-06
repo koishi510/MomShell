@@ -17,6 +17,7 @@ type AdminUserListItem struct {
 	Email     string    `json:"email"`
 	Nickname  string    `json:"nickname"`
 	Role      string    `json:"role"`
+	IsAdmin   bool      `json:"is_admin"`
 	IsActive  bool      `json:"is_active"`
 	IsBanned  bool      `json:"is_banned"`
 	IsGuest   bool      `json:"is_guest"`
@@ -31,6 +32,7 @@ type AdminUserDetail struct {
 	Nickname      string     `json:"nickname"`
 	AvatarURL     *string    `json:"avatar_url"`
 	Role          string     `json:"role"`
+	IsAdmin       bool       `json:"is_admin"`
 	ShellCode     *string    `json:"shell_code"`
 	IsGuest       bool       `json:"is_guest"`
 	IsActive      bool       `json:"is_active"`
@@ -58,6 +60,7 @@ type AdminCreateUser struct {
 // AdminUserUpdate is the request body for updating a user via admin
 type AdminUserUpdate struct {
 	Role     *string `json:"role"`
+	IsAdmin  *bool   `json:"is_admin"`
 	IsActive *bool   `json:"is_active"`
 	IsBanned *bool   `json:"is_banned"`
 	Nickname *string `json:"nickname"`

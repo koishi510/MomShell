@@ -7,7 +7,6 @@ import (
 	"github.com/momshell/backend/internal/admin"
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/middleware"
-	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/service"
 )
 
@@ -37,7 +36,7 @@ func (h *AdminHandler) requireAdmin(c *gin.Context) (string, bool) {
 		return "", false
 	}
 
-	if user.Role != model.RoleAdmin {
+	if !user.IsAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
 		return "", false
 	}

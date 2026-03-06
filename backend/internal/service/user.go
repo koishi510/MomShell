@@ -61,6 +61,7 @@ func (s *UserService) GetProfile(userID string) (*dto.UserProfile, error) {
 		Email:              user.Email,
 		AvatarURL:          user.AvatarURL,
 		Role:               string(user.Role),
+		IsAdmin:            user.IsAdmin,
 		ShellCode:          user.ShellCode,
 		IsCertified:        info.IsCertified,
 		CertificationTitle: info.CertificationTitle,
@@ -120,9 +121,6 @@ func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*
 		}
 		if model.ProfessionalRoles[user.Role] {
 			return nil, errors.New("认证专业人员不能修改角色")
-		}
-		if user.Role == model.RoleAdmin {
-			return nil, errors.New("管理员不能通过此接口修改角色")
 		}
 		if user.PartnerID != nil {
 			return nil, errors.New("已绑定伴侣，无法更改身份")
