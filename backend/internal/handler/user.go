@@ -128,6 +128,46 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	c.JSON(http.StatusOK, profile)
 }
 
+// POST /api/v1/community/users/me/shell-code
+func (h *UserHandler) GenerateShellCode(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	profile, err := h.userService.GenerateShellCode(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, profile)
+}
+
+// POST /api/v1/community/users/me/bind
+func (h *UserHandler) BindPartner(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req dto.BindPartnerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	profile, err := h.userService.BindPartner(userID, req.ShellCode)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, profile)
+}
+
+// DELETE /api/v1/community/users/me/bind
+func (h *UserHandler) UnbindPartner(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	profile, err := h.userService.UnbindPartner(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, profile)
+}
+
 // GET /api/v1/community/users/me/questions
 func (h *UserHandler) GetMyQuestions(c *gin.Context) {
 	userID := middleware.GetUserID(c)

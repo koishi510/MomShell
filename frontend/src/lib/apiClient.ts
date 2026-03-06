@@ -104,18 +104,19 @@ export default apiClient;
 
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{
-      detail?: string | Array<{ msg?: string }> | { message?: string };
-    }>;
-    const detail = axiosError.response?.data?.detail;
+    const data = error.response?.data as Record<string, unknown> | undefined;
+    // Gin backend: {"error": "..."}
+    if (data && typeof data.error === "string") return data.error;
+    // FastAPI-style: {"detail": "..."}
+    const detail = data?.detail;
     if (typeof detail === "string") return detail;
     if (Array.isArray(detail) && detail.length > 0) {
-      return detail.map((e) => e.msg || "").join("; ");
+      return detail.map((e: { msg?: string }) => e.msg || "").join("; ");
     }
     if (detail && typeof detail === "object" && "message" in detail) {
       return (detail as { message?: string }).message || "请求失败";
     }
-    return axiosError.message || "请求失败";
+    return error.message || "请求失败";
   }
   if (error instanceof Error) return error.message;
   return "未知错误";

@@ -54,7 +54,7 @@ export const useAuthStore = defineStore("auth", () => {
     return newUser;
   }
 
-  async function setRole(role: "mom" | "dad" | "family") {
+  async function setRole(role: "mom" | "dad") {
     if (!accessToken.value) throw new Error("Not authenticated");
     const updatedUser = await apiSetRole(accessToken.value, role);
     user.value = updatedUser;

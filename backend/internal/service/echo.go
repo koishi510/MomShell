@@ -17,12 +17,14 @@ import (
 type EchoService struct {
 	client   *openai.Client
 	echoRepo *repository.EchoRepo
+	userRepo *repository.UserRepo
 }
 
-func NewEchoService(client *openai.Client, echoRepo *repository.EchoRepo) *EchoService {
+func NewEchoService(client *openai.Client, echoRepo *repository.EchoRepo, userRepo *repository.UserRepo) *EchoService {
 	return &EchoService{
 		client:   client,
 		echoRepo: echoRepo,
+		userRepo: userRepo,
 	}
 }
 
@@ -86,7 +88,14 @@ func (s *EchoService) DeleteIdentityTag(userID, tagID string) error {
 }
 
 func (s *EchoService) GetMemoirs(userID string, limit, offset int) (*dto.MemoirListResponse, error) {
-	memoirs, total, err := s.echoRepo.FindMemoirsByUserID(userID, limit, offset)
+	// Collect user IDs: self + partner
+	userIDs := []string{userID}
+	user, err := s.userRepo.FindByID(userID)
+	if err == nil && user.PartnerID != nil {
+		userIDs = append(userIDs, *user.PartnerID)
+	}
+
+	memoirs, total, err := s.echoRepo.FindMemoirsByUserIDs(userIDs, limit, offset)
 	if err != nil {
 		return nil, err
 	}

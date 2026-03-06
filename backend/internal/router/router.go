@@ -120,6 +120,9 @@ func Setup(
 			users.GET("/me", userHandler.GetMe)
 			users.PUT("/me", userHandler.UpdateMe)
 			users.POST("/me/avatar", userHandler.UploadAvatar)
+			users.POST("/me/shell-code", userHandler.GenerateShellCode)
+			users.POST("/me/bind", userHandler.BindPartner)
+			users.DELETE("/me/bind", userHandler.UnbindPartner)
 			users.GET("/me/questions", userHandler.GetMyQuestions)
 			users.GET("/me/answers", userHandler.GetMyAnswers)
 		}
