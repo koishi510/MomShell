@@ -385,9 +385,9 @@ import {
 } from '@/lib/api/user'
 import { getErrorMessage } from '@/lib/apiClient'
 
-import avatarFrame from '@/assets/frame.png'
-import avatarDefault from '@/assets/avatar.png'
-import boxImg from '@/assets/box.png'
+import avatarFrame from '@/assets/images/frame.png'
+import avatarDefault from '@/assets/images/avatar.png'
+import boxImg from '@/assets/images/box.png'
 
 const uiStore = useUiStore()
 const auth = useAuthStore()
@@ -837,7 +837,7 @@ watch(activeTab, (tab) => {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: url('@/assets/car-bg.png') center / 100% 100% no-repeat;
+  background: url('@/assets/images/car-bg.png') center / 100% 100% no-repeat;
   background-color: #3a2f28;
   display: flex;
   flex-direction: column;
