@@ -14,7 +14,7 @@ import (
 	"github.com/momshell/backend/pkg/openai"
 )
 
-var mentionPattern = regexp.MustCompile(`@(小石光)`)
+var mentionPattern = regexp.MustCompile(`@小石光`)
 
 type CommunityAIService struct {
 	client       *openai.Client
