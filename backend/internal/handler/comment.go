@@ -12,10 +12,11 @@ import (
 type CommentHandler struct {
 	communityService *service.CommunityService
 	authService      *service.AuthService
+	communityAI      *service.CommunityAIService
 }
 
-func NewCommentHandler(communityService *service.CommunityService, authService *service.AuthService) *CommentHandler {
-	return &CommentHandler{communityService: communityService, authService: authService}
+func NewCommentHandler(communityService *service.CommunityService, authService *service.AuthService, communityAI *service.CommunityAIService) *CommentHandler {
+	return &CommentHandler{communityService: communityService, authService: authService, communityAI: communityAI}
 }
 
 // GET /api/v1/community/answers/:id/comments
@@ -57,6 +58,11 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		}
 		c.JSON(status, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Trigger AI reply if content mentions @小石光/@koishi
+	if h.communityAI != nil && service.ContainsMention(req.Content) {
+		go h.communityAI.HandleNewComment(answerID, comment.ID)
 	}
 
 	c.JSON(http.StatusCreated, comment)
