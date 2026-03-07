@@ -7,6 +7,8 @@ export interface SpriteData {
   rotate?: number
   scaleX?: number
   scaleY?: number
+  bubbleOffsetX?: string
+  bubbleOffsetY?: string
 }
 
 import carImg from '@/assets/images/car.png'
@@ -25,7 +27,15 @@ export const SPRITES: SpriteData[] = [
 
   { id: 'stone', src: stoneImg, left: '68%', top: '-10%',  width: '30vw' },
 
-  { id: 'crab',  src: crabImg,  left: '60%', top: '12%', width: '6vw' },
+  {
+    id: 'crab',
+    src: crabImg,
+    left: '60%',
+    top: '12%',
+    width: '6vw',
+    bubbleOffsetX: '-1vw',
+    bubbleOffsetY: '-5.1rem',
+  },
 
   { id: 'shell', src: shellImg, left: '48%', top: '45%', width: '5vw', rotate: 0 },
 

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth'
 
-export type PanelName = 'auth' | 'role' | 'profile' | 'memory' | 'community' | 'chat' | 'car' | null
+export type PanelName = 'auth' | 'role' | 'memory' | 'community' | 'chat' | 'car' | null
 export type AuthMode = 'login' | 'register' | 'guest'
 
 export const useUiStore = defineStore('ui', () => {
@@ -28,7 +28,7 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   /** Open a feature panel, but intercept if guest → force auth */
-  function openFeature(panel: 'car' | 'profile' | 'memory' | 'community' | 'chat') {
+  function openFeature(panel: 'car' | 'memory' | 'community' | 'chat') {
     const auth = useAuthStore()
     if (!auth.isAuthenticated && !auth.isGuest) {
       openAuth()

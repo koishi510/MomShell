@@ -3,7 +3,6 @@
   <LandingOverlay />
   <AuthPanel />
   <RoleSelectPanel />
-  <ProfilePanel />
   <CarPage />
   <MemoryPanel />
   <CommunityPanel />
@@ -17,7 +16,6 @@ import BeachScene from '@/components/scene/BeachScene.vue'
 import LandingOverlay from '@/components/overlay/LandingOverlay.vue'
 import AuthPanel from '@/components/overlay/AuthPanel.vue'
 import RoleSelectPanel from '@/components/overlay/RoleSelectPanel.vue'
-import ProfilePanel from '@/components/overlay/ProfilePanel.vue'
 import CarPage from '@/components/overlay/CarPage.vue'
 import MemoryPanel from '@/components/overlay/MemoryPanel.vue'
 import CommunityPanel from '@/components/overlay/CommunityPanel.vue'
