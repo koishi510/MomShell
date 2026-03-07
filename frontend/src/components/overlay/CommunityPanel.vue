@@ -44,7 +44,7 @@
               <span v-for="tag in q.tags" :key="tag.id" class="q-tag">{{ tag.name }}</span>
             </div>
             <div class="q-meta">
-              <img :src="q.author.avatar_url || avatarDefault" class="meta-avatar" />
+              <img :src="getAvatar(q.author)" class="meta-avatar" />
               <span>{{ q.author.nickname }}</span>
               <span class="author-tag">{{ q.author.display_tag }}</span>
               <span>· {{ q.answer_count }} 回答</span>
@@ -116,7 +116,7 @@
             <template v-else>
               <h2 class="detail-title">{{ selectedDetail.title }}</h2>
               <div class="detail-author">
-                <img :src="selectedDetail.author.avatar_url || avatarDefault" class="author-avatar" />
+                <img :src="getAvatar(selectedDetail.author)" class="author-avatar" />
                 <span>{{ selectedDetail.author.nickname }}</span>
                 <span class="author-tag">{{ selectedDetail.author.display_tag }}</span>
                 <span v-if="canModify(selectedDetail.author.id)" class="modify-actions">
@@ -146,7 +146,7 @@
               <div v-if="loadingAnswers" class="loading-state">加载中...</div>
               <div v-for="a in answers" :key="a.id" class="answer-card">
                 <div class="answer-author">
-                  <img :src="a.author.avatar_url || avatarDefault" class="author-avatar" />
+                  <img :src="getAvatar(a.author)" class="author-avatar" />
                   <span>{{ a.author.nickname }}</span>
                   <span class="author-tag">{{ a.author.display_tag }}</span>
                   <span v-if="canModify(a.author.id)" class="modify-actions">
@@ -178,7 +178,7 @@
                   <template v-else>
                     <div v-for="c in commentsMap[a.id] || []" :key="c.id" class="comment-item">
                       <div class="comment-header">
-                        <img :src="c.author.avatar_url || avatarDefault" class="comment-avatar" />
+                        <img :src="getAvatar(c.author)" class="comment-avatar" />
                         <span class="comment-author">{{ c.author.nickname }}</span>
                         <span v-if="c.reply_to_user" class="reply-to">@{{ c.reply_to_user.nickname }}</span>
                       </div>
@@ -224,6 +224,7 @@ import { ref, watch, nextTick } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import avatarDefault from '@/assets/avatar.png'
+import aiAvatar from '@/assets/ai_avatar.png'
 import {
   getQuestions,
   getMyCollections,
@@ -285,6 +286,11 @@ const editAnswerContent = ref('')
 
 function canModify(authorId: string) {
   return authStore.user?.id === authorId || authStore.user?.is_admin
+}
+
+function getAvatar(author: { avatar_url: string | null; role: string }) {
+  if (author.role === 'ai_assistant') return aiAvatar
+  return author.avatar_url || avatarDefault
 }
 
 async function fetchQuestions(page = 1) {
