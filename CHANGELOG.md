@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+#### Vue 3 Frontend
+
+- **Background music loop**: Added global alternating playback for `The Shore and You` and `Travelogue`
+- **Profile music control**: Added background music volume slider in the profile settings panel
+
+### Changed
+
+- **Frontend assets**: Reorganized static assets into `frontend/src/assets/images/` and `frontend/src/assets/audio/`
+- **Asset imports**: Updated frontend image and audio references to match the new asset directory structure
+
+---
+
 ## [1.0.0] - 2026-03-05
 
 ### Major Rewrite
