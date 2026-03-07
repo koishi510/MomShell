@@ -17,10 +17,10 @@
           专业问答
         </button>
         <button
-          :class="['channel-tab', { active: channel === 'hot' }]"
-          @click="switchChannel('hot')"
+          :class="['channel-tab', { active: channel === 'collections' }]"
+          @click="switchChannel('collections')"
         >
-          热门
+          我的收藏
         </button>
       </div>
 
@@ -105,16 +105,30 @@
         <div class="detail-card">
           <div class="detail-scroll">
             <button class="detail-close" @click="closeDetail">×</button>
-            <h2 class="detail-title">{{ selectedDetail.title }}</h2>
-            <div class="detail-author">
-              <img :src="selectedDetail.author.avatar_url || avatarDefault" class="author-avatar" />
-              <span>{{ selectedDetail.author.nickname }}</span>
-              <span class="author-tag">{{ selectedDetail.author.display_tag }}</span>
-            </div>
-            <div v-if="selectedDetail.tags && selectedDetail.tags.length" class="detail-tags">
-              <span v-for="tag in selectedDetail.tags" :key="tag.id" class="q-tag">{{ tag.name }}</span>
-            </div>
-            <div class="detail-content">{{ selectedDetail.content }}</div>
+            <template v-if="editingQuestion">
+              <input v-model="editQuestionData.title" class="compose-input" placeholder="标题" />
+              <textarea v-model="editQuestionData.content" class="compose-textarea" rows="6" />
+              <div class="edit-actions">
+                <button class="edit-cancel-btn" @click="editingQuestion = false">取消</button>
+                <button class="edit-save-btn" @click="onSaveQuestion">保存</button>
+              </div>
+            </template>
+            <template v-else>
+              <h2 class="detail-title">{{ selectedDetail.title }}</h2>
+              <div class="detail-author">
+                <img :src="selectedDetail.author.avatar_url || avatarDefault" class="author-avatar" />
+                <span>{{ selectedDetail.author.nickname }}</span>
+                <span class="author-tag">{{ selectedDetail.author.display_tag }}</span>
+                <span v-if="canModify(selectedDetail.author.id)" class="modify-actions">
+                  <button class="modify-btn" @click="startEditQuestion">编辑</button>
+                  <button class="modify-btn delete" @click="onDeleteQuestion">删除</button>
+                </span>
+              </div>
+              <div v-if="selectedDetail.tags && selectedDetail.tags.length" class="detail-tags">
+                <span v-for="tag in selectedDetail.tags" :key="tag.id" class="q-tag">{{ tag.name }}</span>
+              </div>
+              <div class="detail-content">{{ selectedDetail.content }}</div>
+            </template>
 
             <div class="detail-actions-bar">
               <button class="detail-action-btn" @click="onLikeDetailQuestion">
@@ -135,8 +149,21 @@
                   <img :src="a.author.avatar_url || avatarDefault" class="author-avatar" />
                   <span>{{ a.author.nickname }}</span>
                   <span class="author-tag">{{ a.author.display_tag }}</span>
+                  <span v-if="canModify(a.author.id)" class="modify-actions">
+                    <button v-if="editingAnswerId !== a.id" class="modify-btn" @click="startEditAnswer(a)">编辑</button>
+                    <button class="modify-btn delete" @click="onDeleteAnswer(a)">删除</button>
+                  </span>
                 </div>
-                <p class="answer-content">{{ a.content }}</p>
+                <template v-if="editingAnswerId === a.id">
+                  <textarea v-model="editAnswerContent" class="compose-textarea" rows="4" />
+                  <div class="edit-actions">
+                    <button class="edit-cancel-btn" @click="editingAnswerId = null">取消</button>
+                    <button class="edit-save-btn" @click="onSaveAnswer">保存</button>
+                  </div>
+                </template>
+                <template v-else>
+                  <p class="answer-content">{{ a.content }}</p>
+                </template>
                 <div class="answer-meta">
                   <button class="like-btn" @click="onLikeAnswer(a)">
                     <span :class="['icon-like', { active: a.is_liked }]">&#9829;</span> {{ a.like_count }}
@@ -161,6 +188,7 @@
                           <span :class="['icon-like', { active: c.is_liked }]">&#9829;</span> {{ c.like_count }}
                         </button>
                         <button class="comment-action-btn" @click="setCommentTarget(a.id, c)">回复</button>
+                        <button v-if="canModify(c.author.id)" class="comment-action-btn delete" @click="onDeleteComment(c, a.id)">删除</button>
                       </div>
                     </div>
                   </template>
@@ -198,13 +226,18 @@ import { useUiStore } from '@/stores/ui'
 import avatarDefault from '@/assets/avatar.png'
 import {
   getQuestions,
-  getHotQuestions,
+  getMyCollections,
   getQuestion,
   createQuestion,
+  updateQuestion,
+  deleteQuestion,
   getAnswers,
   createAnswer,
+  updateAnswer,
+  deleteAnswer,
   getComments,
   createComment,
+  deleteComment,
   toggleLike,
   toggleCollection,
   getHotTags,
@@ -215,10 +248,12 @@ import {
   type TagListItem,
 } from '@/lib/api/community'
 import { getErrorMessage } from '@/lib/apiClient'
+import { useAuthStore } from '@/stores/auth'
 
 const uiStore = useUiStore()
+const authStore = useAuthStore()
 
-const channel = ref<'experience' | 'professional' | 'hot'>('experience')
+const channel = ref<'experience' | 'professional' | 'collections'>('experience')
 const questions = ref<QuestionListItem[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
@@ -243,6 +278,15 @@ const commentTarget = ref<{ answerId: string; parentId?: string; nickname?: stri
 const replyInputRef = ref<HTMLInputElement | null>(null)
 const PAGE_SIZE = 15
 
+const editingQuestion = ref(false)
+const editQuestionData = ref({ title: '', content: '' })
+const editingAnswerId = ref<string | null>(null)
+const editAnswerContent = ref('')
+
+function canModify(authorId: string) {
+  return authStore.user?.id === authorId || authStore.user?.is_admin
+}
+
 async function fetchQuestions(page = 1) {
   if (page === 1) {
     loading.value = true
@@ -250,17 +294,26 @@ async function fetchQuestions(page = 1) {
     loadingMore.value = true
   }
   try {
-    const res =
-      channel.value === 'hot'
-        ? await getHotQuestions({ page, page_size: PAGE_SIZE })
-        : await getQuestions({ channel: channel.value, page, page_size: PAGE_SIZE })
-    if (page === 1) {
-      questions.value = res.items
+    if (channel.value === 'collections') {
+      const res = await getMyCollections({ page, page_size: PAGE_SIZE })
+      const items = res.items.map((c) => c.question)
+      if (page === 1) {
+        questions.value = items
+      } else {
+        questions.value = [...questions.value, ...items]
+      }
+      currentPage.value = res.page
+      totalPages.value = res.total_pages
     } else {
-      questions.value = [...questions.value, ...res.items]
+      const res = await getQuestions({ channel: channel.value, page, page_size: PAGE_SIZE })
+      if (page === 1) {
+        questions.value = res.items
+      } else {
+        questions.value = [...questions.value, ...res.items]
+      }
+      currentPage.value = res.page
+      totalPages.value = res.total_pages
     }
-    currentPage.value = res.page
-    totalPages.value = res.total_pages
   } catch {
     // silent
   } finally {
@@ -269,7 +322,7 @@ async function fetchQuestions(page = 1) {
   }
 }
 
-function switchChannel(c: 'experience' | 'professional' | 'hot') {
+function switchChannel(c: 'experience' | 'professional' | 'collections') {
   if (channel.value === c) return
   channel.value = c
   currentPage.value = 1
@@ -312,6 +365,8 @@ function closeDetail() {
   answers.value = []
   replyText.value = ''
   commentTarget.value = null
+  editingQuestion.value = false
+  editingAnswerId.value = null
 }
 
 async function openCompose() {
@@ -340,7 +395,7 @@ async function onCreatePost() {
     await createQuestion({
       title: newPost.value.title,
       content: newPost.value.content,
-      channel: channel.value === 'hot' ? 'experience' : channel.value,
+      channel: channel.value === 'collections' ? 'experience' : channel.value,
       tag_ids: selectedTagIds.value.length ? selectedTagIds.value : undefined,
     })
     showCompose.value = false
@@ -506,6 +561,90 @@ function setCommentTarget(answerId: string, comment: CommentListItem) {
   nextTick(() => {
     replyInputRef.value?.focus()
   })
+}
+
+function startEditQuestion() {
+  if (!selectedDetail.value) return
+  editingQuestion.value = true
+  editQuestionData.value = { title: selectedDetail.value.title, content: selectedDetail.value.content }
+}
+
+async function onSaveQuestion() {
+  if (!selectedDetail.value) return
+  try {
+    await updateQuestion(selectedDetail.value.id, editQuestionData.value)
+    selectedDetail.value = {
+      ...selectedDetail.value,
+      title: editQuestionData.value.title,
+      content: editQuestionData.value.content,
+    }
+    questions.value = questions.value.map((q) =>
+      q.id === selectedDetail.value!.id ? { ...q, title: editQuestionData.value.title } : q,
+    )
+    editingQuestion.value = false
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+async function onDeleteQuestion() {
+  if (!selectedDetail.value || !confirm('确定要删除这个问题吗？')) return
+  try {
+    await deleteQuestion(selectedDetail.value.id)
+    questions.value = questions.value.filter((q) => q.id !== selectedDetail.value!.id)
+    closeDetail()
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+function startEditAnswer(a: AnswerListItem) {
+  editingAnswerId.value = a.id
+  editAnswerContent.value = a.content
+}
+
+async function onSaveAnswer() {
+  if (!editingAnswerId.value) return
+  try {
+    await updateAnswer(editingAnswerId.value, editAnswerContent.value)
+    answers.value = answers.value.map((a) =>
+      a.id === editingAnswerId.value ? { ...a, content: editAnswerContent.value } : a,
+    )
+    editingAnswerId.value = null
+    editAnswerContent.value = ''
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+async function onDeleteAnswer(a: AnswerListItem) {
+  if (!confirm('确定要删除这个回答吗？')) return
+  try {
+    await deleteAnswer(a.id)
+    answers.value = answers.value.filter((ans) => ans.id !== a.id)
+    if (selectedDetail.value) {
+      selectedDetail.value = {
+        ...selectedDetail.value,
+        answer_count: selectedDetail.value.answer_count - 1,
+      }
+    }
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+async function onDeleteComment(c: CommentListItem, answerId: string) {
+  if (!confirm('确定要删除这条评论吗？')) return
+  try {
+    await deleteComment(c.id)
+    const updated = (commentsMap.value[answerId] || []).filter((item) => item.id !== c.id)
+    commentsMap.value = { ...commentsMap.value, [answerId]: updated }
+    answers.value = answers.value.map((a) =>
+      a.id === answerId ? { ...a, comment_count: Math.max(0, a.comment_count - 1) } : a,
+    )
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
 }
 
 function clearCommentTarget() {
@@ -1118,5 +1257,72 @@ function clearCommentTarget() {
 
 .reply-btn:disabled {
   opacity: 0.5;
+}
+
+.modify-actions {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.modify-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.modify-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.modify-btn.delete {
+  color: rgba(231, 76, 94, 0.7);
+}
+
+.modify-btn.delete:hover {
+  background: rgba(231, 76, 94, 0.1);
+  color: #e74c5e;
+}
+
+.comment-action-btn.delete {
+  color: rgba(231, 76, 94, 0.7);
+}
+
+.comment-action-btn.delete:hover {
+  color: #e74c5e;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.edit-cancel-btn {
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.edit-save-btn {
+  padding: 6px 16px;
+  background: var(--accent-warm);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 </style>
