@@ -353,6 +353,23 @@
                 </div>
 
                 <div class="settings-section">
+                  <h3 class="settings-heading">背景音乐</h3>
+                  <div class="volume-control">
+                    <input
+                      class="volume-slider"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      :value="backgroundMusicVolumePercent"
+                      @input="onBackgroundMusicVolumeInput"
+                    />
+                    <span class="volume-value">{{ backgroundMusicVolumePercent }}%</span>
+                  </div>
+                  <p class="settings-hint">{{ backgroundMusicStatusText }}</p>
+                </div>
+
+                <div class="settings-section">
                   <button class="logout-btn" @click="onLogout">退出登录</button>
                 </div>
               </template>
@@ -384,6 +401,7 @@ import {
   type MyAnswerListItem,
 } from '@/lib/api/user'
 import { getErrorMessage } from '@/lib/apiClient'
+import { useBackgroundMusicControls } from '@/composables/useBackgroundMusicLoop'
 
 import avatarFrame from '@/assets/images/frame.png'
 import avatarDefault from '@/assets/images/avatar.png'
@@ -487,6 +505,14 @@ const hasCustomAvatar = computed(() => !!(profile.value?.avatar_url || auth.user
 const partnerAvatarUrl = computed(() => profile.value?.partner?.avatar_url || avatarDefault)
 const hasPartnerCustomAvatar = computed(() => !!profile.value?.partner?.avatar_url)
 const roleName = computed(() => roleMap[auth.user?.role || 'mom'] || '溯源者')
+const { backgroundMusicVolume, isBackgroundMusicPlaying, setBackgroundMusicVolume } = useBackgroundMusicControls()
+const backgroundMusicVolumePercent = computed(() => Math.round(backgroundMusicVolume.value * 100))
+const backgroundMusicStatusText = computed(() => isBackgroundMusicPlaying.value ? '拖动滑块调节背景音乐音量' : '如果还没有声音，请先点击页面任意位置以允许播放')
+
+function onBackgroundMusicVolumeInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  setBackgroundMusicVolume(Number(target.value) / 100)
+}
 
 // ── Car page methods ──
 function close() {
@@ -1521,6 +1547,33 @@ watch(activeTab, (tab) => {
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 14px;
+}
+
+.settings-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  opacity: 0.78;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.volume-slider {
+  flex: 1;
+  accent-color: #ffb6c1;
+  cursor: pointer;
+}
+
+.volume-value {
+  min-width: 44px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--text-primary);
 }
 
 .password-form {
