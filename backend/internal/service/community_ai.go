@@ -14,7 +14,7 @@ import (
 	"github.com/momshell/backend/pkg/openai"
 )
 
-var mentionPattern = regexp.MustCompile(`@(小石光|koishi)`)
+var mentionPattern = regexp.MustCompile(`@(小石光)`)
 
 type CommunityAIService struct {
 	client       *openai.Client
@@ -43,13 +43,13 @@ func NewCommunityAIService(
 	}
 }
 
-// ContainsMention checks if content mentions @小石光 or @koishi.
+// ContainsMention checks if content mentions @小石光.
 func ContainsMention(content string) bool {
 	return mentionPattern.MatchString(content)
 }
 
 // ShouldReplyToComment returns true if AI should reply to this comment:
-// - comment mentions @小石光/@koishi, OR
+// - comment mentions @小石光, OR
 // - comment is on an AI-authored answer, OR
 // - comment is a reply to an AI-authored comment.
 func (s *CommunityAIService) ShouldReplyToComment(content, answerID string, parentID *string) bool {
@@ -69,7 +69,7 @@ func (s *CommunityAIService) ShouldReplyToComment(content, answerID string, pare
 	return false
 }
 
-// HandleNewQuestion generates an AI answer for a question that mentions @小石光/@koishi.
+// HandleNewQuestion generates an AI answer for a question that mentions @小石光.
 func (s *CommunityAIService) HandleNewQuestion(questionID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -107,7 +107,7 @@ func (s *CommunityAIService) HandleNewQuestion(questionID string) {
 	log.Printf("[CommunityAI] AI answered question %s", questionID)
 }
 
-// HandleNewComment generates an AI comment reply when a comment mentions @小石光/@koishi.
+// HandleNewComment generates an AI comment reply when a comment mentions @小石光.
 func (s *CommunityAIService) HandleNewComment(answerID, commentID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
