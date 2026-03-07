@@ -223,8 +223,8 @@
 import { ref, watch, nextTick } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
-import avatarDefault from '@/assets/avatar.png'
-import aiAvatar from '@/assets/ai_avatar.png'
+import avatarDefault from '@/assets/images/avatar.png'
+import aiAvatar from '@/assets/images/ai_avatar.png'
 import {
   getQuestions,
   getMyCollections,

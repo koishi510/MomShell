@@ -12,6 +12,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useBackgroundMusicLoop } from '@/composables/useBackgroundMusicLoop'
 import BeachScene from '@/components/scene/BeachScene.vue'
 import LandingOverlay from '@/components/overlay/LandingOverlay.vue'
 import AuthPanel from '@/components/overlay/AuthPanel.vue'
@@ -26,6 +27,8 @@ import { useUiStore } from '@/stores/ui'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
+
+useBackgroundMusicLoop()
 
 onMounted(async () => {
   await authStore.init()
