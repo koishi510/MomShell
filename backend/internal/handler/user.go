@@ -69,7 +69,7 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择要上传的图片"})
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	if header.Size > maxAvatarSize {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "图片大小不能超过 2MB"})
@@ -104,7 +104,7 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	// Remove old avatar files with different extensions
 	for _, e := range []string{".jpg", ".png", ".gif", ".webp"} {
 		if e != ext {
-			os.Remove(filepath.Join(uploadDir, userID+e))
+			_ = os.Remove(filepath.Join(uploadDir, userID+e))
 		}
 	}
 
