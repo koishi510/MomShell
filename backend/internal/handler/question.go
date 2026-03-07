@@ -6,16 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/middleware"
+	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/service"
 )
 
 type QuestionHandler struct {
 	communityService *service.CommunityService
 	authService      *service.AuthService
+	communityAI      *service.CommunityAIService
 }
 
-func NewQuestionHandler(communityService *service.CommunityService, authService *service.AuthService) *QuestionHandler {
-	return &QuestionHandler{communityService: communityService, authService: authService}
+func NewQuestionHandler(communityService *service.CommunityService, authService *service.AuthService, communityAI *service.CommunityAIService) *QuestionHandler {
+	return &QuestionHandler{communityService: communityService, authService: authService, communityAI: communityAI}
 }
 
 // GET /api/v1/community/questions
@@ -120,6 +122,13 @@ func (h *QuestionHandler) Create(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Trigger AI reply if content mentions @小石光/@koishi
+	if h.communityAI != nil && question.Status == model.StatusPublished {
+		if service.ContainsMention(req.Title) || service.ContainsMention(req.Content) {
+			go h.communityAI.HandleNewQuestion(question.ID)
+		}
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"id": question.ID, "status": string(question.Status)})
