@@ -23,6 +23,9 @@ type Config struct {
 	OpenAIBaseURL string
 	OpenAIModel   string
 
+	// Firecrawl (web search)
+	FirecrawlAPIKey string
+
 	// Server
 	Port string
 
@@ -46,6 +49,7 @@ func Load() *Config {
 		OpenAIAPIKey:              getEnv("OPENAI_API_KEY", ""),
 		OpenAIBaseURL:             getEnv("OPENAI_BASE_URL", "https://api-inference.modelscope.cn/v1"),
 		OpenAIModel:               getEnv("OPENAI_MODEL", "Qwen/Qwen2.5-72B-Instruct"),
+		FirecrawlAPIKey:           getEnv("FIRECRAWL_API_KEY", ""),
 		Port:                      getEnv("PORT", "8000"),
 		AdminUsername:             getEnv("ADMIN_USERNAME", ""),
 		AdminEmail:                getEnv("ADMIN_EMAIL", ""),
