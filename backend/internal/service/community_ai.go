@@ -278,23 +278,51 @@ func appendSourceFootnotes(reply string, sources []sourceRef) string {
 		return reply
 	}
 
-	cited := make(map[int]bool)
+	// Collect cited indices in order of first appearance
+	seen := make(map[int]bool)
+	var citedOrder []int
 	for _, m := range matches {
 		var idx int
-		if _, err := fmt.Sscanf(m[1], "%d", &idx); err == nil {
-			cited[idx] = true
+		if _, err := fmt.Sscanf(m[1], "%d", &idx); err == nil && !seen[idx] {
+			seen[idx] = true
+			citedOrder = append(citedOrder, idx)
 		}
 	}
 
-	var footnotes strings.Builder
+	// Build renumber map: old index -> new sequential index
+	renumber := make(map[int]int)
+	for newIdx, oldIdx := range citedOrder {
+		renumber[oldIdx] = newIdx + 1
+	}
+
+	// Replace [来源N] with renumbered [来源M] in reply text
+	replaced := sourceRefPattern.ReplaceAllStringFunc(reply, func(match string) string {
+		sub := sourceRefPattern.FindStringSubmatch(match)
+		var oldIdx int
+		if _, err := fmt.Sscanf(sub[1], "%d", &oldIdx); err == nil {
+			if newIdx, ok := renumber[oldIdx]; ok {
+				return fmt.Sprintf("[来源%d]", newIdx)
+			}
+		}
+		return match
+	})
+
+	// Build source index map for quick lookup
+	sourceMap := make(map[int]sourceRef)
 	for _, src := range sources {
-		if cited[src.index] {
-			fmt.Fprintf(&footnotes, "\n[来源%d] %s %s", src.index, src.title, src.url)
+		sourceMap[src.index] = src
+	}
+
+	// Append footnotes with renumbered indices
+	var footnotes strings.Builder
+	for _, oldIdx := range citedOrder {
+		if src, ok := sourceMap[oldIdx]; ok {
+			fmt.Fprintf(&footnotes, "\n[来源%d] %s %s", renumber[oldIdx], src.title, src.url)
 		}
 	}
 
 	if footnotes.Len() > 0 {
-		reply += "\n" + footnotes.String()
+		replaced += "\n" + footnotes.String()
 	}
-	return reply
+	return replaced
 }
