@@ -9,13 +9,13 @@ export interface SpriteData {
   scaleY?: number
 }
 
-import carImg from '@/assets/car.png'
-import barImg from '@/assets/bar.png'
-import stoneImg from '@/assets/stone.png'
-import crabImg from '@/assets/crab.png'
-import shellImg from '@/assets/shell.png'
-import starImg from '@/assets/star.png'
-import conqueImg from '@/assets/conque.png'
+import carImg from '@/assets/images/car.png'
+import barImg from '@/assets/images/bar.png'
+import stoneImg from '@/assets/images/stone.png'
+import crabImg from '@/assets/images/crab.png'
+import shellImg from '@/assets/images/shell.png'
+import starImg from '@/assets/images/star.png'
+import conqueImg from '@/assets/images/conque.png'
 
 export const SPRITES: SpriteData[] = [
 
