@@ -3,6 +3,7 @@
     <img
       v-for="s in SPRITES"
       :key="s.id"
+      :ref="(element) => setSpriteEl(s.id, element)"
       :src="s.src"
       :alt="s.id"
       :class="['sprite', { clickable: isSpriteClickable(s.id) }]"
@@ -31,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject, type ComponentPublicInstance } from 'vue'
 import { PARALLAX_KEY } from '@/composables/useParallax'
 import { LAYERS } from '@/constants/layers'
 import { SPRITES } from '@/constants/sprites'
@@ -50,30 +51,44 @@ const CRAB_HINTS: readonly string[] = [
 
 const layerEl = ref<HTMLElement | null>(null)
 const bubbleLayerEl = ref<HTMLElement | null>(null)
+const crabSpriteEl = ref<HTMLImageElement | null>(null)
 const ctx = inject(PARALLAX_KEY)!
 const uiStore = useUiStore()
 
 const showBubble = ref(false)
 const currentHint = ref<string>(CRAB_HINTS[0])
+const crabBubblePosition = ref<{ left: string, top: string } | null>(null)
 let bubbleTimer: ReturnType<typeof setTimeout> | null = null
 
 const CLICKABLE_SPRITES = new Set(['car', 'shell', 'star', 'conque', 'bar', 'stone', 'crab'])
 
-const crabSprite = computed(() => SPRITES.find((sprite) => sprite.id === 'crab'))
-const crabBubbleStyle = computed(() => {
-  const sprite = crabSprite.value
-  if (!sprite) {
-    return undefined
-  }
-
-  return {
-    left: `calc(${sprite.left} + ${sprite.bubbleOffsetX ?? '0px'})`,
-    top: `calc(${sprite.top} + ${sprite.bubbleOffsetY ?? '0px'})`,
-  }
-})
+const crabBubbleStyle = computed(() => crabBubblePosition.value ?? undefined)
 
 function isSpriteClickable(id: string): boolean {
   return CLICKABLE_SPRITES.has(id)
+}
+
+function setSpriteEl(id: string, element: Element | ComponentPublicInstance | null) {
+  if (id !== 'crab') {
+    return
+  }
+
+  crabSpriteEl.value = element instanceof HTMLImageElement ? element : null
+}
+
+function updateCrabBubblePosition() {
+  if (!crabSpriteEl.value || !bubbleLayerEl.value) {
+    crabBubblePosition.value = null
+    return
+  }
+
+  const crabRect = crabSpriteEl.value.getBoundingClientRect()
+  const bubbleLayerRect = bubbleLayerEl.value.getBoundingClientRect()
+
+  crabBubblePosition.value = {
+    left: `${crabRect.left - bubbleLayerRect.left + crabRect.width * 0.12}px`,
+    top: `${crabRect.top - bubbleLayerRect.top + crabRect.height * 0.16}px`,
+  }
 }
 
 function clearBubbleTimer() {
@@ -101,6 +116,7 @@ function pickRandomHint() {
 }
 
 function showCrabHint() {
+  updateCrabBubblePosition()
   currentHint.value = pickRandomHint()
   showBubble.value = true
   clearBubbleTimer()
@@ -128,11 +144,14 @@ onMounted(() => {
     ctx.registerLayer(bubbleLayerEl.value, LAYERS.sprites.speed)
   }
 
+  window.addEventListener('resize', updateCrabBubblePosition)
+  requestAnimationFrame(updateCrabBubblePosition)
   document.addEventListener('pointerdown', hideCrabHint, true)
 })
 
 onUnmounted(() => {
   clearBubbleTimer()
+  window.removeEventListener('resize', updateCrabBubblePosition)
   document.removeEventListener('pointerdown', hideCrabHint, true)
 })
 </script>
@@ -193,7 +212,8 @@ onUnmounted(() => {
 
 .crab-bubble {
   --bubble-shift-x: -10%;
-  transform: translateX(var(--bubble-shift-x));
+  --bubble-shift-y: calc(-100% - 0.5rem);
+  transform: translate(var(--bubble-shift-x), var(--bubble-shift-y));
 }
 
 .speech-bubble::after {
@@ -214,6 +234,6 @@ onUnmounted(() => {
 .bubble-fade-enter-from,
 .bubble-fade-leave-to {
   opacity: 0;
-  transform: translateX(var(--bubble-shift-x, 0)) translateY(6px);
+  transform: translate(var(--bubble-shift-x, 0), calc(var(--bubble-shift-y, 0px) + 6px));
 }
 </style>
