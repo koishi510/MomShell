@@ -16,7 +16,7 @@ import { ref, onMounted, inject } from 'vue'
 import { PARALLAX_KEY } from '@/composables/useParallax'
 import { LAYERS } from '@/constants/layers'
 import { generateWaveParticles } from '@/composables/useProceduralElements'
-import sandTexture from '@/assets/sand.png'
+import sandTexture from '@/assets/images/sand.png'
 
 const layerEl = ref<HTMLElement | null>(null)
 const ctx = inject(PARALLAX_KEY)!
