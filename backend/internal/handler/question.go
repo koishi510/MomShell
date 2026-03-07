@@ -124,11 +124,9 @@ func (h *QuestionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Trigger AI reply if content mentions @小石光/@koishi
+	// Trigger AI reply for every new published question
 	if h.communityAI != nil && question.Status == model.StatusPublished {
-		if service.ContainsMention(req.Title) || service.ContainsMention(req.Content) {
-			go h.communityAI.HandleNewQuestion(question.ID)
-		}
+		go h.communityAI.HandleNewQuestion(question.ID)
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"id": question.ID, "status": string(question.Status)})

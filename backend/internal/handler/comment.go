@@ -60,8 +60,8 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Trigger AI reply if content mentions @小石光/@koishi
-	if h.communityAI != nil && service.ContainsMention(req.Content) {
+	// Trigger AI reply if commenting on AI's answer, replying to AI, or @mentioning AI
+	if h.communityAI != nil && h.communityAI.ShouldReplyToComment(req.Content, answerID, req.ParentID) {
 		go h.communityAI.HandleNewComment(answerID, comment.ID)
 	}
 
