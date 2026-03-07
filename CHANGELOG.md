@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Frontend assets**: Reorganized static assets into `frontend/src/assets/images/` and `frontend/src/assets/audio/`
 - **Asset imports**: Updated frontend image and audio references to match the new asset directory structure
-
+- **Crab speech bubble anchoring**: Reworked the beach scene crab hint bubble to position from the crab sprite's rendered bounds instead of static offsets, keeping the bubble visually closer across viewport sizes.
 ---
 
 ## [1.0.0] - 2026-03-05
