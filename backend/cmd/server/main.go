@@ -13,6 +13,7 @@ import (
 	"github.com/momshell/backend/internal/repository"
 	"github.com/momshell/backend/internal/router"
 	"github.com/momshell/backend/internal/service"
+	"github.com/momshell/backend/pkg/firecrawl"
 	"github.com/momshell/backend/pkg/openai"
 	"github.com/momshell/backend/pkg/password"
 )
@@ -63,8 +64,25 @@ func main() {
 		log.Println("[WARN] OPENAI_API_KEY not set, chat service will not work")
 		chatClient = openai.NewClient("dummy", cfg.OpenAIBaseURL, cfg.OpenAIModel)
 	}
-	chatService := service.NewChatService(chatClient, chatRepo)
+
+	var firecrawlClient *firecrawl.Client
+	if cfg.FirecrawlAPIKey != "" {
+		firecrawlClient = firecrawl.NewClient(cfg.FirecrawlAPIKey)
+	}
+
+	chatService := service.NewChatService(chatClient, chatRepo, firecrawlClient)
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
+
+	// Ensure AI user exists for community AI replies
+	aiUserID := ensureAIUser(userRepo)
+	var communityAIService *service.CommunityAIService
+	if aiUserID != "" && cfg.OpenAIAPIKey != "" {
+		communityAIService = service.NewCommunityAIService(
+			chatClient, firecrawlClient,
+			questionRepo, answerRepo, commentRepo,
+			aiUserID,
+		)
+	}
 
 	userService := service.NewUserService(
 		db, userRepo, questionRepo, answerRepo,
@@ -77,9 +95,9 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
-	questionHandler := handler.NewQuestionHandler(communityService, authService)
+	questionHandler := handler.NewQuestionHandler(communityService, authService, communityAIService)
 	answerHandler := handler.NewAnswerHandler(communityService, authService)
-	commentHandler := handler.NewCommentHandler(communityService, authService)
+	commentHandler := handler.NewCommentHandler(communityService, authService, communityAIService)
 	interactionHandler := handler.NewInteractionHandler(communityService)
 	tagHandler := handler.NewTagHandler(communityService)
 	chatHandler := handler.NewChatHandler(chatService)
@@ -142,4 +160,34 @@ func createInitialAdmin(cfg *config.Config, userRepo *repository.UserRepo) {
 	}
 
 	log.Printf("Admin user created: %s", cfg.AdminUsername)
+}
+
+func ensureAIUser(userRepo *repository.UserRepo) string {
+	user, err := userRepo.FindByUsernameOrEmail("xiaoshiguang")
+	if err == nil {
+		return user.ID
+	}
+
+	hash, err := password.Hash("ai-user-no-login")
+	if err != nil {
+		log.Printf("Failed to hash AI user password: %v", err)
+		return ""
+	}
+
+	aiUser := &model.User{
+		Username:     "xiaoshiguang",
+		Email:        "ai@momshell.com",
+		PasswordHash: hash,
+		Nickname:     "小石光",
+		Role:         model.RoleAIAssistant,
+		IsActive:     true,
+	}
+
+	if err := userRepo.Create(aiUser); err != nil {
+		log.Printf("Failed to create AI user: %v", err)
+		return ""
+	}
+
+	log.Printf("AI user created: %s (ID: %s)", aiUser.Username, aiUser.ID)
+	return aiUser.ID
 }
