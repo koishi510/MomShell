@@ -86,6 +86,16 @@ func (r *AnswerRepo) Delete(id string) error {
 	return r.db.Where("id = ?", id).Delete(&model.Answer{}).Error
 }
 
+func (r *AnswerRepo) DeleteByQuestionID(questionID string) error {
+	return r.db.Where("question_id = ?", questionID).Delete(&model.Answer{}).Error
+}
+
+func (r *AnswerRepo) FindIDsByQuestionID(questionID string) ([]string, error) {
+	var ids []string
+	err := r.db.Model(&model.Answer{}).Where("question_id = ?", questionID).Pluck("id", &ids).Error
+	return ids, err
+}
+
 func (r *AnswerRepo) UpdateLikeCount(id string, delta int) error {
 	return r.db.Model(&model.Answer{}).Where("id = ?", id).
 		UpdateColumn("like_count", gorm.Expr("like_count + ?", delta)).Error
