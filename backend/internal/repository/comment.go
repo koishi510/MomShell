@@ -52,6 +52,10 @@ func (r *CommentRepo) DeleteByParentID(parentID string) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
+func (r *CommentRepo) DeleteByAnswerID(answerID string) error {
+	return r.db.Where("answer_id = ?", answerID).Delete(&model.Comment{}).Error
+}
+
 func (r *CommentRepo) UpdateLikeCount(id string, delta int) error {
 	return r.db.Model(&model.Comment{}).Where("id = ?", id).
 		UpdateColumn("like_count", gorm.Expr("like_count + ?", delta)).Error

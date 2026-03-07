@@ -136,7 +136,7 @@ func (s *CommunityAIService) HandleNewComment(answerID, commentID string) {
 	for _, c := range comments {
 		role := "用户"
 		if c.AuthorID == s.aiUserID {
-			role = "贝壳姐姐"
+			role = "小石光"
 		}
 		fmt.Fprintf(&sb, "%s：%s\n", role, c.Content)
 	}
