@@ -707,14 +707,14 @@ export default function PearlShell({
       });
 
       gsap.to(photo.position, {
-        x: 0, y: 0, z: 25,
+        x: 0, y: 0, z: 18,
         duration: 0.8, ease: 'back.out(1.4)',
       });
       gsap.to(photo.quaternion, {
         x: 0, y: 0, z: 0, w: 1,
         duration: 0.8, ease: 'power2.out',
       });
-      gsap.to(photo.scale, { x: 4, y: 4, z: 4, duration: 0.8, ease: 'back.out(1.7)' });
+      gsap.to(photo.scale, { x: 2.5, y: 2.5, z: 2.5, duration: 0.8, ease: 'back.out(1.2)' });
       gsap.to(photo.material, { opacity: 1, duration: 0.5 });
     }
   };
