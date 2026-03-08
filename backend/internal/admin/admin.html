@@ -475,7 +475,7 @@ function app() {
                     headers: { 'Authorization': 'Bearer ' + data.access_token }
                 });
                 const meData = await meResp.json();
-                if (!meResp.ok || meData.role !== 'admin') {
+                if (!meResp.ok || !meData.is_admin) {
                     throw new Error('需要管理员权限');
                 }
 
