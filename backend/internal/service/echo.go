@@ -217,28 +217,117 @@ func buildMemoirSystemPrompt(tags []model.IdentityTag, theme *string) string {
 func parseMemoirLLMResponse(content string) map[string]interface{} {
 	var result map[string]interface{}
 
+	// Strip Qwen3's <think>...</think> blocks
+	thinkRe := regexp.MustCompile(`(?s)<think>.*?</think>`)
+	content = strings.TrimSpace(thinkRe.ReplaceAllString(content, ""))
+
+	// Try direct JSON parse
 	if err := json.Unmarshal([]byte(content), &result); err == nil {
-		return result
+		return cleanParsedMemoir(result)
 	}
 
+	// Try extracting from ```json ... ``` code block
 	re := regexp.MustCompile("(?s)```json\\s*(.*?)\\s*```")
 	if matches := re.FindStringSubmatch(content); len(matches) > 1 {
 		if err := json.Unmarshal([]byte(matches[1]), &result); err == nil {
-			return result
+			return cleanParsedMemoir(result)
 		}
 	}
 
+	// Try extracting any JSON object (greedy)
 	re2 := regexp.MustCompile(`(?s)\{.*\}`)
 	if match := re2.FindString(content); match != "" {
 		if err := json.Unmarshal([]byte(match), &result); err == nil {
-			return result
+			return cleanParsedMemoir(result)
+		}
+	}
+
+	// Handle truncated ```json block (no closing ```) - extract everything after ```json
+	re3 := regexp.MustCompile("(?s)```json\\s*(.*)")
+	if matches := re3.FindStringSubmatch(content); len(matches) > 1 {
+		inner := strings.TrimSpace(matches[1])
+		inner = strings.TrimSuffix(inner, "```")
+		if err := json.Unmarshal([]byte(inner), &result); err == nil {
+			return cleanParsedMemoir(result)
+		}
+		// Try to find JSON object inside
+		if match := re2.FindString(inner); match != "" {
+			if err := json.Unmarshal([]byte(match), &result); err == nil {
+				return cleanParsedMemoir(result)
+			}
+		}
+	}
+
+	// Last resort: try to extract title and content with regex from malformed JSON
+	titleRe := regexp.MustCompile(`"title"\s*:\s*"((?:[^"\\]|\\.)*)`)
+	contentRe := regexp.MustCompile(`"content"\s*:\s*"((?:[^"\\]|\\.)*)`)
+	titleMatch := titleRe.FindStringSubmatch(content)
+	contentMatch := contentRe.FindStringSubmatch(content)
+	if titleMatch != nil || contentMatch != nil {
+		title := "一段温柔的回响"
+		body := ""
+		if titleMatch != nil {
+			title = titleMatch[1]
+		}
+		if contentMatch != nil {
+			body = contentMatch[1]
+			// Unescape common JSON escapes
+			body = strings.ReplaceAll(body, `\n`, "\n")
+			body = strings.ReplaceAll(body, `\"`, `"`)
+			body = strings.ReplaceAll(body, `\\`, `\`)
+		}
+		return map[string]interface{}{
+			"title":   cleanMemoirText(title),
+			"content": cleanMemoirText(body),
 		}
 	}
 
 	return map[string]interface{}{
 		"title":   "一段温柔的回响",
-		"content": strings.TrimSpace(content),
+		"content": cleanMemoirText(strings.TrimSpace(content)),
 	}
+}
+
+// cleanMemoirText strips leftover JSON/markdown artifacts from LLM output.
+func cleanMemoirText(s string) string {
+	s = strings.TrimSpace(s)
+	// Remove trailing markdown code fences and JSON braces
+	s = strings.TrimRight(s, " \t\n\r")
+	for {
+		trimmed := s
+		trimmed = strings.TrimSuffix(trimmed, "```")
+		trimmed = strings.TrimSuffix(trimmed, "}")
+		trimmed = strings.TrimSuffix(trimmed, `"`)
+		trimmed = strings.TrimRight(trimmed, " \t\n\r")
+		if trimmed == s {
+			break
+		}
+		s = trimmed
+	}
+	// Remove leading markdown code fences
+	for {
+		trimmed := s
+		trimmed = strings.TrimPrefix(trimmed, "```json")
+		trimmed = strings.TrimPrefix(trimmed, "```")
+		trimmed = strings.TrimPrefix(trimmed, "{")
+		trimmed = strings.TrimLeft(trimmed, " \t\n\r")
+		if trimmed == s {
+			break
+		}
+		s = trimmed
+	}
+	return strings.TrimSpace(s)
+}
+
+// cleanParsedMemoir cleans title and content fields in a successfully parsed JSON map.
+func cleanParsedMemoir(m map[string]interface{}) map[string]interface{} {
+	if t, ok := m["title"].(string); ok {
+		m["title"] = cleanMemoirText(t)
+	}
+	if c, ok := m["content"].(string); ok {
+		m["content"] = cleanMemoirText(c)
+	}
+	return m
 }
 
 func generateMemoirCoverDataURI(title string, theme *string) string {
