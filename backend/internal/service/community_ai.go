@@ -107,6 +107,52 @@ func (s *CommunityAIService) HandleNewQuestion(questionID string) {
 	log.Printf("[CommunityAI] AI answered question %s", questionID)
 }
 
+// HandleNewAnswer generates an AI comment on an answer that mentions @小石光.
+func (s *CommunityAIService) HandleNewAnswer(questionID, answerID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	q, err := s.questionRepo.FindByID(questionID)
+	if err != nil {
+		log.Printf("[CommunityAI] failed to find question %s: %v", questionID, err)
+		return
+	}
+
+	answer, err := s.answerRepo.FindByID(answerID)
+	if err != nil {
+		log.Printf("[CommunityAI] failed to find answer %s: %v", answerID, err)
+		return
+	}
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "帖子标题：%s\n帖子内容：%s\n\n", q.Title, q.Content)
+	fmt.Fprintf(&sb, "用户回答：%s", answer.Content)
+
+	searchCtx, sources := s.searchWeb(ctx, q.Title)
+
+	reply, err := s.generateReply(ctx, sb.String(), searchCtx, sources)
+	if err != nil {
+		log.Printf("[CommunityAI] failed to generate reply for answer %s: %v", answerID, err)
+		return
+	}
+
+	comment := &model.Comment{
+		AnswerID:      answerID,
+		AuthorID:      s.aiUserID,
+		ReplyToUserID: &answer.AuthorID,
+		Content:       reply,
+		Status:        model.StatusPublished,
+	}
+
+	if err := s.commentRepo.Create(comment); err != nil {
+		log.Printf("[CommunityAI] failed to create comment on answer %s: %v", answerID, err)
+		return
+	}
+
+	_ = s.answerRepo.IncrementCommentCount(answerID)
+	log.Printf("[CommunityAI] AI commented on answer %s", answerID)
+}
+
 // HandleNewComment generates an AI comment reply when a comment mentions @小石光.
 func (s *CommunityAIService) HandleNewComment(answerID, commentID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)

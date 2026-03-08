@@ -98,7 +98,7 @@ func main() {
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)
 	questionHandler := handler.NewQuestionHandler(communityService, authService, communityAIService)
-	answerHandler := handler.NewAnswerHandler(communityService, authService)
+	answerHandler := handler.NewAnswerHandler(communityService, authService, communityAIService)
 	commentHandler := handler.NewCommentHandler(communityService, authService, communityAIService)
 	interactionHandler := handler.NewInteractionHandler(communityService)
 	tagHandler := handler.NewTagHandler(communityService)
