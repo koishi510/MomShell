@@ -240,13 +240,6 @@ func extractImagesFromTaskStatus(status *taskStatusResponse) *ImageResponse {
 	return nil // Status is SUCCEED but no images found
 }
 
-type asyncTaskResponse struct {
-	RequestID    string   `json:"request_id"`
-	TaskID       string   `json:"task_id"`
-	TaskStatus   string   `json:"task_status"`
-	OutputImages []string `json:"output_images,omitempty"`
-}
-
 type taskStatusResponse struct {
 	RequestID    string   `json:"request_id"`
 	TaskID       string   `json:"task_id"`
