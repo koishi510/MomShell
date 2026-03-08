@@ -9,8 +9,9 @@
 
       <div class="car-layout">
         <!-- LEFT: Photo Wall -->
-        <div class="photo-wall">
-          <div class="photo-grid">
+        <div class="photo-wall" @click="!showPearlShell && activatePearlShell()">
+          <!-- Original grid (visible when PearlShell not active or in fullscreen) -->
+          <div v-if="!showPearlShell || pearlShellFullscreen" class="photo-grid">
             <div
               v-for="photo in wallPhotos"
               :key="photo.id"
@@ -20,6 +21,14 @@
               <img :src="photo.image_url" :alt="photo.title || 'photo'" />
             </div>
             <div v-for="n in emptySlots" :key="'empty-' + n" class="photo-frame empty" />
+          </div>
+          <!-- Embedded PearlShell -->
+          <div v-if="showPearlShell && !pearlShellFullscreen" class="pearl-shell-embedded">
+            <PearlShellWrapper
+              :photo-urls="memoirPhotoUrls"
+              :is-fullscreen="false"
+              @request-fullscreen="handleRequestFullscreen"
+            />
           </div>
         </div>
 
@@ -46,6 +55,17 @@
           </div>
         </div>
       </div>
+
+      <!-- Fullscreen PearlShell overlay -->
+      <Transition name="pearl-fullscreen">
+        <div v-if="pearlShellFullscreen" class="pearl-shell-fullscreen">
+          <PearlShellWrapper
+            :photo-urls="memoirPhotoUrls"
+            :is-fullscreen="true"
+            @exit-fullscreen="handleExitFullscreen"
+          />
+        </div>
+      </Transition>
 
       <!-- Suitcase Modal (Photo Gallery) -->
       <Transition name="modal-zoom">
@@ -489,11 +509,13 @@ import {
   type MyAnswerListItem,
 } from '@/lib/api/user'
 import { getErrorMessage } from '@/lib/apiClient'
+import { getMemoirs, type Memoir } from '@/lib/api/echo'
 import { useBackgroundMusicControls } from '@/composables/useBackgroundMusicLoop'
 
 import avatarFrame from '@/assets/images/frame.png'
 import avatarDefault from '@/assets/images/avatar.png'
 import boxImg from '@/assets/images/box.png'
+import PearlShellWrapper from '@/components/react/PearlShellWrapper.vue'
 
 const uiStore = useUiStore()
 const auth = useAuthStore()
@@ -503,6 +525,15 @@ const allPhotos = ref<Photo[]>([])
 const showSuitcase = ref(false)
 const boxRef = ref<HTMLElement | null>(null)
 const modalOrigin = ref<Record<string, string>>({})
+
+// ── PearlShell state ──
+const showPearlShell = ref(false)
+const pearlShellFullscreen = ref(false)
+const memoirs = ref<Memoir[]>([])
+
+const memoirPhotoUrls = computed(() =>
+  memoirs.value.filter(m => m.cover_image_url).map(m => m.cover_image_url!),
+)
 
 const visible = computed(() => uiStore.activePanel === 'car')
 
@@ -616,7 +647,21 @@ function onBackgroundMusicVolumeInput(event: Event) {
 
 // ── Car page methods ──
 function close() {
+  showPearlShell.value = false
+  pearlShellFullscreen.value = false
   uiStore.closePanel()
+}
+
+function activatePearlShell() {
+  showPearlShell.value = true
+}
+
+function handleRequestFullscreen() {
+  pearlShellFullscreen.value = true
+}
+
+function handleExitFullscreen() {
+  pearlShellFullscreen.value = false
 }
 
 function openSuitcase() {
@@ -1052,7 +1097,18 @@ watch(visible, async (isVisible) => {
     showSuitcase.value = false
     showProfile.value = false
     showDetail.value = false
-    await Promise.all([fetchPhotos(), fetchProfile()])
+    showPearlShell.value = false
+    pearlShellFullscreen.value = false
+    try {
+      const [, memoirRes] = await Promise.all([
+        fetchPhotos(),
+        getMemoirs(50, 0),
+        fetchProfile(),
+      ])
+      memoirs.value = memoirRes.memoirs
+    } catch {
+      // silent
+    }
   }
 })
 
@@ -2213,6 +2269,36 @@ watch(activeTab, (tab) => {
 
 .danger-btn:hover:not(:disabled) {
   background: rgba(220, 80, 80, 0.25) !important;
+}
+
+/* ── PearlShell ── */
+.pearl-shell-embedded {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 3 / 4;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pearl-shell-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: #d48a56;
+}
+
+.pearl-fullscreen-enter-active {
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pearl-fullscreen-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.pearl-fullscreen-enter-from,
+.pearl-fullscreen-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
 }
 
 /* ── Transitions ── */
