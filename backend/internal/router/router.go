@@ -20,6 +20,7 @@ func Setup(
 	echoHandler *handler.EchoHandler,
 	userHandler *handler.UserHandler,
 	adminHandler *handler.AdminHandler,
+	photoHandler *handler.PhotoHandler,
 ) {
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
@@ -144,6 +145,18 @@ func Setup(
 		echo.GET("/memoirs", echoHandler.GetMemoirs)
 		echo.POST("/memoirs/generate", echoHandler.GenerateMemoir)
 		echo.POST("/memoirs/:id/rate", echoHandler.RateMemoir)
+	}
+
+	// ==================== Photos ====================
+	photos := api.Group("/photos", middleware.AuthRequired(cfg))
+	{
+		photos.GET("", photoHandler.List)
+		photos.POST("/upload", photoHandler.Upload)
+		photos.POST("/generate", photoHandler.Generate)
+		photos.PUT("/wall", photoHandler.BatchUpdateWall)
+		photos.PUT("/:id", photoHandler.Update)
+		photos.DELETE("/:id", photoHandler.Delete)
+		photos.PUT("/:id/wall", photoHandler.ToggleWall)
 	}
 
 	// ==================== Admin ====================
