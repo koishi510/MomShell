@@ -21,6 +21,8 @@ func Setup(
 	userHandler *handler.UserHandler,
 	adminHandler *handler.AdminHandler,
 	photoHandler *handler.PhotoHandler,
+	whisperHandler *handler.WhisperHandler,
+	taskHandler *handler.TaskHandler,
 ) {
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
@@ -157,6 +159,24 @@ func Setup(
 		photos.PUT("/:id", photoHandler.Update)
 		photos.DELETE("/:id", photoHandler.Delete)
 		photos.PUT("/:id/wall", photoHandler.ToggleWall)
+	}
+
+	// ==================== Whisper (Heart Words) ====================
+	whisper := api.Group("/whisper", middleware.AuthRequired(cfg))
+	{
+		whisper.POST("", whisperHandler.Create)
+		whisper.GET("", whisperHandler.List)
+		whisper.GET("/tips", whisperHandler.Tips)
+	}
+
+	// ==================== Tasks ====================
+	tasks := api.Group("/tasks", middleware.AuthRequired(cfg))
+	{
+		tasks.GET("/daily", taskHandler.DailyTasks)
+		tasks.POST("/:id/complete", taskHandler.Complete)
+		tasks.GET("/partner", taskHandler.PartnerTasks)
+		tasks.POST("/:id/score", taskHandler.Score)
+		tasks.GET("/stats", taskHandler.Stats)
 	}
 
 	// ==================== Admin ====================

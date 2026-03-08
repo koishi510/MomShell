@@ -7,6 +7,8 @@
   <MemoryPanel />
   <CommunityPanel />
   <ChatPanel />
+  <WhisperPanel />
+  <TaskPanel />
 </template>
 
 <script setup lang="ts">
@@ -20,6 +22,8 @@ import CarPage from '@/components/overlay/CarPage.vue'
 import MemoryPanel from '@/components/overlay/MemoryPanel.vue'
 import CommunityPanel from '@/components/overlay/CommunityPanel.vue'
 import ChatPanel from '@/components/overlay/ChatPanel.vue'
+import WhisperPanel from '@/components/overlay/WhisperPanel.vue'
+import TaskPanel from '@/components/overlay/TaskPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 

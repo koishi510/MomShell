@@ -129,8 +129,8 @@ function onSpriteClick(id: string) {
   if (ctx.wasDrag()) return
   if (id === 'car') uiStore.openFeature('car')
   else if (id === 'shell') uiStore.openFeature('memory')
-  else if (id === 'star') uiStore.openFeature('memory')
-  else if (id === 'conque') uiStore.openFeature('memory')
+  else if (id === 'star') uiStore.openFeature('task')
+  else if (id === 'conque') uiStore.openFeature('whisper')
   else if (id === 'bar') uiStore.openFeature('community')
   else if (id === 'stone') uiStore.openFeature('chat')
   else if (id === 'crab') showCrabHint()
