@@ -39,7 +39,8 @@
 
       <!-- Result -->
       <div v-if="result" class="result-card">
-        <img v-if="result.cover_image_url" :src="result.cover_image_url" alt="" class="result-img" />
+        <div v-if="generatingImage" class="result-img-loading">图片生成中...</div>
+        <img v-else-if="generatedImageUrl" :src="generatedImageUrl" alt="" class="result-img" />
         <h3 class="result-title">{{ result.title }}</h3>
         <p class="result-content">{{ result.content }}</p>
       </div>
@@ -58,6 +59,7 @@ import {
   type IdentityTagList,
   type Memoir,
 } from '@/lib/api/echo'
+import { generatePhoto } from '@/lib/api/photo'
 import { getErrorMessage } from '@/lib/apiClient'
 
 const uiStore = useUiStore()
@@ -67,6 +69,8 @@ const loadingTags = ref(false)
 const selectedTag = ref<string | null>(null)
 const inputText = ref('')
 const generating = ref(false)
+const generatingImage = ref(false)
+const generatedImageUrl = ref('')
 const result = ref<Memoir | null>(null)
 const error = ref('')
 
@@ -112,9 +116,28 @@ async function onGenerate() {
 
   error.value = ''
   generating.value = true
+  generatingImage.value = false
+  generatedImageUrl.value = ''
   result.value = null
   try {
-    result.value = await generateMemoir(theme || undefined)
+    const memoir = await generateMemoir(theme || undefined)
+    result.value = memoir
+
+    // Generate an AI photo based on the memoir, show it in the result card
+    const photoPrompt = memoir.title
+      ? `${memoir.title} - ${theme || '温暖的记忆'}`
+      : theme || '记忆贴纸'
+    generatingImage.value = true
+    generatePhoto(photoPrompt)
+      .then((photo) => {
+        generatedImageUrl.value = photo.image_url
+      })
+      .catch(() => {
+        // Photo generation failed; leave image area empty
+      })
+      .finally(() => {
+        generatingImage.value = false
+      })
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
@@ -244,6 +267,23 @@ async function onGenerate() {
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
+}
+
+.result-img-loading {
+  width: 100%;
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 14px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .result-title {
