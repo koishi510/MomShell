@@ -20,6 +20,7 @@ func Migrate(db *gorm.DB) error {
 		&model.ChatMemory{},
 		&model.IdentityTag{},
 		&model.Memoir{},
+		&model.Photo{},
 	); err != nil {
 		return err
 	}
