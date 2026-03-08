@@ -1011,10 +1011,10 @@ export default function PearlShell({
         }}
       >
         <div style={{ fontWeight: 700, marginBottom: 4 }}>GESTURE CONTROLS</div>
-        <div><span style={{ display: 'inline-block', width: 52, color: '#ffd8a8' }}>FIST</span> Close Shell</div>
-        <div><span style={{ display: 'inline-block', width: 52, color: '#ffd8a8' }}>PEACE</span> Open Shell</div>
-        <div><span style={{ display: 'inline-block', width: 52, color: '#ffd8a8' }}>OPEN</span> Scatter</div>
-        <div><span style={{ display: 'inline-block', width: 52, color: '#ffd8a8' }}>OK</span> Zoom Photo</div>
+        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>✊ FIST</span> Close Shell</div>
+        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>✌️ PEACE</span> Open Shell</div>
+        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>🖐️ OPEN</span> Scatter</div>
+        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>👌 OK</span> Zoom Photo</div>
       </div>
 
       {/* Debug panel */}
@@ -1085,27 +1085,6 @@ export default function PearlShell({
         </div>
       )}
 
-      {/* FIST hint */}
-      {gesture === 'FIST' && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 60,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.5)',
-            color: '#fff',
-            padding: '8px 20px',
-            borderRadius: 20,
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            zIndex: 50,
-            fontSize: 13,
-          }}
-        >
-          Move your fist to rotate the shell
-        </div>
-      )}
 
       {/* Camera preview */}
       <div
