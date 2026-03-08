@@ -15,8 +15,9 @@
               v-for="photo in wallPhotos"
               :key="photo.id"
               class="photo-frame"
+              @click="openDetail(photo)"
             >
-              <img :src="photo.cover_image_url!" alt="memoir cover" />
+              <img :src="photo.image_url" :alt="photo.title || 'photo'" />
             </div>
             <div v-for="n in emptySlots" :key="'empty-' + n" class="photo-frame empty" />
           </div>
@@ -38,23 +39,102 @@
             个人资料
           </button>
 
-          <!-- Box 现在是 right-section 的一部分 -->
-          <div ref="boxRef" class="overflow-box" @click="openModal">
+          <!-- Box -->
+          <div ref="boxRef" class="overflow-box" @click="openSuitcase">
             <img :src="boxImg" class="box-icon" alt="overflow box" />
-            <span v-if="overflowPhotos.length > 0" class="box-badge">{{ overflowPhotos.length }}</span>
+            <span v-if="allPhotos.length > 0" class="box-badge">{{ allPhotos.length }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Modal 相册 -->
+      <!-- Suitcase Modal (Photo Gallery) -->
       <Transition name="modal-zoom">
-        <div v-if="showOverflow" class="modal-overlay" @click.self="showOverflow = false">
-          <div class="modal-content" :style="modalOrigin">
-            <button class="modal-close" @click="showOverflow = false">✕</button>
-            <div v-if="overflowPhotos.length > 0" class="overflow-grid">
-              <img v-for="p in overflowPhotos" :key="p.id" :src="p.cover_image_url!" alt="memoir cover" class="overflow-photo" />
+        <div v-if="showSuitcase" class="modal-overlay" @click.self="showSuitcase = false">
+          <div class="suitcase-modal" :style="modalOrigin">
+            <button class="modal-close" @click="showSuitcase = false">✕</button>
+            <h3 class="suitcase-title">照片集</h3>
+
+            <!-- Actions -->
+            <div class="suitcase-actions">
+              <button class="action-btn" @click="triggerPhotoUpload" :disabled="uploading">
+                {{ uploading ? '上传中...' : '上传照片' }}
+              </button>
+              <input
+                ref="photoInput"
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                style="display: none"
+                @change="onPhotoUpload"
+              />
             </div>
-            <div v-else class="modal-empty">暂无更多照片</div>
+
+            <div v-if="photoError" class="photo-error">{{ photoError }}</div>
+
+            <!-- Photo Grid -->
+            <div v-if="allPhotos.length > 0" class="suitcase-grid">
+              <div
+                v-for="p in allPhotos"
+                :key="p.id"
+                class="suitcase-card"
+                :class="{ 'on-wall': p.is_on_wall }"
+              >
+                <img :src="p.image_url" :alt="p.title || 'photo'" class="suitcase-img" @click="openDetail(p)" />
+                <div class="suitcase-card-actions">
+                  <button
+                    class="card-action-btn"
+                    :class="{ active: p.is_on_wall }"
+                    :title="p.is_on_wall ? '从照片墙移除' : '添加到照片墙'"
+                    @click="onToggleWall(p)"
+                  >
+                    {{ p.is_on_wall ? '✦' : '☆' }}
+                  </button>
+                  <button
+                    class="card-action-btn delete-btn"
+                    title="删除"
+                    @click="onDeletePhoto(p.id)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <span v-if="p.source === 'ai_generated'" class="source-badge">AI</span>
+              </div>
+            </div>
+            <div v-else class="modal-empty">还没有照片，快来上传吧</div>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Photo Detail Modal -->
+      <Transition name="modal-zoom">
+        <div v-if="showDetail && detailPhoto" class="modal-overlay" @click.self="closeDetail">
+          <div class="detail-modal">
+            <button class="modal-close" @click="closeDetail">✕</button>
+            <img :src="detailPhoto.image_url" :alt="detailPhoto.title || 'photo'" class="detail-image" />
+            <div class="detail-info">
+              <div v-if="!editingDetail" class="detail-view">
+                <h3 class="detail-title">{{ detailPhoto.title || '未命名' }}</h3>
+                <p v-if="detailPhoto.description" class="detail-desc">{{ detailPhoto.description }}</p>
+                <div v-if="detailPhoto.tags.length > 0" class="detail-tags">
+                  <span v-for="tag in detailPhoto.tags" :key="tag" class="detail-tag">{{ tag }}</span>
+                </div>
+                <div class="detail-meta">
+                  <span>{{ detailPhoto.source === 'ai_generated' ? 'AI 生成' : '上传' }}</span>
+                  <span>{{ formatDate(detailPhoto.created_at) }}</span>
+                </div>
+                <button class="action-btn" @click="startEditDetail">编辑信息</button>
+              </div>
+              <div v-else class="detail-edit">
+                <input v-model="editForm.title" class="form-input" placeholder="标题" maxlength="200" />
+                <textarea v-model="editForm.description" class="form-input form-textarea" placeholder="描述" maxlength="2000" />
+                <input v-model="editForm.tagsStr" class="form-input" placeholder="标签 (逗号分隔)" />
+                <div class="edit-actions">
+                  <button class="action-btn" :disabled="editSaving" @click="onSaveDetail">
+                    {{ editSaving ? '保存中...' : '保存' }}
+                  </button>
+                  <button class="action-btn action-cancel" @click="editingDetail = false">取消</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </Transition>
@@ -94,7 +174,8 @@
                   />
                 </div>
                 <p class="profile-username">@{{ profile?.username || auth.user?.username }}</p>
-                <span class="role-badge" :class="'role-' + (auth.user?.role || 'mom')">{{ roleName }}</span>
+                <span v-if="isAdmin" class="role-badge role-admin">管理员</span>
+                <span class="role-badge" :class="'role-' + (profile?.role || auth.user?.role || 'mom')">{{ roleName }}</span>
               </div>
             </div>
 
@@ -385,7 +466,14 @@
 import { ref, computed, watch, nextTick, reactive } from 'vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
-import { getMemoirs, type Memoir } from '@/lib/api/echo'
+import {
+  getPhotos,
+  uploadPhoto,
+  updatePhoto,
+  deletePhoto,
+  togglePhotoWall,
+  type Photo,
+} from '@/lib/api/photo'
 import {
   getUserProfile,
   updateUserProfile,
@@ -411,22 +499,33 @@ const uiStore = useUiStore()
 const auth = useAuthStore()
 
 // ── Car page state ──
-const memoirs = ref<Memoir[]>([])
-const showOverflow = ref(false)
+const allPhotos = ref<Photo[]>([])
+const showSuitcase = ref(false)
 const boxRef = ref<HTMLElement | null>(null)
 const modalOrigin = ref<Record<string, string>>({})
 
 const visible = computed(() => uiStore.activePanel === 'car')
 
 const wallPhotos = computed(() =>
-  memoirs.value.filter((m) => m.cover_image_url).slice(0, 9),
-)
-
-const overflowPhotos = computed(() =>
-  memoirs.value.filter((m) => m.cover_image_url).slice(9),
+  allPhotos.value
+    .filter((p) => p.is_on_wall)
+    .sort((a, b) => (a.wall_position ?? 99) - (b.wall_position ?? 99))
+    .slice(0, 9),
 )
 
 const emptySlots = computed(() => Math.max(0, 9 - wallPhotos.value.length))
+
+// ── Photo management state ──
+const photoInput = ref<HTMLInputElement | null>(null)
+const uploading = ref(false)
+const photoError = ref('')
+
+// ── Photo detail state ──
+const showDetail = ref(false)
+const detailPhoto = ref<Photo | null>(null)
+const editingDetail = ref(false)
+const editForm = reactive({ title: '', description: '', tagsStr: '' })
+const editSaving = ref(false)
 
 // ── Profile modal state ──
 const showProfile = ref(false)
@@ -504,7 +603,8 @@ const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.
 const hasCustomAvatar = computed(() => !!(profile.value?.avatar_url || auth.user?.avatar_url))
 const partnerAvatarUrl = computed(() => profile.value?.partner?.avatar_url || avatarDefault)
 const hasPartnerCustomAvatar = computed(() => !!profile.value?.partner?.avatar_url)
-const roleName = computed(() => roleMap[auth.user?.role || 'mom'] || '溯源者')
+const roleName = computed(() => roleMap[profile.value?.role || auth.user?.role || 'mom'] || '溯源者')
+const isAdmin = computed(() => !!(profile.value?.is_admin || auth.user?.is_admin))
 const { backgroundMusicVolume, isBackgroundMusicPlaying, setBackgroundMusicVolume } = useBackgroundMusicControls()
 const backgroundMusicVolumePercent = computed(() => Math.round(backgroundMusicVolume.value * 100))
 const backgroundMusicStatusText = computed(() => isBackgroundMusicPlaying.value ? '拖动滑块调节背景音乐音量' : '如果还没有声音，请先点击页面任意位置以允许播放')
@@ -519,14 +619,134 @@ function close() {
   uiStore.closePanel()
 }
 
-function openModal() {
+function openSuitcase() {
   if (boxRef.value) {
     const rect = boxRef.value.getBoundingClientRect()
     const x = rect.left + rect.width / 2
     const y = rect.top + rect.height / 2
     modalOrigin.value = { transformOrigin: `${x}px ${y}px` }
   }
-  showOverflow.value = !showOverflow.value
+  showSuitcase.value = !showSuitcase.value
+}
+
+// ── Photo methods ──
+async function fetchPhotos() {
+  try {
+    const res = await getPhotos(1, 50)
+    allPhotos.value = res.photos
+  } catch {
+    // silent
+  }
+}
+
+function triggerPhotoUpload() {
+  photoInput.value?.click()
+}
+
+async function onPhotoUpload(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  input.value = ''
+
+  if (file.size > 5 * 1024 * 1024) {
+    photoError.value = '照片大小不能超过 5MB'
+    return
+  }
+  if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+    photoError.value = '仅支持 JPG、PNG、GIF、WebP 格式'
+    return
+  }
+
+  photoError.value = ''
+  uploading.value = true
+  try {
+    const photo = await uploadPhoto(file)
+    allPhotos.value = [photo, ...allPhotos.value]
+  } catch (err) {
+    photoError.value = getErrorMessage(err)
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function onToggleWall(photo: Photo) {
+  const newIsOnWall = !photo.is_on_wall
+  const wallCount = allPhotos.value.filter((p) => p.is_on_wall).length
+
+  if (newIsOnWall && wallCount >= 9) {
+    photoError.value = '照片墙已满 (最多 9 张)'
+    return
+  }
+
+  let position: number | undefined
+  if (newIsOnWall) {
+    position = wallCount
+  }
+
+  try {
+    const updated = await togglePhotoWall(photo.id, newIsOnWall, position)
+    allPhotos.value = allPhotos.value.map((p) => (p.id === updated.id ? updated : p))
+    photoError.value = ''
+  } catch (err) {
+    photoError.value = getErrorMessage(err)
+  }
+}
+
+async function onDeletePhoto(id: string) {
+  try {
+    await deletePhoto(id)
+    allPhotos.value = allPhotos.value.filter((p) => p.id !== id)
+    if (detailPhoto.value?.id === id) {
+      closeDetail()
+    }
+  } catch (err) {
+    photoError.value = getErrorMessage(err)
+  }
+}
+
+// ── Detail modal ──
+function openDetail(photo: Photo) {
+  detailPhoto.value = photo
+  editingDetail.value = false
+  showDetail.value = true
+}
+
+function closeDetail() {
+  showDetail.value = false
+  detailPhoto.value = null
+  editingDetail.value = false
+}
+
+function startEditDetail() {
+  if (!detailPhoto.value) return
+  editForm.title = detailPhoto.value.title
+  editForm.description = detailPhoto.value.description
+  editForm.tagsStr = detailPhoto.value.tags.join(', ')
+  editingDetail.value = true
+}
+
+async function onSaveDetail() {
+  if (!detailPhoto.value) return
+  editSaving.value = true
+  try {
+    const tags = editForm.tagsStr
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+    const updated = await updatePhoto(detailPhoto.value.id, {
+      title: editForm.title,
+      description: editForm.description,
+      tags,
+    })
+    allPhotos.value = allPhotos.value.map((p) => (p.id === updated.id ? updated : p))
+    detailPhoto.value = updated
+    editingDetail.value = false
+  } catch (err) {
+    photoError.value = getErrorMessage(err)
+  } finally {
+    editSaving.value = false
+  }
 }
 
 // ── Profile methods ──
@@ -829,17 +1049,10 @@ function onLogout() {
 // ── Watchers ──
 watch(visible, async (isVisible) => {
   if (isVisible) {
-    showOverflow.value = false
+    showSuitcase.value = false
     showProfile.value = false
-    try {
-      const [res] = await Promise.all([
-        getMemoirs(50, 0),
-        fetchProfile(),
-      ])
-      memoirs.value = res.memoirs
-    } catch {
-      // silent
-    }
+    showDetail.value = false
+    await Promise.all([fetchPhotos(), fetchProfile()])
   }
 })
 
@@ -925,6 +1138,7 @@ watch(activeTab, (tab) => {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .photo-frame:hover:not(.empty) {
@@ -941,6 +1155,7 @@ watch(activeTab, (tab) => {
 .photo-frame.empty {
   background: rgba(255, 255, 255, 0.04);
   border: 1px dashed rgba(255, 255, 255, 0.12);
+  cursor: default;
 }
 
 /* ── Right Section ── */
@@ -1034,8 +1249,8 @@ watch(activeTab, (tab) => {
 
 .box-badge {
   position: absolute;
-  top: -6px;
-  right: -10px;
+  top: 22%;
+  right: 18%;
   min-width: 22px;
   height: 22px;
   display: flex;
@@ -1092,6 +1307,7 @@ watch(activeTab, (tab) => {
   font-size: 16px;
   cursor: pointer;
   transition: background 0.2s;
+  z-index: 2;
 }
 
 .modal-close:hover {
@@ -1105,23 +1321,253 @@ watch(activeTab, (tab) => {
   padding: 48px 0;
 }
 
-.overflow-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 12px;
+/* ── Suitcase Modal ── */
+.suitcase-modal {
+  position: relative;
+  width: 75vw;
+  max-width: 900px;
+  max-height: 80vh;
+  background: rgba(40, 34, 28, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-.overflow-photo {
+.suitcase-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin-bottom: 20px;
+}
+
+.suitcase-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.action-btn {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.02);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.action-btn.action-cancel {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.photo-error {
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  background: rgba(255, 100, 100, 0.12);
+  border-radius: 10px;
+  font-size: 13px;
+  color: #ff8888;
+}
+
+/* ── Suitcase Grid ── */
+.suitcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.suitcase-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.suitcase-card:hover {
+  transform: scale(1.02);
+}
+
+.suitcase-card.on-wall {
+  border-color: rgba(255, 182, 100, 0.5);
+  box-shadow: 0 0 12px rgba(255, 182, 100, 0.15);
+}
+
+.suitcase-img {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.2s;
+  cursor: pointer;
+  display: block;
 }
 
-.overflow-photo:hover {
-  transform: scale(1.05);
+.suitcase-card-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.suitcase-card:hover .suitcase-card-actions {
+  opacity: 1;
+}
+
+.card-action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.card-action-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.card-action-btn.active {
+  color: #ffb664;
+}
+
+.card-action-btn.delete-btn:hover {
+  background: rgba(255, 80, 80, 0.4);
+}
+
+.source-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  background: rgba(147, 112, 219, 0.8);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ── Detail Modal ── */
+.detail-modal {
+  position: relative;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 85vh;
+  background: rgba(40, 34, 28, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.detail-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 24px 24px 0 0;
+}
+
+.detail-info {
+  padding: 24px;
+}
+
+.detail-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.detail-desc {
+  font-size: 14px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  line-height: 1.6;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detail-tag {
+  padding: 3px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.detail-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.4));
+}
+
+.detail-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Fade Transition ── */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s, max-height 0.3s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 /* ── Profile Modal ── */
@@ -1334,6 +1780,11 @@ watch(activeTab, (tab) => {
 .role-professional {
   background: rgba(144, 238, 144, 0.2);
   color: #90ee90;
+}
+
+.role-admin {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
 }
 
 .inline-error {
