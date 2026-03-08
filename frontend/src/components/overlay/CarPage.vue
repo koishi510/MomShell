@@ -2276,9 +2276,11 @@ watch(activeTab, (tab) => {
 .pearl-shell-embedded {
   position: relative;
   width: 100%;
-  max-width: 420px;
-  aspect-ratio: 3 / 4;
-  border-radius: 12px;
+  width: 936px;
+  height:544px;
+  margin-top: -34px;
+  margin-left: 215px;
+  border-radius: 2px;
   overflow: hidden;
 }
 

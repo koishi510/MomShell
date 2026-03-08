@@ -203,8 +203,8 @@ export default function PearlShell({
     scene.fog = new THREE.FogExp2(0xd48a56, 0.015);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 40);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 28);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -223,8 +223,8 @@ export default function PearlShell({
     const renderScene = new RenderPass(scene, camera);
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.4, 0.5, 0.85);
     bloomPass.threshold = 0.5;
-    bloomPass.strength = 0.4;
-    bloomPass.radius = 0.5;
+    bloomPass.strength = 0.6;
+    bloomPass.radius = 0.7;
 
     const composer = new EffectComposer(renderer);
     composer.addPass(renderScene);
@@ -630,7 +630,7 @@ export default function PearlShell({
 
       if (cameraRef.current && controlsRef.current) {
         isAnimatingCameraRef.current = true;
-        gsap.to(cameraRef.current.position, { x: 0, y: 0, z: 40, duration: 2, delay: shellDelay });
+        gsap.to(cameraRef.current.position, { x: 0, y: 0, z: 28, duration: 2, delay: shellDelay });
         gsap.to(controlsRef.current.target, {
           x: 0, y: 0, z: 0, duration: 2, delay: shellDelay,
           onComplete: () => { isAnimatingCameraRef.current = false; },
@@ -675,7 +675,7 @@ export default function PearlShell({
 
       if (cameraRef.current && controlsRef.current) {
         isAnimatingCameraRef.current = true;
-        gsap.to(cameraRef.current.position, { x: 0, y: 5, z: 50, duration: 2 });
+        gsap.to(cameraRef.current.position, { x: 0, y: 5, z: 35, duration: 2 });
         gsap.to(controlsRef.current.target, {
           x: 0, y: 0, z: 0, duration: 2,
           onComplete: () => { isAnimatingCameraRef.current = false; },
