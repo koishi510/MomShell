@@ -29,6 +29,7 @@
               :is-fullscreen="false"
               @request-fullscreen="handleRequestFullscreen"
             />
+            <button class="pearl-shell-close" @click.stop="showPearlShell = false" aria-label="关闭贝壳">✕</button>
           </div>
         </div>
 
@@ -2273,11 +2274,37 @@ watch(activeTab, (tab) => {
 
 /* ── PearlShell ── */
 .pearl-shell-embedded {
+  position: relative;
   width: 100%;
   max-width: 420px;
   aspect-ratio: 3 / 4;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.pearl-shell-close {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 30;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pearl-shell-close:hover {
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .pearl-shell-fullscreen {
