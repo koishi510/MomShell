@@ -174,31 +174,49 @@ if pg_isready -q 2>/dev/null; then
     success "PostgreSQL is running"
 else
     warn "PostgreSQL is not running, attempting to start..."
-    if sudo systemctl start postgresql 2>/dev/null; then
+    if [[ "$OSTYPE" == darwin* ]]; then
+        brew services start postgresql 2>/dev/null || brew services start postgresql@* 2>/dev/null
+    else
+        sudo systemctl start postgresql 2>/dev/null
+    fi
+    if pg_isready -q 2>/dev/null; then
         success "PostgreSQL started"
     else
         fail "Could not start PostgreSQL"
-        echo "  Try: sudo systemctl start postgresql"
-        echo "  Arch first-time: sudo -u postgres initdb -D /var/lib/postgres/data"
+        if [[ "$OSTYPE" == darwin* ]]; then
+            echo "  Try: brew services start postgresql"
+        else
+            echo "  Try: sudo systemctl start postgresql"
+            echo "  Arch first-time: sudo -u postgres initdb -D /var/lib/postgres/data"
+        fi
         exit 1
     fi
 fi
 
+# Determine how to run psql as superuser
+# macOS Homebrew: psql runs as the current user who is already a superuser
+# Linux: need sudo -u postgres
+if [[ "$OSTYPE" == darwin* ]]; then
+    PG_SUDO="psql -d postgres"
+else
+    PG_SUDO="sudo -u postgres psql"
+fi
+
 # Create database user if not exists
-if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" 2>/dev/null | grep -q 1; then
+if $PG_SUDO -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" 2>/dev/null | grep -q 1; then
     success "Database user '$DB_USER' exists"
 else
     info "Creating database user '$DB_USER'..."
-    sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null
+    $PG_SUDO -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null
     success "Database user '$DB_USER' created"
 fi
 
 # Create database if not exists
-if sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>/dev/null | grep -q 1; then
+if $PG_SUDO -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>/dev/null | grep -q 1; then
     success "Database '$DB_NAME' exists"
 else
     info "Creating database '$DB_NAME'..."
-    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
+    $PG_SUDO -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
     success "Database '$DB_NAME' created"
 fi
 
@@ -324,8 +342,19 @@ fi
 echo ""
 echo -e "${BLUE}=== 4. Initialize Backend (Go) ===${NC}"
 
+# Set Go proxy to Chinese mirror if default proxy is unreachable
+CURRENT_GOPROXY=$(go env GOPROXY)
+if [[ "$CURRENT_GOPROXY" == *"proxy.golang.org"* ]]; then
+    info "Testing Go module proxy connectivity..."
+    if ! curl -sf --connect-timeout 5 "https://proxy.golang.org/" >/dev/null 2>&1; then
+        warn "proxy.golang.org unreachable, switching to goproxy.cn"
+        go env -w GOPROXY=https://goproxy.cn,direct
+        success "GOPROXY set to https://goproxy.cn,direct"
+    fi
+fi
+
 info "Downloading Go dependencies..."
-cd backend && go mod download && cd "$PROJECT_ROOT"
+(cd "$PROJECT_ROOT/backend" && go mod download)
 success "Backend dependencies installed"
 
 # ============================================
@@ -334,8 +363,25 @@ success "Backend dependencies installed"
 echo ""
 echo -e "${BLUE}=== 5. Initialize Frontend (Vue) ===${NC}"
 
+# Set npm registry to Chinese mirror if default registry is unreachable
+CURRENT_NPM_REGISTRY=$(npm config get registry 2>/dev/null)
+if [[ "$CURRENT_NPM_REGISTRY" == *"registry.npmjs.org"* ]]; then
+    info "Testing npm registry connectivity..."
+    if ! curl -sf --connect-timeout 5 "https://registry.npmjs.org/" >/dev/null 2>&1; then
+        warn "registry.npmjs.org unreachable, switching to npmmirror.com"
+        npm config set registry https://registry.npmmirror.com
+        success "npm registry set to https://registry.npmmirror.com"
+    fi
+fi
+
 info "Installing npm dependencies..."
-cd frontend && npm install && cd "$PROJECT_ROOT"
+if [ -d "$PROJECT_ROOT/frontend/node_modules" ]; then
+    info "Cleaning stale node_modules..."
+    rm -rf "$PROJECT_ROOT/frontend/node_modules"
+fi
+# Use Chinese mirror for Puppeteer's Chromium download if needed
+export PUPPETEER_DOWNLOAD_BASE_URL="${PUPPETEER_DOWNLOAD_BASE_URL:-https://registry.npmmirror.com/mirrors/chrome-for-testing}"
+(cd "$PROJECT_ROOT/frontend" && npm install)
 success "Frontend dependencies installed"
 
 # ============================================
@@ -377,14 +423,13 @@ fi
 echo ""
 echo -e "${BLUE}=== 7. Verify ===${NC}"
 
-if cd backend && go build ./... 2>/dev/null; then
+if (cd "$PROJECT_ROOT/backend" && go build ./... 2>/dev/null); then
     success "Backend build passed"
 else
     warn "Backend build failed (database config may be missing)"
 fi
-cd "$PROJECT_ROOT"
 
-if [ -d frontend/node_modules ]; then
+if [ -d "$PROJECT_ROOT/frontend/node_modules" ]; then
     success "Frontend node_modules installed"
 else
     warn "Frontend node_modules not found"
