@@ -816,8 +816,8 @@ export default function PearlShell({
             targetShellPositionRef.current = { x: 0, y: 0, z: 0 };
             targetShellRotationRef.current = { x: 0, y: 0 };
           } else {
-            const posX = -(landmarks[9].x - 0.5) * 110;
-            const posY = -(landmarks[9].y - 0.5) * 80;
+            const posX = Math.max(-15, Math.min(15, -(landmarks[9].x - 0.5) * 30));
+            const posY = Math.max(-10, Math.min(10, -(landmarks[9].y - 0.5) * 20));
             targetShellPositionRef.current = { x: posX, y: posY, z: 0 };
 
             const targetY = (landmarks[9].x - 0.5) * Math.PI * 2;
