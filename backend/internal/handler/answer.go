@@ -12,10 +12,11 @@ import (
 type AnswerHandler struct {
 	communityService *service.CommunityService
 	authService      *service.AuthService
+	communityAI      *service.CommunityAIService
 }
 
-func NewAnswerHandler(communityService *service.CommunityService, authService *service.AuthService) *AnswerHandler {
-	return &AnswerHandler{communityService: communityService, authService: authService}
+func NewAnswerHandler(communityService *service.CommunityService, authService *service.AuthService, communityAI *service.CommunityAIService) *AnswerHandler {
+	return &AnswerHandler{communityService: communityService, authService: authService, communityAI: communityAI}
 }
 
 // GET /api/v1/community/questions/:id/answers
@@ -65,6 +66,11 @@ func (h *AnswerHandler) Create(c *gin.Context) {
 		}
 		c.JSON(status, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Trigger AI reply if answer mentions @小石光
+	if h.communityAI != nil && service.ContainsMention(req.Content) {
+		go h.communityAI.HandleNewAnswer(answer.QuestionID, answer.ID)
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"id": answer.ID, "status": string(answer.Status)})
