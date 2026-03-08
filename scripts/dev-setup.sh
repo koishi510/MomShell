@@ -282,6 +282,14 @@ else
     ask "OPENAI_MODEL" "Qwen/Qwen3-235B-A22B"
     OPENAI_MODEL="$REPLY"
 
+    ask "IMAGE_MODEL (image generation)" "Tongyi-MAI/Z-Image-Turbo"
+    IMAGE_MODEL="$REPLY"
+
+    # Firecrawl
+    echo -e "  ${BLUE}-- Firecrawl (Web Search) --${NC}"
+    ask "FIRECRAWL_API_KEY" ""
+    FIRECRAWL_API_KEY="$REPLY"
+
     # Server
     echo -e "  ${BLUE}-- Server --${NC}"
     ask "PORT" "8000"
@@ -319,6 +327,10 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS=$JWT_REFRESH_TOKEN_EXPIRE_DAYS
 OPENAI_API_KEY=$OPENAI_API_KEY
 OPENAI_BASE_URL=$OPENAI_BASE_URL
 OPENAI_MODEL=$OPENAI_MODEL
+IMAGE_MODEL=$IMAGE_MODEL
+
+# ==================== Firecrawl (Web Search) ====================
+FIRECRAWL_API_KEY=$FIRECRAWL_API_KEY
 
 # ==================== Server ====================
 PORT=$PORT
