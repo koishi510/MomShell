@@ -48,6 +48,8 @@ func main() {
 	chatRepo := repository.NewChatRepo(db)
 	echoRepo := repository.NewEchoRepo(db)
 	photoRepo := repository.NewPhotoRepo(db)
+	whisperRepo := repository.NewWhisperRepo(db)
+	taskRepo := repository.NewTaskRepo(db)
 
 	// Initialize services
 	moderationService := service.NewModerationService()
@@ -74,6 +76,8 @@ func main() {
 	chatService := service.NewChatService(chatClient, chatRepo, firecrawlClient)
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
 	photoService := service.NewPhotoService(photoRepo, chatClient, cfg.ImageModel)
+	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient)
+	taskService := service.NewTaskService(taskRepo, userRepo)
 
 	// Ensure AI user exists for community AI replies
 	aiUserID := ensureAIUser(userRepo)
@@ -107,6 +111,8 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	adminHandler := handler.NewAdminHandler(adminService, authService)
 	photoHandler := handler.NewPhotoHandler(photoService)
+	whisperHandler := handler.NewWhisperHandler(whisperService)
+	taskHandler := handler.NewTaskHandler(taskService)
 
 	// Setup Gin
 	r := gin.New()
@@ -120,7 +126,7 @@ func main() {
 		authHandler, questionHandler, answerHandler,
 		commentHandler, interactionHandler, tagHandler,
 		chatHandler, echoHandler, userHandler, adminHandler,
-		photoHandler,
+		photoHandler, whisperHandler, taskHandler,
 	)
 
 	// Start server

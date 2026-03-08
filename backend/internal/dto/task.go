@@ -1,0 +1,27 @@
+package dto
+
+import "time"
+
+type UserTaskItem struct {
+	ID          string     `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Category    string     `json:"category"`
+	Difficulty  int        `json:"difficulty"`
+	Status      string     `json:"status"`
+	Score       *int       `json:"score"`
+	Comment     *string    `json:"comment"`
+	CompletedAt *time.Time `json:"completed_at"`
+	ScoredAt    *time.Time `json:"scored_at"`
+	Date        time.Time  `json:"date"`
+}
+
+type TaskScore struct {
+	Score   int    `json:"score" binding:"required,min=1,max=5"`
+	Comment string `json:"comment" binding:"max=500"`
+}
+
+type TaskStats struct {
+	XP    int `json:"xp"`
+	Level int `json:"level"`
+}
