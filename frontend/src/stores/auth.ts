@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import {
   type User,
   type LoginParams,
@@ -9,11 +9,9 @@ import {
   apiGetMe,
   apiRefresh,
   apiSetRole,
-  saveTokens,
-  getAccessToken,
-  getRefreshToken,
-  clearTokens,
+  apiLogout,
 } from "@/lib/auth";
+import { setAccessToken } from "@/lib/apiClient";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
@@ -23,26 +21,25 @@ export const useAuthStore = defineStore("auth", () => {
 
   const isAuthenticated = computed(() => !!user.value && !!accessToken.value);
 
+  // Keep apiClient's in-memory token in sync with the store
+  watch(accessToken, (token) => {
+    setAccessToken(token);
+  });
+
   async function init() {
-    const storedToken = getAccessToken();
-    if (storedToken) {
-      try {
-        const userInfo = await apiGetMe(storedToken);
-        user.value = userInfo;
-        accessToken.value = storedToken;
-      } catch {
-        const refreshed = await refreshAuth();
-        if (!refreshed) clearTokens();
-      }
+    // Try to restore session via httpOnly refresh cookie
+    const refreshed = await refreshAuth();
+    if (!refreshed) {
+      user.value = null;
+      accessToken.value = null;
     }
     isLoading.value = false;
   }
 
-  async function login(params: LoginParams, rememberMe = true) {
-    const tokens = await apiLogin(params);
-    saveTokens(tokens, rememberMe);
-    accessToken.value = tokens.access_token;
-    const userInfo = await apiGetMe(tokens.access_token);
+  async function login(params: LoginParams) {
+    const resp = await apiLogin(params);
+    accessToken.value = resp.access_token;
+    const userInfo = await apiGetMe(resp.access_token);
     user.value = userInfo;
     isGuest.value = false;
   }
@@ -61,7 +58,9 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function logout() {
-    clearTokens();
+    if (accessToken.value) {
+      apiLogout(accessToken.value).catch(() => {});
+    }
     user.value = null;
     accessToken.value = null;
     isGuest.value = false;
@@ -72,20 +71,14 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function refreshAuth(): Promise<boolean> {
-    const currentRefreshToken = getRefreshToken();
-    if (!currentRefreshToken) return false;
-
     try {
-      const tokens = await apiRefresh(currentRefreshToken);
-      const rememberMe =
-        localStorage.getItem("momshell_remember_me") === "true";
-      saveTokens(tokens, rememberMe);
-      accessToken.value = tokens.access_token;
-      const userInfo = await apiGetMe(tokens.access_token);
+      // Refresh token is sent automatically via httpOnly cookie
+      const resp = await apiRefresh();
+      accessToken.value = resp.access_token;
+      const userInfo = await apiGetMe(resp.access_token);
       user.value = userInfo;
       return true;
     } catch {
-      clearTokens();
       user.value = null;
       accessToken.value = null;
       return false;
