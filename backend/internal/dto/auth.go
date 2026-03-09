@@ -6,7 +6,7 @@ import "time"
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=50"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8"`
 	Nickname string `json:"nickname" binding:"required,min=1,max=50"`
 	Role     string `json:"role" binding:"omitempty,oneof=mom dad family"`
 }
@@ -48,7 +48,7 @@ type UserResponse struct {
 // ChangePasswordRequest is the request body for changing password
 type ChangePasswordRequest struct {
 	OldPassword string `json:"old_password" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
 // ForgotPasswordRequest is the request body for forgot password
@@ -59,7 +59,7 @@ type ForgotPasswordRequest struct {
 // ResetPasswordRequest is the request body for resetting password
 type ResetPasswordRequest struct {
 	Token       string `json:"token" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
 // UpdateRoleRequest is the request body for updating user role

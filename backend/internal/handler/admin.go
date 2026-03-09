@@ -22,6 +22,15 @@ func NewAdminHandler(adminService *service.AdminService, authService *service.Au
 	}
 }
 
+// IsAdmin checks if the given user is an admin. Used as middleware.AdminChecker.
+func (h *AdminHandler) IsAdmin(userID string) bool {
+	user, err := h.authService.GetUserByID(userID)
+	if err != nil {
+		return false
+	}
+	return user.IsAdmin
+}
+
 // requireAdmin checks if the current user is an admin
 func (h *AdminHandler) requireAdmin(c *gin.Context) (string, bool) {
 	userID := middleware.GetUserID(c)

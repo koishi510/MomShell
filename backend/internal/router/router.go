@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/momshell/backend/internal/config"
 	"github.com/momshell/backend/internal/handler"
@@ -10,6 +12,7 @@ import (
 func Setup(
 	r *gin.Engine,
 	cfg *config.Config,
+	isAdmin middleware.AdminChecker,
 	authHandler *handler.AuthHandler,
 	questionHandler *handler.QuestionHandler,
 	answerHandler *handler.AnswerHandler,
@@ -24,6 +27,11 @@ func Setup(
 	whisperHandler *handler.WhisperHandler,
 	taskHandler *handler.TaskHandler,
 ) {
+	// Rate limiters
+	authLimiter := middleware.RateLimit(10, 1*time.Minute)     // 10 req/min for auth
+	aiLimiter := middleware.RateLimit(20, 1*time.Minute)       // 20 req/min for AI endpoints
+	generalLimiter := middleware.RateLimit(120, 1*time.Minute) // 120 req/min general
+
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -35,22 +43,23 @@ func Setup(
 	// Admin panel (HTML page, no auth required for serving the page)
 	r.GET("/admin", adminHandler.ServeAdminPage)
 
-	api := r.Group("/api/v1")
+	api := r.Group("/api/v1", generalLimiter)
 
 	// ==================== Auth ====================
 	auth := api.Group("/auth")
 	{
-		auth.POST("/register", authHandler.Register)
-		auth.POST("/login", authHandler.Login)
-		auth.POST("/refresh", authHandler.Refresh)
-		auth.POST("/forgot-password", authHandler.ForgotPassword)
-		auth.POST("/reset-password", authHandler.ResetPassword)
+		auth.POST("/register", authLimiter, authHandler.Register)
+		auth.POST("/login", authLimiter, authHandler.Login)
+		auth.POST("/refresh", authLimiter, authHandler.Refresh)
+		auth.POST("/forgot-password", authLimiter, authHandler.ForgotPassword)
+		auth.POST("/reset-password", authLimiter, authHandler.ResetPassword)
 
 		authRequired := auth.Group("", middleware.AuthRequired(cfg))
 		{
 			authRequired.POST("/change-password", authHandler.ChangePassword)
 			authRequired.GET("/me", authHandler.GetMe)
 			authRequired.PATCH("/me/role", authHandler.UpdateRole)
+			authRequired.POST("/logout", authHandler.Logout)
 		}
 	}
 
@@ -114,7 +123,7 @@ func Setup(
 		{
 			tags.GET("", tagHandler.List)
 			tags.GET("/hot", tagHandler.ListHot)
-			tags.POST("", middleware.AdminRequired(cfg), tagHandler.Create)
+			tags.POST("", middleware.AdminRequired(cfg, isAdmin), tagHandler.Create)
 		}
 
 		// User profile (community context)
@@ -134,7 +143,7 @@ func Setup(
 	// ==================== Companion (AI Chat) ====================
 	companion := api.Group("/companion")
 	{
-		companion.POST("/chat", middleware.AuthOptional(cfg), chatHandler.Chat)
+		companion.POST("/chat", aiLimiter, middleware.AuthOptional(cfg), chatHandler.Chat)
 		companion.GET("/profile", middleware.AuthOptional(cfg), chatHandler.GetProfile)
 	}
 
@@ -145,7 +154,7 @@ func Setup(
 		echo.DELETE("/identity-tags/:id", echoHandler.DeleteIdentityTag)
 
 		echo.GET("/memoirs", echoHandler.GetMemoirs)
-		echo.POST("/memoirs/generate", echoHandler.GenerateMemoir)
+		echo.POST("/memoirs/generate", aiLimiter, echoHandler.GenerateMemoir)
 		echo.POST("/memoirs/:id/rate", echoHandler.RateMemoir)
 	}
 
@@ -154,7 +163,7 @@ func Setup(
 	{
 		photos.GET("", photoHandler.List)
 		photos.POST("/upload", photoHandler.Upload)
-		photos.POST("/generate", photoHandler.Generate)
+		photos.POST("/generate", aiLimiter, photoHandler.Generate)
 		photos.PUT("/wall", photoHandler.BatchUpdateWall)
 		photos.PUT("/:id", photoHandler.Update)
 		photos.DELETE("/:id", photoHandler.Delete)
@@ -166,7 +175,7 @@ func Setup(
 	{
 		whisper.POST("", whisperHandler.Create)
 		whisper.GET("", whisperHandler.List)
-		whisper.GET("/tips", whisperHandler.Tips)
+		whisper.GET("/tips", aiLimiter, whisperHandler.Tips)
 	}
 
 	// ==================== Tasks ====================
@@ -181,7 +190,7 @@ func Setup(
 	}
 
 	// ==================== Admin ====================
-	adminAPI := api.Group("/admin", middleware.AdminRequired(cfg))
+	adminAPI := api.Group("/admin", middleware.AdminRequired(cfg, isAdmin))
 	{
 		adminAPI.GET("/stats", adminHandler.GetStats)
 		adminAPI.GET("/users", adminHandler.ListUsers)

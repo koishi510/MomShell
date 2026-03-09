@@ -184,6 +184,10 @@ func (s *AuthService) GetUserByID(userID string) (*model.User, error) {
 	return s.userRepo.FindByID(userID)
 }
 
+func (s *AuthService) GetJWTSecret() string {
+	return s.cfg.JWTSecretKey
+}
+
 func (s *AuthService) generateTokens(userID string) (*dto.TokenResponse, error) {
 	accessToken, err := pkgjwt.CreateAccessToken(userID, s.cfg.JWTSecretKey, s.cfg.JWTAccessTokenExpireMin)
 	if err != nil {
