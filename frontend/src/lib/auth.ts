@@ -16,10 +16,8 @@ export interface User {
   created_at: string;
 }
 
-export interface TokenResponse {
+export interface AccessTokenResponse {
   access_token: string;
-  refresh_token: string;
-  token_type: string;
   expires_in: number;
 }
 
@@ -47,6 +45,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
     headers: mergedHeaders,
+    credentials: "include", // Send cookies (for refresh token)
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -76,17 +75,17 @@ export function apiRegister(params: RegisterParams): Promise<User> {
   });
 }
 
-export function apiLogin(params: LoginParams): Promise<TokenResponse> {
-  return fetchJson<TokenResponse>(`${AUTH_API}/login`, {
+export function apiLogin(params: LoginParams): Promise<AccessTokenResponse> {
+  return fetchJson<AccessTokenResponse>(`${AUTH_API}/login`, {
     method: "POST",
     body: JSON.stringify(params),
   });
 }
 
-export function apiRefresh(refresh_token: string): Promise<TokenResponse> {
-  return fetchJson<TokenResponse>(`${AUTH_API}/refresh`, {
+// Refresh token is sent automatically via httpOnly cookie
+export function apiRefresh(): Promise<AccessTokenResponse> {
+  return fetchJson<AccessTokenResponse>(`${AUTH_API}/refresh`, {
     method: "POST",
-    body: JSON.stringify({ refresh_token }),
   });
 }
 
@@ -95,7 +94,6 @@ export function apiGetMe(accessToken: string): Promise<User> {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      "X-Access-Token": accessToken,
     },
   });
 }
@@ -109,42 +107,17 @@ export function apiSetRole(
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      "X-Access-Token": accessToken,
     },
     body: JSON.stringify({ role }),
   });
 }
 
-// Token storage
-const ACCESS_TOKEN_KEY = "momshell_access_token";
-const REFRESH_TOKEN_KEY = "momshell_refresh_token";
-const REMEMBER_ME_KEY = "momshell_remember_me";
-
-export function saveTokens(tokens: TokenResponse, rememberMe: boolean): void {
-  localStorage.setItem(REMEMBER_ME_KEY, rememberMe.toString());
-  const storage = rememberMe ? localStorage : sessionStorage;
-  storage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
-  storage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
-}
-
-export function getAccessToken(): string | null {
-  return (
-    localStorage.getItem(ACCESS_TOKEN_KEY) ||
-    sessionStorage.getItem(ACCESS_TOKEN_KEY)
-  );
-}
-
-export function getRefreshToken(): string | null {
-  return (
-    localStorage.getItem(REFRESH_TOKEN_KEY) ||
-    sessionStorage.getItem(REFRESH_TOKEN_KEY)
-  );
-}
-
-export function clearTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(REMEMBER_ME_KEY);
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+export function apiLogout(accessToken: string): Promise<void> {
+  return fetch(`${AUTH_API}/logout`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: "include",
+  }).then(() => undefined);
 }

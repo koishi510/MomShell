@@ -100,7 +100,7 @@ func main() {
 	adminService := service.NewAdminService(cfg, adminRepo, userRepo)
 
 	// Initialize handlers
-	authHandler := handler.NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService, cfg)
 	questionHandler := handler.NewQuestionHandler(communityService, authService, communityAIService)
 	answerHandler := handler.NewAnswerHandler(communityService, authService, communityAIService)
 	commentHandler := handler.NewCommentHandler(communityService, authService, communityAIService)

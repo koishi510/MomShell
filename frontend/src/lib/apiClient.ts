@@ -3,19 +3,25 @@ import axios, {
   type AxiosError,
   type InternalAxiosRequestConfig,
 } from "axios";
-import {
-  getAccessToken,
-  getRefreshToken,
-  saveTokens,
-  clearTokens,
-  apiRefresh,
-} from "./auth";
+import { apiRefresh } from "./auth";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+
+// In-memory access token — not stored in localStorage
+let currentAccessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  currentAccessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return currentAccessToken;
+}
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true, // Send cookies for refresh token
 });
 
 let isRefreshing = false;
@@ -34,10 +40,8 @@ function processQueue(error: Error | null, token: string | null = null) {
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getAccessToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-      config.headers["X-Access-Token"] = token;
+    if (currentAccessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${currentAccessToken}`;
     }
     // Let browser set Content-Type with boundary for FormData
     if (config.data instanceof FormData) {
@@ -56,9 +60,6 @@ apiClient.interceptors.response.use(
     };
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      const currentRefreshToken = getRefreshToken();
-      if (!currentRefreshToken) return Promise.reject(error);
-
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -76,20 +77,19 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const tokens = await apiRefresh(currentRefreshToken);
-        const rememberMe =
-          localStorage.getItem("momshell_remember_me") === "true";
-        saveTokens(tokens, rememberMe);
+        // Refresh token is sent automatically via httpOnly cookie
+        const resp = await apiRefresh();
+        currentAccessToken = resp.access_token;
 
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${tokens.access_token}`;
+          originalRequest.headers.Authorization = `Bearer ${resp.access_token}`;
         }
 
-        processQueue(null, tokens.access_token);
+        processQueue(null, resp.access_token);
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
-        clearTokens();
+        currentAccessToken = null;
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
