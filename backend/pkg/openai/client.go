@@ -92,8 +92,8 @@ func (c *Client) Chat(ctx context.Context, messages []Message) (string, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("openai chat completion failed: status %d, body: %.500s",
-			resp.StatusCode, string(respBody))
+		return "", fmt.Errorf("openai chat completion failed: status %d, body_len: %d",
+			resp.StatusCode, len(respBody))
 	}
 
 	var chatResp chatResponse
