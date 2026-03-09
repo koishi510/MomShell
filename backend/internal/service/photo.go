@@ -180,8 +180,9 @@ func (s *PhotoService) DeletePhoto(id, userID string) error {
 	// Remove file from disk if it's a local upload
 	if photo.ImageURL != "" {
 		localPath := filepath.Clean("." + photo.ImageURL)
-		// Ensure the path is under the uploads directory to prevent path traversal
-		if strings.HasPrefix(localPath, "uploads"+string(filepath.Separator)) {
+		// Strict validation: must be under uploads/photos/ and match expected pattern
+		if strings.HasPrefix(localPath, "uploads"+string(filepath.Separator)) &&
+			!strings.Contains(localPath, "..") {
 			_ = os.Remove(localPath)
 		}
 	}

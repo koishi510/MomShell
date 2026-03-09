@@ -10,6 +10,8 @@ var TokenBlacklist = &tokenBlacklistStore{
 	tokens: make(map[string]time.Time),
 }
 
+const maxBlacklistSize = 100000
+
 type tokenBlacklistStore struct {
 	mu     sync.RWMutex
 	tokens map[string]time.Time
@@ -19,6 +21,19 @@ type tokenBlacklistStore struct {
 func (b *tokenBlacklistStore) Add(token string, expiry time.Time) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	if len(b.tokens) >= maxBlacklistSize {
+		// Emergency cleanup: remove expired tokens immediately
+		now := time.Now()
+		for t, exp := range b.tokens {
+			if now.After(exp) {
+				delete(b.tokens, t)
+			}
+		}
+	}
+	// If still at capacity after cleanup, skip adding (token will simply not be blacklisted)
+	if len(b.tokens) >= maxBlacklistSize {
+		return
+	}
 	b.tokens[token] = expiry
 }
 

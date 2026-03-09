@@ -116,7 +116,9 @@ func main() {
 
 	// Setup Gin
 	r := gin.New()
+	_ = r.SetTrustedProxies(nil) // Don't trust any proxy headers by default
 	r.Use(middleware.Recovery())
+	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.CORS(cfg))
 	r.Use(gin.Logger())
 

@@ -4,13 +4,13 @@ import "time"
 
 // AnswerCreate is the request body for creating an answer
 type AnswerCreate struct {
-	Content   string   `json:"content" binding:"required,min=1"`
+	Content   string   `json:"content" binding:"required,min=1,max=50000"`
 	ImageURLs []string `json:"image_urls"`
 }
 
 // AnswerUpdate is the request body for updating an answer
 type AnswerUpdate struct {
-	Content *string `json:"content" binding:"omitempty,min=1"`
+	Content *string `json:"content" binding:"omitempty,min=1,max=50000"`
 }
 
 // AnswerListParams holds query parameters for listing answers
