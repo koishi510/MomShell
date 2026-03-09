@@ -4,7 +4,7 @@ import "time"
 
 // CommentCreate is the request body for creating a comment
 type CommentCreate struct {
-	Content  string  `json:"content" binding:"required,min=1"`
+	Content  string  `json:"content" binding:"required,min=1,max=10000"`
 	ParentID *string `json:"parent_id"`
 }
 

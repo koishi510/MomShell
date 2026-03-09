@@ -76,6 +76,9 @@ func (h *EchoHandler) GetMemoirs(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
 			return
 		}
+		if parsed > 100 {
+			parsed = 100
+		}
 		limit = parsed
 	}
 

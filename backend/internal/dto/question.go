@@ -5,7 +5,7 @@ import "time"
 // QuestionCreate is the request body for creating a question
 type QuestionCreate struct {
 	Title     string   `json:"title" binding:"required,min=1,max=200"`
-	Content   string   `json:"content" binding:"required,min=1"`
+	Content   string   `json:"content" binding:"required,min=1,max=50000"`
 	Channel   string   `json:"channel" binding:"required,oneof=professional experience"`
 	ImageURLs []string `json:"image_urls"`
 	TagIDs    []string `json:"tag_ids"`
@@ -14,7 +14,7 @@ type QuestionCreate struct {
 // QuestionUpdate is the request body for updating a question
 type QuestionUpdate struct {
 	Title   *string  `json:"title" binding:"omitempty,min=1,max=200"`
-	Content *string  `json:"content" binding:"omitempty,min=1"`
+	Content *string  `json:"content" binding:"omitempty,min=1,max=50000"`
 	TagIDs  []string `json:"tag_ids"`
 }
 

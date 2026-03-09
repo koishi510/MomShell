@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 type Client struct {
@@ -17,7 +18,7 @@ type Client struct {
 func NewClient(apiKey string) *Client {
 	return &Client{
 		apiKey: apiKey,
-		http:   &http.Client{},
+		http:   &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -67,7 +68,7 @@ func (c *Client) Search(ctx context.Context, query string, limit int) ([]SearchR
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("firecrawl search failed: status %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("firecrawl search failed: status %d", resp.StatusCode)
 	}
 
 	var searchResp searchResponse
