@@ -2,11 +2,13 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/middleware"
 	"github.com/momshell/backend/internal/service"
+	pkgjwt "github.com/momshell/backend/pkg/jwt"
 )
 
 type AuthHandler struct {
@@ -102,6 +104,27 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "密码修改成功"})
 }
 
+// POST /api/v1/auth/logout
+func (h *AuthHandler) Logout(c *gin.Context) {
+	tokenStr := ""
+	auth := c.GetHeader("Authorization")
+	if strings.HasPrefix(auth, "Bearer ") {
+		tokenStr = strings.TrimPrefix(auth, "Bearer ")
+	}
+	if tokenStr == "" {
+		tokenStr = c.GetHeader("X-Access-Token")
+	}
+
+	if tokenStr != "" {
+		claims, err := pkgjwt.ParseToken(tokenStr, h.authService.GetJWTSecret())
+		if err == nil && claims.ExpiresAt != nil {
+			middleware.TokenBlacklist.Add(tokenStr, claims.ExpiresAt.Time)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "已退出登录"})
+}
+
 // POST /api/v1/auth/forgot-password
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req dto.ForgotPasswordRequest
@@ -117,10 +140,10 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// In production, send email instead of returning token
+	// TODO: In production, send email with reset link instead of logging
+	_ = token // token would be sent via email
 	c.JSON(http.StatusOK, gin.H{
 		"message": "如果该邮箱已注册，将收到重置密码邮件",
-		"token":   token, // For development only
 	})
 }
 
