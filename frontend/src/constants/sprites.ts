@@ -33,10 +33,10 @@ export const SPRITES: SpriteData[] = [
     width: '6vw',
   },
 
-  { id: 'shell', src: shellImg, left: '48%', top: '45%', width: '5vw', rotate: 0 },
+  { id: 'shell', src: shellImg, left: '52.5%', top: '45%', width: '5vw', rotate: 0 },
 
-  { id: 'star', src: starImg, left: '50%', top: '75%', width: '5vw', rotate: 0 },
+  { id: 'star', src: starImg, left: '54.5%', top: '75%', width: '5vw', rotate: 0 },
 
-  { id: 'conque', src: conqueImg, left: '52.5%', top: '48%', width: '5vw', rotate: 0 },
+  { id: 'conque', src: conqueImg, left: '57%', top: '48%', width: '5vw', rotate: 0 },
 
 ]
