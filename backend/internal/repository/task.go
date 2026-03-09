@@ -61,6 +61,17 @@ func (r *TaskRepo) UpdateUserTask(ut *model.UserTask) error {
 	return r.db.Save(ut).Error
 }
 
+// ResetUserTaskToPending clears completed_at and sets status back to pending.
+func (r *TaskRepo) ResetUserTaskToPending(ut *model.UserTask) error {
+	return r.db.Model(ut).
+		Select("status", "completed_at", "comment").
+		Updates(map[string]interface{}{
+			"status":       ut.Status,
+			"completed_at": nil,
+			"comment":      ut.Comment,
+		}).Error
+}
+
 func (r *TaskRepo) SumScoreByUserID(userID string) (int, error) {
 	var total *int
 	err := r.db.Model(&model.UserTask{}).
