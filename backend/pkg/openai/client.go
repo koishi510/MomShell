@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	maxChatResponseSize  = 1 << 20  // 1 MB
+	maxImageResponseSize = 10 << 20 // 10 MB
+)
+
 type Client struct {
 	apiKey  string
 	baseURL string
@@ -81,14 +86,14 @@ func (c *Client) Chat(ctx context.Context, messages []Message) (string, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxChatResponseSize))
 	if err != nil {
 		return "", fmt.Errorf("failed to read response: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("openai chat completion failed: error, status code: %d, status: %s, message: %s",
-			resp.StatusCode, resp.Status, string(respBody))
+		return "", fmt.Errorf("openai chat completion failed: status %d, body: %.500s",
+			resp.StatusCode, string(respBody))
 	}
 
 	var chatResp chatResponse
@@ -104,9 +109,7 @@ func (c *Client) Chat(ctx context.Context, messages []Message) (string, error) {
 		return "", fmt.Errorf("openai returned no choices")
 	}
 
-	content := chatResp.Choices[0].Message.Content
-	log.Printf("[Chat] raw response (first 500 chars): %.500s", content)
-	return content, nil
+	return chatResp.Choices[0].Message.Content, nil
 }
 
 type imageRequest struct {
@@ -159,16 +162,16 @@ func (c *Client) GenerateImage(ctx context.Context, model, prompt string) (*Imag
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxImageResponseSize))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read image response: %w", err)
 	}
 
-	log.Printf("[ImageGen] model=%s POST status=%d body_len=%d body_preview=%.500s", model, resp.StatusCode, len(respBody), string(respBody))
+	log.Printf("[ImageGen] model=%s POST status=%d body_len=%d", model, resp.StatusCode, len(respBody))
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, fmt.Errorf("image generation failed: status code: %d, message: %s",
-			resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("image generation failed: status code: %d, body_len: %d",
+			resp.StatusCode, len(respBody))
 	}
 
 	// Try parsing as an async task response (ModelScope returns task_id for polling)
@@ -281,13 +284,13 @@ func (c *Client) pollImageTask(ctx context.Context, taskID string) (*ImageRespon
 			continue
 		}
 
-		respBody, err := io.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxImageResponseSize))
 		_ = resp.Body.Close()
 		if err != nil {
 			continue
 		}
 
-		log.Printf("[ImageGen] poll #%d status=%d body_len=%d body_preview=%.500s", i+1, resp.StatusCode, len(respBody), string(respBody))
+		log.Printf("[ImageGen] poll #%d status=%d body_len=%d", i+1, resp.StatusCode, len(respBody))
 
 		var status taskStatusResponse
 		if err := json.Unmarshal(respBody, &status); err != nil {

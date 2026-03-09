@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -176,8 +179,11 @@ func (s *PhotoService) DeletePhoto(id, userID string) error {
 
 	// Remove file from disk if it's a local upload
 	if photo.ImageURL != "" {
-		localPath := "." + photo.ImageURL
-		_ = os.Remove(localPath)
+		localPath := filepath.Clean("." + photo.ImageURL)
+		// Ensure the path is under the uploads directory to prevent path traversal
+		if strings.HasPrefix(localPath, "uploads"+string(filepath.Separator)) {
+			_ = os.Remove(localPath)
+		}
 	}
 
 	return s.photoRepo.Delete(id, userID)
@@ -272,6 +278,11 @@ func (s *PhotoService) downloadGeneratedImage(imgResp *openai.ImageResponse) (st
 }
 
 func (s *PhotoService) downloadFromURL(imageURL, savePath string) (string, error) {
+	// Validate URL to prevent SSRF
+	if err := validateExternalURL(imageURL); err != nil {
+		return "", fmt.Errorf("invalid image URL: %w", err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -296,7 +307,7 @@ func (s *PhotoService) downloadFromURL(imageURL, savePath string) (string, error
 	}
 	defer func() { _ = out.Close() }()
 
-	if _, err := io.Copy(out, resp.Body); err != nil {
+	if _, err := io.Copy(out, io.LimitReader(resp.Body, 20<<20)); err != nil { // 20 MB max
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -332,4 +343,38 @@ func truncate(s string, maxLen int) string {
 		return string(runes[:maxLen])
 	}
 	return s
+}
+
+// validateExternalURL checks that a URL is safe to fetch (prevents SSRF).
+func validateExternalURL(rawURL string) error {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL")
+	}
+
+	if u.Scheme != "https" && u.Scheme != "http" {
+		return fmt.Errorf("unsupported scheme: %s", u.Scheme)
+	}
+
+	host := u.Hostname()
+
+	// Block obvious internal hostnames
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" ||
+		host == "0.0.0.0" || strings.HasSuffix(host, ".local") ||
+		strings.HasSuffix(host, ".internal") {
+		return fmt.Errorf("internal host not allowed")
+	}
+
+	// Resolve and check IP ranges
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		return fmt.Errorf("DNS resolution failed: %w", err)
+	}
+	for _, ip := range ips {
+		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+			return fmt.Errorf("internal IP not allowed")
+		}
+	}
+
+	return nil
 }
