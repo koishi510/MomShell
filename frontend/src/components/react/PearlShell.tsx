@@ -1086,49 +1086,14 @@ export default function PearlShell({
       )}
 
 
-      {/* Camera preview */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 12,
-          right: 12,
-          width: isFullscreen ? 160 : 100,
-          height: isFullscreen ? 120 : 75,
-          background: 'rgba(0,0,0,0.3)',
-          borderRadius: 12,
-          overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.2)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 10,
-          pointerEvents: 'none',
-        }}
-      >
-        <video
-          ref={videoRef}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            transform: 'scaleX(-1)',
-          }}
-          playsInline
-          autoPlay
-          muted
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 2,
-            left: 4,
-            fontSize: 8,
-            color: 'rgba(255,255,255,0.6)',
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-          }}
-        >
-          Camera
-        </div>
-      </div>
+      {/* Hidden video element for MediaPipe hand tracking */}
+      <video
+        ref={videoRef}
+        style={{ display: 'none' }}
+        playsInline
+        autoPlay
+        muted
+      />
     </div>
   );
 }
