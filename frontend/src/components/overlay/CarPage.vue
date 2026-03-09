@@ -25,7 +25,7 @@
           <!-- Embedded PearlShell -->
           <div v-if="showPearlShell && !pearlShellFullscreen" class="pearl-shell-embedded">
             <PearlShellWrapper
-              :photo-urls="memoirPhotoUrls"
+              :photo-urls="allPhotoUrls"
               :is-fullscreen="false"
               @request-fullscreen="handleRequestFullscreen"
             />
@@ -61,7 +61,7 @@
       <Transition name="pearl-fullscreen">
         <div v-if="pearlShellFullscreen" class="pearl-shell-fullscreen">
           <PearlShellWrapper
-            :photo-urls="memoirPhotoUrls"
+            :photo-urls="allPhotoUrls"
             :is-fullscreen="true"
             @exit-fullscreen="handleExitFullscreen"
           />
@@ -518,7 +518,6 @@ import {
   type MyAnswerListItem,
 } from '@/lib/api/user'
 import { getErrorMessage } from '@/lib/apiClient'
-import { getMemoirs, type Memoir } from '@/lib/api/echo'
 import { useBackgroundMusicControls } from '@/composables/useBackgroundMusicLoop'
 
 import avatarFrame from '@/assets/images/frame.png'
@@ -538,12 +537,6 @@ const modalOrigin = ref<Record<string, string>>({})
 // ── PearlShell state ──
 const showPearlShell = ref(false)
 const pearlShellFullscreen = ref(false)
-const memoirs = ref<Memoir[]>([])
-
-const memoirPhotoUrls = computed(() =>
-  memoirs.value.filter(m => m.cover_image_url).map(m => m.cover_image_url!),
-)
-
 const visible = computed(() => uiStore.activePanel === 'car')
 
 const wallPhotos = computed(() =>
@@ -551,6 +544,10 @@ const wallPhotos = computed(() =>
     .filter((p) => p.is_on_wall)
     .sort((a, b) => (a.wall_position ?? 99) - (b.wall_position ?? 99))
     .slice(0, 9),
+)
+
+const allPhotoUrls = computed(() =>
+  allPhotos.value.map((p) => p.image_url),
 )
 
 const emptySlots = computed(() => Math.max(0, 9 - wallPhotos.value.length))
@@ -1120,12 +1117,10 @@ watch(visible, async (isVisible) => {
     showPearlShell.value = false
     pearlShellFullscreen.value = false
     try {
-      const [, memoirRes] = await Promise.all([
+      await Promise.all([
         fetchPhotos(),
-        getMemoirs(50, 0),
         fetchProfile(),
       ])
-      memoirs.value = memoirRes.memoirs
     } catch {
       // silent
     }
