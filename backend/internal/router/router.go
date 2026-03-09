@@ -200,5 +200,7 @@ func Setup(
 		adminAPI.DELETE("/users/:id", adminHandler.DeleteUser)
 		adminAPI.GET("/config", adminHandler.GetConfig)
 		adminAPI.PATCH("/config", adminHandler.UpdateConfig)
+		adminAPI.GET("/photos", adminHandler.ListPhotos)
+		adminAPI.DELETE("/photos/:id", adminHandler.DeletePhoto)
 	}
 }

@@ -22,6 +22,9 @@
                     <h1 class="text-3xl font-bold text-gray-800">MomShell</h1>
                     <p class="text-gray-500 mt-2">管理员登录</p>
                 </div>
+                <div class="mb-4">
+                    <a href="/" class="text-sm text-blue-600 hover:text-blue-800 font-medium">← 返回主站</a>
+                </div>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">用户名 / 邮箱</label>
@@ -75,8 +78,16 @@
                             class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition">
                         ⚙️ 系统配置
                     </button>
+                    <button @click="currentPage = 'photos'; loadPhotos()"
+                            :class="currentPage === 'photos' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'"
+                            class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition">
+                        📷 照片管理
+                    </button>
                 </nav>
-                <div class="p-4 border-t border-gray-200">
+                <div class="p-4 border-t border-gray-200 space-y-1">
+                    <a href="/" class="block w-full text-left px-4 py-2 rounded-lg text-sm text-blue-600 hover:bg-blue-50 transition font-medium">
+                        ← 返回主站
+                    </a>
                     <button @click="logout()" class="w-full text-left px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition">
                         🚪 退出登录
                     </button>
@@ -110,7 +121,7 @@
                     </div>
 
                     <!-- Content Stats -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <p class="text-sm text-gray-500">问题总数</p>
                             <p class="text-2xl font-bold text-gray-800 mt-1" x-text="stats.total_questions || 0"></p>
@@ -122,6 +133,14 @@
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                             <p class="text-sm text-gray-500">认证总数</p>
                             <p class="text-2xl font-bold text-gray-800 mt-1" x-text="stats.total_certifications || 0"></p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">总照片数</p>
+                            <p class="text-2xl font-bold text-indigo-600 mt-1" x-text="stats.total_photos || 0"></p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <p class="text-sm text-gray-500">上墙照片数</p>
+                            <p class="text-2xl font-bold text-pink-600 mt-1" x-text="stats.wall_photos || 0"></p>
                         </div>
                     </div>
 
@@ -278,6 +297,93 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Photos Page -->
+                <div x-show="currentPage === 'photos'" class="p-8 fade-in">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">照片管理</h2>
+
+                    <!-- Filters -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <input type="text" x-model="photoFilters.search"
+                                   @input.debounce.300ms="photoFilters.page = 1; loadPhotos()"
+                                   placeholder="搜索标题..."
+                                   class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-64">
+                            <input type="text" x-model="photoFilters.user_id"
+                                   @input.debounce.300ms="photoFilters.page = 1; loadPhotos()"
+                                   placeholder="用户ID..."
+                                   class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-64">
+                            <select x-model="photoFilters.source" @change="photoFilters.page = 1; loadPhotos()"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                <option value="">全部来源</option>
+                                <option value="upload">上传</option>
+                                <option value="ai_generated">AI 生成</option>
+                            </select>
+                            <select x-model="photoFilters.on_wall" @change="photoFilters.page = 1; loadPhotos()"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                <option value="">全部状态</option>
+                                <option value="true">已上墙</option>
+                                <option value="false">未上墙</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Photos Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">预览</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">标题</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">用户</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">来源</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">上墙</th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">创建时间</th>
+                                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <template x-for="photo in photos" :key="photo.id">
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-6 py-4">
+                                            <img :src="photo.image_url" class="w-12 h-12 rounded object-cover" alt="">
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-800 max-w-[200px] truncate" x-text="photo.title || '-'"></td>
+                                        <td class="px-6 py-4 text-sm text-gray-600" x-text="photo.username || photo.user_id"></td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                                  :class="photo.source === 'upload' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'"
+                                                  x-text="photo.source === 'upload' ? '上传' : 'AI 生成'"></span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span x-show="photo.is_on_wall" class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">已上墙</span>
+                                            <span x-show="!photo.is_on_wall" class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">未上墙</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500" x-text="formatDate(photo.created_at)"></td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button @click="confirmDeletePhoto(photo)" class="text-red-600 hover:text-red-800 text-sm font-medium">删除</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="photos.length === 0">
+                                    <tr><td colspan="7" class="px-6 py-12 text-center text-gray-400">暂无数据</td></tr>
+                                </template>
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination -->
+                        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+                            <p class="text-sm text-gray-500">共 <span x-text="photoPagination.total"></span> 条</p>
+                            <div class="flex items-center gap-2">
+                                <button @click="photoFilters.page--; loadPhotos()" :disabled="photoFilters.page <= 1"
+                                        class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-white transition">上一页</button>
+                                <span class="text-sm text-gray-600" x-text="photoFilters.page + ' / ' + photoPagination.totalPages"></span>
+                                <button @click="photoFilters.page++; loadPhotos()" :disabled="photoFilters.page >= photoPagination.totalPages"
+                                        class="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-white transition">下一页</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </template>
@@ -376,6 +482,31 @@
         </div>
     </template>
 
+    <!-- Delete Photo Confirm Modal -->
+    <template x-if="showDeletePhotoModal">
+        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showDeletePhotoModal = false">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 fade-in">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">确认删除照片</h3>
+                <p class="text-sm text-gray-600 mb-4">确定要删除这张照片吗？此操作不可恢复。</p>
+                <template x-if="deletingPhoto">
+                    <img :src="deletingPhoto.image_url" class="w-full h-32 object-cover rounded-lg mb-4" alt="">
+                </template>
+                <template x-if="deletePhotoError">
+                    <p class="text-red-500 text-sm mb-4" x-text="deletePhotoError"></p>
+                </template>
+                <div class="flex justify-end gap-3">
+                    <button @click="showDeletePhotoModal = false"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">取消</button>
+                    <button @click="deleteAdminPhoto()" :disabled="deletePhotoLoading"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition disabled:opacity-50">
+                        <span x-show="!deletePhotoLoading">删除</span>
+                        <span x-show="deletePhotoLoading">删除中...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Toast -->
     <template x-if="toast.show">
         <div class="fixed top-6 right-6 z-50 fade-in">
@@ -422,6 +553,15 @@ function app() {
         configItems: [],
         configEdits: {},
         configSaving: false,
+
+        // Photos
+        photos: [],
+        photoFilters: { search: '', user_id: '', source: '', on_wall: '', page: 1, page_size: 20 },
+        photoPagination: { total: 0, totalPages: 0 },
+        showDeletePhotoModal: false,
+        deletingPhoto: null,
+        deletePhotoError: '',
+        deletePhotoLoading: false,
 
         // Toast
         toast: { show: false, message: '', type: 'success' },
@@ -647,6 +787,49 @@ function app() {
                 this.showToast(e.message, 'error');
             } finally {
                 this.configSaving = false;
+            }
+        },
+
+        // --- Photos ---
+        async loadPhotos() {
+            try {
+                const params = new URLSearchParams();
+                params.set('page', this.photoFilters.page);
+                params.set('page_size', this.photoFilters.page_size);
+                if (this.photoFilters.search) params.set('search', this.photoFilters.search);
+                if (this.photoFilters.user_id) params.set('user_id', this.photoFilters.user_id);
+                if (this.photoFilters.source) params.set('source', this.photoFilters.source);
+                if (this.photoFilters.on_wall) params.set('on_wall', this.photoFilters.on_wall);
+
+                const data = await this.api('GET', '/admin/photos?' + params.toString());
+                this.photos = data.items || [];
+                this.photoPagination.total = data.total;
+                this.photoPagination.totalPages = data.total_pages;
+            } catch (e) {
+                if (e.message.includes('未授权') || e.message.includes('权限')) {
+                    this.logout();
+                }
+            }
+        },
+
+        confirmDeletePhoto(photo) {
+            this.deletingPhoto = photo;
+            this.deletePhotoError = '';
+            this.showDeletePhotoModal = true;
+        },
+
+        async deleteAdminPhoto() {
+            this.deletePhotoError = '';
+            this.deletePhotoLoading = true;
+            try {
+                await this.api('DELETE', '/admin/photos/' + this.deletingPhoto.id);
+                this.showToast('照片已删除');
+                this.showDeletePhotoModal = false;
+                this.loadPhotos();
+            } catch (e) {
+                this.deletePhotoError = e.message;
+            } finally {
+                this.deletePhotoLoading = false;
             }
         },
 

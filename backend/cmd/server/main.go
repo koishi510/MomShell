@@ -12,6 +12,7 @@ import (
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
 	"github.com/momshell/backend/internal/router"
+	"github.com/momshell/backend/internal/scheduler"
 	"github.com/momshell/backend/internal/service"
 	"github.com/momshell/backend/pkg/firecrawl"
 	"github.com/momshell/backend/pkg/openai"
@@ -75,7 +76,7 @@ func main() {
 
 	chatService := service.NewChatService(chatClient, chatRepo, firecrawlClient)
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
-	photoService := service.NewPhotoService(photoRepo, chatClient, cfg.ImageModel)
+	photoService := service.NewPhotoService(photoRepo, userRepo, chatClient, cfg.ImageModel)
 	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient)
 	taskService := service.NewTaskService(taskRepo, userRepo)
 
@@ -97,7 +98,10 @@ func main() {
 
 	// Initialize admin layer
 	adminRepo := repository.NewAdminRepo(db)
-	adminService := service.NewAdminService(cfg, adminRepo, userRepo)
+	adminService := service.NewAdminService(cfg, adminRepo, userRepo, photoRepo)
+
+	// Start background schedulers
+	scheduler.StartPhotoCleanup(photoRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService, cfg)

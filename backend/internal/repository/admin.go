@@ -113,3 +113,12 @@ func (r *AdminRepo) CountCertifications() (int64, error) {
 	err := r.db.Model(&model.UserCertification{}).Count(&count).Error
 	return count, err
 }
+
+// CountPhotos returns total photo count and wall photo count
+func (r *AdminRepo) CountPhotos() (total, wall int64, err error) {
+	if err = r.db.Model(&model.Photo{}).Count(&total).Error; err != nil {
+		return
+	}
+	err = r.db.Model(&model.Photo{}).Where("is_on_wall = ?", true).Count(&wall).Error
+	return
+}
