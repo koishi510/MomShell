@@ -374,6 +374,12 @@ func (s *CommunityService) DeleteQuestion(questionID string, user *model.User) e
 	// Clean up related data
 	answerIDs, _ := s.answerRepo.FindIDsByQuestionID(questionID)
 	for _, aid := range answerIDs {
+		// Delete likes on comments before deleting the comments themselves
+		if comments, cErr := s.commentRepo.FindByAnswerID(aid); cErr == nil {
+			for _, c := range comments {
+				_ = s.interactionRepo.DeleteLikesByTarget("comment", c.ID)
+			}
+		}
 		_ = s.commentRepo.DeleteByAnswerID(aid)
 		_ = s.interactionRepo.DeleteLikesByTarget("answer", aid)
 	}
@@ -534,6 +540,12 @@ func (s *CommunityService) DeleteAnswer(answerID string, user *model.User) error
 		return errors.New("无权删除此回答")
 	}
 
+	// Delete likes on comments before deleting the comments themselves
+	if comments, cErr := s.commentRepo.FindByAnswerID(answerID); cErr == nil {
+		for _, c := range comments {
+			_ = s.interactionRepo.DeleteLikesByTarget("comment", c.ID)
+		}
+	}
 	_ = s.commentRepo.DeleteByAnswerID(answerID)
 	_ = s.interactionRepo.DeleteLikesByTarget("answer", answerID)
 	_ = s.questionRepo.DecrementAnswerCount(a.QuestionID)
