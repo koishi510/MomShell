@@ -80,7 +80,7 @@
                   :class="['star-btn', { active: (scoreMap[t.id]?.score ?? 0) >= s }]"
                   @click="setScore(t.id, s)"
                 >
-                  *
+                  {{ (scoreMap[t.id]?.score ?? 0) >= s ? '★' : '☆' }}
                 </button>
               </div>
               <input
@@ -89,13 +89,22 @@
                 placeholder="留一句评价..."
                 maxlength="500"
               />
-              <button
-                class="action-btn score-btn"
-                :disabled="scoring === t.id || !(scoreMap[t.id]?.score)"
-                @click="onScore(t.id)"
-              >
-                {{ scoring === t.id ? '提交中...' : '验收' }}
-              </button>
+              <div class="score-actions">
+                <button
+                  class="action-btn reject-btn"
+                  :disabled="scoring === t.id"
+                  @click="onReject(t.id)"
+                >
+                  {{ scoring === t.id ? '...' : '未完成' }}
+                </button>
+                <button
+                  class="action-btn score-btn"
+                  :disabled="scoring === t.id || !(scoreMap[t.id]?.score)"
+                  @click="onScore(t.id)"
+                >
+                  {{ scoring === t.id ? '提交中...' : '验收' }}
+                </button>
+              </div>
             </div>
 
             <p v-if="t.comment && t.status === 'verified'" class="score-comment">{{ t.comment }}</p>
@@ -109,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, reactive } from 'vue'
+import { ref, watch, computed, reactive, onUnmounted } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
@@ -118,6 +127,7 @@ import {
   getPartnerTasks,
   completeTask,
   scoreTask,
+  rejectTask,
   getTaskStats,
   type UserTaskItem,
   type TaskStats,
@@ -136,6 +146,64 @@ const error = ref('')
 const completing = ref('')
 const scoring = ref('')
 const scoreMap = reactive<Record<string, { score: number; comment: string }>>({})
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+async function fetchTasks() {
+  const [taskList, taskStats] = await Promise.all([
+    isDad.value ? getDailyTasks() : getPartnerTasks(),
+    getTaskStats(),
+  ])
+  tasks.value = taskList
+  stats.value = taskStats
+  initScoreMap(taskList)
+}
+
+function initScoreMap(taskList: UserTaskItem[]) {
+  for (const t of taskList) {
+    if (t.status === 'completed' && !scoreMap[t.id]) {
+      scoreMap[t.id] = { score: 0, comment: '' }
+    }
+  }
+}
+
+async function pollTasks() {
+  try {
+    const [taskList, taskStats] = await Promise.all([
+      isDad.value ? getDailyTasks() : getPartnerTasks(),
+      getTaskStats(),
+    ])
+    for (const incoming of taskList) {
+      const existing = tasks.value.find((t) => t.id === incoming.id)
+      if (existing) {
+        if (existing.status !== incoming.status) existing.status = incoming.status
+        if (existing.score !== incoming.score) existing.score = incoming.score
+        if (existing.comment !== incoming.comment) existing.comment = incoming.comment
+        if (existing.completed_at !== incoming.completed_at) existing.completed_at = incoming.completed_at
+        if (existing.scored_at !== incoming.scored_at) existing.scored_at = incoming.scored_at
+      }
+    }
+    if (stats.value?.xp !== taskStats.xp || stats.value?.level !== taskStats.level) {
+      stats.value = taskStats
+    }
+    initScoreMap(taskList)
+  } catch {
+    // Silently ignore poll errors
+  }
+}
+
+function startPolling() {
+  stopPolling()
+  pollTimer = setInterval(pollTasks, 10000)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+onUnmounted(stopPolling)
 
 watch(
   () => uiStore.activePanel,
@@ -144,23 +212,15 @@ watch(
       error.value = ''
       loading.value = true
       try {
-        const [taskList, taskStats] = await Promise.all([
-          isDad.value ? getDailyTasks() : getPartnerTasks(),
-          getTaskStats(),
-        ])
-        tasks.value = taskList
-        stats.value = taskStats
-        // Init score map for completed tasks (Mom view)
-        for (const t of taskList) {
-          if (t.status === 'completed' && !scoreMap[t.id]) {
-            scoreMap[t.id] = { score: 0, comment: '' }
-          }
-        }
+        await fetchTasks()
       } catch (e) {
         error.value = getErrorMessage(e)
       } finally {
         loading.value = false
       }
+      startPolling()
+    } else {
+      stopPolling()
     }
   },
 )
@@ -203,6 +263,23 @@ async function onScore(id: string) {
   }
 }
 
+async function onReject(id: string) {
+  const entry = scoreMap[id]
+  scoring.value = id
+  error.value = ''
+  try {
+    const updated = await rejectTask(id, {
+      comment: entry?.comment || undefined,
+    })
+    tasks.value = tasks.value.map((t) => (t.id === id ? updated : t))
+    delete scoreMap[id]
+  } catch (e) {
+    error.value = getErrorMessage(e)
+  } finally {
+    scoring.value = ''
+  }
+}
+
 const categoryLabels: Record<string, string> = {
   housework: '家务',
   parenting: '育儿',
@@ -215,7 +292,7 @@ function categoryLabel(cat: string) {
 }
 
 function difficultyStars(d: number) {
-  return '*'.repeat(d)
+  return '★'.repeat(d)
 }
 </script>
 
@@ -372,21 +449,24 @@ function difficultyStars(d: number) {
 }
 
 .star-btn {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: 22px;
   cursor: pointer;
   transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
 }
 
 .star-btn.active {
-  background: var(--accent-warm);
-  border-color: var(--accent-warm);
-  color: #fff;
+  color: var(--accent-warm);
+}
+
+.star-btn:hover {
+  transform: scale(1.2);
 }
 
 .score-input {
@@ -401,13 +481,25 @@ function difficultyStars(d: number) {
 
 .score-input::placeholder { color: var(--text-secondary); }
 
+.score-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .score-btn {
-  align-self: flex-end;
   background: rgba(80, 200, 120, 0.8);
   color: #fff;
 }
 
 .score-btn:hover { background: rgba(80, 200, 120, 1); }
+
+.reject-btn {
+  background: rgba(255, 160, 80, 0.3);
+  color: #ffb060;
+}
+
+.reject-btn:hover { background: rgba(255, 160, 80, 0.5); }
 
 .score-comment {
   margin-top: 8px;

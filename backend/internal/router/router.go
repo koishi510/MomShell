@@ -176,6 +176,7 @@ func Setup(
 		tasks.POST("/:id/complete", taskHandler.Complete)
 		tasks.GET("/partner", taskHandler.PartnerTasks)
 		tasks.POST("/:id/score", taskHandler.Score)
+		tasks.POST("/:id/reject", taskHandler.Reject)
 		tasks.GET("/stats", taskHandler.Stats)
 	}
 
