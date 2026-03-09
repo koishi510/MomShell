@@ -251,7 +251,7 @@ func (s *AdminService) GetConfig() []dto.ConfigItem {
 
 	return []dto.ConfigItem{
 		// Read-only
-		{Key: "DATABASE_URL", Value: maskString(s.cfg.DatabaseURL, 15, 0), Editable: false},
+		{Key: "DATABASE_URL", Value: maskString(s.cfg.DatabaseURL, 0, 0), Editable: false},
 		{Key: "JWT_ALGORITHM", Value: s.cfg.JWTAlgorithm, Editable: false},
 		{Key: "PORT", Value: s.cfg.Port, Editable: false},
 		// Editable
