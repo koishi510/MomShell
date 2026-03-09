@@ -57,7 +57,7 @@
         </label>
         <label class="auth-label">
           <span>昵称</span>
-          <input v-model="regForm.nickname" type="text" class="auth-input" required maxlength="50" />
+          <input v-model="regForm.nickname" type="text" class="auth-input" required maxlength="50" autocomplete="nickname" />
         </label>
         <label class="auth-label">
           <span>密码</span>
