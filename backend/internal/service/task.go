@@ -180,6 +180,44 @@ func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dt
 	return &item, nil
 }
 
+// RejectTask allows Mom to reject a completed task back to pending.
+func (s *TaskService) RejectTask(callerID, taskID string, comment string) (*dto.UserTaskItem, error) {
+	caller, err := s.userRepo.FindByID(callerID)
+	if err != nil {
+		return nil, fmt.Errorf("用户不存在")
+	}
+	if caller.Role != model.RoleMom {
+		return nil, fmt.Errorf("只有妈妈角色可以验收任务")
+	}
+	if caller.PartnerID == nil {
+		return nil, fmt.Errorf("请先完成伴侣绑定")
+	}
+
+	ut, err := s.taskRepo.FindUserTaskByID(taskID)
+	if err != nil {
+		return nil, fmt.Errorf("任务不存在")
+	}
+	if ut.UserID != *caller.PartnerID {
+		return nil, fmt.Errorf("只能验收伴侣的任务")
+	}
+	if ut.Status != model.TaskCompleted {
+		return nil, fmt.Errorf("只能驳回已完成的任务")
+	}
+
+	ut.Status = model.TaskPending
+	ut.CompletedAt = nil
+	if comment != "" {
+		ut.Comment = &comment
+	}
+
+	if err := s.taskRepo.ResetUserTaskToPending(ut); err != nil {
+		return nil, err
+	}
+
+	item := toTaskItem(*ut)
+	return &item, nil
+}
+
 // GetTaskStats returns XP and level for a user (Dad).
 func (s *TaskService) GetTaskStats(userID string) (*dto.TaskStats, error) {
 	user, err := s.userRepo.FindByID(userID)

@@ -87,6 +87,31 @@ func (h *TaskHandler) Score(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
+// POST /api/v1/tasks/:id/reject
+func (h *TaskHandler) Reject(c *gin.Context) {
+	taskID := c.Param("id")
+	userID := middleware.GetUserID(c)
+
+	var req struct {
+		Comment string `json:"comment" binding:"max=500"`
+	}
+	_ = c.ShouldBindJSON(&req)
+
+	item, err := h.taskService.RejectTask(userID, taskID, req.Comment)
+	if err != nil {
+		status := http.StatusBadRequest
+		if err.Error() == "任务不存在" {
+			status = http.StatusNotFound
+		} else if err.Error() == "只能验收伴侣的任务" || err.Error() == "只有妈妈角色可以验收任务" {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}
+
 // GET /api/v1/tasks/stats
 func (h *TaskHandler) Stats(c *gin.Context) {
 	userID := middleware.GetUserID(c)

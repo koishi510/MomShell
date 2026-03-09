@@ -38,6 +38,15 @@ export function scoreTask(
   return apiClient.post(`/api/v1/tasks/${id}/score`, data).then((r) => r.data);
 }
 
+export function rejectTask(
+  id: string,
+  data?: { comment?: string },
+): Promise<UserTaskItem> {
+  return apiClient
+    .post(`/api/v1/tasks/${id}/reject`, data ?? {})
+    .then((r) => r.data);
+}
+
 export function getTaskStats(): Promise<TaskStats> {
   return apiClient.get("/api/v1/tasks/stats").then((r) => r.data);
 }
