@@ -41,8 +41,24 @@
       <div v-if="result" class="result-card">
         <div v-if="generatingImage" class="result-img-loading">图片生成中...</div>
         <img v-else-if="generatedImageUrl" :src="generatedImageUrl" alt="" class="result-img" />
-        <h3 class="result-title">{{ result.title }}</h3>
-        <p class="result-content">{{ result.content }}</p>
+        <div class="result-body">
+          <h3 v-if="!editingResult" class="result-title">{{ result.title }}</h3>
+          <input v-else v-model="editTitle" class="result-title-input" placeholder="标题" />
+          <p v-if="!editingResult" class="result-content">{{ result.content }}</p>
+          <textarea v-else v-model="editContent" class="result-content-input" placeholder="内容" />
+          <div class="result-actions">
+            <template v-if="!editingResult">
+              <button class="result-action-btn" @click="startEdit">编辑文字</button>
+              <button class="result-action-btn accent" :disabled="generatingImage" @click="onRegenerateImage">
+                {{ generatingImage ? '生成中...' : '重新生成图片' }}
+              </button>
+            </template>
+            <template v-else>
+              <button class="result-action-btn accent" @click="confirmEdit">确认</button>
+              <button class="result-action-btn" @click="editingResult = false">取消</button>
+            </template>
+          </div>
+        </div>
       </div>
     </div>
   </OverlayPanel>
@@ -59,7 +75,7 @@ import {
   type IdentityTagList,
   type Memoir,
 } from '@/lib/api/echo'
-import { generatePhoto } from '@/lib/api/photo'
+import { generatePhoto, deletePhoto } from '@/lib/api/photo'
 import { getErrorMessage } from '@/lib/apiClient'
 
 const uiStore = useUiStore()
@@ -71,8 +87,12 @@ const inputText = ref('')
 const generating = ref(false)
 const generatingImage = ref(false)
 const generatedImageUrl = ref('')
+const generatedPhotoId = ref<string | null>(null)
 const result = ref<Memoir | null>(null)
 const error = ref('')
+const editingResult = ref(false)
+const editTitle = ref('')
+const editContent = ref('')
 
 const allTags = computed<IdentityTag[]>(() => {
   if (!tags.value) return []
@@ -118,31 +138,62 @@ async function onGenerate() {
   generating.value = true
   generatingImage.value = false
   generatedImageUrl.value = ''
+  generatedPhotoId.value = null
   result.value = null
   try {
     const memoir = await generateMemoir(theme || undefined)
     result.value = memoir
+    editingResult.value = false
 
-    // Generate an AI photo based on the memoir, show it in the result card
-    const photoPrompt = memoir.title
-      ? `${memoir.title} - ${theme || '温暖的记忆'}`
-      : theme || '记忆贴纸'
-    generatingImage.value = true
-    generatePhoto(photoPrompt)
-      .then((photo) => {
-        generatedImageUrl.value = photo.image_url
-      })
-      .catch(() => {
-        // Photo generation failed; leave image area empty
-      })
-      .finally(() => {
-        generatingImage.value = false
-      })
+    // Generate an AI photo based on the memoir content
+    triggerImageGeneration(memoir.content || memoir.title || theme || '记忆贴纸')
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
     generating.value = false
   }
+}
+
+function triggerImageGeneration(prompt: string) {
+  generatingImage.value = true
+  generatedImageUrl.value = ''
+
+  // Delete old generated photo if exists
+  const oldId = generatedPhotoId.value
+  if (oldId) {
+    deletePhoto(oldId).catch(() => {})
+    generatedPhotoId.value = null
+  }
+
+  generatePhoto(prompt)
+    .then((photo) => {
+      generatedImageUrl.value = photo.image_url
+      generatedPhotoId.value = photo.id
+    })
+    .catch(() => {
+      // Photo generation failed; leave image area empty
+    })
+    .finally(() => {
+      generatingImage.value = false
+    })
+}
+
+function startEdit() {
+  if (!result.value) return
+  editTitle.value = result.value.title
+  editContent.value = result.value.content
+  editingResult.value = true
+}
+
+function confirmEdit() {
+  if (!result.value) return
+  result.value = { ...result.value, title: editTitle.value, content: editContent.value }
+  editingResult.value = false
+}
+
+function onRegenerateImage() {
+  if (!result.value) return
+  triggerImageGeneration(result.value.content || result.value.title || '记忆贴纸')
 }
 </script>
 
@@ -286,18 +337,95 @@ async function onGenerate() {
   50% { opacity: 1; }
 }
 
+.result-body {
+  padding: 16px 18px 18px;
+}
+
 .result-title {
-  padding: 16px 18px 4px;
   font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
 .result-content {
-  padding: 4px 18px 18px;
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+.result-title-input {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 17px;
+  font-weight: 600;
+  outline: none;
+  font-family: inherit;
+}
+
+.result-title-input:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.result-content-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.result-content-input:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.result-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.result-action-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.result-action-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.result-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.result-action-btn.accent {
+  background: var(--accent-warm);
+  border-color: var(--accent-warm);
+  color: #fff;
+}
+
+.result-action-btn.accent:hover:not(:disabled) {
+  background: var(--accent-warm-hover);
 }
 
 .loading-state {
