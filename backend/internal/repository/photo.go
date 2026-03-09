@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/momshell/backend/internal/model"
 	"gorm.io/gorm"
 )
@@ -100,4 +102,48 @@ func (r *PhotoRepo) BatchUpdateWall(userID string, updates []WallUpdate) error {
 type WallUpdate struct {
 	PhotoID  string
 	Position int
+}
+
+// FindExpiredOffWall returns photos not on the wall created before the given time.
+func (r *PhotoRepo) FindExpiredOffWall(before time.Time, limit int) ([]model.Photo, error) {
+	var photos []model.Photo
+	err := r.db.Where("is_on_wall = ? AND created_at < ?", false, before).
+		Order("created_at asc").Limit(limit).Find(&photos).Error
+	return photos, err
+}
+
+// DeleteByID deletes a photo by ID without user scoping (admin use).
+func (r *PhotoRepo) DeleteByID(id string) error {
+	return r.db.Where("id = ?", id).Delete(&model.Photo{}).Error
+}
+
+// FindAllPaginated returns all photos with optional filters for admin listing.
+func (r *PhotoRepo) FindAllPaginated(search, userID, source, onWall string, limit, offset int) ([]model.Photo, int64, error) {
+	query := r.db.Model(&model.Photo{}).Preload("User")
+
+	if search != "" {
+		like := "%" + search + "%"
+		query = query.Where("title ILIKE ?", like)
+	}
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+	if source != "" {
+		query = query.Where("source = ?", source)
+	}
+	switch onWall {
+	case "true":
+		query = query.Where("is_on_wall = ?", true)
+	case "false":
+		query = query.Where("is_on_wall = ?", false)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var photos []model.Photo
+	err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&photos).Error
+	return photos, total, err
 }

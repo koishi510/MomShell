@@ -199,3 +199,39 @@ func (h *AdminHandler) UpdateConfig(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "配置已更新"})
 }
+
+// ListPhotos returns paginated photo list for admin
+func (h *AdminHandler) ListPhotos(c *gin.Context) {
+	if _, ok := h.requireAdmin(c); !ok {
+		return
+	}
+
+	var params dto.AdminPhotoListParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		return
+	}
+
+	resp, err := h.adminService.ListPhotos(params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// DeletePhoto deletes a photo by ID (admin)
+func (h *AdminHandler) DeletePhoto(c *gin.Context) {
+	if _, ok := h.requireAdmin(c); !ok {
+		return
+	}
+
+	id := c.Param("id")
+	if err := h.adminService.DeletePhoto(id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "照片已删除"})
+}
