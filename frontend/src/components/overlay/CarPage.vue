@@ -1186,13 +1186,14 @@ watch(activeTab, (tab) => {
 .car-layout {
   display: flex;
   height: 100%;
-  padding: 5vh 5vw;
+  padding: 5vh 5vw 5vh 9vw;
   gap: 4vw;
   align-items: center;
 }
 
 /* ── Photo Wall (Left) ── */
 .photo-wall {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
@@ -2293,12 +2294,14 @@ watch(activeTab, (tab) => {
 
 /* ── PearlShell ── */
 .pearl-shell-embedded {
-  position: relative;
-  width: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 936px;
-  height:544px;
-  margin-top: -34px;
-  margin-left: 215px;
+  height: 544px;
+  margin-top: -17px;
+  margin-left: 108px;
   border-radius: 2px;
   overflow: hidden;
 }
