@@ -117,12 +117,13 @@ func main() {
 	// Setup Gin
 	r := gin.New()
 	r.Use(middleware.Recovery())
-	r.Use(middleware.CORS())
+	r.Use(middleware.CORS(cfg))
 	r.Use(gin.Logger())
 
 	// Register routes
 	router.Setup(
 		r, cfg,
+		adminHandler.IsAdmin,
 		authHandler, questionHandler, answerHandler,
 		commentHandler, interactionHandler, tagHandler,
 		chatHandler, echoHandler, userHandler, adminHandler,

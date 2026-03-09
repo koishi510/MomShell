@@ -13,6 +13,9 @@ const (
 	ContextUserID = "user_id"
 )
 
+// AdminChecker is a function that checks if a user is an admin.
+type AdminChecker func(userID string) bool
+
 // AuthRequired requires a valid JWT token
 func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -37,17 +40,21 @@ func AuthOptional(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
-// AdminRequired requires a valid JWT token and admin role
-// Note: actual role check is done in handler with user lookup
-func AdminRequired(cfg *config.Config) gin.HandlerFunc {
+// AdminRequired requires a valid JWT token and verifies admin role via the checker function.
+func AdminRequired(cfg *config.Config, isAdmin AdminChecker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := extractUserID(c, cfg)
 		if err != nil || userID == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "未授权，请先登录"})
 			return
 		}
+
+		if !isAdmin(userID) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
+			return
+		}
+
 		c.Set(ContextUserID, userID)
-		// Admin role check will be done in the handler after fetching the user
 		c.Next()
 	}
 }
@@ -66,15 +73,16 @@ func extractUserID(c *gin.Context, cfg *config.Config) (string, error) {
 		tokenStr = c.GetHeader("X-Access-Token")
 	}
 
-	// 3. Cookie
-	if tokenStr == "" {
-		if cookie, err := c.Cookie("access_token"); err == nil {
-			tokenStr = cookie
-		}
-	}
+	// Note: Cookie-based auth removed to prevent CSRF attacks.
+	// All auth must be via explicit headers.
 
 	if tokenStr == "" {
 		return "", nil
+	}
+
+	// Check token blacklist (revoked tokens)
+	if TokenBlacklist.IsBlacklisted(tokenStr) {
+		return "", pkgjwt.ErrInvalidToken
 	}
 
 	claims, err := pkgjwt.ParseToken(tokenStr, cfg.JWTSecretKey)
