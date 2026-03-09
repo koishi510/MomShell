@@ -23,19 +23,21 @@ import (
 )
 
 const (
-	maxPhotosPerUser = 50
+	maxPhotosPerUser = 25
 	maxWallPhotos    = 9
 )
 
 type PhotoService struct {
 	photoRepo  *repository.PhotoRepo
+	userRepo   *repository.UserRepo
 	aiClient   *openai.Client
 	imageModel string
 }
 
-func NewPhotoService(photoRepo *repository.PhotoRepo, aiClient *openai.Client, imageModel string) *PhotoService {
+func NewPhotoService(photoRepo *repository.PhotoRepo, userRepo *repository.UserRepo, aiClient *openai.Client, imageModel string) *PhotoService {
 	return &PhotoService{
 		photoRepo:  photoRepo,
+		userRepo:   userRepo,
 		aiClient:   aiClient,
 		imageModel: imageModel,
 	}
@@ -117,7 +119,13 @@ func (s *PhotoService) GeneratePhoto(ctx context.Context, userID string, req dto
 		return nil, fmt.Errorf("photo limit reached (max %d)", maxPhotosPerUser)
 	}
 
-	imgResp, err := s.aiClient.GenerateImage(ctx, s.imageModel, req.Prompt)
+	var userRole string
+	if user, err := s.userRepo.FindByID(userID); err == nil {
+		userRole = string(user.Role)
+	}
+
+	styledPrompt := buildImagePrompt(req.Prompt, userRole)
+	imgResp, err := s.aiClient.GenerateImage(ctx, s.imageModel, styledPrompt)
 	if err != nil {
 		return nil, fmt.Errorf("image generation failed: %w", err)
 	}
@@ -344,6 +352,26 @@ func truncate(s string, maxLen int) string {
 		return string(runes[:maxLen])
 	}
 	return s
+}
+
+// buildImagePrompt wraps the user's content description with style guidance.
+// Rules:
+//  1. Use flat cartoon / warm illustration style
+//  2. Treat the user input as scene content, not a literal title
+//  3. Default protagonist gender is based on user role: dad → male, otherwise female
+func buildImagePrompt(userContent, userRole string) string {
+	genderHint := "depict the person as a young woman"
+	if userRole == "dad" {
+		genderHint = "depict the person as a young man"
+	}
+
+	return fmt.Sprintf(
+		"Flat cartoon style, warm pastel color illustration, soft lighting, cozy atmosphere. "+
+			"Scene description: %s. "+
+			"If the scene includes a person and no gender is specified, %s. "+
+			"No text, no watermark, no signature.",
+		userContent, genderHint,
+	)
 }
 
 // validateExternalURL checks that a URL is safe to fetch (prevents SSRF).

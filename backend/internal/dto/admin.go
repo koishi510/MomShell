@@ -77,6 +77,8 @@ type DashboardStats struct {
 	TotalQuestions      int64            `json:"total_questions"`
 	TotalAnswers        int64            `json:"total_answers"`
 	TotalCertifications int64            `json:"total_certifications"`
+	TotalPhotos         int64            `json:"total_photos"`
+	WallPhotos          int64            `json:"wall_photos"`
 }
 
 // ConfigItem represents a single configuration item
@@ -89,4 +91,25 @@ type ConfigItem struct {
 // ConfigUpdateRequest is the request body for updating configuration
 type ConfigUpdateRequest struct {
 	Items map[string]string `json:"items" binding:"required"`
+}
+
+// AdminPhotoListParams holds query parameters for admin photo listing
+type AdminPhotoListParams struct {
+	PaginationParams
+	Search string `form:"search"`
+	UserID string `form:"user_id"`
+	Source string `form:"source"`
+	OnWall string `form:"on_wall"`
+}
+
+// AdminPhotoListItem is a photo row in admin photo list
+type AdminPhotoListItem struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Username  string    `json:"username"`
+	Title     string    `json:"title"`
+	ImageURL  string    `json:"image_url"`
+	IsOnWall  bool      `json:"is_on_wall"`
+	Source    string    `json:"source"`
+	CreatedAt time.Time `json:"created_at"`
 }

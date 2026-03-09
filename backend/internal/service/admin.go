@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,14 +20,16 @@ type AdminService struct {
 	cfg       *config.Config
 	adminRepo *repository.AdminRepo
 	userRepo  *repository.UserRepo
+	photoRepo *repository.PhotoRepo
 	mu        sync.RWMutex
 }
 
-func NewAdminService(cfg *config.Config, adminRepo *repository.AdminRepo, userRepo *repository.UserRepo) *AdminService {
+func NewAdminService(cfg *config.Config, adminRepo *repository.AdminRepo, userRepo *repository.UserRepo, photoRepo *repository.PhotoRepo) *AdminService {
 	return &AdminService{
 		cfg:       cfg,
 		adminRepo: adminRepo,
 		userRepo:  userRepo,
+		photoRepo: photoRepo,
 	}
 }
 
@@ -57,6 +60,11 @@ func (s *AdminService) GetDashboardStats() (*dto.DashboardStats, error) {
 		return nil, fmt.Errorf("统计认证失败: %w", err)
 	}
 
+	totalPhotos, wallPhotos, err := s.adminRepo.CountPhotos()
+	if err != nil {
+		return nil, fmt.Errorf("统计照片失败: %w", err)
+	}
+
 	return &dto.DashboardStats{
 		TotalUsers:          total,
 		ActiveUsers:         active,
@@ -66,6 +74,8 @@ func (s *AdminService) GetDashboardStats() (*dto.DashboardStats, error) {
 		TotalQuestions:      questions,
 		TotalAnswers:        answers,
 		TotalCertifications: certifications,
+		TotalPhotos:         totalPhotos,
+		WallPhotos:          wallPhotos,
 	}, nil
 }
 
@@ -225,6 +235,52 @@ func (s *AdminService) DeleteUser(id, adminID string) error {
 	}
 
 	return s.adminRepo.DeleteUser(id)
+}
+
+// ListPhotos returns a paginated list of all photos for admin
+func (s *AdminService) ListPhotos(params dto.AdminPhotoListParams) (*dto.PaginatedResponse, error) {
+	offset := params.GetOffset()
+	limit := params.GetPageSize()
+
+	photos, total, err := s.photoRepo.FindAllPaginated(params.Search, params.UserID, params.Source, params.OnWall, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("查询照片列表失败: %w", err)
+	}
+
+	items := make([]dto.AdminPhotoListItem, len(photos))
+	for i, p := range photos {
+		items[i] = dto.AdminPhotoListItem{
+			ID:        p.ID,
+			UserID:    p.UserID,
+			Username:  p.User.Username,
+			Title:     p.Title,
+			ImageURL:  p.ImageURL,
+			IsOnWall:  p.IsOnWall,
+			Source:    p.Source,
+			CreatedAt: p.CreatedAt,
+		}
+	}
+
+	resp := dto.NewPaginatedResponse(items, total, params.GetPage(), params.GetPageSize())
+	return &resp, nil
+}
+
+// DeletePhoto deletes a photo by ID (admin, no user scope) and removes the disk file.
+func (s *AdminService) DeletePhoto(id string) error {
+	photo, err := s.photoRepo.FindByID(id)
+	if err != nil {
+		return errors.New("照片不存在")
+	}
+
+	if photo.ImageURL != "" {
+		localPath := filepath.Clean("." + photo.ImageURL)
+		if strings.HasPrefix(localPath, "uploads"+string(filepath.Separator)) &&
+			!strings.Contains(localPath, "..") {
+			_ = os.Remove(localPath)
+		}
+	}
+
+	return s.photoRepo.DeleteByID(id)
 }
 
 // maskString masks a string, showing first n and last m characters
