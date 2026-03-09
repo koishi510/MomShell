@@ -727,7 +727,18 @@ async function onToggleWall(photo: Photo) {
 
   let position: number | undefined
   if (newIsOnWall) {
-    position = wallCount
+    // Find the lowest free slot (0-8) to avoid position collisions
+    const usedPositions = new Set(
+      allPhotos.value
+        .filter((p) => p.is_on_wall && p.id !== photo.id)
+        .map((p) => p.wall_position),
+    )
+    for (let i = 0; i <= 8; i++) {
+      if (!usedPositions.has(i)) {
+        position = i
+        break
+      }
+    }
   }
 
   try {

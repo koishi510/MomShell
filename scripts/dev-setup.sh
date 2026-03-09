@@ -175,7 +175,7 @@ if pg_isready -q 2>/dev/null; then
 else
     warn "PostgreSQL is not running, attempting to start..."
     if [[ "$OSTYPE" == darwin* ]]; then
-        brew services start postgresql 2>/dev/null || brew services start postgresql@* 2>/dev/null
+        brew services start postgresql 2>/dev/null || brew services start "$(brew list --formula | grep -m1 '^postgresql@')" 2>/dev/null
     else
         sudo systemctl start postgresql 2>/dev/null
     fi
