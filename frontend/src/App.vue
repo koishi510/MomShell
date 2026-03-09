@@ -1,4 +1,4 @@
-f<template>
+<template>
   <BeachScene />
   <LandingOverlay />
   <AuthPanel />
