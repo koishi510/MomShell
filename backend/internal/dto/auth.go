@@ -17,11 +17,17 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// TokenResponse is the response body for login/refresh
+// TokenResponse is the response body for login/refresh (internal use)
 type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"` // seconds
+}
+
+// AccessTokenResponse is the response body sent to clients (refresh token in cookie only)
+type AccessTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"` // seconds
 }
 
 // RefreshRequest is the request body for token refresh

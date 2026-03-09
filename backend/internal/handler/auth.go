@@ -5,18 +5,36 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/momshell/backend/internal/config"
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/middleware"
 	"github.com/momshell/backend/internal/service"
 	pkgjwt "github.com/momshell/backend/pkg/jwt"
 )
 
+const (
+	refreshTokenCookie = "momshell_refresh_token"
+	refreshCookiePath  = "/api/v1/auth"
+)
+
 type AuthHandler struct {
 	authService *service.AuthService
+	cfg         *config.Config
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService *service.AuthService, cfg *config.Config) *AuthHandler {
+	return &AuthHandler{authService: authService, cfg: cfg}
+}
+
+func (h *AuthHandler) setRefreshCookie(c *gin.Context, refreshToken string, maxAge int) {
+	secure := !strings.Contains(h.cfg.CORSOrigins, "localhost")
+	c.SetCookie(refreshTokenCookie, refreshToken, maxAge, refreshCookiePath, "", secure, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+}
+
+func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
+	secure := !strings.Contains(h.cfg.CORSOrigins, "localhost")
+	c.SetCookie(refreshTokenCookie, "", -1, refreshCookiePath, "", secure, true)
 }
 
 // POST /api/v1/auth/register
@@ -54,24 +72,45 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	// Set refresh token as httpOnly cookie
+	maxAge := h.cfg.JWTRefreshTokenExpireDays * 86400
+	h.setRefreshCookie(c, resp.RefreshToken, maxAge)
+
+	// Return only access token in response body
+	c.JSON(http.StatusOK, dto.AccessTokenResponse{
+		AccessToken: resp.AccessToken,
+		ExpiresIn:   resp.ExpiresIn,
+	})
 }
 
 // POST /api/v1/auth/refresh
 func (h *AuthHandler) Refresh(c *gin.Context) {
-	var req dto.RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	// Read refresh token from httpOnly cookie first, fall back to JSON body
+	refreshToken, _ := c.Cookie(refreshTokenCookie)
+	if refreshToken == "" {
+		var req dto.RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing refresh token"})
+			return
+		}
+		refreshToken = req.RefreshToken
 	}
 
-	resp, err := h.authService.RefreshToken(req.RefreshToken)
+	resp, err := h.authService.RefreshToken(refreshToken)
 	if err != nil {
+		h.clearRefreshCookie(c)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	// Rotate refresh token cookie
+	maxAge := h.cfg.JWTRefreshTokenExpireDays * 86400
+	h.setRefreshCookie(c, resp.RefreshToken, maxAge)
+
+	c.JSON(http.StatusOK, dto.AccessTokenResponse{
+		AccessToken: resp.AccessToken,
+		ExpiresIn:   resp.ExpiresIn,
+	})
 }
 
 // GET /api/v1/auth/me
@@ -122,6 +161,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		}
 	}
 
+	h.clearRefreshCookie(c)
 	c.JSON(http.StatusOK, gin.H{"message": "已退出登录"})
 }
 
