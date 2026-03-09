@@ -71,6 +71,20 @@ func (h *PhotoHandler) Upload(c *gin.Context) {
 		return
 	}
 
+	// Validate actual file content via magic bytes
+	buf := make([]byte, 512)
+	n, _ := file.Read(buf)
+	detectedType := http.DetectContentType(buf[:n])
+	if !allowedPhotoTypes[detectedType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "文件内容与格式不匹配"})
+		return
+	}
+	// Reset reader position for SaveUploadedFile
+	if _, err := file.Seek(0, 0); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "上传失败"})
+		return
+	}
+
 	ext := ".jpg"
 	switch contentType {
 	case "image/png":
@@ -161,7 +175,7 @@ func (h *PhotoHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	c.Status(http.StatusNoContent)
 }
 
 // PUT /api/v1/photos/:id/wall
