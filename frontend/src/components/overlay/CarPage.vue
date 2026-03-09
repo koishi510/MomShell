@@ -471,6 +471,14 @@
                   <p class="settings-hint">{{ backgroundMusicStatusText }}</p>
                 </div>
 
+                <div v-if="isAdmin" class="settings-section">
+                  <h3 class="settings-heading">管理面板</h3>
+                  <p class="settings-hint">进入后台管理系统，管理用户、照片和系统配置。</p>
+                  <a href="/admin" class="submit-btn" style="display: inline-block; text-align: center; text-decoration: none;">
+                    打开管理面板
+                  </a>
+                </div>
+
                 <div class="settings-section">
                   <button class="logout-btn" @click="onLogout">退出登录</button>
                 </div>
