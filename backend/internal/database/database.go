@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/momshell/backend/internal/config"
 	"gorm.io/driver/postgres"
@@ -10,8 +11,20 @@ import (
 )
 
 func Connect(cfg *config.Config) (*gorm.DB, error) {
+	logLevel := logger.Warn
+	switch strings.ToLower(cfg.DBLogLevel) {
+	case "silent":
+		logLevel = logger.Silent
+	case "error":
+		logLevel = logger.Error
+	case "warn":
+		logLevel = logger.Warn
+	case "info":
+		logLevel = logger.Info
+	}
+
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseURL), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logLevel),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
