@@ -216,6 +216,9 @@
         </div>
       </div>
     </div>
+    <Transition name="toast">
+      <div v-if="panelError" class="panel-toast-error">{{ panelError }}</div>
+    </Transition>
   </OverlayPanel>
 </template>
 
@@ -283,6 +286,14 @@ const editingQuestion = ref(false)
 const editQuestionData = ref({ title: '', content: '' })
 const editingAnswerId = ref<string | null>(null)
 const editAnswerContent = ref('')
+const panelError = ref('')
+
+function showPanelError(msg: string) {
+  panelError.value = msg
+  setTimeout(() => {
+    panelError.value = ''
+  }, 4000)
+}
 
 function canModify(authorId: string) {
   return authStore.user?.id === authorId || authStore.user?.is_admin
@@ -409,7 +420,7 @@ async function onCreatePost() {
     selectedTagIds.value = []
     await fetchQuestions(1)
   } catch (e) {
-    alert(getErrorMessage(e))
+    showPanelError(getErrorMessage(e))
   } finally {
     posting.value = false
   }
@@ -512,7 +523,7 @@ async function onSubmitReply() {
       }
     }
   } catch (e) {
-    alert(getErrorMessage(e))
+    showPanelError(getErrorMessage(e))
   }
 }
 
@@ -589,7 +600,7 @@ async function onSaveQuestion() {
     )
     editingQuestion.value = false
   } catch (e) {
-    alert(getErrorMessage(e))
+    showPanelError(getErrorMessage(e))
   }
 }
 
@@ -600,7 +611,7 @@ async function onDeleteQuestion() {
     questions.value = questions.value.filter((q) => q.id !== selectedDetail.value!.id)
     closeDetail()
   } catch (e) {
-    alert(getErrorMessage(e))
+    showPanelError(getErrorMessage(e))
   }
 }
 
@@ -619,7 +630,7 @@ async function onSaveAnswer() {
     editingAnswerId.value = null
     editAnswerContent.value = ''
   } catch (e) {
-    alert(getErrorMessage(e))
+    showPanelError(getErrorMessage(e))
   }
 }
 
@@ -635,7 +646,7 @@ async function onDeleteAnswer(a: AnswerListItem) {
       }
     }
   } catch (e) {
-    alert(getErrorMessage(e))
+    showPanelError(getErrorMessage(e))
   }
 }
 
@@ -649,7 +660,7 @@ async function onDeleteComment(c: CommentListItem, answerId: string) {
       a.id === answerId ? { ...a, comment_count: Math.max(0, a.comment_count - 1) } : a,
     )
   } catch (e) {
-    alert(getErrorMessage(e))
+    showPanelError(getErrorMessage(e))
   }
 }
 
@@ -659,6 +670,29 @@ function clearCommentTarget() {
 </script>
 
 <style scoped>
+.panel-toast-error {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(220, 53, 69, 0.92);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+}
+
 .community-panel {
   padding: 32px 24px;
   min-height: 100vh;

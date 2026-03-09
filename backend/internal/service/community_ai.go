@@ -48,6 +48,11 @@ func ContainsMention(content string) bool {
 	return mentionPattern.MatchString(content)
 }
 
+// IsMentioned checks if the given content mentions @小石光.
+func (s *CommunityAIService) IsMentioned(content string) bool {
+	return ContainsMention(content)
+}
+
 // ShouldReplyToComment returns true if AI should reply to this comment:
 // - comment mentions @小石光, OR
 // - comment is on an AI-authored answer, OR

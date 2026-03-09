@@ -124,8 +124,8 @@ func (h *QuestionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Trigger AI reply for every new published question
-	if h.communityAI != nil && question.Status == model.StatusPublished {
+	// Trigger AI reply only when question mentions @小石光
+	if h.communityAI != nil && question.Status == model.StatusPublished && h.communityAI.IsMentioned(req.Content) {
 		go h.communityAI.HandleNewQuestion(question.ID)
 	}
 
