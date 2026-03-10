@@ -40,8 +40,8 @@ func Setup(
 	// Serve uploaded files
 	r.Static("/uploads", "./uploads")
 
-	// Admin panel (HTML page, no auth required for serving the page)
-	r.GET("/admin", adminHandler.ServeAdminPage)
+	// Admin panel (HTML page, requires admin authentication)
+	r.GET("/admin", middleware.AdminRequired(cfg, isAdmin), adminHandler.ServeAdminPage)
 
 	api := r.Group("/api/v1", generalLimiter)
 

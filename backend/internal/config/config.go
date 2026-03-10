@@ -69,6 +69,9 @@ func Load() *Config {
 	if cfg.JWTSecretKey == "change-me-in-production" {
 		fmt.Println("[WARN] Using default JWT secret key. Set JWT_SECRET_KEY in production!")
 	}
+	if len(cfg.JWTSecretKey) < 32 {
+		fmt.Println("[WARN] JWT_SECRET_KEY is shorter than 32 characters. Use a strong secret in production!")
+	}
 
 	return cfg
 }

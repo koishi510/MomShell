@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -346,7 +345,7 @@ func (s *AdminService) UpdateConfig(req dto.ConfigUpdateRequest) error {
 			s.cfg.JWTRefreshTokenExpireDays = v
 		}
 
-		_ = os.Setenv(key, value)
+		// Only update in-memory config; do not pollute process environment.
 	}
 
 	return nil

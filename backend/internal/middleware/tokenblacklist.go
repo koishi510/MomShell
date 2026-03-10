@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -30,8 +31,8 @@ func (b *tokenBlacklistStore) Add(token string, expiry time.Time) {
 			}
 		}
 	}
-	// If still at capacity after cleanup, skip adding (token will simply not be blacklisted)
 	if len(b.tokens) >= maxBlacklistSize {
+		log.Printf("[SECURITY] token blacklist at capacity (%d), revoked token could not be stored", maxBlacklistSize)
 		return
 	}
 	b.tokens[token] = expiry

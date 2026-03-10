@@ -68,11 +68,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	resp, err := h.authService.Login(req)
 	if err != nil {
-		status := http.StatusUnauthorized
-		if err.Error() == "账号已禁用" || err.Error() == "账号已被封禁" {
-			status = http.StatusForbidden
-		}
-		c.JSON(status, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 

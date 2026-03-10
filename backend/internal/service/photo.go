@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -304,13 +305,29 @@ func (s *PhotoService) downloadFromURL(imageURL, savePath string) (string, error
 		return "", fmt.Errorf("download failed with status: %d", resp.StatusCode)
 	}
 
+	// Validate downloaded content is an allowed image type
+	contentBuf := make([]byte, 512)
+	n, _ := resp.Body.Read(contentBuf)
+	detectedType := http.DetectContentType(contentBuf[:n])
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+		"image/gif":  true,
+		"image/webp": true,
+	}
+	if !allowedTypes[detectedType] {
+		return "", fmt.Errorf("downloaded content is not a valid image")
+	}
+
 	out, err := os.Create(savePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create file: %w", err)
 	}
 	defer func() { _ = out.Close() }()
 
-	if _, err := io.Copy(out, io.LimitReader(resp.Body, 20<<20)); err != nil { // 20 MB max
+	// Recombine already-read header bytes with the rest of the body
+	body := io.MultiReader(bytes.NewReader(contentBuf[:n]), resp.Body)
+	if _, err := io.Copy(out, io.LimitReader(body, 20<<20)); err != nil { // 20 MB max
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -388,13 +405,19 @@ func validateExternalURL(rawURL string) error {
 		return fmt.Errorf("internal host not allowed")
 	}
 
+	// Block cloud metadata service hostnames
+	if host == "169.254.169.254" || host == "metadata.google.internal" {
+		return fmt.Errorf("metadata endpoint not allowed")
+	}
+
 	// Resolve and check IP ranges
 	ips, err := net.LookupIP(host)
 	if err != nil {
 		return fmt.Errorf("DNS resolution failed: %w", err)
 	}
 	for _, ip := range ips {
-		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() ||
+			ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified() {
 			return fmt.Errorf("internal IP not allowed")
 		}
 	}

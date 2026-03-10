@@ -86,7 +86,7 @@ func (h *PhotoHandler) Upload(c *gin.Context) {
 	}
 
 	ext := ".jpg"
-	switch contentType {
+	switch detectedType {
 	case "image/png":
 		ext = ".png"
 	case "image/gif":
