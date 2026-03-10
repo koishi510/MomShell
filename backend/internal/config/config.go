@@ -33,6 +33,9 @@ type Config struct {
 	// CORS
 	CORSOrigins string
 
+	// Proxy
+	TrustProxy bool
+
 	// Logging
 	DBLogLevel string
 
@@ -55,11 +58,12 @@ func Load() *Config {
 		JWTRefreshTokenExpireDays: getEnvInt("JWT_REFRESH_TOKEN_EXPIRE_DAYS", 7),
 		OpenAIAPIKey:              getEnv("OPENAI_API_KEY", ""),
 		OpenAIBaseURL:             getEnv("OPENAI_BASE_URL", "https://api-inference.modelscope.cn/v1"),
-		OpenAIModel:               getEnv("OPENAI_MODEL", "Qwen/Qwen2.5-72B-Instruct"),
+		OpenAIModel:               getEnv("OPENAI_MODEL", "Qwen/Qwen3-235B-A22B"),
 		FirecrawlAPIKey:           getEnv("FIRECRAWL_API_KEY", ""),
-		ImageModel:                getEnv("IMAGE_MODEL", ""),
+		ImageModel:                getEnv("IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo"),
 		Port:                      getEnv("PORT", "8000"),
 		CORSOrigins:               getEnv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8000,http://localhost:3000"),
+		TrustProxy:                getEnvBool("TRUST_PROXY", false),
 		DBLogLevel:                getEnv("DB_LOG_LEVEL", "warn"),
 		AdminUsername:             getEnv("ADMIN_USERNAME", ""),
 		AdminEmail:                getEnv("ADMIN_EMAIL", ""),
@@ -90,4 +94,16 @@ func getEnvInt(key string, fallback int) int {
 		return fallback
 	}
 	return i
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return fallback
+	}
+	return b
 }
