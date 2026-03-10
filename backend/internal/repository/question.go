@@ -1,11 +1,21 @@
 package repository
 
 import (
-	"fmt"
-
 	"github.com/momshell/backend/internal/model"
 	"gorm.io/gorm"
 )
+
+var allowedQuestionSortColumns = map[string]bool{
+	"created_at":   true,
+	"view_count":   true,
+	"answer_count": true,
+	"like_count":   true,
+}
+
+var allowedSortOrders = map[string]bool{
+	"asc":  true,
+	"desc": true,
+}
 
 type QuestionRepo struct {
 	db *gorm.DB
@@ -43,9 +53,14 @@ func (r *QuestionRepo) FindAll(
 		return nil, 0, err
 	}
 
-	orderClause := fmt.Sprintf("questions.%s %s", sortBy, order)
+	if !allowedQuestionSortColumns[sortBy] {
+		sortBy = "created_at"
+	}
+	if !allowedSortOrders[order] {
+		order = "desc"
+	}
 	var questions []model.Question
-	err := query.Order(orderClause).Offset(offset).Limit(limit).Find(&questions).Error
+	err := query.Order("questions." + sortBy + " " + order).Offset(offset).Limit(limit).Find(&questions).Error
 	return questions, total, err
 }
 
