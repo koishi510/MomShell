@@ -127,7 +127,7 @@ export function apiLogout(accessToken?: string): Promise<void> {
       if (typeof (err as Record<string, unknown>).error === "string") {
         throw new Error((err as Record<string, string>).error);
       }
-      throw new Error("logout failed");
+      throw new Error("退出登录失败");
     }
   });
 }
