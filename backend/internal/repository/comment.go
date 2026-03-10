@@ -47,6 +47,10 @@ func (r *CommentRepo) Delete(id string) error {
 	return r.db.Where("id = ?", id).Delete(&model.Comment{}).Error
 }
 
+func (r *CommentRepo) Update(c *model.Comment) error {
+	return r.db.Save(c).Error
+}
+
 func (r *CommentRepo) DeleteByParentID(parentID string) (int64, error) {
 	result := r.db.Where("parent_id = ?", parentID).Delete(&model.Comment{})
 	return result.RowsAffected, result.Error

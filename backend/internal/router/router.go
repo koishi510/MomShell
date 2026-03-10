@@ -97,9 +97,10 @@ func Setup(
 			answers.POST("/:id/comments", middleware.AuthRequired(cfg), commentHandler.Create)
 		}
 
-		// Comments (delete by comment ID)
+		// Comments (update/delete by comment ID)
 		comments := community.Group("/comments")
 		{
+			comments.PUT("/:id", middleware.AuthRequired(cfg), commentHandler.Update)
 			comments.DELETE("/:id", middleware.AuthRequired(cfg), commentHandler.Delete)
 		}
 

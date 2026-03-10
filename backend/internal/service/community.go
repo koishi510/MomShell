@@ -655,6 +655,37 @@ func (s *CommunityService) CreateComment(answerID string, req dto.CommentCreate,
 	}, nil
 }
 
+func (s *CommunityService) UpdateComment(commentID string, req dto.CommentUpdate, user *model.User) (*model.Comment, error) {
+	comment, err := s.commentRepo.FindByID(commentID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("评论不存在")
+		}
+		return nil, err
+	}
+
+	if comment.AuthorID != user.ID && !user.IsAdmin {
+		return nil, errors.New("无权修改此评论")
+	}
+
+	decision := s.moderation.ModerateText(req.Content)
+	if decision.Result == model.ModerationRejected {
+		return nil, fmt.Errorf("评论审核未通过: %s", derefStr(decision.Reason))
+	}
+
+	comment.Content = req.Content
+	if decision.Result == model.ModerationNeedManualReview {
+		comment.Status = model.StatusPendingReview
+	}
+
+	comment.UpdatedAt = time.Now()
+	if err := s.commentRepo.Update(comment); err != nil {
+		return nil, err
+	}
+
+	return comment, nil
+}
+
 func (s *CommunityService) DeleteComment(commentID string, user *model.User) error {
 	comment, err := s.commentRepo.FindByID(commentID)
 	if err != nil {
