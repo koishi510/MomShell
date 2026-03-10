@@ -33,9 +33,6 @@ type Config struct {
 	// CORS
 	CORSOrigins string
 
-	// Proxy
-	TrustProxy bool
-
 	// Logging
 	DBLogLevel string
 
@@ -63,7 +60,6 @@ func Load() *Config {
 		ImageModel:                getEnv("IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo"),
 		Port:                      getEnv("PORT", "8000"),
 		CORSOrigins:               getEnv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8000,http://localhost:3000"),
-		TrustProxy:                getEnvBool("TRUST_PROXY", false),
 		DBLogLevel:                getEnv("DB_LOG_LEVEL", "warn"),
 		AdminUsername:             getEnv("ADMIN_USERNAME", ""),
 		AdminEmail:                getEnv("ADMIN_EMAIL", ""),
@@ -94,16 +90,4 @@ func getEnvInt(key string, fallback int) int {
 		return fallback
 	}
 	return i
-}
-
-func getEnvBool(key string, fallback bool) bool {
-	v := os.Getenv(key)
-	if v == "" {
-		return fallback
-	}
-	b, err := strconv.ParseBool(v)
-	if err != nil {
-		return fallback
-	}
-	return b
 }
