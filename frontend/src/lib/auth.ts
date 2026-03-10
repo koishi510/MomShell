@@ -112,12 +112,22 @@ export function apiSetRole(
   });
 }
 
-export function apiLogout(accessToken: string): Promise<void> {
+export function apiLogout(accessToken?: string): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
   return fetch(`${AUTH_API}/logout`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers,
     credentials: "include",
-  }).then(() => undefined);
+  }).then(async (response) => {
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      if (typeof (err as Record<string, unknown>).error === "string") {
+        throw new Error((err as Record<string, string>).error);
+      }
+      throw new Error("logout failed");
+    }
+  });
 }
