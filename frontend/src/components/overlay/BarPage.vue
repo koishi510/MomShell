@@ -29,7 +29,7 @@
                   @click="openDetail(post)"
                 >
                   <img class="note-bg" :src="getNoteImage(post)" draggable="false" />
-                  <div class="note-content">
+                  <div :class="['note-content', { 'note-content-n2': getNoteImage(post) === note2, 'note-content-n3': getNoteImage(post) === note3 }]">
                     <h4>{{ post.title }}</h4>
                     <p>{{ post.content_preview }}</p>
                     <span class="note-meta"><img :src="getAvatar(post.author)" class="note-meta-avatar" @error="onAvatarError" />{{ post.author.nickname }} · {{ post.answer_count }} 评论</span>
@@ -786,8 +786,16 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.note-content-n2 {
+  inset: 19% 12% 14% 12%;
+}
+
+.note-content-n3 {
+  inset: 19% 12% 14% 12%;
+}
+
 .note-content h4 {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: #3a2a1a;
   margin: 0 0 4px;
@@ -797,7 +805,7 @@ onUnmounted(() => {
 }
 
 .note-content p {
-  font-size: 13px;
+  font-size: 15px;
   color: #5a4a3a;
   line-height: 1.4;
   margin: 0;
@@ -808,7 +816,7 @@ onUnmounted(() => {
 }
 
 .note-meta {
-  font-size: 10px;
+  font-size: 11px;
   color: #8a7a6a;
   margin-top: auto;
 }
