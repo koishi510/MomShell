@@ -74,7 +74,7 @@ func main() {
 		firecrawlClient = firecrawl.NewClient(cfg.FirecrawlAPIKey)
 	}
 
-	chatService := service.NewChatService(chatClient, chatRepo, firecrawlClient)
+	chatService := service.NewChatService(chatClient, chatRepo, userRepo, firecrawlClient)
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
 	photoService := service.NewPhotoService(photoRepo, userRepo, chatClient, cfg.ImageModel)
 	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient)
@@ -87,7 +87,7 @@ func main() {
 		communityAIService = service.NewCommunityAIService(
 			chatClient, firecrawlClient,
 			questionRepo, answerRepo, commentRepo,
-			aiUserID,
+			userRepo, aiUserID,
 		)
 	}
 
