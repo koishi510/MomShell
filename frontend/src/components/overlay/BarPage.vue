@@ -24,11 +24,11 @@
                 <div
                   v-for="post in posts"
                   :key="post.id"
-                  class="note-card"
+                  :class="['note-card', { 'note-card-pro': post.channel === 'professional' }]"
                   :style="getCardStyle(post)"
                   @click="openDetail(post)"
                 >
-                  <img :class="['note-bg', { 'note-bg-flipped': getNoteImage(post) === note2 }]" :src="getNoteImage(post)" draggable="false" />
+                  <img class="note-bg" :src="getNoteImage(post)" draggable="false" />
                   <div class="note-content">
                     <h4>{{ post.title }}</h4>
                     <p>{{ post.content_preview }}</p>
@@ -766,14 +766,14 @@ onUnmounted(() => {
   z-index: 10 !important;
 }
 
+.note-card-pro {
+  width: 20.8%;
+}
+
 .note-bg {
   width: 100%;
   display: block;
   pointer-events: none;
-}
-
-.note-bg-flipped {
-  transform: scaleX(-1);
 }
 
 .note-content {
@@ -782,10 +782,12 @@ onUnmounted(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  text-align: center;
+  align-items: center;
 }
 
 .note-content h4 {
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 700;
   color: #3a2a1a;
   margin: 0 0 4px;
@@ -795,7 +797,7 @@ onUnmounted(() => {
 }
 
 .note-content p {
-  font-size: 9px;
+  font-size: 13px;
   color: #5a4a3a;
   line-height: 1.4;
   margin: 0;
@@ -806,7 +808,7 @@ onUnmounted(() => {
 }
 
 .note-meta {
-  font-size: 8px;
+  font-size: 10px;
   color: #8a7a6a;
   margin-top: auto;
 }
