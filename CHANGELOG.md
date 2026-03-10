@@ -12,10 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Security Hardening
 
 - **httpOnly cookie authentication**: Migrated auth tokens from localStorage to httpOnly cookies, eliminating XSS token theft vectors
-- **Sliding window rate limiting**: Added per-endpoint rate limiting to all API routes to prevent abuse
+- **Fixed-window rate limiting**: Added per-endpoint rate limiting to all API routes to prevent abuse
 - **Input validation hardening**: Strengthened validation across all user-facing endpoints
 - **SQL injection prevention**: Added allowlist validation for ORDER BY clauses in repository layer (defense-in-depth for `question.go` and `answer.go`)
-- **Insecure randomness fix**: Removed `Math.random()` fallback for session ID generation in `ChatPanel.vue`; now uses `crypto.randomUUID()` exclusively
+- **Insecure randomness fix**: Replaced `Math.random()` fallback with `crypto.getRandomValues()` for cryptographically secure session ID generation in `ChatPanel.vue`
 - **Auth token extraction hardening**: Improved multi-source token extraction security (header, cookie)
 - **OpenAI error sanitization**: Removed response body from OpenAI error messages to prevent data exposure
 
