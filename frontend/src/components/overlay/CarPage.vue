@@ -221,77 +221,7 @@
               </div>
             </div>
 
-            <div class="tab-bar">
-              <button
-                v-for="tab in profileTabs"
-                :key="tab.key"
-                :class="['tab-btn', { active: activeTab === tab.key }]"
-                @click="activeTab = tab.key"
-              >
-                {{ tab.label }}
-              </button>
-            </div>
-
-            <div class="tab-content">
-              <template v-if="activeTab === 'questions'">
-                <div v-if="questionsLoading && myQuestions.length === 0" class="loading-state">加载中...</div>
-                <div v-else-if="myQuestions.length === 0" class="empty-state">还没有发布过问题</div>
-                <template v-else>
-                  <div class="item-list">
-                    <div v-for="q in myQuestions" :key="q.id" class="item-card">
-                      <div class="item-top">
-                        <h4 class="item-title">{{ q.title }}</h4>
-                        <span class="status-badge" :class="'status-' + q.status">{{ statusText(q.status) }}</span>
-                      </div>
-                      <p class="item-preview">{{ q.content_preview }}</p>
-                      <div class="item-meta">
-                        <span>💬 {{ q.answer_count }}</span>
-                        <span>❤️ {{ q.like_count }}</span>
-                        <span>{{ formatDate(q.created_at) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    v-if="questionsPage < questionsTotalPages"
-                    class="load-more-btn"
-                    :disabled="questionsLoading"
-                    @click="loadMoreQuestions"
-                  >
-                    {{ questionsLoading ? '加载中...' : '加载更多' }}
-                  </button>
-                </template>
-              </template>
-
-              <template v-if="activeTab === 'answers'">
-                <div v-if="answersLoading && myAnswers.length === 0" class="loading-state">加载中...</div>
-                <div v-else-if="myAnswers.length === 0" class="empty-state">还没有回答过问题</div>
-                <template v-else>
-                  <div class="item-list">
-                    <div v-for="a in myAnswers" :key="a.id" class="item-card">
-                      <div class="item-top">
-                        <span class="item-ref">{{ a.question.title }}</span>
-                        <span class="status-badge" :class="'status-' + a.status">{{ statusText(a.status) }}</span>
-                      </div>
-                      <p class="item-preview">{{ a.content_preview }}</p>
-                      <div class="item-meta">
-                        <span>❤️ {{ a.like_count }}</span>
-                        <span v-if="a.is_accepted" class="accepted-tag">✓ 已采纳</span>
-                        <span>{{ formatDate(a.created_at) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    v-if="answersPage < answersTotalPages"
-                    class="load-more-btn"
-                    :disabled="answersLoading"
-                    @click="loadMoreAnswers"
-                  >
-                    {{ answersLoading ? '加载中...' : '加载更多' }}
-                  </button>
-                </template>
-              </template>
-
-              <template v-if="activeTab === 'settings'">
+            <div class="settings-content">
                 <!-- Profile Info -->
                 <div class="settings-section">
                   <h3 class="settings-heading">个人资料</h3>
@@ -482,7 +412,6 @@
                 <div class="settings-section">
                   <button class="logout-btn" @click="onLogout">退出登录</button>
                 </div>
-              </template>
             </div>
           </div>
         </div>
@@ -510,12 +439,8 @@ import {
   generateShellCode,
   bindPartner,
   unbindPartner,
-  getMyQuestions,
-  getMyAnswers,
   changePassword,
   type UserProfile,
-  type MyQuestionListItem,
-  type MyAnswerListItem,
 } from '@/lib/api/user'
 import { getErrorMessage } from '@/lib/apiClient'
 import { useBackgroundMusicControls } from '@/composables/useBackgroundMusicLoop'
@@ -567,22 +492,10 @@ const editSaving = ref(false)
 // ── Profile modal state ──
 const showProfile = ref(false)
 const profile = ref<UserProfile | null>(null)
-const activeTab = ref<'questions' | 'answers' | 'settings'>('questions')
-
 const editingNickname = ref(false)
 const nicknameValue = ref('')
 const nicknameError = ref('')
 const nicknameInput = ref<HTMLInputElement | null>(null)
-
-const myQuestions = ref<MyQuestionListItem[]>([])
-const questionsPage = ref(1)
-const questionsTotalPages = ref(1)
-const questionsLoading = ref(false)
-
-const myAnswers = ref<MyAnswerListItem[]>([])
-const answersPage = ref(1)
-const answersTotalPages = ref(1)
-const answersLoading = ref(false)
 
 const pwForm = ref({ old_password: '', new_password: '', confirm_password: '' })
 const pwError = ref('')
@@ -621,12 +534,6 @@ const unbindLoading = ref(false)
 
 const isBound = computed(() => !!profile.value?.partner)
 const isMom = computed(() => (profile.value?.role || auth.user?.role) === 'mom')
-
-const profileTabs = [
-  { key: 'questions' as const, label: '我的提问' },
-  { key: 'answers' as const, label: '我的回答' },
-  { key: 'settings' as const, label: '设置' },
-]
 
 const roleMap: Record<string, string> = {
   mom: '溯源者',
@@ -822,30 +729,14 @@ async function onSaveDetail() {
 // ── Profile methods ──
 function openProfile() {
   showProfile.value = true
-  activeTab.value = 'questions'
-  myQuestions.value = []
-  myAnswers.value = []
-  questionsPage.value = 1
-  answersPage.value = 1
   pwForm.value = { old_password: '', new_password: '', confirm_password: '' }
   pwError.value = ''
   pwSuccess.value = ''
   fetchProfile()
-  fetchQuestions(1)
 }
 
 function closeProfile() {
   showProfile.value = false
-}
-
-function statusText(status: string): string {
-  const map: Record<string, string> = {
-    published: '已发布',
-    pending_review: '审核中',
-    hidden: '已隐藏',
-    draft: '草稿',
-  }
-  return map[status] || status
 }
 
 function formatDate(iso: string): string {
@@ -893,53 +784,10 @@ async function fetchProfile() {
   try {
     profile.value = await getUserProfile()
     syncProfileForm()
+    selectedRole.value = profile.value?.role || auth.user?.role || 'mom'
   } catch {
     syncProfileForm()
   }
-}
-
-async function fetchQuestions(page: number) {
-  questionsLoading.value = true
-  try {
-    const res = await getMyQuestions({ page, page_size: 10 })
-    if (page === 1) {
-      myQuestions.value = res.items
-    } else {
-      myQuestions.value = [...myQuestions.value, ...res.items]
-    }
-    questionsPage.value = res.page
-    questionsTotalPages.value = res.total_pages
-  } catch {
-    // silent
-  } finally {
-    questionsLoading.value = false
-  }
-}
-
-async function fetchAnswers(page: number) {
-  answersLoading.value = true
-  try {
-    const res = await getMyAnswers({ page, page_size: 10 })
-    if (page === 1) {
-      myAnswers.value = res.items
-    } else {
-      myAnswers.value = [...myAnswers.value, ...res.items]
-    }
-    answersPage.value = res.page
-    answersTotalPages.value = res.total_pages
-  } catch {
-    // silent
-  } finally {
-    answersLoading.value = false
-  }
-}
-
-function loadMoreQuestions() {
-  fetchQuestions(questionsPage.value + 1)
-}
-
-function loadMoreAnswers() {
-  fetchAnswers(answersPage.value + 1)
 }
 
 function triggerAvatarUpload() {
@@ -1132,20 +980,6 @@ watch(visible, async (isVisible) => {
     } catch {
       // silent
     }
-  }
-})
-
-watch(activeTab, (tab) => {
-  if (tab === 'answers' && myAnswers.value.length === 0) {
-    fetchAnswers(1)
-  }
-  if (tab === 'settings') {
-    syncProfileForm()
-    profileFormError.value = ''
-    profileFormSuccess.value = ''
-    selectedRole.value = profile.value?.role || auth.user?.role || 'mom'
-    roleError.value = ''
-    roleSuccess.value = ''
   }
 })
 </script>
@@ -1904,169 +1738,6 @@ watch(activeTab, (tab) => {
   font-size: 11px;
   color: var(--text-secondary);
   letter-spacing: 0.5px;
-}
-
-.tab-bar {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 4px;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 10px 0;
-  border-radius: 11px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tab-btn.active {
-  background: rgba(255, 255, 255, 0.14);
-  color: var(--text-primary);
-}
-
-.tab-content {
-  min-height: 200px;
-}
-
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 40px 0;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.item-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.item-card {
-  padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  transition: background 0.2s;
-}
-
-.item-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.item-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.item-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.item-ref {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent-warm);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-badge {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.status-published {
-  background: rgba(72, 199, 142, 0.18);
-  color: #48c78e;
-}
-
-.status-pending_review {
-  background: rgba(255, 210, 76, 0.18);
-  color: #ffd24c;
-}
-
-.status-hidden {
-  background: rgba(160, 160, 160, 0.18);
-  color: #a0a0a0;
-}
-
-.status-draft {
-  background: rgba(160, 160, 160, 0.18);
-  color: #a0a0a0;
-}
-
-.item-preview {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 8px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.item-meta {
-  font-size: 12px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.accepted-tag {
-  color: #48c78e;
-  font-weight: 600;
-}
-
-.load-more-btn {
-  display: block;
-  width: 100%;
-  margin-top: 16px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.load-more-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.load-more-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 .settings-section {
