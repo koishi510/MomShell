@@ -4,7 +4,8 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.x.x   | ✓                  |
+| 1.x.x   | ✓                  |
+| 0.x.x   | ✗ (archived)       |
 
 ## Reporting a Vulnerability
 
@@ -27,7 +28,7 @@ Instead, please report them via one of the following methods:
 Please include the following information in your report:
 
 - Type of vulnerability (e.g., SQL injection, XSS, authentication bypass)
-- Affected component (Soul Companion, Recovery Coach, Community, Guardian Partner, API, etc.)
+- Affected component (Soul Companion, Sisterhood Bond, Echo/Memoir, Photo Gallery, Whisper, Tasks, Admin Panel, API, etc.)
 - Step-by-step instructions to reproduce the issue
 - Proof-of-concept or exploit code (if possible)
 - Potential impact of the vulnerability
@@ -47,19 +48,19 @@ When deploying MomShell, please ensure:
 
 1. **Environment Variables**
    - Never commit `.env` files or API keys to version control
-   - Use secure secret management for `MODELSCOPE_KEY`
+   - Use secure secret management for `OPENAI_API_KEY`
    - Change `JWT_SECRET_KEY` to a secure random value in production
    - Rotate API keys periodically
 
 2. **Network Security**
-   - Use HTTPS in production (configure SSL/TLS in nginx)
+   - Use HTTPS in production (configure SSL/TLS in Nginx)
    - Restrict API access to trusted origins (CORS configuration)
    - Use firewalls to limit exposed ports
 
 3. **Database Security**
-   - Use strong, unique passwords for database access
-   - Regularly backup database files
-   - Restrict file permissions on SQLite database files
+   - Use strong, unique passwords for PostgreSQL access
+   - Regularly backup the database
+   - Restrict network access to the database port
 
 4. **Docker Security**
    - Keep base images updated

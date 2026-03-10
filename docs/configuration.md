@@ -27,8 +27,17 @@ The setup script auto-generates `JWT_SECRET_KEY`. Change it manually for product
 | `OPENAI_API_KEY` | API key for LLM service | **Yes** | — |
 | `OPENAI_BASE_URL` | API base URL | No | `https://api-inference.modelscope.cn/v1` |
 | `OPENAI_MODEL` | Model name | No | `Qwen/Qwen3-235B-A22B` |
+| `IMAGE_MODEL` | Model for AI image generation | No | `Tongyi-MAI/Z-Image-Turbo` |
 
 Any OpenAI-compatible API is supported (ModelScope, OpenAI, local Ollama, etc.).
+
+## Web Search
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `FIRECRAWL_API_KEY` | Firecrawl API key for web search grounding | No | — |
+
+When set, AI replies use web search to reduce hallucinations for factual questions.
 
 ## Server
 

@@ -9,16 +9,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Security Hardening
+
+- **httpOnly cookie authentication**: Migrated auth tokens from localStorage to httpOnly cookies, eliminating XSS token theft vectors
+- **Sliding window rate limiting**: Added per-endpoint rate limiting to all API routes to prevent abuse
+- **Input validation hardening**: Strengthened validation across all user-facing endpoints
+- **SQL injection prevention**: Added allowlist validation for ORDER BY clauses in repository layer (defense-in-depth for `question.go` and `answer.go`)
+- **Insecure randomness fix**: Removed `Math.random()` fallback for session ID generation in `ChatPanel.vue`; now uses `crypto.randomUUID()` exclusively
+- **Auth token extraction hardening**: Improved multi-source token extraction security (header, cookie)
+- **OpenAI error sanitization**: Removed response body from OpenAI error messages to prevent data exposure
+
+#### Photo Gallery & Lifecycle Management
+
+- **Photo lifecycle management**: Auto-cleanup of expired photos and admin-level photo controls
+- **Pic wall**: Interactive photo wall with drag, zoom, and close-window UI
+- **AI photo generation**: AI-generated photos in memoir using image model integration
+
+#### Memoir & Echo Enhancements
+
+- **Memoir text editing**: Users can edit AI-generated memoir text inline
+- **Image regeneration**: Regenerate memoir cover images on demand
+
+#### Whisper & Tasks
+
+- **Whisper (Conque)**: Audio-to-text conversation feature using speech recognition
+- **Tasks (Star)**: Goal-setting and task-tracking system with partner support
+- **Partner task UI**: Improved task interface with reject and polling support
+
+#### Admin Panel
+
+- **Frontend admin exposure**: Admin panel accessible through the Vue frontend with navigation integration
+
+#### Community Enhancements
+
+- **AI auto-reply trigger**: AI reply triggered on answers mentioning @小石光
+- **Cascade delete**: Deleting a question now cascades to its answers and comments
+- **Edit/delete UI**: Added edit and delete controls for questions, answers, and comments
+- **AI avatar**: Dedicated AI user avatar with simplified mention pattern
+- **Source citation**: AI replies cite sources only for factual claims, not emotional support; sources renumbered sequentially
+
 #### Vue 3 Frontend
 
-- **Background music loop**: Added global alternating playback for `The Shore and You` and `Travelogue`
-- **Profile music control**: Added background music volume slider in the profile settings panel
+- **Background music loop**: Global alternating playback for `The Shore and You` and `Travelogue`
+- **Profile music control**: Background music volume slider in the profile settings panel
+- **Beach shell sprites**: Repositioned shell sprites to the right side of the scene
+- **Hand detection camera**: MediaPipe hand detection integration (hidden camera preview)
 
 ### Changed
 
 - **Frontend assets**: Reorganized static assets into `frontend/src/assets/images/` and `frontend/src/assets/audio/`
-- **Asset imports**: Updated frontend image and audio references to match the new asset directory structure
-- **Crab speech bubble anchoring**: Reworked the beach scene crab hint bubble to position from the crab sprite's rendered bounds instead of static offsets, keeping the bubble visually closer across viewport sizes.
+- **Crab speech bubble anchoring**: Reworked hint bubble positioning to use rendered sprite bounds instead of static offsets
+- **Pearl shell layout**: Adjusted pearl shell positioning; uses all photos in pearl shell
+
+### Fixed
+
+- Missing `autocomplete` attribute on nickname input
+- Stray character in `App.vue` template
+- Pearl shell layout positioning issues
+- Camera preview visibility in pic wall
+
 ---
 
 ## [1.0.0] - 2026-03-05
