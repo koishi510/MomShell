@@ -104,7 +104,6 @@
                   <div class="detail-body">{{ selectedDetail.content }}</div>
                   <div v-if="canModify(selectedDetail.author.id)" class="detail-manage">
                     <button class="manage-btn" @click="startEditPost">编辑</button>
-                    <button class="manage-btn manage-btn-danger" @click="onDeletePost">删除</button>
                   </div>
                 </template>
                 <template v-else>
@@ -113,6 +112,7 @@
                   <div class="detail-manage">
                     <button class="manage-btn" @click="saveEditPost">保存</button>
                     <button class="manage-btn" @click="cancelEditPost">取消</button>
+                    <button class="manage-btn manage-btn-danger" @click="onDeletePost">删除</button>
                   </div>
                 </template>
 
@@ -141,6 +141,7 @@
                       <div class="detail-manage">
                         <button class="manage-btn" @click="saveEditAnswer">保存</button>
                         <button class="manage-btn" @click="cancelEditAnswer">取消</button>
+                        <button class="manage-btn manage-btn-danger" @click="onDeleteAnswer(a)">删除</button>
                       </div>
                     </template>
                     <p v-else class="comment-body">{{ a.content }}</p>
@@ -155,7 +156,6 @@
                         回复
                       </button>
                       <button v-if="canModify(a.author.id)" class="comment-like-btn" @click="startEditAnswer(a)">编辑</button>
-                      <button v-if="canModify(a.author.id)" class="comment-like-btn manage-text-danger" @click="onDeleteAnswer(a)">删除</button>
                     </div>
 
                     <!-- Nested comments -->
