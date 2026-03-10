@@ -37,11 +37,11 @@
         <div class="right-section">
           <div class="avatars">
             <div class="avatar-wrapper">
-              <img class="avatar-photo" :class="{ 'avatar-custom': hasPartnerCustomAvatar }" :src="partnerAvatarUrl" alt="partner avatar" />
+              <img class="avatar-photo" :class="{ 'avatar-custom': hasPartnerCustomAvatar }" :src="partnerAvatarUrl" alt="partner avatar" @error="onAvatarImgError" />
               <img class="avatar-frame" :src="avatarFrame" alt="partner frame" />
             </div>
             <div class="avatar-wrapper">
-              <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="my avatar" />
+              <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="my avatar" @error="onAvatarImgError" />
               <img class="avatar-frame" :src="avatarFrame" alt="my frame" />
             </div>
           </div>
@@ -168,7 +168,7 @@
 
             <div class="profile-header">
               <div class="profile-avatar" @click="triggerAvatarUpload">
-                <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" />
+                <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" @error="onAvatarImgError" />
                 <span v-else class="avatar-placeholder">{{ displayInitial }}</span>
                 <span class="avatar-edit-hint">{{ avatarUploading ? '...' : '✎' }}</span>
                 <input
@@ -299,7 +299,7 @@
                     <label class="form-label">头像</label>
                     <div class="avatar-upload-row">
                       <div class="avatar-preview-small">
-                        <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" />
+                        <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" @error="onAvatarImgError" />
                         <span v-else class="avatar-placeholder-small">{{ displayInitial }}</span>
                       </div>
                       <button class="upload-btn" :disabled="avatarUploading" @click="triggerAvatarUpload">
@@ -640,6 +640,14 @@ const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.
 const hasCustomAvatar = computed(() => !!(profile.value?.avatar_url || auth.user?.avatar_url))
 const partnerAvatarUrl = computed(() => profile.value?.partner?.avatar_url || avatarDefault)
 const hasPartnerCustomAvatar = computed(() => !!profile.value?.partner?.avatar_url)
+
+function onAvatarImgError(e: Event) {
+  const img = e.target as HTMLImageElement
+  if (!img.dataset.fallback) {
+    img.dataset.fallback = '1'
+    img.src = avatarDefault
+  }
+}
 const roleName = computed(() => roleMap[profile.value?.role || auth.user?.role || 'mom'] || '溯源者')
 const isAdmin = computed(() => !!(profile.value?.is_admin || auth.user?.is_admin))
 const { backgroundMusicVolume, isBackgroundMusicPlaying, setBackgroundMusicVolume } = useBackgroundMusicControls()
