@@ -2,7 +2,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue?style=flat)](LICENSE)
-[![Go](https://img.shields.io/badge/Go-1.23-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?style=flat&logo=vue.js&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -15,6 +15,10 @@ AI-powered postpartum recovery platform with emotional support, community connec
 |--------|-------------|
 | **Soul Companion** | AI chat companion with conversation memory and emotional support |
 | **Sisterhood Bond** | Community Q&A with verified healthcare professionals and content moderation |
+| **Echo / Memoir** | Self-reflection space with AI-generated memoir stickers and partner connection |
+| **Photo Gallery** | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI |
+| **Whisper** | Audio-to-text conversation using speech recognition |
+| **Tasks** | Goal-setting and task-tracking system with partner support |
 | **Admin Panel** | Embedded single-page admin at `/admin` — dashboard, user CRUD, config management |
 
 ## Quick Start
@@ -38,12 +42,17 @@ MomShell/
 ├── backend/            # Go (Gin + GORM + PostgreSQL)
 │   ├── cmd/server/     # Entry point
 │   ├── internal/       # App code (handler/service/repository/model/dto)
-│   │   └── admin/      # Embedded admin panel (go:embed)
-│   └── pkg/            # Shared utilities (JWT, password, OpenAI)
+│   │   ├── admin/      # Embedded admin panel (go:embed)
+│   │   └── scheduler/  # Background job scheduling
+│   └── pkg/            # Shared utilities (JWT, password, OpenAI, Firecrawl)
 ├── frontend/           # Vue 3 (Vite + TypeScript + Pinia)
 │   └── src/
+│       ├── components/ # Overlay panels + beach scene layers
+│       ├── composables/# Animation, parallax, waves, music
+│       └── stores/     # Pinia stores (auth, UI)
 ├── deploy/             # Docker Compose + Nginx
 ├── docs/               # Documentation
+├── scripts/            # Development setup scripts
 └── Makefile            # Development commands
 ```
 

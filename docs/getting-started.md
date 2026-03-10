@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- [Go 1.23+](https://go.dev/dl/)
+- [Go 1.25+](https://go.dev/dl/)
 - [Node.js 24+](https://nodejs.org/) (or via [nvm](https://github.com/nvm-sh/nvm))
 - [PostgreSQL](https://www.postgresql.org/)
 - Git

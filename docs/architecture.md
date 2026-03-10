@@ -8,11 +8,12 @@ Technical architecture overview of MomShell.
 
 | Technology | Purpose |
 |------------|---------|
-| **Go 1.23** | Backend language |
+| **Go 1.25** | Backend language |
 | **Gin** | HTTP framework |
 | **GORM** | ORM (PostgreSQL) |
-| **JWT (golang-jwt)** | Authentication |
-| **OpenAI SDK** | LLM integration |
+| **JWT (golang-jwt)** | Authentication (httpOnly cookies) |
+| **OpenAI SDK** | LLM integration (Qwen / any OpenAI-compatible) |
+| **Firecrawl** | Web search for grounding AI responses |
 | **go:embed** | Embedded admin panel |
 
 ### Frontend
@@ -24,6 +25,9 @@ Technical architecture overview of MomShell.
 | **TypeScript** | Type safety |
 | **Pinia** | State management |
 | **Axios** | HTTP client |
+| **GSAP** | Animations |
+| **Three.js** | 3D graphics |
+| **MediaPipe** | Hand detection |
 
 ## Project Structure
 
@@ -37,12 +41,14 @@ MomShell/
 │   │   ├── database/           # DB connection & auto-migration
 │   │   ├── dto/                # Request/response data transfer objects
 │   │   ├── handler/            # HTTP handlers (Gin)
-│   │   ├── middleware/         # Auth, CORS, recovery middleware
+│   │   ├── middleware/         # Auth, CORS, recovery, rate limiting
 │   │   ├── model/              # GORM models (User, Question, Answer, etc.)
 │   │   ├── repository/         # Data access layer
 │   │   ├── router/             # Route registration
+│   │   ├── scheduler/          # Background job scheduling (photo cleanup)
 │   │   └── service/            # Business logic
 │   └── pkg/
+│       ├── firecrawl/          # Web search API client
 │       ├── jwt/                # JWT generation & validation
 │       ├── openai/             # OpenAI-compatible client
 │       └── password/           # bcrypt hashing
@@ -50,9 +56,9 @@ MomShell/
 ├── frontend/                   # Vue 3 frontend
 │   └── src/
 │       ├── components/
-│       │   ├── overlay/        # Auth, chat, community, profile panels
+│       │   ├── overlay/        # Auth, chat, community, profile, whisper, task panels
 │       │   └── scene/          # Beach scene layers (sky, ocean, sand, etc.)
-│       ├── composables/        # Vue composables (animation, parallax, waves)
+│       ├── composables/        # Vue composables (animation, parallax, waves, music)
 │       ├── constants/          # Scene configuration
 │       ├── lib/                # API client, auth utilities
 │       ├── stores/             # Pinia stores (auth, UI)
@@ -60,7 +66,7 @@ MomShell/
 │
 ├── deploy/                     # Docker Compose + Nginx config
 ├── docs/                       # Documentation
-├── scripts/dev-setup.sh        # Development setup script
+├── scripts/                    # Development setup scripts
 ├── .env.example                # Environment template
 ├── Makefile                    # Build & dev commands
 └── .pre-commit-config.yaml     # Git hooks
@@ -86,9 +92,10 @@ The admin panel is a single HTML file (`internal/admin/admin.html`) using Tailwi
 
 ### Authentication
 
-- JWT access tokens (30 min) + refresh tokens (7 days)
+- JWT access tokens (30 min) + refresh tokens (7 days), stored in httpOnly cookies
 - Tokens extracted from `Authorization: Bearer`, `X-Access-Token` header, or `access_token` cookie
 - Admin role verified per-request in handler via `authService.GetUserByID`
+- Sliding window rate limiting on all API endpoints
 
 ### Content Moderation
 
