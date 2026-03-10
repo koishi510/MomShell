@@ -31,7 +31,7 @@
                   <div class="note-content">
                     <h4>{{ post.title }}</h4>
                     <p>{{ post.content_preview }}</p>
-                    <span class="note-meta">{{ post.author.nickname }} · {{ post.answer_count }} 评论</span>
+                    <span class="note-meta"><img :src="getAvatar(post.author)" class="note-meta-avatar" @error="onAvatarError" />{{ post.author.nickname }} · {{ post.answer_count }} 评论</span>
                   </div>
                 </div>
                 <div ref="sentinelRef" class="load-sentinel" />
@@ -86,6 +86,7 @@
               <template v-if="paperMode === 'detail' && selectedDetail">
                 <h3 class="paper-title">{{ selectedDetail.title }}</h3>
                 <div class="detail-author">
+                  <img :src="getAvatar(selectedDetail.author)" class="detail-avatar" @error="onAvatarError" />
                   <span class="author-name">{{ selectedDetail.author.nickname }}</span>
                   <span v-if="selectedDetail.author.display_tag" class="author-tag">{{ selectedDetail.author.display_tag }}</span>
                 </div>
@@ -107,6 +108,7 @@
                   <div v-if="loadingAnswers" class="comments-loading">加载中...</div>
                   <div v-for="a in answers" :key="a.id" class="comment-card">
                     <div class="comment-header">
+                      <img :src="getAvatar(a.author)" class="comment-avatar" @error="onAvatarError" />
                       <span class="comment-author">{{ a.author.nickname }}</span>
                       <span v-if="a.author.display_tag" class="author-tag">{{ a.author.display_tag }}</span>
                     </div>
@@ -127,6 +129,7 @@
                     <div v-if="loadingComments[a.id]" class="sub-comments-loading">加载中...</div>
                     <div v-if="answerComments[a.id]" class="sub-comments">
                       <div v-for="c in answerComments[a.id]" :key="c.id" class="sub-comment">
+                        <img :src="getAvatar(c.author)" class="sub-comment-avatar" @error="onAvatarError" />
                         <span class="sub-comment-author">{{ c.author.nickname }}</span>
                         <span v-if="c.reply_to_user" class="sub-comment-reply-hint">回复 @{{ c.reply_to_user.nickname }}</span>
                         <span class="sub-comment-text">{{ c.content }}</span>
@@ -140,6 +143,7 @@
                         </div>
                         <!-- Nested replies -->
                         <div v-for="r in c.replies" :key="r.id" class="sub-comment nested">
+                          <img :src="getAvatar(r.author)" class="sub-comment-avatar" @error="onAvatarError" />
                           <span class="sub-comment-author">{{ r.author.nickname }}</span>
                           <span v-if="r.reply_to_user" class="sub-comment-reply-hint">回复 @{{ r.reply_to_user.nickname }}</span>
                           <span class="sub-comment-text">{{ r.content }}</span>
@@ -185,7 +189,7 @@
                 >
                   <h4>{{ item.title }}</h4>
                   <p>{{ item.content_preview }}</p>
-                  <span class="note-meta">{{ item.author.nickname }} · {{ item.answer_count }} 评论</span>
+                  <span class="note-meta"><img :src="getAvatar(item.author)" class="note-meta-avatar" @error="onAvatarError" />{{ item.author.nickname }} · {{ item.answer_count }} 评论</span>
                 </div>
               </template>
             </div>
@@ -228,6 +232,21 @@ import note3 from '@/assets/images/note_3.png'
 import notePro from '@/assets/images/note_pro.png'
 import bagImg from '@/assets/images/bag.png'
 import paperImg from '@/assets/images/paper.png'
+import avatarDefault from '@/assets/images/avatar.png'
+import aiAvatar from '@/assets/images/ai_avatar.png'
+
+function getAvatar(author: { avatar_url: string | null; role: string }) {
+  if (author.role === 'ai_assistant') return aiAvatar
+  return author.avatar_url || avatarDefault
+}
+
+function onAvatarError(e: Event) {
+  const img = e.target as HTMLImageElement
+  if (!img.dataset.fallback) {
+    img.dataset.fallback = '1'
+    img.src = avatarDefault
+  }
+}
 
 const uiStore = useUiStore()
 
@@ -745,6 +764,39 @@ onUnmounted(() => {
   font-size: 8px;
   color: #8a7a6a;
   margin-top: auto;
+}
+
+/* Avatar styles */
+.note-meta-avatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+.detail-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.sub-comment-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 2px;
 }
 
 .load-sentinel {
