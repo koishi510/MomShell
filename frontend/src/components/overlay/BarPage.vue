@@ -314,13 +314,13 @@ function getCardStyle(post: QuestionListItem) {
   const col = idx % 3
   const row = Math.floor(idx / 3)
   const baseLeft = 8 + col * 30
-  const baseTop = 5 + row * 28
+  const baseTop = 3 + row * 18
   const jitterX = ((hash % 17) - 8) * 0.8
-  const jitterY = (((hash >> 4) % 13) - 6) * 0.7
+  const jitterY = (((hash >> 4) % 13) - 6) * 0.5
   const rotation = (((hash >> 8) % 21) - 10) * 0.8
   return {
     left: `${baseLeft + jitterX}%`,
-    top: `${baseTop + jitterY}%`,
+    top: `${baseTop + jitterY}vh`,
     transform: `rotate(${rotation}deg)`,
     zIndex: (hash % 5) + 2,
   }
@@ -328,7 +328,8 @@ function getCardStyle(post: QuestionListItem) {
 
 const scatterHeight = computed(() => {
   const rows = Math.ceil(posts.value.length / 3)
-  return `${Math.max(100, rows * 28 + 10)}%`
+  const height = rows * 18 + 15
+  return `${Math.max(50, height)}vh`
 })
 
 // API calls
@@ -656,15 +657,13 @@ onUnmounted(() => {
   flex-direction: row;
   align-items: center;
   padding: 0 4%;
-  padding-bottom: 5vh;
 }
 
 /* Board container */
 .board-container {
   width: 80%;
-  height: 65vh;
-  align-self: flex-start;
-  margin-top: 1vh;
+  height: 100%;
+  align-self: stretch;
   min-height: 0;
 }
 
@@ -673,25 +672,17 @@ onUnmounted(() => {
   width: 100%;
   display: block;
   z-index: 1;
-  position: sticky;
   pointer-events: none;
-}
-
-.board-frame-top {
-  top: 0;
-}
-
-.board-frame-bottom {
-  bottom: 0;
 }
 
 .board-scroll-area {
   height: 100%;
   overflow-y: auto;
   scrollbar-width: none;
-  background: url('@/assets/images/board_med.png') repeat-y center / 100% auto;
   min-height: 0;
   position: relative;
+  padding-top: 10vh;
+  padding-bottom: 30vh;
 }
 
 .board-scroll-area::-webkit-scrollbar {
@@ -703,6 +694,7 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   min-height: 100%;
+  background: url('@/assets/images/board_med.png') repeat-y center / 100% auto;
 }
 
 .board-loading,
