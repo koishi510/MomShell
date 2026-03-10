@@ -500,10 +500,13 @@ onUnmounted(() => {
 
 .bg-top {
   top: 0;
+  transform: scale(1.25);
+  transform-origin: top center;
 }
 
 .bg-bottom {
   bottom: 0;
+  clip-path: inset(25% 0 0 0);
 }
 
 /* 内容层 */
@@ -652,8 +655,24 @@ onUnmounted(() => {
 }
 
 .side-btn img {
-  width: min(100px, 12vw);
+  width: min(200px, 24vw);
   height: auto;
+}
+
+.side-btn:first-child {
+  transform: translateY(-60px);
+}
+
+.side-btn:last-child {
+  transform: translateY(60px);
+}
+
+.side-btn:first-child:hover {
+  transform: translateY(-60px) scale(1.08);
+}
+
+.side-btn:last-child:hover {
+  transform: translateY(60px) scale(1.08);
 }
 
 /* Paper overlay */
