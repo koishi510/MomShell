@@ -115,15 +115,57 @@
                       <button class="comment-like-btn" @click="onLikeAnswer(a)">
                         <span :class="['icon-like', { active: a.is_liked }]">&#9829;</span> {{ a.like_count }}
                       </button>
+                      <button class="comment-like-btn" @click="toggleAnswerComments(a)">
+                        &#128172; {{ a.comment_count }}
+                      </button>
+                      <button class="comment-like-btn" @click="setReplyTarget(a.id)">
+                        回复
+                      </button>
+                    </div>
+
+                    <!-- Nested comments -->
+                    <div v-if="loadingComments[a.id]" class="sub-comments-loading">加载中...</div>
+                    <div v-if="answerComments[a.id]" class="sub-comments">
+                      <div v-for="c in answerComments[a.id]" :key="c.id" class="sub-comment">
+                        <span class="sub-comment-author">{{ c.author.nickname }}</span>
+                        <span v-if="c.reply_to_user" class="sub-comment-reply-hint">回复 {{ c.reply_to_user.nickname }}</span>
+                        <span class="sub-comment-text">{{ c.content }}</span>
+                        <div class="sub-comment-actions">
+                          <button class="comment-like-btn" @click="onLikeComment(a.id, c)">
+                            <span :class="['icon-like', { active: c.is_liked }]">&#9829;</span> {{ c.like_count }}
+                          </button>
+                          <button class="comment-like-btn" @click="setReplyTarget(a.id, c.id, c.author.nickname)">
+                            回复
+                          </button>
+                        </div>
+                        <!-- Nested replies -->
+                        <div v-for="r in c.replies" :key="r.id" class="sub-comment nested">
+                          <span class="sub-comment-author">{{ r.author.nickname }}</span>
+                          <span v-if="r.reply_to_user" class="sub-comment-reply-hint">回复 {{ r.reply_to_user.nickname }}</span>
+                          <span class="sub-comment-text">{{ r.content }}</span>
+                          <div class="sub-comment-actions">
+                            <button class="comment-like-btn" @click="onLikeComment(a.id, r)">
+                              <span :class="['icon-like', { active: r.is_liked }]">&#9829;</span> {{ r.like_count }}
+                            </button>
+                            <button class="comment-like-btn" @click="setReplyTarget(a.id, r.id, r.author.nickname)">
+                              回复
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="reply-area">
+                  <div v-if="replyTarget" class="reply-target-hint">
+                    回复 {{ replyTarget.replyToName || '评论' }}
+                    <button class="reply-target-clear" @click="clearReplyTarget">✕</button>
+                  </div>
                   <input
                     v-model="replyText"
                     class="reply-input"
-                    placeholder="写下你的评论..."
+                    :placeholder="replyTarget ? `回复 ${replyTarget.replyToName || '评论'}...` : '写下你的评论...'"
                     @keydown.enter="onSubmitReply"
                   />
                   <button class="reply-btn" :disabled="!replyText.trim()" @click="onSubmitReply">发送</button>
@@ -163,12 +205,15 @@ import {
   getAnswers,
   createQuestion,
   createAnswer,
+  getComments,
+  createComment,
   toggleLike,
   toggleCollection,
   getMyCollections,
   type QuestionListItem,
   type QuestionDetail,
   type AnswerListItem,
+  type CommentListItem,
 } from '@/lib/api/community'
 import { getErrorMessage } from '@/lib/apiClient'
 
@@ -209,6 +254,15 @@ const selectedDetail = ref<QuestionDetail | null>(null)
 const answers = ref<AnswerListItem[]>([])
 const loadingAnswers = ref(false)
 const replyText = ref('')
+
+// Nested comments state
+const answerComments = ref<Record<string, CommentListItem[]>>({})
+const loadingComments = ref<Record<string, boolean>>({})
+const replyTarget = ref<{
+  answerId: string
+  parentId?: string
+  replyToName?: string
+} | null>(null)
 
 // Collections state
 const collectionItems = ref<QuestionListItem[]>([])
@@ -329,6 +383,9 @@ function closePaper() {
   selectedDetail.value = null
   answers.value = []
   replyText.value = ''
+  answerComments.value = {}
+  loadingComments.value = {}
+  replyTarget.value = null
 }
 
 async function onCreatePost() {
@@ -399,19 +456,77 @@ async function onLikeAnswer(a: AnswerListItem) {
   }
 }
 
+async function toggleAnswerComments(a: AnswerListItem) {
+  if (answerComments.value[a.id]) {
+    delete answerComments.value[a.id]
+    return
+  }
+  loadingComments.value[a.id] = true
+  try {
+    answerComments.value[a.id] = await getComments(a.id)
+  } catch {
+    // silent
+  } finally {
+    loadingComments.value[a.id] = false
+  }
+}
+
+function setReplyTarget(answerId: string, parentId?: string, replyToName?: string) {
+  replyTarget.value = { answerId, parentId, replyToName }
+  replyText.value = ''
+}
+
+function clearReplyTarget() {
+  replyTarget.value = null
+}
+
 async function onSubmitReply() {
   if (!replyText.value.trim() || !selectedDetail.value) return
   try {
-    await createAnswer(selectedDetail.value.id, replyText.value)
-    replyText.value = ''
-    const answerRes = await getAnswers(selectedDetail.value.id, { page: 1, page_size: 50 })
-    answers.value = answerRes.items
-    selectedDetail.value = {
-      ...selectedDetail.value,
-      answer_count: selectedDetail.value.answer_count + 1,
+    if (replyTarget.value) {
+      const { answerId, parentId } = replyTarget.value
+      await createComment(answerId, {
+        content: replyText.value,
+        parent_id: parentId,
+      })
+      answerComments.value[answerId] = await getComments(answerId)
+      replyTarget.value = null
+    } else {
+      await createAnswer(selectedDetail.value.id, replyText.value)
+      const answerRes = await getAnswers(selectedDetail.value.id, { page: 1, page_size: 50 })
+      answers.value = answerRes.items
+      selectedDetail.value = {
+        ...selectedDetail.value,
+        answer_count: selectedDetail.value.answer_count + 1,
+      }
     }
+    replyText.value = ''
   } catch (e) {
     alert(getErrorMessage(e))
+  }
+}
+
+function updateCommentInList(
+  list: CommentListItem[],
+  targetId: string,
+  res: { is_liked: boolean; new_count: number },
+): CommentListItem[] {
+  return list.map((c) =>
+    c.id === targetId
+      ? { ...c, is_liked: res.is_liked, like_count: res.new_count }
+      : { ...c, replies: updateCommentInList(c.replies, targetId, res) },
+  )
+}
+
+async function onLikeComment(answerId: string, c: CommentListItem) {
+  try {
+    const res = await toggleLike('comment', c.id, c.is_liked)
+    const comments = answerComments.value[answerId]
+    if (comments) {
+      answerComments.value[answerId] = updateCommentInList(comments, c.id, res)
+    }
+  } catch {
+    // silent
   }
 }
 
@@ -937,6 +1052,68 @@ onUnmounted(() => {
   gap: 8px;
   margin-top: 12px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.reply-target-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #8a6a4a;
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.reply-target-clear {
+  background: none;
+  border: none;
+  color: #8a7a6a;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+/* Nested comments */
+.sub-comments {
+  margin-top: 6px;
+  padding-left: 16px;
+  border-left: 2px solid rgba(90, 62, 43, 0.1);
+}
+
+.sub-comments-loading {
+  padding: 6px 0 6px 16px;
+  color: #8a7a6a;
+  font-size: 11px;
+}
+
+.sub-comment {
+  padding: 4px 0;
+  font-size: 12px;
+  color: #5a4a3a;
+  line-height: 1.5;
+}
+
+.sub-comment.nested {
+  padding-left: 16px;
+}
+
+.sub-comment-author {
+  font-weight: 600;
+  color: #3a2a1a;
+  margin-right: 4px;
+}
+
+.sub-comment-reply-hint {
+  color: #8a7a6a;
+  margin-right: 4px;
+  font-size: 11px;
+}
+
+.sub-comment-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .reply-input {
