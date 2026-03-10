@@ -15,7 +15,8 @@
         <div class="bar-content">
           <!-- Left: Board -->
           <div class="board-container">
-            <div class="board-scroll-area" ref="scrollAreaRef">
+            <div class="board-scroll-area" ref="scrollAreaRef" @wheel="onScrollWheel">
+              <div :style="bounceStyle" class="board-scroll-inner">
               <img class="board-frame-top" :src="boardUp" draggable="false" />
               <div class="notes-scatter" :style="{ minHeight: scatterHeight }">
                 <div v-if="loading" class="board-loading">加载中...</div>
@@ -37,6 +38,7 @@
                 <div ref="sentinelRef" class="load-sentinel" />
               </div>
               <img class="board-frame-bottom" :src="boardDown" draggable="false" />
+              </div>
             </div>
           </div>
 
@@ -579,8 +581,43 @@ watch(posts, () => {
   nextTick(setupObserver)
 })
 
+// Elastic bounce effect
+const bounceOffset = ref(0)
+let bounceRaf = 0
+
+function onScrollWheel(e: WheelEvent) {
+  const el = scrollAreaRef.value
+  if (!el) return
+
+  const atTop = el.scrollTop <= 0
+  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight
+
+  if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+    e.preventDefault()
+    bounceOffset.value += e.deltaY * -0.3
+    // Clamp
+    bounceOffset.value = Math.max(-80, Math.min(80, bounceOffset.value))
+    cancelAnimationFrame(bounceRaf)
+    bounceRaf = requestAnimationFrame(springBack)
+  }
+}
+
+function springBack() {
+  bounceOffset.value *= 0.85
+  if (Math.abs(bounceOffset.value) < 0.5) {
+    bounceOffset.value = 0
+    return
+  }
+  bounceRaf = requestAnimationFrame(springBack)
+}
+
+const bounceStyle = computed(() =>
+  bounceOffset.value ? { transform: `translateY(${bounceOffset.value}px)` } : {},
+)
+
 onUnmounted(() => {
   if (observer) observer.disconnect()
+  cancelAnimationFrame(bounceRaf)
 })
 </script>
 
@@ -681,12 +718,16 @@ onUnmounted(() => {
   scrollbar-width: none;
   min-height: 0;
   position: relative;
-  padding-top: 10vh;
-  padding-bottom: 30vh;
+  padding-top: 5vh;
+  padding-bottom: 25vh;
 }
 
 .board-scroll-area::-webkit-scrollbar {
   display: none;
+}
+
+.board-scroll-inner {
+  will-change: transform;
 }
 
 /* Notes scatter */
