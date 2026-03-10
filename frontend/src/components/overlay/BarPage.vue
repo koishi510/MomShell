@@ -500,13 +500,14 @@ onUnmounted(() => {
 
 .bg-top {
   top: 0;
-  transform: scale(1.25);
+  transform: scaleY(1.25);
   transform-origin: top center;
 }
 
 .bg-bottom {
   bottom: 0;
-  clip-path: inset(25% 0 0 0);
+  transform: scaleY(0.75);
+  transform-origin: bottom center;
 }
 
 /* 内容层 */
