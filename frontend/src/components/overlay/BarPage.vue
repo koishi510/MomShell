@@ -1170,6 +1170,7 @@ onUnmounted(() => {
   font-weight: 700;
   color: #3a2a1a;
   margin: 0 0 12px;
+  text-align: center;
 }
 
 .paper-input {
