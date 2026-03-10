@@ -10,12 +10,19 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 // In-memory access token — not stored in localStorage
 let currentAccessToken: string | null = null;
 
+// Callback for notifying external consumers (e.g. Pinia store) of token changes
+let onTokenRefreshed: ((token: string | null) => void) | null = null;
+
 export function setAccessToken(token: string | null) {
   currentAccessToken = token;
 }
 
 export function getAccessToken(): string | null {
   return currentAccessToken;
+}
+
+export function setOnTokenRefreshed(cb: (token: string | null) => void) {
+  onTokenRefreshed = cb;
 }
 
 const apiClient: AxiosInstance = axios.create({
@@ -81,6 +88,11 @@ apiClient.interceptors.response.use(
         const resp = await apiRefresh();
         currentAccessToken = resp.access_token;
 
+        // Notify store so isAuthenticated stays in sync
+        if (onTokenRefreshed) {
+          onTokenRefreshed(resp.access_token);
+        }
+
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${resp.access_token}`;
         }
@@ -90,6 +102,9 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
         currentAccessToken = null;
+        if (onTokenRefreshed) {
+          onTokenRefreshed(null);
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
