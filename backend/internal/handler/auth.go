@@ -26,30 +26,19 @@ func NewAuthHandler(authService *service.AuthService, cfg *config.Config) *AuthH
 	return &AuthHandler{authService: authService, cfg: cfg}
 }
 
-// isSecureRequest determines whether the current HTTP request should be treated
-// as secure for setting the Secure flag on cookies. It checks actual TLS first,
-// then falls back to X-Forwarded-Proto only when cfg.TrustProxy is enabled
-// (i.e. the app runs behind a known reverse proxy that sets this header).
-func (h *AuthHandler) isSecureRequest(c *gin.Context) bool {
-	if c.Request.TLS != nil {
-		return true
-	}
-	if h.cfg.TrustProxy {
-		return strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https")
-	}
-	return false
-}
-
+// setRefreshCookie sets the refresh token as an httpOnly, Secure, SameSite=Lax
+// cookie. The Secure flag is always true so the cookie is only sent over HTTPS.
+// Browsers treat localhost as a secure context, so this works for local dev on
+// http://localhost. For non-localhost plain HTTP (e.g. http://192.168.x.x)
+// the cookie will not be sent back — use HTTPS or localhost in that case.
 func (h *AuthHandler) setRefreshCookie(c *gin.Context, refreshToken string, maxAge int) {
-	secure := h.isSecureRequest(c)
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(refreshTokenCookie, refreshToken, maxAge, refreshCookiePath, "", secure, true)
+	c.SetCookie(refreshTokenCookie, refreshToken, maxAge, refreshCookiePath, "", true, true)
 }
 
 func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
-	secure := h.isSecureRequest(c)
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(refreshTokenCookie, "", -1, refreshCookiePath, "", secure, true)
+	c.SetCookie(refreshTokenCookie, "", -1, refreshCookiePath, "", true, true)
 }
 
 // POST /api/v1/auth/register
