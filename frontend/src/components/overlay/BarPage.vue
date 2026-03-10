@@ -64,6 +64,14 @@
               <!-- Compose mode -->
               <template v-if="paperMode === 'compose'">
                 <h3 class="paper-title">发布帖子</h3>
+                <label class="channel-toggle">
+                  <input type="checkbox"
+                    :checked="newPost.channel === 'professional'"
+                    @change="newPost.channel = ($event.target as HTMLInputElement).checked ? 'professional' : 'experience'"
+                  />
+                  <span>专家帖</span>
+                  <span class="channel-hint">仅认证专家可回复</span>
+                </label>
                 <input
                   v-model="newPost.title"
                   class="paper-input"
@@ -267,7 +275,7 @@ type PaperMode = 'compose' | 'detail' | 'collections' | null
 const paperMode = ref<PaperMode>(null)
 
 // Compose state
-const newPost = ref({ title: '', content: '' })
+const newPost = ref({ title: '', content: '', channel: 'experience' as string })
 const posting = ref(false)
 
 // Detail state
@@ -306,7 +314,7 @@ function simpleHash(str: string): number {
 }
 
 function getNoteImage(post: QuestionListItem): string {
-  if (post.author.is_certified) return notePro
+  if (post.channel === 'professional') return notePro
   return NOTE_VARIANTS[simpleHash(post.id) % 3]
 }
 
@@ -363,7 +371,7 @@ function close() {
 }
 
 function openCompose() {
-  newPost.value = { title: '', content: '' }
+  newPost.value = { title: '', content: '', channel: 'experience' }
   paperMode.value = 'compose'
 }
 
@@ -417,10 +425,10 @@ async function onCreatePost() {
     await createQuestion({
       title: newPost.value.title,
       content: newPost.value.content,
-      channel: 'experience',
+      channel: newPost.value.channel,
     })
     paperMode.value = null
-    newPost.value = { title: '', content: '' }
+    newPost.value = { title: '', content: '', channel: 'experience' }
     await fetchPosts(1)
   } catch (e) {
     alert(getErrorMessage(e))
@@ -1285,5 +1293,24 @@ onUnmounted(() => {
 .paper-fade-enter-from,
 .paper-fade-leave-to {
   opacity: 0;
+}
+
+.channel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #5a4a3a;
+  cursor: pointer;
+}
+
+.channel-toggle input[type="checkbox"] {
+  accent-color: #8a6a4a;
+}
+
+.channel-hint {
+  font-size: 11px;
+  color: #8a7a6a;
 }
 </style>
