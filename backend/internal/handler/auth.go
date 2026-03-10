@@ -26,14 +26,25 @@ func NewAuthHandler(authService *service.AuthService, cfg *config.Config) *AuthH
 	return &AuthHandler{authService: authService, cfg: cfg}
 }
 
+// isSecureRequest determines whether the current HTTP request should be treated
+// as secure for setting the Secure flag on cookies. It checks actual TLS first,
+// then falls back to X-Forwarded-Proto for reverse proxy setups.
+func isSecureRequest(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+	return strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https")
+}
+
 func (h *AuthHandler) setRefreshCookie(c *gin.Context, refreshToken string, maxAge int) {
-	secure := !strings.Contains(h.cfg.CORSOrigins, "localhost")
-	c.SetCookie(refreshTokenCookie, refreshToken, maxAge, refreshCookiePath, "", secure, true)
+	secure := isSecureRequest(c)
 	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(refreshTokenCookie, refreshToken, maxAge, refreshCookiePath, "", secure, true)
 }
 
 func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
-	secure := !strings.Contains(h.cfg.CORSOrigins, "localhost")
+	secure := isSecureRequest(c)
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(refreshTokenCookie, "", -1, refreshCookiePath, "", secure, true)
 }
 

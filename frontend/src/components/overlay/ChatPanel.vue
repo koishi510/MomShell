@@ -107,10 +107,7 @@ const colorToneMap: Record<string, string> = {
 }
 
 function generateSessionId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-  return Date.now().toString(36) + Math.random().toString(36).slice(2)
+  return crypto.randomUUID()
 }
 
 function syncPersistent() {
