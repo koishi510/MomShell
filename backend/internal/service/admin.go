@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/momshell/backend/internal/config"
 	"github.com/momshell/backend/internal/dto"
+	"github.com/momshell/backend/internal/fileutil"
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
 	"github.com/momshell/backend/pkg/password"
@@ -273,11 +273,7 @@ func (s *AdminService) DeletePhoto(id string) error {
 	}
 
 	if photo.ImageURL != "" {
-		localPath := filepath.Clean("." + photo.ImageURL)
-		if strings.HasPrefix(localPath, "uploads"+string(filepath.Separator)) &&
-			!strings.Contains(localPath, "..") {
-			_ = os.Remove(localPath)
-		}
+		fileutil.RemoveUploadedFile(photo.ImageURL)
 	}
 
 	return s.photoRepo.DeleteByID(id)

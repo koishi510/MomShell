@@ -31,28 +31,6 @@ func (h *AdminHandler) IsAdmin(userID string) bool {
 	return user.IsAdmin
 }
 
-// requireAdmin checks if the current user is an admin
-func (h *AdminHandler) requireAdmin(c *gin.Context) (string, bool) {
-	userID := middleware.GetUserID(c)
-	if userID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未授权"})
-		return "", false
-	}
-
-	user, err := h.authService.GetUserByID(userID)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
-		return "", false
-	}
-
-	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
-		return "", false
-	}
-
-	return userID, true
-}
-
 // ServeAdminPage returns the embedded admin HTML page
 func (h *AdminHandler) ServeAdminPage(c *gin.Context) {
 	c.Data(http.StatusOK, "text/html; charset=utf-8", admin.HTML)
@@ -60,10 +38,6 @@ func (h *AdminHandler) ServeAdminPage(c *gin.Context) {
 
 // GetStats returns dashboard statistics
 func (h *AdminHandler) GetStats(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	stats, err := h.adminService.GetDashboardStats()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -75,10 +49,6 @@ func (h *AdminHandler) GetStats(c *gin.Context) {
 
 // ListUsers returns paginated user list
 func (h *AdminHandler) ListUsers(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	var params dto.AdminUserListParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
@@ -96,10 +66,6 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 // GetUser returns a single user's detail
 func (h *AdminHandler) GetUser(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	id := c.Param("id")
 	detail, err := h.adminService.GetUser(id)
 	if err != nil {
@@ -112,10 +78,6 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 
 // CreateUser creates a new user
 func (h *AdminHandler) CreateUser(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	var req dto.AdminCreateUser
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误: " + err.Error()})
@@ -133,10 +95,7 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 
 // UpdateUser updates user fields
 func (h *AdminHandler) UpdateUser(c *gin.Context) {
-	adminID, ok := h.requireAdmin(c)
-	if !ok {
-		return
-	}
+	adminID := middleware.GetUserID(c)
 
 	id := c.Param("id")
 	var req dto.AdminUserUpdate
@@ -156,10 +115,7 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 
 // DeleteUser deletes a user
 func (h *AdminHandler) DeleteUser(c *gin.Context) {
-	adminID, ok := h.requireAdmin(c)
-	if !ok {
-		return
-	}
+	adminID := middleware.GetUserID(c)
 
 	id := c.Param("id")
 	if err := h.adminService.DeleteUser(id, adminID); err != nil {
@@ -172,20 +128,12 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 
 // GetConfig returns configuration items
 func (h *AdminHandler) GetConfig(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	items := h.adminService.GetConfig()
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
 // UpdateConfig updates editable configuration items
 func (h *AdminHandler) UpdateConfig(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	var req dto.ConfigUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误: " + err.Error()})
@@ -202,10 +150,6 @@ func (h *AdminHandler) UpdateConfig(c *gin.Context) {
 
 // ListPhotos returns paginated photo list for admin
 func (h *AdminHandler) ListPhotos(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	var params dto.AdminPhotoListParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
@@ -223,10 +167,6 @@ func (h *AdminHandler) ListPhotos(c *gin.Context) {
 
 // DeletePhoto deletes a photo by ID (admin)
 func (h *AdminHandler) DeletePhoto(c *gin.Context) {
-	if _, ok := h.requireAdmin(c); !ok {
-		return
-	}
-
 	id := c.Param("id")
 	if err := h.adminService.DeletePhoto(id); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
