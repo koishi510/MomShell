@@ -12,11 +12,6 @@ var allowedQuestionSortColumns = map[string]string{
 	"like_count":   "questions.like_count",
 }
 
-var allowedSortOrders = map[string]string{
-	"asc":  "asc",
-	"desc": "desc",
-}
-
 func sanitizeQuestionSort(sortBy, order string) string {
 	col, ok := allowedQuestionSortColumns[sortBy]
 	if !ok {
