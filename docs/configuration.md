@@ -39,6 +39,14 @@ Any OpenAI-compatible API is supported (ModelScope, OpenAI, local Ollama, etc.).
 
 When set, AI replies use web search to reduce hallucinations for factual questions.
 
+## Proxy
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `TRUST_PROXY` | Trust `X-Forwarded-Proto` header for Secure cookie flag | No | `false` |
+
+Set to `true` when running behind a reverse proxy (Nginx, Cloudflare, etc.) that sets the `X-Forwarded-Proto` header. Required for correct `Secure` cookie flag in HTTPS deployments.
+
 ## Server
 
 | Variable | Description | Required | Default |
