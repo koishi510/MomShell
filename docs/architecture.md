@@ -95,7 +95,7 @@ The admin panel is a single HTML file (`internal/admin/admin.html`) using Tailwi
 - JWT access tokens (30 min) + refresh tokens (7 days), stored in httpOnly cookies
 - Tokens extracted from `Authorization: Bearer`, `X-Access-Token` header, or `access_token` cookie
 - Admin role verified per-request in handler via `authService.GetUserByID`
-- Sliding window rate limiting on all API endpoints
+- Fixed-window rate limiting on all API endpoints
 
 ### Content Moderation
 
