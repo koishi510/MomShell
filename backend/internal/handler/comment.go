@@ -68,6 +68,38 @@ func (h *CommentHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, comment)
 }
 
+// PUT /api/v1/community/comments/:id
+func (h *CommentHandler) Update(c *gin.Context) {
+	commentID := c.Param("id")
+
+	var req dto.CommentUpdate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+	user, err := h.authService.GetUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	comment, err := h.communityService.UpdateComment(commentID, req, user)
+	if err != nil {
+		status := http.StatusBadRequest
+		if err.Error() == "评论不存在" {
+			status = http.StatusNotFound
+		} else if err.Error() == "无权修改此评论" {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"id": comment.ID, "content": comment.Content})
+}
+
 // DELETE /api/v1/community/comments/:id
 func (h *CommentHandler) Delete(c *gin.Context) {
 	commentID := c.Param("id")
