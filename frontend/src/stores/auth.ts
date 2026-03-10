@@ -66,9 +66,11 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function logout() {
-    // Always call logout so the server clears the httpOnly refresh cookie,
-    // even if we don't currently have an access token in memory.
-    apiLogout(accessToken.value ?? undefined).catch(() => {});
+    // The /logout endpoint requires authentication, so only call the server
+    // when we have a token. The server clears the httpOnly refresh cookie.
+    if (accessToken.value) {
+      apiLogout(accessToken.value).catch(() => {});
+    }
     user.value = null;
     accessToken.value = null;
     isGuest.value = false;
