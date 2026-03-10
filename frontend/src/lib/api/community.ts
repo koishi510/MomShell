@@ -262,6 +262,24 @@ export function getMyCollections(params?: {
 
 // ==================== Tags ====================
 
+export function getMyQuestions(params?: {
+  page?: number
+  page_size?: number
+}): Promise<PaginatedResponse<QuestionListItem>> {
+  return apiClient
+    .get('/api/v1/community/users/me/questions', { params })
+    .then((r) => r.data)
+}
+
+export function getMyAnswers(params?: {
+  page?: number
+  page_size?: number
+}): Promise<PaginatedResponse<AnswerListItem>> {
+  return apiClient
+    .get('/api/v1/community/users/me/answers', { params })
+    .then((r) => r.data)
+}
+
 export function getTags(): Promise<TagListItem[]> {
   return apiClient.get('/api/v1/community/tags').then((r) => r.data)
 }

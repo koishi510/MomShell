@@ -229,19 +229,54 @@
 
               <!-- Collections mode -->
               <template v-if="paperMode === 'collections'">
-                <h3 class="paper-title">我的收藏</h3>
-                <div v-if="loadingCollections" class="comments-loading">加载中...</div>
-                <div v-else-if="collectionItems.length === 0" class="board-empty">暂无收藏</div>
-                <div
-                  v-for="item in collectionItems"
-                  :key="item.id"
-                  class="collection-item"
-                  @click="openDetail(item)"
-                >
-                  <h4>{{ item.title }}</h4>
-                  <p>{{ item.content_preview }}</p>
-                  <span class="note-meta"><img :src="getAvatar(item.author)" class="note-meta-avatar" @error="onAvatarError" />{{ item.author.nickname }} · {{ item.answer_count }} 评论</span>
+                <div class="bag-tabs">
+                  <button :class="['bag-tab', { active: bagTab === 'collections' }]" @click="bagTab = 'collections'">我的收藏</button>
+                  <button :class="['bag-tab', { active: bagTab === 'my-questions' }]" @click="bagTab = 'my-questions'">我的提问</button>
+                  <button :class="['bag-tab', { active: bagTab === 'my-answers' }]" @click="bagTab = 'my-answers'">我的回答</button>
                 </div>
+                <div v-if="loadingCollections" class="comments-loading">加载中...</div>
+                <template v-else>
+                  <!-- 收藏 -->
+                  <template v-if="bagTab === 'collections'">
+                    <div v-if="collectionItems.length === 0" class="board-empty">暂无收藏</div>
+                    <div
+                      v-for="item in collectionItems"
+                      :key="item.id"
+                      class="collection-item"
+                      @click="openDetail(item)"
+                    >
+                      <h4>{{ item.title }}</h4>
+                      <p>{{ item.content_preview }}</p>
+                      <span class="note-meta"><img :src="getAvatar(item.author)" class="note-meta-avatar" @error="onAvatarError" />{{ item.author.nickname }} · {{ item.answer_count }} 评论</span>
+                    </div>
+                  </template>
+                  <!-- 我的提问 -->
+                  <template v-if="bagTab === 'my-questions'">
+                    <div v-if="myQuestions.length === 0" class="board-empty">暂无提问</div>
+                    <div
+                      v-for="item in myQuestions"
+                      :key="item.id"
+                      class="collection-item"
+                      @click="openDetail(item)"
+                    >
+                      <h4>{{ item.title }}</h4>
+                      <p>{{ item.content_preview }}</p>
+                      <span class="note-meta">{{ item.answer_count }} 评论 · {{ item.like_count }} 赞</span>
+                    </div>
+                  </template>
+                  <!-- 我的回答 -->
+                  <template v-if="bagTab === 'my-answers'">
+                    <div v-if="myAnswers.length === 0" class="board-empty">暂无回答</div>
+                    <div
+                      v-for="item in myAnswers"
+                      :key="item.id"
+                      class="collection-item"
+                    >
+                      <p>{{ item.content_preview }}</p>
+                      <span class="note-meta">{{ item.like_count }} 赞 · {{ item.comment_count }} 评论</span>
+                    </div>
+                  </template>
+                </template>
               </template>
             </div>
           </div>
@@ -271,6 +306,8 @@ import {
   deleteAnswer,
   deleteComment,
   updateComment,
+  getMyQuestions,
+  getMyAnswers,
   type QuestionListItem,
   type QuestionDetail,
   type AnswerListItem,
@@ -343,8 +380,13 @@ const replyTarget = ref<{
 } | null>(null)
 
 // Collections state
+// Collections / My content state
 const collectionItems = ref<QuestionListItem[]>([])
+const myQuestions = ref<QuestionListItem[]>([])
+const myAnswers = ref<AnswerListItem[]>([])
 const loadingCollections = ref(false)
+type BagTab = 'collections' | 'my-questions' | 'my-answers'
+const bagTab = ref<BagTab>('collections')
 
 // Edit/delete state
 const editingPost = ref(false)
@@ -455,11 +497,20 @@ async function openDetail(q: QuestionListItem) {
 
 async function openCollections() {
   paperMode.value = 'collections'
+  bagTab.value = 'collections'
   collectionItems.value = []
+  myQuestions.value = []
+  myAnswers.value = []
   loadingCollections.value = true
   try {
-    const res = await getMyCollections({ page: 1, page_size: 50 })
-    collectionItems.value = res.items.map((c) => c.question)
+    const [colRes, qRes, aRes] = await Promise.all([
+      getMyCollections({ page: 1, page_size: 50 }),
+      getMyQuestions({ page: 1, page_size: 50 }),
+      getMyAnswers({ page: 1, page_size: 50 }),
+    ])
+    collectionItems.value = colRes.items.map((c) => c.question)
+    myQuestions.value = qRes.items
+    myAnswers.value = aRes.items
   } catch {
     // silent
   } finally {
@@ -1494,6 +1545,31 @@ onUnmounted(() => {
 }
 
 /* Collections mode */
+.bag-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(90, 62, 43, 0.15);
+}
+
+.bag-tab {
+  flex: 1;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a7a6a;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.bag-tab.active {
+  color: #3a2a1a;
+  border-bottom-color: #8a6a4a;
+}
+
 .collection-item {
   padding: 12px 0;
   border-bottom: 1px solid rgba(90, 62, 43, 0.1);
