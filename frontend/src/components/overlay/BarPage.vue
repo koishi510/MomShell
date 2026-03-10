@@ -102,30 +102,30 @@
                     <span v-if="selectedDetail.author.display_tag" class="author-tag">{{ selectedDetail.author.display_tag }}</span>
                   </div>
                   <div class="detail-body">{{ selectedDetail.content }}</div>
-                  <div v-if="canModify(selectedDetail.author.id)" class="detail-manage">
-                    <button class="manage-btn" @click="startEditPost">编辑</button>
+                  <div class="detail-actions-bar">
+                    <button class="detail-action-btn" @click="onLikeDetailQuestion">
+                      <span :class="['icon-like', { active: selectedDetail.is_liked }]">&#9829;</span>
+                      {{ selectedDetail.like_count }}
+                    </button>
+                    <button class="detail-action-btn" @click="onCollectQuestion">
+                      <span :class="['icon-collect', { active: selectedDetail.is_collected }]">&#9733;</span>
+                      {{ selectedDetail.collection_count }}
+                    </button>
+                    <template v-if="canModify(selectedDetail.author.id)">
+                      <button class="detail-action-btn detail-action-right" @click="startEditPost">编辑</button>
+                      <button class="detail-action-btn detail-action-danger" @click="onDeletePost">删除</button>
+                    </template>
                   </div>
                 </template>
                 <template v-else>
                   <input v-model="editPostForm.title" class="paper-input" placeholder="标题" />
                   <textarea v-model="editPostForm.content" class="paper-textarea" rows="6" />
-                  <div class="detail-manage">
-                    <button class="manage-btn" @click="saveEditPost">保存</button>
-                    <button class="manage-btn" @click="cancelEditPost">取消</button>
-                    <button class="manage-btn manage-btn-danger" @click="onDeletePost">删除</button>
+                  <div class="detail-actions-bar">
+                    <button class="detail-action-btn" @click="saveEditPost">保存</button>
+                    <button class="detail-action-btn" @click="cancelEditPost">取消</button>
+                    <button class="detail-action-btn detail-action-right detail-action-danger" @click="onDeletePost">删除</button>
                   </div>
                 </template>
-
-                <div class="detail-actions-bar">
-                  <button class="detail-action-btn" @click="onLikeDetailQuestion">
-                    <span :class="['icon-like', { active: selectedDetail.is_liked }]">&#9829;</span>
-                    {{ selectedDetail.like_count }}
-                  </button>
-                  <button class="detail-action-btn" @click="onCollectQuestion">
-                    <span :class="['icon-collect', { active: selectedDetail.is_collected }]">{{ selectedDetail.is_collected ? '&#9733;' : '&#9734;' }}</span>
-                    {{ selectedDetail.collection_count }}
-                  </button>
-                </div>
 
                 <div class="comments-section">
                   <h4 class="comments-title">评论 ({{ selectedDetail.answer_count }})</h4>
@@ -150,7 +150,7 @@
                         <span :class="['icon-like', { active: a.is_liked }]">&#9829;</span> {{ a.like_count }}
                       </button>
                       <button class="comment-like-btn" @click="toggleAnswerComments(a)">
-                        &#128172; {{ a.comment_count }}
+                        <svg class="icon-comment" width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H8l-4 4v-4H4a2 2 0 01-2-2V4z"/></svg> {{ a.comment_count }}
                       </button>
                       <button class="comment-like-btn" @click="setReplyTarget(a.id)">
                         回复
@@ -1271,6 +1271,19 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
+.detail-action-right {
+  margin-left: auto;
+}
+
+.detail-action-danger {
+  color: #c0392b !important;
+  border-color: rgba(192, 57, 43, 0.3);
+}
+
+.detail-action-danger:hover {
+  background: rgba(192, 57, 43, 0.1);
+}
+
 .detail-action-btn {
   display: flex;
   align-items: center;
@@ -1298,8 +1311,14 @@ onUnmounted(() => {
   color: #e74c5e;
 }
 
+.icon-comment {
+  vertical-align: middle;
+  color: #8a7a6a;
+}
+
 .icon-collect {
   font-size: 14px;
+  color: #8a7a6a;
 }
 
 .icon-collect.active {
