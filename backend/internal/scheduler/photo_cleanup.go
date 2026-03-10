@@ -2,11 +2,9 @@ package scheduler
 
 import (
 	"log"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
+	"github.com/momshell/backend/internal/fileutil"
 	"github.com/momshell/backend/internal/repository"
 )
 
@@ -17,7 +15,7 @@ const (
 )
 
 // StartPhotoCleanup launches a background goroutine that periodically deletes
-// photos with is_on_wall=false older than 30 days, including their disk files.
+// photos with is_on_wall=false older than 365 days, including their disk files.
 func StartPhotoCleanup(photoRepo *repository.PhotoRepo) {
 	go func() {
 		log.Println("photo cleanup scheduler started")
@@ -48,7 +46,7 @@ func runCleanup(photoRepo *repository.PhotoRepo) {
 		}
 
 		for _, p := range photos {
-			removePhotoFile(p.ImageURL)
+			fileutil.RemoveUploadedFile(p.ImageURL)
 			if err := photoRepo.DeleteByID(p.ID); err != nil {
 				log.Printf("photo cleanup: delete error id=%s: %v", p.ID, err)
 				continue
@@ -59,16 +57,5 @@ func runCleanup(photoRepo *repository.PhotoRepo) {
 
 	if totalDeleted > 0 {
 		log.Printf("photo cleanup: deleted %d expired photos", totalDeleted)
-	}
-}
-
-func removePhotoFile(imageURL string) {
-	if imageURL == "" {
-		return
-	}
-	localPath := filepath.Clean("." + imageURL)
-	if strings.HasPrefix(localPath, "uploads"+string(filepath.Separator)) &&
-		!strings.Contains(localPath, "..") {
-		_ = os.Remove(localPath)
 	}
 }
