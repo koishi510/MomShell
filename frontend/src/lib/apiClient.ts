@@ -10,7 +10,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 // In-memory access token — not stored in localStorage
 let currentAccessToken: string | null = null;
 
-// Callback for notifying external consumers (e.g. Pinia store) of token changes
+// Callback for notifying external consumers (e.g. Pinia store) of token changes.
+// Only one callback is supported — subsequent calls to setOnTokenRefreshed
+// overwrite the previous one. This is intentional for a single-page app with
+// one auth store instance.
 let onTokenRefreshed: ((token: string | null) => void) | null = null;
 
 export function setAccessToken(token: string | null) {
