@@ -5,16 +5,28 @@ import (
 	"gorm.io/gorm"
 )
 
-var allowedQuestionSortColumns = map[string]bool{
-	"created_at":   true,
-	"view_count":   true,
-	"answer_count": true,
-	"like_count":   true,
+var allowedQuestionSortColumns = map[string]string{
+	"created_at":   "questions.created_at",
+	"view_count":   "questions.view_count",
+	"answer_count": "questions.answer_count",
+	"like_count":   "questions.like_count",
 }
 
-var allowedSortOrders = map[string]bool{
-	"asc":  true,
-	"desc": true,
+var allowedSortOrders = map[string]string{
+	"asc":  "asc",
+	"desc": "desc",
+}
+
+func sanitizeQuestionSort(sortBy, order string) string {
+	col, ok := allowedQuestionSortColumns[sortBy]
+	if !ok {
+		col = "questions.created_at"
+	}
+	dir, ok := allowedSortOrders[order]
+	if !ok {
+		dir = "desc"
+	}
+	return col + " " + dir
 }
 
 type QuestionRepo struct {
@@ -53,14 +65,8 @@ func (r *QuestionRepo) FindAll(
 		return nil, 0, err
 	}
 
-	if !allowedQuestionSortColumns[sortBy] {
-		sortBy = "created_at"
-	}
-	if !allowedSortOrders[order] {
-		order = "desc"
-	}
 	var questions []model.Question
-	err := query.Order("questions." + sortBy + " " + order).Offset(offset).Limit(limit).Find(&questions).Error
+	err := query.Order(sanitizeQuestionSort(sortBy, order)).Offset(offset).Limit(limit).Find(&questions).Error
 	return questions, total, err
 }
 

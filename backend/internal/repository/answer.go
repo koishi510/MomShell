@@ -5,9 +5,21 @@ import (
 	"gorm.io/gorm"
 )
 
-var allowedAnswerSortColumns = map[string]bool{
-	"created_at": true,
-	"like_count": true,
+var allowedAnswerSortColumns = map[string]string{
+	"created_at": "created_at",
+	"like_count": "like_count",
+}
+
+func sanitizeAnswerSort(sortBy, order string) string {
+	col, ok := allowedAnswerSortColumns[sortBy]
+	if !ok {
+		col = "created_at"
+	}
+	dir, ok := allowedSortOrders[order]
+	if !ok {
+		dir = "desc"
+	}
+	return col + " " + dir
 }
 
 type AnswerRepo struct {
@@ -39,14 +51,8 @@ func (r *AnswerRepo) FindByQuestionID(
 		return nil, 0, err
 	}
 
-	if !allowedAnswerSortColumns[sortBy] {
-		sortBy = "created_at"
-	}
-	if !allowedSortOrders[order] {
-		order = "desc"
-	}
 	var answers []model.Answer
-	err := query.Order(sortBy + " " + order).Offset(offset).Limit(limit).Find(&answers).Error
+	err := query.Order(sanitizeAnswerSort(sortBy, order)).Offset(offset).Limit(limit).Find(&answers).Error
 	return answers, total, err
 }
 
