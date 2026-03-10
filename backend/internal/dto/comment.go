@@ -8,6 +8,11 @@ type CommentCreate struct {
 	ParentID *string `json:"parent_id"`
 }
 
+// CommentUpdate is the request body for updating a comment
+type CommentUpdate struct {
+	Content string `json:"content" binding:"required,min=1,max=10000"`
+}
+
 // CommentListItem is a single comment (with nested replies)
 type CommentListItem struct {
 	ID          string            `json:"id"`

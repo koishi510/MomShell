@@ -209,6 +209,15 @@ export function deleteComment(commentId: string): Promise<{ message: string }> {
   return apiClient.delete(`/api/v1/community/comments/${commentId}`).then((r) => r.data)
 }
 
+export function updateComment(
+  commentId: string,
+  content: string,
+): Promise<{ id: string; content: string }> {
+  return apiClient
+    .put(`/api/v1/community/comments/${commentId}`, { content })
+    .then((r) => r.data)
+}
+
 // ==================== Likes ====================
 
 export function toggleLike(

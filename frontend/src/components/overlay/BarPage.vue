@@ -165,7 +165,14 @@
                         <img :src="getAvatar(c.author)" class="sub-comment-avatar" @error="onAvatarError" />
                         <span class="sub-comment-author">{{ c.author.nickname }}</span>
                         <span v-if="c.reply_to_user" class="sub-comment-reply-hint">回复 @{{ c.reply_to_user.nickname }}</span>
-                        <span class="sub-comment-text">{{ c.content }}</span>
+                        <template v-if="editingCommentId === c.id">
+                          <div class="edit-comment-area">
+                            <input v-model="editingCommentContent" class="reply-input" @keydown.enter="onSaveComment(a.id)" />
+                            <button class="reply-btn" :disabled="!editingCommentContent.trim()" @click="onSaveComment(a.id)">保存</button>
+                            <button class="comment-like-btn" @click="cancelEditComment">取消</button>
+                          </div>
+                        </template>
+                        <span v-else class="sub-comment-text">{{ c.content }}</span>
                         <div class="sub-comment-actions">
                           <button class="comment-like-btn" @click="onLikeComment(a.id, c)">
                             <span :class="['icon-like', { active: c.is_liked }]">&#9829;</span> {{ c.like_count }}
@@ -173,6 +180,7 @@
                           <button class="comment-like-btn" @click="setReplyTarget(a.id, c.id, c.author.nickname)">
                             回复
                           </button>
+                          <button v-if="canModify(c.author.id)" class="comment-like-btn" @click="startEditComment(c)">编辑</button>
                           <button v-if="canModify(c.author.id)" class="comment-like-btn manage-text-danger" @click="onDeleteComment(a.id, c.id)">删除</button>
                         </div>
                         <!-- Nested replies -->
@@ -180,7 +188,14 @@
                           <img :src="getAvatar(r.author)" class="sub-comment-avatar" @error="onAvatarError" />
                           <span class="sub-comment-author">{{ r.author.nickname }}</span>
                           <span v-if="r.reply_to_user" class="sub-comment-reply-hint">回复 @{{ r.reply_to_user.nickname }}</span>
-                          <span class="sub-comment-text">{{ r.content }}</span>
+                          <template v-if="editingCommentId === r.id">
+                            <div class="edit-comment-area">
+                              <input v-model="editingCommentContent" class="reply-input" @keydown.enter="onSaveComment(a.id)" />
+                              <button class="reply-btn" :disabled="!editingCommentContent.trim()" @click="onSaveComment(a.id)">保存</button>
+                              <button class="comment-like-btn" @click="cancelEditComment">取消</button>
+                            </div>
+                          </template>
+                          <span v-else class="sub-comment-text">{{ r.content }}</span>
                           <div class="sub-comment-actions">
                             <button class="comment-like-btn" @click="onLikeComment(a.id, r)">
                               <span :class="['icon-like', { active: r.is_liked }]">&#9829;</span> {{ r.like_count }}
@@ -188,6 +203,7 @@
                             <button class="comment-like-btn" @click="setReplyTarget(a.id, r.id, r.author.nickname)">
                               回复
                             </button>
+                            <button v-if="canModify(r.author.id)" class="comment-like-btn" @click="startEditComment(r)">编辑</button>
                             <button v-if="canModify(r.author.id)" class="comment-like-btn manage-text-danger" @click="onDeleteComment(a.id, r.id)">删除</button>
                           </div>
                         </div>
@@ -254,6 +270,7 @@ import {
   updateAnswer,
   deleteAnswer,
   deleteComment,
+  updateComment,
   type QuestionListItem,
   type QuestionDetail,
   type AnswerListItem,
@@ -685,6 +702,46 @@ async function onDeleteComment(answerId: string, commentId: string) {
     answers.value = answers.value.map((a) =>
       a.id === answerId ? { ...a, comment_count: a.comment_count - 1 } : a,
     )
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+// Edit comment
+const editingCommentId = ref<string | null>(null)
+const editingCommentContent = ref('')
+
+function startEditComment(c: CommentListItem) {
+  editingCommentId.value = c.id
+  editingCommentContent.value = c.content
+}
+
+function cancelEditComment() {
+  editingCommentId.value = null
+  editingCommentContent.value = ''
+}
+
+function editCommentInList(
+  list: CommentListItem[],
+  commentId: string,
+  newContent: string,
+): CommentListItem[] {
+  return list.map((c) =>
+    c.id === commentId
+      ? { ...c, content: newContent }
+      : { ...c, replies: editCommentInList(c.replies, commentId, newContent) },
+  )
+}
+
+async function onSaveComment(answerId: string) {
+  if (!editingCommentId.value || !editingCommentContent.value.trim()) return
+  try {
+    const res = await updateComment(editingCommentId.value, editingCommentContent.value)
+    const comments = answerComments.value[answerId]
+    if (comments) {
+      answerComments.value[answerId] = editCommentInList(comments, res.id, res.content)
+    }
+    cancelEditComment()
   } catch (e) {
     alert(getErrorMessage(e))
   }
@@ -1377,6 +1434,14 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   margin-top: 2px;
+}
+
+.edit-comment-area {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  margin: 4px 0;
 }
 
 .reply-input {
