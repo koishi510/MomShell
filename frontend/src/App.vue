@@ -6,6 +6,7 @@
   <CarPage />
   <MemoryPanel />
   <CommunityPanel />
+  <BarPage />
   <ChatPanel />
   <WhisperPanel />
   <TaskPanel />
@@ -21,6 +22,7 @@ import RoleSelectPanel from '@/components/overlay/RoleSelectPanel.vue'
 import CarPage from '@/components/overlay/CarPage.vue'
 import MemoryPanel from '@/components/overlay/MemoryPanel.vue'
 import CommunityPanel from '@/components/overlay/CommunityPanel.vue'
+import BarPage from '@/components/overlay/BarPage.vue'
 import ChatPanel from '@/components/overlay/ChatPanel.vue'
 import WhisperPanel from '@/components/overlay/WhisperPanel.vue'
 import TaskPanel from '@/components/overlay/TaskPanel.vue'
