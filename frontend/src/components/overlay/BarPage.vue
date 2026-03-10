@@ -1102,19 +1102,19 @@ onUnmounted(() => {
 }
 
 .side-btn:first-child {
-  transform: translateY(-60px);
+  transform: translateY(-100px) scale(1.3);
 }
 
 .side-btn:last-child {
-  transform: translateY(60px);
+  transform: translateY(65px) scale(1.3);
 }
 
 .side-btn:first-child:hover {
-  transform: translateY(-60px) scale(1.08);
+  transform: translateY(-100px) scale(1.4);
 }
 
 .side-btn:last-child:hover {
-  transform: translateY(60px) scale(1.08);
+  transform: translateY(65px) scale(1.4);
 }
 
 /* Paper overlay */
