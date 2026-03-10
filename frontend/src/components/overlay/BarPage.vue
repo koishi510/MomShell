@@ -15,8 +15,8 @@
         <div class="bar-content">
           <!-- Left: Board -->
           <div class="board-container">
-            <img class="board-frame-top" :src="boardUp" draggable="false" />
             <div class="board-scroll-area" ref="scrollAreaRef">
+              <img class="board-frame-top" :src="boardUp" draggable="false" />
               <div class="notes-scatter" :style="{ minHeight: scatterHeight }">
                 <div v-if="loading" class="board-loading">加载中...</div>
                 <div v-else-if="posts.length === 0" class="board-empty">暂无帖子</div>
@@ -36,8 +36,8 @@
                 </div>
                 <div ref="sentinelRef" class="load-sentinel" />
               </div>
+              <img class="board-frame-bottom" :src="boardDown" draggable="false" />
             </div>
-            <img class="board-frame-bottom" :src="boardDown" draggable="false" />
           </div>
 
           <!-- Right: Action buttons -->
@@ -249,7 +249,7 @@ function getCardStyle(post: QuestionListItem) {
     left: `${baseLeft + jitterX}%`,
     top: `${baseTop + jitterY}%`,
     transform: `rotate(${rotation}deg)`,
-    zIndex: (hash % 5) + 1,
+    zIndex: (hash % 5) + 2,
   }
 }
 
@@ -506,8 +506,10 @@ onUnmounted(() => {
 
 .bg-bottom {
   bottom: 0;
-  transform: scaleY(0.75);
+  transform: scaleY(1);
   transform-origin: bottom center;
+  z-index: 3;
+  pointer-events: none;
 }
 
 /* 内容层 */
@@ -529,8 +531,6 @@ onUnmounted(() => {
   height: 65vh;
   align-self: flex-start;
   margin-top: 1vh;
-  display: flex;
-  flex-direction: column;
   min-height: 0;
 }
 
@@ -538,13 +538,21 @@ onUnmounted(() => {
 .board-frame-bottom {
   width: 100%;
   display: block;
-  flex-shrink: 0;
-  z-index: 3;
-  position: relative;
+  z-index: 1;
+  position: sticky;
+  pointer-events: none;
+}
+
+.board-frame-top {
+  top: 0;
+}
+
+.board-frame-bottom {
+  bottom: 0;
 }
 
 .board-scroll-area {
-  flex: 1;
+  height: 100%;
   overflow-y: auto;
   scrollbar-width: none;
   background: url('@/assets/images/board_med.png') repeat-y center / 100% auto;
