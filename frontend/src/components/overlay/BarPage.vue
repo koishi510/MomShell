@@ -991,6 +991,8 @@ onUnmounted(() => {
 .comments-section {
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 
 .comments-title {
