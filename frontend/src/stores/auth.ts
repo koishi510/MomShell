@@ -11,7 +11,7 @@ import {
   apiSetRole,
   apiLogout,
 } from "@/lib/auth";
-import { setAccessToken } from "@/lib/apiClient";
+import { setAccessToken, setOnTokenRefreshed } from "@/lib/apiClient";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
@@ -24,6 +24,14 @@ export const useAuthStore = defineStore("auth", () => {
   // Keep apiClient's in-memory token in sync with the store
   watch(accessToken, (token) => {
     setAccessToken(token);
+  });
+
+  // Keep store in sync when apiClient refreshes the token via interceptor
+  setOnTokenRefreshed((token) => {
+    accessToken.value = token;
+    if (!token) {
+      user.value = null;
+    }
   });
 
   async function init() {
@@ -58,9 +66,9 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function logout() {
-    if (accessToken.value) {
-      apiLogout(accessToken.value).catch(() => {});
-    }
+    // Always call logout so the server clears the httpOnly refresh cookie,
+    // even if we don't currently have an access token in memory.
+    apiLogout(accessToken.value ?? undefined).catch(() => {});
     user.value = null;
     accessToken.value = null;
     isGuest.value = false;
