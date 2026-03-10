@@ -27,7 +27,7 @@
                   :style="getCardStyle(post)"
                   @click="openDetail(post)"
                 >
-                  <img class="note-bg" :src="getNoteImage(post)" draggable="false" />
+                  <img :class="['note-bg', { 'note-bg-flipped': getNoteImage(post) === note2 }]" :src="getNoteImage(post)" draggable="false" />
                   <div class="note-content">
                     <h4>{{ post.title }}</h4>
                     <p>{{ post.content_preview }}</p>
@@ -721,6 +721,10 @@ onUnmounted(() => {
   width: 100%;
   display: block;
   pointer-events: none;
+}
+
+.note-bg-flipped {
+  transform: scaleX(-1);
 }
 
 .note-content {
