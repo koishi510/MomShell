@@ -307,7 +307,10 @@ func (s *PhotoService) downloadFromURL(imageURL, savePath string) (string, error
 
 	// Validate downloaded content is an allowed image type
 	contentBuf := make([]byte, 512)
-	n, _ := resp.Body.Read(contentBuf)
+	n, readErr := resp.Body.Read(contentBuf)
+	if readErr != nil && n == 0 {
+		return "", fmt.Errorf("failed to read response body: %w", readErr)
+	}
 	detectedType := http.DetectContentType(contentBuf[:n])
 	allowedTypes := map[string]bool{
 		"image/jpeg": true,
