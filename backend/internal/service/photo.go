@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/momshell/backend/internal/dto"
+	"github.com/momshell/backend/internal/fileutil"
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
 	"github.com/momshell/backend/pkg/openai"
@@ -186,14 +187,7 @@ func (s *PhotoService) DeletePhoto(id, userID string) error {
 	}
 
 	// Remove file from disk if it's a local upload
-	if photo.ImageURL != "" {
-		localPath := filepath.Clean("." + photo.ImageURL)
-		// Strict validation: must be under uploads/photos/ and match expected pattern
-		if strings.HasPrefix(localPath, "uploads"+string(filepath.Separator)) &&
-			!strings.Contains(localPath, "..") {
-			_ = os.Remove(localPath)
-		}
-	}
+	fileutil.RemoveUploadedFile(photo.ImageURL)
 
 	return s.photoRepo.Delete(id, userID)
 }
