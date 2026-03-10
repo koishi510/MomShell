@@ -128,7 +128,7 @@
                     <div v-if="answerComments[a.id]" class="sub-comments">
                       <div v-for="c in answerComments[a.id]" :key="c.id" class="sub-comment">
                         <span class="sub-comment-author">{{ c.author.nickname }}</span>
-                        <span v-if="c.reply_to_user" class="sub-comment-reply-hint">回复 {{ c.reply_to_user.nickname }}</span>
+                        <span v-if="c.reply_to_user" class="sub-comment-reply-hint">回复 @{{ c.reply_to_user.nickname }}</span>
                         <span class="sub-comment-text">{{ c.content }}</span>
                         <div class="sub-comment-actions">
                           <button class="comment-like-btn" @click="onLikeComment(a.id, c)">
@@ -141,7 +141,7 @@
                         <!-- Nested replies -->
                         <div v-for="r in c.replies" :key="r.id" class="sub-comment nested">
                           <span class="sub-comment-author">{{ r.author.nickname }}</span>
-                          <span v-if="r.reply_to_user" class="sub-comment-reply-hint">回复 {{ r.reply_to_user.nickname }}</span>
+                          <span v-if="r.reply_to_user" class="sub-comment-reply-hint">回复 @{{ r.reply_to_user.nickname }}</span>
                           <span class="sub-comment-text">{{ r.content }}</span>
                           <div class="sub-comment-actions">
                             <button class="comment-like-btn" @click="onLikeComment(a.id, r)">
@@ -159,13 +159,13 @@
 
                 <div class="reply-area">
                   <div v-if="replyTarget" class="reply-target-hint">
-                    回复 {{ replyTarget.replyToName || '评论' }}
+                    回复 @{{ replyTarget.replyToName || '评论' }}
                     <button class="reply-target-clear" @click="clearReplyTarget">✕</button>
                   </div>
                   <input
                     v-model="replyText"
                     class="reply-input"
-                    :placeholder="replyTarget ? `回复 ${replyTarget.replyToName || '评论'}...` : '写下你的评论...'"
+                    :placeholder="replyTarget ? `回复 @${replyTarget.replyToName || '评论'}...` : '写下你的评论...'"
                     @keydown.enter="onSubmitReply"
                   />
                   <button class="reply-btn" :disabled="!replyText.trim()" @click="onSubmitReply">发送</button>
