@@ -94,13 +94,27 @@
 
               <!-- Detail mode -->
               <template v-if="paperMode === 'detail' && selectedDetail">
-                <h3 class="paper-title">{{ selectedDetail.title }}</h3>
-                <div class="detail-author">
-                  <img :src="getAvatar(selectedDetail.author)" class="detail-avatar" @error="onAvatarError" />
-                  <span class="author-name">{{ selectedDetail.author.nickname }}</span>
-                  <span v-if="selectedDetail.author.display_tag" class="author-tag">{{ selectedDetail.author.display_tag }}</span>
-                </div>
-                <div class="detail-body">{{ selectedDetail.content }}</div>
+                <template v-if="!editingPost">
+                  <h3 class="paper-title">{{ selectedDetail.title }}</h3>
+                  <div class="detail-author">
+                    <img :src="getAvatar(selectedDetail.author)" class="detail-avatar" @error="onAvatarError" />
+                    <span class="author-name">{{ selectedDetail.author.nickname }}</span>
+                    <span v-if="selectedDetail.author.display_tag" class="author-tag">{{ selectedDetail.author.display_tag }}</span>
+                  </div>
+                  <div class="detail-body">{{ selectedDetail.content }}</div>
+                  <div v-if="canModify(selectedDetail.author.id)" class="detail-manage">
+                    <button class="manage-btn" @click="startEditPost">编辑</button>
+                    <button class="manage-btn manage-btn-danger" @click="onDeletePost">删除</button>
+                  </div>
+                </template>
+                <template v-else>
+                  <input v-model="editPostForm.title" class="paper-input" placeholder="标题" />
+                  <textarea v-model="editPostForm.content" class="paper-textarea" rows="6" />
+                  <div class="detail-manage">
+                    <button class="manage-btn" @click="saveEditPost">保存</button>
+                    <button class="manage-btn" @click="cancelEditPost">取消</button>
+                  </div>
+                </template>
 
                 <div class="detail-actions-bar">
                   <button class="detail-action-btn" @click="onLikeDetailQuestion">
@@ -122,7 +136,14 @@
                       <span class="comment-author">{{ a.author.nickname }}</span>
                       <span v-if="a.author.display_tag" class="author-tag">{{ a.author.display_tag }}</span>
                     </div>
-                    <p class="comment-body">{{ a.content }}</p>
+                    <template v-if="editingAnswerId === a.id">
+                      <textarea v-model="editAnswerContent" class="edit-answer-textarea" rows="3" />
+                      <div class="detail-manage">
+                        <button class="manage-btn" @click="saveEditAnswer">保存</button>
+                        <button class="manage-btn" @click="cancelEditAnswer">取消</button>
+                      </div>
+                    </template>
+                    <p v-else class="comment-body">{{ a.content }}</p>
                     <div class="comment-actions">
                       <button class="comment-like-btn" @click="onLikeAnswer(a)">
                         <span :class="['icon-like', { active: a.is_liked }]">&#9829;</span> {{ a.like_count }}
@@ -133,6 +154,8 @@
                       <button class="comment-like-btn" @click="setReplyTarget(a.id)">
                         回复
                       </button>
+                      <button v-if="canModify(a.author.id)" class="comment-like-btn" @click="startEditAnswer(a)">编辑</button>
+                      <button v-if="canModify(a.author.id)" class="comment-like-btn manage-text-danger" @click="onDeleteAnswer(a)">删除</button>
                     </div>
 
                     <!-- Nested comments -->
@@ -150,6 +173,7 @@
                           <button class="comment-like-btn" @click="setReplyTarget(a.id, c.id, c.author.nickname)">
                             回复
                           </button>
+                          <button v-if="canModify(c.author.id)" class="comment-like-btn manage-text-danger" @click="onDeleteComment(a.id, c.id)">删除</button>
                         </div>
                         <!-- Nested replies -->
                         <div v-for="r in c.replies" :key="r.id" class="sub-comment nested">
@@ -164,6 +188,7 @@
                             <button class="comment-like-btn" @click="setReplyTarget(a.id, r.id, r.author.nickname)">
                               回复
                             </button>
+                            <button v-if="canModify(r.author.id)" class="comment-like-btn manage-text-danger" @click="onDeleteComment(a.id, r.id)">删除</button>
                           </div>
                         </div>
                       </div>
@@ -224,12 +249,18 @@ import {
   toggleLike,
   toggleCollection,
   getMyCollections,
+  updateQuestion,
+  deleteQuestion,
+  updateAnswer,
+  deleteAnswer,
+  deleteComment,
   type QuestionListItem,
   type QuestionDetail,
   type AnswerListItem,
   type CommentListItem,
 } from '@/lib/api/community'
 import { getErrorMessage } from '@/lib/apiClient'
+import { useAuthStore } from '@/stores/auth'
 
 import bgTop from '@/assets/images/background_1.png'
 import bgBottom from '@/assets/images/background_2.png'
@@ -259,6 +290,7 @@ function onAvatarError(e: Event) {
 }
 
 const uiStore = useUiStore()
+const auth = useAuthStore()
 
 const visible = computed(() => uiStore.activePanel === 'bar')
 
@@ -296,6 +328,16 @@ const replyTarget = ref<{
 // Collections state
 const collectionItems = ref<QuestionListItem[]>([])
 const loadingCollections = ref(false)
+
+// Edit/delete state
+const editingPost = ref(false)
+const editPostForm = ref({ title: '', content: '' })
+const editingAnswerId = ref<string | null>(null)
+const editAnswerContent = ref('')
+
+function canModify(authorId: string) {
+  return auth.user?.id === authorId || auth.user?.is_admin
+}
 
 // Refs for infinite scroll
 const scrollAreaRef = ref<HTMLElement | null>(null)
@@ -416,6 +458,8 @@ function closePaper() {
   answerComments.value = {}
   loadingComments.value = {}
   replyTarget.value = null
+  editingPost.value = false
+  editingAnswerId.value = null
 }
 
 async function onCreatePost() {
@@ -531,6 +575,116 @@ async function onSubmitReply() {
       }
     }
     replyText.value = ''
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+// Edit/delete post (question)
+function startEditPost() {
+  if (!selectedDetail.value) return
+  editPostForm.value = {
+    title: selectedDetail.value.title,
+    content: selectedDetail.value.content,
+  }
+  editingPost.value = true
+}
+
+function cancelEditPost() {
+  editingPost.value = false
+  editPostForm.value = { title: '', content: '' }
+}
+
+async function saveEditPost() {
+  if (!selectedDetail.value) return
+  try {
+    await updateQuestion(selectedDetail.value.id, editPostForm.value)
+    selectedDetail.value = {
+      ...selectedDetail.value,
+      title: editPostForm.value.title,
+      content: editPostForm.value.content,
+    }
+    posts.value = posts.value.map((p) =>
+      p.id === selectedDetail.value!.id
+        ? { ...p, title: editPostForm.value.title, content_preview: editPostForm.value.content.slice(0, 100) }
+        : p,
+    )
+    editingPost.value = false
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+async function onDeletePost() {
+  if (!selectedDetail.value || !confirm('确定删除此帖？')) return
+  try {
+    await deleteQuestion(selectedDetail.value.id)
+    posts.value = posts.value.filter((p) => p.id !== selectedDetail.value!.id)
+    closePaper()
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+// Edit/delete answer
+function startEditAnswer(a: AnswerListItem) {
+  editingAnswerId.value = a.id
+  editAnswerContent.value = a.content
+}
+
+function cancelEditAnswer() {
+  editingAnswerId.value = null
+  editAnswerContent.value = ''
+}
+
+async function saveEditAnswer() {
+  if (!editingAnswerId.value) return
+  try {
+    await updateAnswer(editingAnswerId.value, editAnswerContent.value)
+    answers.value = answers.value.map((a) =>
+      a.id === editingAnswerId.value ? { ...a, content: editAnswerContent.value } : a,
+    )
+    editingAnswerId.value = null
+    editAnswerContent.value = ''
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+async function onDeleteAnswer(a: AnswerListItem) {
+  if (!confirm('确定删除此回复？')) return
+  try {
+    await deleteAnswer(a.id)
+    answers.value = answers.value.filter((ans) => ans.id !== a.id)
+    if (selectedDetail.value) {
+      selectedDetail.value = {
+        ...selectedDetail.value,
+        answer_count: selectedDetail.value.answer_count - 1,
+      }
+    }
+  } catch (e) {
+    alert(getErrorMessage(e))
+  }
+}
+
+// Delete comment
+function removeCommentFromList(list: CommentListItem[], commentId: string): CommentListItem[] {
+  return list
+    .filter((c) => c.id !== commentId)
+    .map((c) => ({ ...c, replies: removeCommentFromList(c.replies, commentId) }))
+}
+
+async function onDeleteComment(answerId: string, commentId: string) {
+  if (!confirm('确定删除此评论？')) return
+  try {
+    await deleteComment(commentId)
+    const comments = answerComments.value[answerId]
+    if (comments) {
+      answerComments.value[answerId] = removeCommentFromList(comments, commentId)
+    }
+    answers.value = answers.value.map((a) =>
+      a.id === answerId ? { ...a, comment_count: a.comment_count - 1 } : a,
+    )
   } catch (e) {
     alert(getErrorMessage(e))
   }
@@ -1322,5 +1476,41 @@ onUnmounted(() => {
 .channel-hint {
   font-size: 11px;
   color: #8a7a6a;
+}
+
+.detail-manage {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.manage-btn {
+  font-size: 12px;
+  padding: 2px 10px;
+  border: 1px solid #c5b8a8;
+  border-radius: 4px;
+  background: transparent;
+  color: #5a4a3a;
+  cursor: pointer;
+}
+
+.manage-btn-danger {
+  color: #c44;
+  border-color: #c44;
+}
+
+.manage-text-danger {
+  color: #c44 !important;
+}
+
+.edit-answer-textarea {
+  width: 100%;
+  font-size: 13px;
+  padding: 6px;
+  border: 1px solid #c5b8a8;
+  border-radius: 4px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 </style>
