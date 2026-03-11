@@ -1020,7 +1020,7 @@ watch(visible, async (isVisible) => {
 .car-layout {
   display: flex;
   height: 100%;
-  padding: 5vh 5vw 5vh 9vw;
+  padding: 5vh 5vw 5vh 20vw;
   gap: 4vw;
   align-items: center;
 }
