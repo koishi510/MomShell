@@ -258,9 +258,9 @@ async function onSend() {
 .chat-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px 24px 16px;
+  padding: 24px 56px 16px 24px; /* right padding clears the overlay close button */
   flex-shrink: 0;
+  gap: 12px;
 }
 
 .chat-title {
@@ -270,8 +270,8 @@ async function onSend() {
 }
 
 .memory-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
