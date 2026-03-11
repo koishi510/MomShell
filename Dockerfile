@@ -18,7 +18,7 @@ RUN CGO_ENABLED=0 go build -o /server cmd/server/main.go
 
 # ---- Stage 3: Final image ----
 FROM nginx:alpine
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata postgresql postgresql-contrib
 
 # Nginx config
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
@@ -33,5 +33,5 @@ COPY --from=backend-builder /server /app/server
 COPY deploy/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 80
+EXPOSE 7860
 CMD ["/entrypoint.sh"]
