@@ -8,6 +8,7 @@
   <CommunityPanel />
   <BarPage />
   <ChatPanel />
+  <AiMemoryPanel />
   <WhisperPanel />
   <TaskPanel />
 </template>
@@ -24,6 +25,7 @@ import MemoryPanel from '@/components/overlay/MemoryPanel.vue'
 import CommunityPanel from '@/components/overlay/CommunityPanel.vue'
 import BarPage from '@/components/overlay/BarPage.vue'
 import ChatPanel from '@/components/overlay/ChatPanel.vue'
+import AiMemoryPanel from '@/components/overlay/AiMemoryPanel.vue'
 import WhisperPanel from '@/components/overlay/WhisperPanel.vue'
 import TaskPanel from '@/components/overlay/TaskPanel.vue'
 import { useAuthStore } from '@/stores/auth'

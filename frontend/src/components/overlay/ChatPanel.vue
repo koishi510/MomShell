@@ -1,7 +1,14 @@
 <template>
   <OverlayPanel :visible="uiStore.activePanel === 'chat'" position="right" @close="uiStore.closePanel()">
     <div class="chat-panel">
-      <h2 class="chat-title">Echo 倾听</h2>
+      <div class="chat-header">
+        <h2 class="chat-title">Echo 倾听</h2>
+        <button v-if="authStore.isAuthenticated" class="memory-btn" @click="uiStore.openPanel('ai-memory')" title="AI 记忆管理">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="currentColor" />
+          </svg>
+        </button>
+      </div>
 
       <Transition name="toast">
         <div v-if="showMemoryToast" class="memory-toast">✨ 记住了</div>
@@ -248,12 +255,38 @@ async function onSend() {
   position: relative;
 }
 
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 16px;
+  flex-shrink: 0;
+}
+
 .chat-title {
   font-size: 20px;
   font-weight: 600;
   color: var(--text-primary);
-  padding: 24px 24px 16px;
-  flex-shrink: 0;
+}
+
+.memory-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.memory-btn:hover {
+  background: rgba(255, 215, 0, 0.12);
+  border-color: rgba(255, 215, 0, 0.2);
+  color: var(--accent-warm);
 }
 
 /* Memory toast */
