@@ -27,7 +27,23 @@ type ChatProfile struct {
 	PetDetails            *string  `json:"pet_details"`
 	Interests             []string `json:"interests"`
 	Concerns              []string `json:"concerns"`
+	Facts                 []string `json:"facts"`
 	ImportantDates        []string `json:"important_dates"`
 	BabyAgeWeeks          *int     `json:"baby_age_weeks"`
 	CommunityInteractions []string `json:"community_interactions"`
+}
+
+// ChatMemoryFactDTO is the response body for a single memory fact
+type ChatMemoryFactDTO struct {
+	ID               string  `json:"id"`
+	Content          string  `json:"content"`
+	Category         string  `json:"category"`
+	CreatedAt        string  `json:"created_at"`
+	LastReferencedAt *string `json:"last_referenced_at"`
+}
+
+// ChatMemoryFactsResponse wraps the list of memory facts
+type ChatMemoryFactsResponse struct {
+	Facts []ChatMemoryFactDTO `json:"facts"`
+	Total int                 `json:"total"`
 }

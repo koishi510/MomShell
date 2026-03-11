@@ -59,3 +59,26 @@ func (h *ChatHandler) GetProfile(c *gin.Context) {
 	profile := h.chatService.GetGuestProfile(sessionID)
 	c.JSON(http.StatusOK, profile)
 }
+
+// GET /api/v1/companion/memories
+func (h *ChatHandler) GetMemories(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	resp, err := h.chatService.GetMemories(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// DELETE /api/v1/companion/memories/:id
+func (h *ChatHandler) DeleteMemory(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	factID := c.Param("id")
+
+	if err := h.chatService.DeleteMemory(userID, factID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "已删除"})
+}

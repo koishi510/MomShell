@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/momshell/backend/internal/dto"
@@ -50,7 +52,7 @@ const companionSystemPromptMom = `你是「小石光」，一位真诚的知心�
    - effect_type: "ripple" | "sunlight" | "calm" | "warm_glow" | "gentle_wave"
    - intensity: 0.0 ~ 1.0
    - color_tone: "soft_pink" | "warm_gold" | "gentle_blue" | "lavender" | "neutral_white" | "coral" | "sage"
-3. **memory_extract**: 如果用户分享了值得记住的信息，提取出来；否则为 null
+3. **memory_extract**: 如果用户分享了值得记住的信息，提取为 JSON 对象（包含 facts 字符串数组，每条用一句话概括一个重要信息，如"宝宝叫小米"、"最近在学烘焙"、"老公经常出差"）；否则为 null
 
 记住：你的存在不是为了「解决她的问题」，而是让她感到——在这一刻，有人真正看见了她。`
 
@@ -87,7 +89,7 @@ const companionSystemPromptDad = `你是「小石光」，一位耐心的同行�
    - effect_type: "ripple" | "sunlight" | "calm" | "warm_glow" | "gentle_wave"
    - intensity: 0.0 ~ 1.0
    - color_tone: "soft_pink" | "warm_gold" | "gentle_blue" | "lavender" | "neutral_white" | "coral" | "sage"
-3. **memory_extract**: 如果用户分享了值得记住的信息，提取出来；否则为 null
+3. **memory_extract**: 如果用户分享了值得记住的信息，提取为 JSON 对象（包含 facts 字符串数组，每条用一句话概括一个重要信息，如"宝宝叫小米"、"最近在学烘焙"、"老公经常出差"）；否则为 null
 
 记住：你的存在是帮他成为更好的自己——看清方向，迈出下一步。`
 
@@ -124,11 +126,30 @@ const companionSystemPromptProfessional = `你是「小石光」，一位尊重�
    - effect_type: "ripple" | "sunlight" | "calm" | "warm_glow" | "gentle_wave"
    - intensity: 0.0 ~ 1.0
    - color_tone: "soft_pink" | "warm_gold" | "gentle_blue" | "lavender" | "neutral_white" | "coral" | "sage"
-3. **memory_extract**: 如果用户分享了值得记住的信息，提取出来；否则为 null
+3. **memory_extract**: 如果用户分享了值得记住的信息，提取为 JSON 对象（包含 facts 字符串数组，每条用一句话概括一个重要信息，如"宝宝叫小米"、"最近在学烘焙"、"老公经常出差"）；否则为 null
 
 记住：你的存在是提供一个对等的、可以卸下专业面具的空间。`
 
 const adminPromptSuffix = "\n\n## 额外信息\n该用户是社区管理员。保持一贯的真诚态度，涉及社区管理话题时可以更直接高效地交流。"
+
+const summarizationPrompt = `请将以下对话历史压缩为一段简洁的中文摘要（不超过500字）。
+保留关键信息：用户提到的重要事件、情感变化、做出的决定、讨论的话题。
+删除重复和琐碎内容。如果已有旧摘要，将新内容与旧摘要合并。
+
+已有摘要：
+%s
+
+新增对话：
+%s
+
+请直接输出合并后的完整摘要（纯文本，不要JSON格式，不要任何前缀说明）。`
+
+const (
+	maxGuestSessions = 1000
+	summaryThreshold = 20 // trigger summarization when turns exceed this
+	keepRecentTurns  = 15 // keep this many recent turns after summarization
+	promptTurns      = 10 // inject this many turns into the prompt
+)
 
 func getCompanionPrompt(role model.UserRole, isAdmin bool) string {
 	var prompt string
@@ -155,29 +176,27 @@ func pronounFor(role model.UserRole) string {
 	return "她"
 }
 
-const (
-	maxGuestSessions = 1000 // Maximum number of guest sessions in memory
-)
-
 type ChatService struct {
 	client    *openai.Client
 	chatRepo  *repository.ChatRepo
 	userRepo  *repository.UserRepo
 	firecrawl *firecrawl.Client
 	// In-memory storage for guest sessions
-	mu            sync.RWMutex
-	guestMemory   map[string][]map[string]interface{}
-	guestProfiles map[string]map[string]interface{}
+	mu              sync.RWMutex
+	guestMemory     map[string][]map[string]interface{}
+	guestProfiles   map[string]map[string]interface{}
+	guestLastAccess map[string]time.Time
 }
 
 func NewChatService(client *openai.Client, chatRepo *repository.ChatRepo, userRepo *repository.UserRepo, fc *firecrawl.Client) *ChatService {
 	return &ChatService{
-		client:        client,
-		chatRepo:      chatRepo,
-		userRepo:      userRepo,
-		firecrawl:     fc,
-		guestMemory:   make(map[string][]map[string]interface{}),
-		guestProfiles: make(map[string]map[string]interface{}),
+		client:          client,
+		chatRepo:        chatRepo,
+		userRepo:        userRepo,
+		firecrawl:       fc,
+		guestMemory:     make(map[string][]map[string]interface{}),
+		guestProfiles:   make(map[string]map[string]interface{}),
+		guestLastAccess: make(map[string]time.Time),
 	}
 }
 
@@ -199,11 +218,14 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 	pronoun := pronounFor(role)
 
 	// Load memory from DB
-	profile, turns := s.loadUserMemory(userID)
+	profile, turns, summary := s.loadUserMemory(userID)
+
+	// Load structured facts for prompt
+	factsText := s.loadFactsForPrompt(userID)
 
 	systemPrompt := fmt.Sprintf(getCompanionPrompt(role, isAdmin),
-		formatProfile(profile, pronoun),
-		formatTurns(turns, pronoun),
+		formatProfile(profile, pronoun, factsText),
+		formatTurns(turns, summary, pronoun),
 	)
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
@@ -223,20 +245,27 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 
 	parsed := parseLLMResponse(rawContent)
 
-	// Update memory
+	// Update profile from extract
 	memoryUpdated := updateProfileFromExtract(profile, parsed["memory_extract"])
 
-	// Save turn
+	// Save structured facts (Phase 3)
+	s.saveFactsFromExtract(userID, parsed["memory_extract"])
+
+	// Append new turn
 	turns = append(turns, map[string]interface{}{
 		"user_input":         msg.Content,
 		"assistant_response": parsed["text"],
 	})
-	if len(turns) > 20 {
-		turns = turns[len(turns)-20:]
+
+	// Phase 2: trigger summarization if turns exceed threshold
+	if len(turns) > summaryThreshold {
+		toSummarize := turns[:len(turns)-keepRecentTurns]
+		turns = turns[len(turns)-keepRecentTurns:]
+		go s.generateAndSaveSummary(userID, summary, toSummarize)
 	}
 
 	// Save to DB
-	s.saveUserMemory(userID, profile, turns)
+	s.saveUserMemory(userID, profile, turns, summary)
 
 	return buildVisualResponse(parsed, memoryUpdated), nil
 }
@@ -252,33 +281,40 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 
 	s.mu.Lock()
 	if _, ok := s.guestMemory[sessionID]; !ok {
-		// Evict oldest sessions if at capacity
+		// Evict least recently accessed sessions if at capacity
 		if len(s.guestMemory) >= maxGuestSessions {
-			// Delete ~10% of sessions to avoid evicting on every new request
 			toDelete := maxGuestSessions / 10
 			if toDelete < 1 {
 				toDelete = 1
 			}
-			deleted := 0
-			for k := range s.guestMemory {
-				delete(s.guestMemory, k)
-				delete(s.guestProfiles, k)
-				deleted++
-				if deleted >= toDelete {
-					break
-				}
+			type sessionAge struct {
+				id string
+				ts time.Time
+			}
+			ages := make([]sessionAge, 0, len(s.guestLastAccess))
+			for k, t := range s.guestLastAccess {
+				ages = append(ages, sessionAge{k, t})
+			}
+			sort.Slice(ages, func(i, j int) bool {
+				return ages[i].ts.Before(ages[j].ts)
+			})
+			for i := 0; i < toDelete && i < len(ages); i++ {
+				delete(s.guestMemory, ages[i].id)
+				delete(s.guestProfiles, ages[i].id)
+				delete(s.guestLastAccess, ages[i].id)
 			}
 		}
 		s.guestMemory[sessionID] = nil
 		s.guestProfiles[sessionID] = make(map[string]interface{})
 	}
+	s.guestLastAccess[sessionID] = time.Now()
 	profile := s.guestProfiles[sessionID]
 	turns := s.guestMemory[sessionID]
 	s.mu.Unlock()
 
 	systemPrompt := fmt.Sprintf(getCompanionPrompt(model.RoleMom, false),
-		formatProfile(profile, "她"),
-		formatTurns(turns, "她"),
+		formatProfile(profile, "她", ""),
+		formatTurns(turns, "", "她"),
 	)
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
@@ -303,8 +339,8 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 		"user_input":         msg.Content,
 		"assistant_response": parsed["text"],
 	})
-	if len(turns) > 20 {
-		turns = turns[len(turns)-20:]
+	if len(turns) > summaryThreshold {
+		turns = turns[len(turns)-keepRecentTurns:]
 	}
 
 	s.mu.Lock()
@@ -314,6 +350,188 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 
 	return buildVisualResponse(parsed, memoryUpdated), nil
 }
+
+// --- Phase 2: Conversation Summary ---
+
+func (s *ChatService) generateAndSaveSummary(userID string, existingSummary string, oldTurns []map[string]interface{}) {
+	if len(oldTurns) == 0 {
+		return
+	}
+
+	// Format old turns for summarization
+	var sb strings.Builder
+	for _, t := range oldTurns {
+		fmt.Fprintf(&sb, "用户：%v\n回复：%v\n\n", t["user_input"], t["assistant_response"])
+	}
+
+	oldSummaryText := existingSummary
+	if oldSummaryText == "" {
+		oldSummaryText = "（无）"
+	}
+
+	prompt := fmt.Sprintf(summarizationPrompt, oldSummaryText, sb.String())
+	messages := []openai.Message{
+		{Role: "system", Content: "你是一个对话摘要助手。"},
+		{Role: "user", Content: prompt},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	newSummary, err := s.client.Chat(ctx, messages)
+	if err != nil {
+		log.Printf("[ChatService] failed to generate summary for user %s: %v", userID, err)
+		return
+	}
+
+	newSummary = strings.TrimSpace(newSummary)
+
+	// Load current memory to get latest turns (may have changed since goroutine started)
+	mem, err := s.chatRepo.FindByUserID(userID)
+	if err != nil {
+		log.Printf("[ChatService] failed to load memory for summary update user %s: %v", userID, err)
+		return
+	}
+
+	mem.SetSummary(newSummary)
+	if err := s.chatRepo.UpdateSummaryAndTurns(userID, newSummary, mem.ConversationTurns); err != nil {
+		log.Printf("[ChatService] failed to save summary for user %s: %v", userID, err)
+	}
+}
+
+// --- Phase 3: Structured Memory Facts ---
+
+func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) {
+	if extract == nil {
+		return
+	}
+	extractMap, ok := extract.(map[string]interface{})
+	if !ok {
+		return
+	}
+	facts, ok := extractMap["facts"].([]interface{})
+	if !ok || len(facts) == 0 {
+		return
+	}
+
+	for _, v := range facts {
+		content, ok := v.(string)
+		if !ok || strings.TrimSpace(content) == "" {
+			continue
+		}
+		content = strings.TrimSpace(content)
+
+		// Skip if identical fact already exists
+		exists, err := s.chatRepo.FactExistsByContent(userID, content)
+		if err != nil {
+			log.Printf("[ChatService] failed to check fact existence: %v", err)
+			continue
+		}
+		if exists {
+			continue
+		}
+
+		category := categorizeFactContent(content)
+		fact := &model.ChatMemoryFact{
+			UserID:   userID,
+			Content:  content,
+			Category: category,
+		}
+		if err := s.chatRepo.CreateFact(fact); err != nil {
+			log.Printf("[ChatService] failed to save fact for user %s: %v", userID, err)
+		}
+	}
+}
+
+func categorizeFactContent(content string) model.FactCategory {
+	lower := strings.ToLower(content)
+	switch {
+	case strings.Contains(lower, "宝宝") || strings.Contains(lower, "孩子") ||
+		strings.Contains(lower, "老公") || strings.Contains(lower, "老婆") ||
+		strings.Contains(lower, "伴侣") || strings.Contains(lower, "家人") ||
+		strings.Contains(lower, "父母") || strings.Contains(lower, "婆婆"):
+		return model.FactCategoryFamily
+	case strings.Contains(lower, "喜欢") || strings.Contains(lower, "爱好") ||
+		strings.Contains(lower, "兴趣") || strings.Contains(lower, "在学"):
+		return model.FactCategoryInterest
+	case strings.Contains(lower, "担心") || strings.Contains(lower, "焦虑") ||
+		strings.Contains(lower, "害怕") || strings.Contains(lower, "困扰"):
+		return model.FactCategoryConcern
+	case strings.Contains(lower, "叫") || strings.Contains(lower, "名字") ||
+		strings.Contains(lower, "岁") || strings.Contains(lower, "职业") ||
+		strings.Contains(lower, "住在"):
+		return model.FactCategoryPersonalInfo
+	case strings.Contains(lower, "偏好") || strings.Contains(lower, "习惯") ||
+		strings.Contains(lower, "不喜欢"):
+		return model.FactCategoryPreference
+	default:
+		return model.FactCategoryOther
+	}
+}
+
+func (s *ChatService) loadFactsForPrompt(userID string) string {
+	facts, err := s.chatRepo.FindFactsByUserID(userID)
+	if err != nil || len(facts) == 0 {
+		return ""
+	}
+
+	// Track referenced fact IDs to update last_referenced_at
+	ids := make([]string, 0, len(facts))
+
+	var sb strings.Builder
+	for _, f := range facts {
+		fmt.Fprintf(&sb, "  · %s\n", f.Content)
+		ids = append(ids, f.ID)
+	}
+
+	// Update last_referenced_at in background
+	go func() {
+		if err := s.chatRepo.TouchFactReferencedAt(ids); err != nil {
+			log.Printf("[ChatService] failed to touch fact referenced_at: %v", err)
+		}
+	}()
+
+	return sb.String()
+}
+
+// GetMemories returns all structured memory facts for a user (Phase 3 API).
+func (s *ChatService) GetMemories(userID string) (*dto.ChatMemoryFactsResponse, error) {
+	facts, err := s.chatRepo.FindFactsByUserID(userID)
+	if err != nil {
+		return &dto.ChatMemoryFactsResponse{Facts: []dto.ChatMemoryFactDTO{}, Total: 0}, nil
+	}
+
+	items := make([]dto.ChatMemoryFactDTO, 0, len(facts))
+	for _, f := range facts {
+		item := dto.ChatMemoryFactDTO{
+			ID:        f.ID,
+			Content:   f.Content,
+			Category:  string(f.Category),
+			CreatedAt: f.CreatedAt.Format(time.RFC3339),
+		}
+		if f.LastReferencedAt != nil {
+			t := f.LastReferencedAt.Format(time.RFC3339)
+			item.LastReferencedAt = &t
+		}
+		items = append(items, item)
+	}
+
+	return &dto.ChatMemoryFactsResponse{Facts: items, Total: len(items)}, nil
+}
+
+// DeleteMemory deletes a single memory fact, verifying ownership.
+func (s *ChatService) DeleteMemory(userID, factID string) error {
+	fact, err := s.chatRepo.FindFactByID(factID)
+	if err != nil {
+		return fmt.Errorf("记忆条目不存在")
+	}
+	if fact.UserID != userID {
+		return fmt.Errorf("无权删除此记忆")
+	}
+	return s.chatRepo.DeleteFact(factID)
+}
+
+// --- Existing helpers (updated) ---
 
 func (s *ChatService) searchWebForChat(ctx context.Context, userMessage string) string {
 	if s.firecrawl == nil {
@@ -347,6 +565,7 @@ func (s *ChatService) GetProfile(userID string) (*dto.ChatProfile, error) {
 		return &dto.ChatProfile{
 			Interests:             []string{},
 			Concerns:              []string{},
+			Facts:                 []string{},
 			ImportantDates:        []string{},
 			CommunityInteractions: []string{},
 		}, nil
@@ -364,6 +583,7 @@ func (s *ChatService) GetGuestProfile(sessionID string) *dto.ChatProfile {
 		return &dto.ChatProfile{
 			Interests:             []string{},
 			Concerns:              []string{},
+			Facts:                 []string{},
 			ImportantDates:        []string{},
 			CommunityInteractions: []string{},
 		}
@@ -371,28 +591,29 @@ func (s *ChatService) GetGuestProfile(sessionID string) *dto.ChatProfile {
 	return profileToDTO(profile)
 }
 
-func (s *ChatService) loadUserMemory(userID string) (map[string]interface{}, []map[string]interface{}) {
+func (s *ChatService) loadUserMemory(userID string) (map[string]interface{}, []map[string]interface{}, string) {
 	mem, err := s.chatRepo.FindByUserID(userID)
 	if err != nil {
-		return make(map[string]interface{}), nil
+		return make(map[string]interface{}), nil, ""
 	}
-	return mem.GetProfile(), mem.GetTurns()
+	return mem.GetProfile(), mem.GetTurns(), mem.GetSummary()
 }
 
-func (s *ChatService) saveUserMemory(userID string, profile map[string]interface{}, turns []map[string]interface{}) {
+func (s *ChatService) saveUserMemory(userID string, profile map[string]interface{}, turns []map[string]interface{}, summary string) {
 	mem := &model.ChatMemory{
 		UserID: userID,
 	}
 	mem.SetProfile(profile)
 	mem.SetTurns(turns)
+	mem.SetSummary(summary)
 
 	if err := s.chatRepo.Upsert(mem); err != nil {
 		log.Printf("[ChatService] failed to save memory for user %s: %v", userID, err)
 	}
 }
 
-func formatProfile(profile map[string]interface{}, pronoun string) string {
-	if len(profile) == 0 {
+func formatProfile(profile map[string]interface{}, pronoun string, factsText string) string {
+	if len(profile) == 0 && factsText == "" {
 		return "（暂无记录）"
 	}
 	parts := ""
@@ -404,6 +625,18 @@ func formatProfile(profile map[string]interface{}, pronoun string) string {
 			parts += fmt.Sprintf("- %s有宠物：%s\n", pronoun, details)
 		}
 	}
+
+	// Structured facts from DB (Phase 3) take priority
+	if factsText != "" {
+		parts += "- 重要信息：\n" + factsText
+	} else if facts, ok := profile["facts"].([]interface{}); ok && len(facts) > 0 {
+		// Fallback to legacy profile facts
+		parts += "- 重要信息：\n"
+		for _, v := range facts {
+			parts += fmt.Sprintf("  · %v\n", v)
+		}
+	}
+
 	if interests, ok := profile["interests"].([]interface{}); ok && len(interests) > 0 {
 		parts += fmt.Sprintf("- %s的兴趣：", pronoun)
 		for i, v := range interests {
@@ -430,17 +663,27 @@ func formatProfile(profile map[string]interface{}, pronoun string) string {
 	return parts
 }
 
-func formatTurns(turns []map[string]interface{}, pronoun string) string {
-	if len(turns) == 0 {
+func formatTurns(turns []map[string]interface{}, summary string, pronoun string) string {
+	if len(turns) == 0 && summary == "" {
 		return "（这是你们的第一次对话）"
 	}
-	result := ""
+	var result string
+
+	// Prepend summary of older conversations (Phase 2)
+	if summary != "" {
+		result += "【earlier conversation summary】\n" + summary + "\n\n【recent conversations】\n"
+	}
+
 	start := 0
-	if len(turns) > 5 {
-		start = len(turns) - 5
+	if len(turns) > promptTurns {
+		start = len(turns) - promptTurns
 	}
 	for _, t := range turns[start:] {
-		result += fmt.Sprintf("%s说：%v\n你回复：%v\n", pronoun, t["user_input"], t["assistant_response"])
+		response := fmt.Sprintf("%v", t["assistant_response"])
+		if len([]rune(response)) > 200 {
+			response = string([]rune(response)[:200]) + "..."
+		}
+		result += fmt.Sprintf("%s说：%v\n你回复：%s\n", pronoun, t["user_input"], response)
 	}
 	return result
 }
@@ -505,16 +748,44 @@ func updateProfileFromExtract(profile map[string]interface{}, extract interface{
 	}
 	if interests, ok := extractMap["interests"].([]interface{}); ok && len(interests) > 0 {
 		existing, _ := profile["interests"].([]interface{})
-		profile["interests"] = append(existing, interests...)
+		profile["interests"] = deduplicateAndCap(existing, interests, 20)
 		updated = true
 	}
 	if concerns, ok := extractMap["concerns"].([]interface{}); ok && len(concerns) > 0 {
 		existing, _ := profile["concerns"].([]interface{})
-		profile["concerns"] = append(existing, concerns...)
+		profile["concerns"] = deduplicateAndCap(existing, concerns, 20)
+		updated = true
+	}
+	if facts, ok := extractMap["facts"].([]interface{}); ok && len(facts) > 0 {
+		existing, _ := profile["facts"].([]interface{})
+		profile["facts"] = deduplicateAndCap(existing, facts, 20)
 		updated = true
 	}
 
 	return updated
+}
+
+func deduplicateAndCap(existing, newItems []interface{}, maxItems int) []interface{} {
+	seen := make(map[string]bool)
+	var result []interface{}
+	for _, v := range existing {
+		s := fmt.Sprintf("%v", v)
+		if !seen[s] {
+			seen[s] = true
+			result = append(result, v)
+		}
+	}
+	for _, v := range newItems {
+		s := fmt.Sprintf("%v", v)
+		if !seen[s] {
+			seen[s] = true
+			result = append(result, v)
+		}
+	}
+	if len(result) > maxItems {
+		result = result[len(result)-maxItems:]
+	}
+	return result
 }
 
 func buildVisualResponse(parsed map[string]interface{}, memoryUpdated bool) *dto.VisualResponse {
@@ -552,6 +823,7 @@ func profileToDTO(profile map[string]interface{}) *dto.ChatProfile {
 	cp := &dto.ChatProfile{
 		Interests:             []string{},
 		Concerns:              []string{},
+		Facts:                 []string{},
 		ImportantDates:        []string{},
 		CommunityInteractions: []string{},
 	}
@@ -576,6 +848,13 @@ func profileToDTO(profile map[string]interface{}) *dto.ChatProfile {
 		for _, v := range concerns {
 			if s, ok := v.(string); ok {
 				cp.Concerns = append(cp.Concerns, s)
+			}
+		}
+	}
+	if facts, ok := profile["facts"].([]interface{}); ok {
+		for _, v := range facts {
+			if s, ok := v.(string); ok {
+				cp.Facts = append(cp.Facts, s)
 			}
 		}
 	}

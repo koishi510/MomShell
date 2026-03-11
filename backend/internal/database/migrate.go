@@ -18,6 +18,7 @@ func Migrate(db *gorm.DB) error {
 		&model.Collection{},
 		&model.ModerationLog{},
 		&model.ChatMemory{},
+		&model.ChatMemoryFact{},
 		&model.IdentityTag{},
 		&model.Memoir{},
 		&model.Photo{},
