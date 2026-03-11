@@ -28,10 +28,31 @@ export interface ChatProfile {
   community_interactions: string[]
 }
 
+export interface MemoryFact {
+  id: string
+  content: string
+  category: string
+  created_at: string
+  last_referenced_at: string | null
+}
+
+export interface MemoryFactsResponse {
+  facts: MemoryFact[]
+  total: number
+}
+
 export function sendChatMessage(data: ChatRequest): Promise<ChatResponse> {
   return apiClient.post('/api/v1/companion/chat', data).then((r) => r.data)
 }
 
 export function getChatProfile(): Promise<ChatProfile> {
   return apiClient.get('/api/v1/companion/profile').then((r) => r.data)
+}
+
+export function getMemories(): Promise<MemoryFactsResponse> {
+  return apiClient.get('/api/v1/companion/memories').then((r) => r.data)
+}
+
+export function deleteMemory(id: string): Promise<void> {
+  return apiClient.delete(`/api/v1/companion/memories/${id}`).then(() => undefined)
 }

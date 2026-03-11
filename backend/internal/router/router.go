@@ -146,6 +146,8 @@ func Setup(
 	{
 		companion.POST("/chat", aiLimiter, middleware.AuthOptional(cfg), chatHandler.Chat)
 		companion.GET("/profile", middleware.AuthOptional(cfg), chatHandler.GetProfile)
+		companion.GET("/memories", middleware.AuthRequired(cfg), chatHandler.GetMemories)
+		companion.DELETE("/memories/:id", middleware.AuthRequired(cfg), chatHandler.DeleteMemory)
 	}
 
 	echo := api.Group("/echo", middleware.AuthRequired(cfg))
