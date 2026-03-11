@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### AI Memory & Conversation History
+
+- **Conversation summary (Phase 2)**: Auto-summarize older conversation turns via AI when history exceeds 20 turns; keeps recent 15 turns + compressed summary for long-term context
+- **Structured memory facts (Phase 3)**: `ChatMemoryFact` model with category-based classification (family, interest, concern, personal_info, preference, other); auto-extract and deduplicate facts from AI `memory_extract`
+- **Memory management panel**: `AiMemoryPanel.vue` with list/delete UI for structured facts, category-colored badges, and memory button in chat header (auth-only)
+- **Conversation history viewing**: Users can view full conversation history (turns + summary) via a new "对话历史" tab in memory panel
+- **Conversation history clearing**: Clear conversation history with confirm-to-clear button for privacy control
+- **Memory panel tabs**: Tab switcher between "记忆" (structured facts) and "对话历史" (conversation history)
+- **Backend API**: `GET/DELETE /api/v1/companion/memories`, `GET/DELETE /api/v1/companion/history` endpoints
+- **Role-based AI prompts**: Different system prompts for mom, dad, and professional roles with role-appropriate tone and pronouns
+
+#### Community Board Redesign
+
+- **Community bar UI**: Full board-style community redesign with layered layout, avatars, and scroll behavior
+- **Board scroll**: Board scrolls as whole unit; comments area scrolls independently within its flex-allocated space
+- **Comment editing**: Users and admins can edit comments in the community
+- **My-questions / my-answers tabs**: Added tabs to bag panel for viewing own questions and answers
+- **Avatar integration**: User avatars displayed in community board posts
+- **AI auto-reply on all posts**: AI replies to all new posts and comment replies with source footnotes
+
+#### ModelScope Docker Deployment
+
+- **Embedded PostgreSQL**: Single-container Docker deployment with embedded PostgreSQL for ModelScope platform; nginx listens on port 7860; entrypoint auto-initializes PostgreSQL
+- **Companion renamed**: Chat companion renamed to 小石光
+
 #### Security Hardening
 
 - **httpOnly cookie authentication**: Migrated auth tokens from localStorage to httpOnly cookies, eliminating XSS token theft vectors
@@ -18,12 +43,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Insecure randomness fix**: Replaced `Math.random()` fallback with `crypto.getRandomValues()` for cryptographically secure session ID generation in `ChatPanel.vue`
 - **Auth token extraction hardening**: Improved multi-source token extraction security (header, cookie)
 - **OpenAI error sanitization**: Removed response body from OpenAI error messages to prevent data exposure
+- **CodeQL compliance**: Cookie `Secure=true` always set; taint flow in ORDER BY broken for CodeQL analysis; `X-Forwarded-Proto` guarded behind `TrustProxy` config; hardened cookie attributes and permissions policy
 
 #### Photo Gallery & Lifecycle Management
 
 - **Photo lifecycle management**: Auto-cleanup of expired photos and admin-level photo controls
 - **Pic wall**: Interactive photo wall with drag, zoom, and close-window UI
 - **AI photo generation**: AI-generated photos in memoir using image model integration
+- **Photo wall expansion**: Photo wall expanded from 3x3 (9 photos) to 2x5 grid (10 photos)
 
 #### Memoir & Echo Enhancements
 
@@ -54,12 +81,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Profile music control**: Background music volume slider in the profile settings panel
 - **Beach shell sprites**: Repositioned shell sprites to the right side of the scene
 - **Hand detection camera**: MediaPipe hand detection integration (hidden camera preview)
+- **Crab hints update**: Updated crab hints; replaced profile button with avatar click
+- **Profile tabs cleanup**: Removed profile tabs from CarPage
 
 ### Changed
 
 - **Frontend assets**: Reorganized static assets into `frontend/src/assets/images/` and `frontend/src/assets/audio/`
 - **Crab speech bubble anchoring**: Reworked hint bubble positioning to use rendered sprite bounds instead of static offsets
 - **Pearl shell layout**: Adjusted pearl shell positioning; uses all photos in pearl shell
+- **Pearl removal**: Removed pearl mesh, point light, and all related animations from PearlShell 3D scene
+- **Backend refactor**: Extracted shared file deletion helper and removed redundant admin checks
 
 ### Fixed
 
@@ -67,6 +98,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stray character in `App.vue` template
 - Pearl shell layout positioning issues
 - Camera preview visibility in pic wall
+- Auth token sync between Axios interceptor and Pinia store on refresh
+- Crypto fallback guarded; logout auth check restored
+- Chinese error messages for frontend validation; `crypto.randomUUID` fallback documented
+- Memory button overlapping with close button in chat header
+- Photo zoom behavior and drag-too-fast issue
+- Rate limiting description corrected from sliding-window to fixed-window in docs
+- `TRUST_PROXY` configuration reference added to docs
 
 ---
 

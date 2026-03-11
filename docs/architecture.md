@@ -40,9 +40,10 @@ MomShell/
 │   │   ├── config/             # Environment config loader
 │   │   ├── database/           # DB connection & auto-migration
 │   │   ├── dto/                # Request/response data transfer objects
+│   │   ├── fileutil/           # Shared file utilities (deletion helper)
 │   │   ├── handler/            # HTTP handlers (Gin)
 │   │   ├── middleware/         # Auth, CORS, recovery, rate limiting
-│   │   ├── model/              # GORM models (User, Question, Answer, etc.)
+│   │   ├── model/              # GORM models (User, ChatMemory, ChatMemoryFact, etc.)
 │   │   ├── repository/         # Data access layer
 │   │   ├── router/             # Route registration
 │   │   ├── scheduler/          # Background job scheduling (photo cleanup)
@@ -55,14 +56,24 @@ MomShell/
 │
 ├── frontend/                   # Vue 3 frontend
 │   └── src/
+│       ├── assets/
+│       │   ├── audio/          # Background music and sound effects
+│       │   └── images/         # Scene sprites, icons, backgrounds
 │       ├── components/
-│       │   ├── overlay/        # Auth, chat, community, profile, whisper, task panels
+│       │   ├── overlay/        # UI panels (Auth, Chat, Community, AiMemory, Bar, Car,
+│       │   │                   #   Whisper, Task, Profile, RoleSelect, Landing, etc.)
+│       │   ├── react/          # React components (PearlShell 3D scene)
 │       │   └── scene/          # Beach scene layers (sky, ocean, sand, etc.)
-│       ├── composables/        # Vue composables (animation, parallax, waves, music)
+│       ├── composables/        # Vue composables (animation, parallax, waves, music, input)
 │       ├── constants/          # Scene configuration
-│       ├── lib/                # API client, auth utilities
+│       ├── lib/
+│       │   ├── api/            # API modules (chat, community, echo, photo, task, user, whisper)
+│       │   ├── apiClient.ts    # Axios instance with JWT interceptor
+│       │   └── auth.ts         # Raw fetch auth calls (register, login, refresh)
 │       ├── stores/             # Pinia stores (auth, UI)
-│       └── styles/             # CSS
+│       ├── styles/             # CSS
+│       ├── types/              # TypeScript type definitions
+│       └── utils/              # Shared utility functions
 │
 ├── deploy/                     # Docker Compose + Nginx config
 ├── docs/                       # Documentation
@@ -97,11 +108,26 @@ The admin panel is a single HTML file (`internal/admin/admin.html`) using Tailwi
 - Admin role verified per-request in handler via `authService.GetUserByID`
 - Fixed-window rate limiting on all API endpoints
 
+### AI Companion Memory
+
+Three-phase memory system for the Soul Companion:
+
+1. **Conversation turns** — Raw user/assistant exchanges stored as JSON in `ChatMemory.ConversationTurns`
+2. **Conversation summary** — Auto-generated summary when turns exceed 20; keeps recent 15 turns + compressed summary
+3. **Structured memory facts** — `ChatMemoryFact` model with category classification (family, interest, concern, personal_info, preference, other); auto-extracted from AI responses and deduplicated
+
+Role-based system prompts adjust tone for mom, dad, and professional users.
+
 ### Content Moderation
 
 - Keyword-based detection with categories (pseudoscience, violence, self-harm, spam)
 - Crisis keywords trigger auto-rejection
 - Results: Passed / Rejected / NeedManualReview
+
+### Deployment Modes
+
+- **Docker Compose**: Nginx + Go + PostgreSQL as separate containers, port 80
+- **ModelScope standalone**: Single container with embedded PostgreSQL, nginx on port 7860, auto-initialized via entrypoint
 
 ## Data Flow
 

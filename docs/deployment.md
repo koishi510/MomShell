@@ -13,7 +13,7 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-## Quick Start
+## Quick Start (Docker Compose)
 
 ```bash
 # 1. Configure environment
@@ -37,10 +37,11 @@ A single Docker image contains both frontend and backend:
 Browser → Nginx (:80)
             ├── /            → static files (Vue SPA)
             ├── /api/        → proxy → Go backend (:8000)
+            ├── /uploads/    → proxy → Go backend (:8000)
             └── /admin       → proxy → Go backend (:8000)
 ```
 
-`docker-compose.yml` runs two containers:
+`docker-compose.yml` (in `deploy/`) runs two containers:
 
 | Service | Image | Port |
 |---------|-------|------|
@@ -49,8 +50,19 @@ Browser → Nginx (:80)
 
 The root `Dockerfile` uses multi-stage builds:
 1. **frontend-builder** — Node 24, `npm ci && npm run build` → `dist/`
-2. **backend-builder** — Go 1.23, `go build` → binary
+2. **backend-builder** — Go 1.25, `go build` → binary
 3. **final** — Nginx Alpine + Go binary + entrypoint script
+
+## ModelScope Standalone Deployment
+
+For single-container platforms like ModelScope Studios, the Dockerfile also supports embedded PostgreSQL:
+
+```bash
+docker build -t momshell .
+docker run -d -p 7860:7860 --env-file .env momshell
+```
+
+The entrypoint script (`deploy/entrypoint.sh`) auto-initializes PostgreSQL (initdb, create user/db) when no external database is configured. Nginx listens on port 7860 in this mode.
 
 ## Make Commands
 
@@ -59,16 +71,6 @@ make docker-build    # Build Docker image
 make docker-up       # Start all services (app + postgres)
 make docker-down     # Stop all services
 make docker-logs     # View logs
-```
-
-## Standalone Run
-
-```bash
-# Build
-docker build -t momshell .
-
-# Run (requires external PostgreSQL)
-docker run -d -p 80:80 --env-file .env momshell
 ```
 
 ## Configuration

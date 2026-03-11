@@ -13,7 +13,7 @@ AI-powered postpartum recovery platform with emotional support, community connec
 
 | Module | Description |
 |--------|-------------|
-| **Soul Companion** | AI chat companion with conversation memory and emotional support |
+| **Soul Companion** | AI chat companion with conversation memory, history viewing, and emotional support |
 | **Sisterhood Bond** | Community Q&A with verified healthcare professionals and content moderation |
 | **Echo / Memoir** | Self-reflection space with AI-generated memoir stickers and partner connection |
 | **Photo Gallery** | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI |
@@ -43,13 +43,17 @@ MomShell/
 │   ├── cmd/server/     # Entry point
 │   ├── internal/       # App code (handler/service/repository/model/dto)
 │   │   ├── admin/      # Embedded admin panel (go:embed)
+│   │   ├── fileutil/   # Shared file helpers
 │   │   └── scheduler/  # Background job scheduling
 │   └── pkg/            # Shared utilities (JWT, password, OpenAI, Firecrawl)
 ├── frontend/           # Vue 3 (Vite + TypeScript + Pinia)
 │   └── src/
-│       ├── components/ # Overlay panels + beach scene layers
+│       ├── components/ # Overlay panels + beach scene + React 3D shell
 │       ├── composables/# Animation, parallax, waves, music
-│       └── stores/     # Pinia stores (auth, UI)
+│       ├── lib/api/    # API client modules (chat, community, echo, photo, etc.)
+│       ├── stores/     # Pinia stores (auth, UI)
+│       ├── types/      # TypeScript type definitions
+│       └── utils/      # Shared utility functions
 ├── deploy/             # Docker Compose + Nginx
 ├── docs/               # Documentation
 ├── scripts/            # Development setup scripts

@@ -8,8 +8,14 @@ AI-powered emotional support companion.
 
 - **Empathetic conversations** designed for postpartum emotional support
 - **Conversation memory** for personalized experience across sessions
+- **Structured memory facts** — AI extracts and stores key information (family, interests, concerns) with category labels
+- **Memory management** — view, browse, and delete individual memory facts in the memory panel
+- **Conversation history** — view full conversation history (recent turns + compressed summary) in a dedicated tab
+- **History clearing** — clear conversation history with confirmation for privacy control
+- **Auto-summarization** — older conversation turns are automatically compressed into a summary to keep context efficient
 - **Content moderation** with crisis keyword detection
 - **Visual effects** — color tones and animations on AI responses
+- **Web search grounding** — AI responses reference web search results for factual questions
 
 ## Sisterhood Bond
 
@@ -17,8 +23,11 @@ Community Q&A connecting mothers with verified healthcare professionals.
 
 - **Dual channels**: Professional advice and peer experience sharing
 - **Verified professionals**: Doctors, therapists, and nurses with credential verification
+- **Community board UI**: Board-style layout with avatars, layered scroll, and elastic bounce effects
+- **Comment editing**: Users and admins can edit their comments
+- **My content tabs**: View own questions and answers in bag panel tabs
 - **Engagement**: Q&A, likes, collections, comments
-- **AI auto-reply**: AI community assistant replies to posts and comments with source citations
+- **AI auto-reply**: AI community assistant replies to all new posts and comment replies with source citations
 - **Content moderation**: Keyword-based filtering with manual review queue
 
 ## Echo / Memoir
