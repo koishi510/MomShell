@@ -66,8 +66,8 @@
       </Transition>
 
       <!-- Suitcase Modal (Photo Gallery) -->
-      <Transition name="modal-zoom">
-        <div v-if="showSuitcase" class="modal-overlay" @click.self="showSuitcase = false">
+      <Transition name="suitcase-panel">
+        <div v-if="showSuitcase" class="suitcase-overlay" @click.self="showSuitcase = false">
           <div class="suitcase-modal" :style="modalOrigin">
             <button class="modal-close" @click="showSuitcase = false">✕</button>
             <h3 class="suitcase-title">照片集</h3>
@@ -158,8 +158,8 @@
       </Transition>
 
       <!-- Profile Modal -->
-      <Transition name="modal-zoom">
-        <div v-if="showProfile" class="modal-overlay" @click.self="closeProfile">
+      <Transition name="profile-panel">
+        <div v-if="showProfile" class="profile-overlay" @click.self="closeProfile">
           <div class="modal-content profile-modal">
             <button class="modal-close" @click="closeProfile">✕</button>
 
@@ -465,14 +465,14 @@ const wallPhotos = computed(() =>
   allPhotos.value
     .filter((p) => p.is_on_wall)
     .sort((a, b) => (a.wall_position ?? 99) - (b.wall_position ?? 99))
-    .slice(0, 9),
+    .slice(0, 10),
 )
 
 const allPhotoUrls = computed(() =>
   allPhotos.value.map((p) => p.image_url),
 )
 
-const emptySlots = computed(() => Math.max(0, 9 - wallPhotos.value.length))
+const emptySlots = computed(() => Math.max(0, 10 - wallPhotos.value.length))
 
 // ── Photo management state ──
 const photoInput = ref<HTMLInputElement | null>(null)
@@ -637,8 +637,8 @@ async function onToggleWall(photo: Photo) {
   const newIsOnWall = !photo.is_on_wall
   const wallCount = allPhotos.value.filter((p) => p.is_on_wall).length
 
-  if (newIsOnWall && wallCount >= 9) {
-    photoError.value = '照片墙已满 (最多 9 张)'
+  if (newIsOnWall && wallCount >= 10) {
+    photoError.value = '照片墙已满 (最多 10 张)'
     return
   }
 
@@ -650,7 +650,7 @@ async function onToggleWall(photo: Photo) {
         .filter((p) => p.is_on_wall && p.id !== photo.id)
         .map((p) => p.wall_position),
     )
-    for (let i = 0; i <= 8; i++) {
+    for (let i = 0; i <= 9; i++) {
       if (!usedPositions.has(i)) {
         position = i
         break
@@ -1036,10 +1036,10 @@ watch(visible, async (isVisible) => {
 
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
   width: 100%;
-  max-width: 420px;
+  max-width: 880px;
 }
 
 .photo-frame {
@@ -1220,21 +1220,63 @@ watch(visible, async (isVisible) => {
   padding: 48px 0;
 }
 
+/* ── Suitcase Overlay (matches OverlayPanel) ── */
+.suitcase-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
 /* ── Suitcase Modal ── */
 .suitcase-modal {
   position: relative;
   width: 75vw;
   max-width: 900px;
   max-height: 80vh;
-  background: rgba(40, 34, 28, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-radius: var(--glass-radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
   padding: 32px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* ── Suitcase Panel Transition ── */
+.suitcase-panel-enter-active {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.suitcase-panel-enter-active .suitcase-modal {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+.suitcase-panel-leave-active {
+  transition: opacity 0.25s ease;
+}
+.suitcase-panel-leave-active .suitcase-modal {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.suitcase-panel-enter-from {
+  opacity: 0;
+}
+.suitcase-panel-enter-from .suitcase-modal {
+  transform: scale(0.92) translateY(20px);
+  opacity: 0;
+}
+.suitcase-panel-leave-to {
+  opacity: 0;
+}
+.suitcase-panel-leave-to .suitcase-modal {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
 }
 
 .suitcase-title {
@@ -1469,11 +1511,58 @@ watch(visible, async (isVisible) => {
   opacity: 0;
 }
 
+/* ── Profile Overlay (matches OverlayPanel) ── */
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
 /* ── Profile Modal ── */
 .profile-modal {
   width: 520px;
   max-width: 90vw;
   padding: 32px 28px;
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
+}
+
+/* ── Profile Panel Transition ── */
+.profile-panel-enter-active {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.profile-panel-enter-active .profile-modal {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+.profile-panel-leave-active {
+  transition: opacity 0.25s ease;
+}
+.profile-panel-leave-active .profile-modal {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.profile-panel-enter-from {
+  opacity: 0;
+}
+.profile-panel-enter-from .profile-modal {
+  transform: scale(0.92) translateY(20px);
+  opacity: 0;
+}
+.profile-panel-leave-to {
+  opacity: 0;
+}
+.profile-panel-leave-to .profile-modal {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
 }
 
 .profile-header {

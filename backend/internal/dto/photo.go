@@ -33,14 +33,14 @@ type UpdatePhotoRequest struct {
 
 type ToggleWallRequest struct {
 	IsOnWall     bool `json:"is_on_wall"`
-	WallPosition *int `json:"wall_position" binding:"omitempty,min=0,max=8"`
+	WallPosition *int `json:"wall_position" binding:"omitempty,min=0,max=9"`
 }
 
 type BatchWallUpdateRequest struct {
-	Photos []WallItem `json:"photos" binding:"required,min=1,max=9"`
+	Photos []WallItem `json:"photos" binding:"required,min=1,max=10"`
 }
 
 type WallItem struct {
 	PhotoID  string `json:"photo_id" binding:"required"`
-	Position int    `json:"position" binding:"min=0,max=8"`
+	Position int    `json:"position" binding:"min=0,max=9"`
 }

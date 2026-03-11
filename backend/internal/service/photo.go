@@ -25,7 +25,7 @@ import (
 
 const (
 	maxPhotosPerUser = 25
-	maxWallPhotos    = 9
+	maxWallPhotos    = 10
 )
 
 type PhotoService struct {
