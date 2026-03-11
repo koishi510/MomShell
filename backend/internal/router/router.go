@@ -148,6 +148,8 @@ func Setup(
 		companion.GET("/profile", middleware.AuthOptional(cfg), chatHandler.GetProfile)
 		companion.GET("/memories", middleware.AuthRequired(cfg), chatHandler.GetMemories)
 		companion.DELETE("/memories/:id", middleware.AuthRequired(cfg), chatHandler.DeleteMemory)
+		companion.GET("/history", middleware.AuthRequired(cfg), chatHandler.GetHistory)
+		companion.DELETE("/history", middleware.AuthRequired(cfg), chatHandler.ClearHistory)
 	}
 
 	echo := api.Group("/echo", middleware.AuthRequired(cfg))

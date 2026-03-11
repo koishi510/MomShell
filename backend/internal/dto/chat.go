@@ -47,3 +47,15 @@ type ChatMemoryFactsResponse struct {
 	Facts []ChatMemoryFactDTO `json:"facts"`
 	Total int                 `json:"total"`
 }
+
+// ConversationTurn represents a single user-assistant exchange
+type ConversationTurn struct {
+	UserInput         string `json:"user_input"`
+	AssistantResponse string `json:"assistant_response"`
+}
+
+// ConversationHistoryResponse wraps conversation turns and summary
+type ConversationHistoryResponse struct {
+	Turns   []ConversationTurn `json:"turns"`
+	Summary string             `json:"summary"`
+}

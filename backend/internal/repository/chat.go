@@ -71,7 +71,7 @@ func (r *ChatRepo) DeleteFact(id string) error {
 
 func (r *ChatRepo) FactExistsByContent(userID, content string) (bool, error) {
 	var count int64
-	err := r.db.Model(&model.ChatMemoryFact{}).
+	err := r.db.Unscoped().Model(&model.ChatMemoryFact{}).
 		Where("user_id = ? AND content = ?", userID, content).
 		Count(&count).Error
 	return count > 0, err

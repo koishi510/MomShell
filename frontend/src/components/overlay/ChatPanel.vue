@@ -1,8 +1,15 @@
 <template>
   <OverlayPanel :visible="uiStore.activePanel === 'chat'" position="right" @close="uiStore.closePanel()">
-    <div class="chat-panel">
+    <div class="chat-panel" :style="ambientStyle">
+      <!-- Ambient background layer -->
+      <div class="ambient-bg" :style="ambientGradientStyle" />
+
+      <!-- Ripple on send -->
+      <Transition name="ripple-fx">
+        <div v-if="showRipple" class="send-ripple" />
+      </Transition>
+
       <div class="chat-header">
-        <h2 class="chat-title">小石光</h2>
         <button v-if="authStore.isAuthenticated" class="memory-btn" @click="uiStore.openPanel('ai-memory')" title="AI 记忆管理">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="currentColor" />
@@ -16,31 +23,32 @@
 
       <!-- Messages -->
       <div class="messages" ref="messagesEl">
-        <div v-if="messages.length === 0" class="chat-empty">
-          <p v-if="preferredName">{{ preferredName }}，你好，我是小石光。</p>
-          <p v-else>你好，我是小石光。</p>
-          <p>有什么想聊的吗？</p>
-        </div>
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          :class="['message', msg.role]"
-        >
-          <div
-            :class="[
-              'msg-bubble',
-              msg.showEffect && msg.visualMeta ? `effect-${msg.visualMeta.effect_type}` : '',
-            ]"
-            :style="getBubbleStyle(msg)"
-          >
-            {{ msg.text }}
+        <Transition name="msg-replace" mode="out-in">
+          <div v-if="messages.length === 0 && !sending" key="empty" class="chat-empty">
+            <p class="empty-greeting" v-if="preferredName">{{ preferredName }}，你好</p>
+            <p class="empty-greeting" v-else>你好</p>
+            <p class="empty-subtitle">我是小石光，有什么想聊的吗？</p>
           </div>
-        </div>
-        <div v-if="sending" class="message assistant">
-          <div class="msg-bubble typing">
-            <span /><span /><span />
+          <div v-else-if="sending" key="loading" class="msg-center">
+            <p v-if="latestUserMsg" class="msg-text user-text">{{ latestUserMsg.text }}</p>
+            <div class="typing-dots">
+              <span /><span /><span />
+            </div>
           </div>
-        </div>
+          <div v-else-if="latestAssistantMsg" :key="latestAssistantMsg.id" class="msg-center">
+            <p v-if="latestUserMsg" class="msg-text user-text">{{ latestUserMsg.text }}</p>
+            <p
+              :class="[
+                'msg-text assistant-text',
+                latestAssistantMsg.showEffect && latestAssistantMsg.visualMeta
+                  ? `effect-${latestAssistantMsg.visualMeta.effect_type}` : '',
+              ]"
+              :style="getBubbleStyle(latestAssistantMsg)"
+            >
+              {{ latestAssistantMsg.text }}
+            </p>
+          </div>
+        </Transition>
       </div>
 
       <!-- Input -->
@@ -49,12 +57,12 @@
           v-model="input"
           type="text"
           class="chat-input"
-          placeholder="说点什么..."
+          placeholder="说说你的心情..."
           :disabled="sending"
         />
         <button type="submit" class="send-btn" :disabled="!input.trim() || sending">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M3 10L17 3L10 17L9 11L3 10Z" fill="currentColor" />
+            <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
           </svg>
         </button>
       </form>
@@ -100,6 +108,7 @@ const sending = ref(false)
 const messagesEl = ref<HTMLElement | null>(null)
 const preferredName = ref<string | null>(_preferredName)
 const showMemoryToast = ref(false)
+const showRipple = ref(false)
 
 const isOpen = computed(() => uiStore.activePanel === 'chat')
 
@@ -112,6 +121,47 @@ const colorToneMap: Record<string, string> = {
   coral: 'rgba(255,127,80,0.15)',
   sage: 'rgba(143,188,143,0.15)',
 }
+
+const ambientColorMap: Record<string, { primary: string; secondary: string }> = {
+  soft_pink: { primary: 'rgba(255,182,193,0.25)', secondary: 'rgba(255,228,225,0.1)' },
+  warm_gold: { primary: 'rgba(255,215,0,0.2)', secondary: 'rgba(255,248,220,0.08)' },
+  gentle_blue: { primary: 'rgba(135,206,235,0.2)', secondary: 'rgba(176,224,230,0.08)' },
+  lavender: { primary: 'rgba(200,162,255,0.2)', secondary: 'rgba(230,230,250,0.08)' },
+  neutral_white: { primary: 'rgba(255,255,255,0.12)', secondary: 'rgba(255,255,255,0.04)' },
+  coral: { primary: 'rgba(255,127,80,0.2)', secondary: 'rgba(255,160,122,0.08)' },
+  sage: { primary: 'rgba(143,188,143,0.2)', secondary: 'rgba(193,225,193,0.08)' },
+}
+
+const latestColorTone = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const m = messages.value[i]
+    if (m.role === 'assistant' && m.visualMeta?.color_tone) return m.visualMeta.color_tone
+  }
+  return 'gentle_blue'
+})
+
+const ambientStyle = computed(() => ({
+  '--ambient-primary': ambientColorMap[latestColorTone.value]?.primary ?? ambientColorMap.gentle_blue.primary,
+  '--ambient-secondary': ambientColorMap[latestColorTone.value]?.secondary ?? ambientColorMap.gentle_blue.secondary,
+}))
+
+const ambientGradientStyle = computed(() => ({
+  background: `radial-gradient(ellipse at 30% 40%, var(--ambient-primary), var(--ambient-secondary), transparent)`,
+}))
+
+const latestUserMsg = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].role === 'user') return messages.value[i]
+  }
+  return null
+})
+
+const latestAssistantMsg = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].role === 'assistant') return messages.value[i]
+  }
+  return null
+})
 
 function generateSessionId(): string {
   // crypto.randomUUID() requires a secure context (HTTPS or localhost).
@@ -148,7 +198,6 @@ function getBubbleStyle(msg: ChatMessage): Record<string, string> {
     return {
       '--effect-color': color,
       '--effect-intensity': String(0.5 + msg.visualMeta.intensity * 0.5),
-      background: `radial-gradient(ellipse at 30% 50%, ${color}, rgba(255,255,255,0.1))`,
     }
   }
   return {}
@@ -192,6 +241,8 @@ async function onSend() {
   ]
   input.value = ''
   sending.value = true
+  showRipple.value = true
+  setTimeout(() => { showRipple.value = false }, 800)
   syncPersistent()
   scrollToBottom()
 
@@ -255,41 +306,81 @@ async function onSend() {
   position: relative;
 }
 
+/* ── Ambient background ── */
+.ambient-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 2s ease-in-out;
+  animation: ambientBreath 4s ease-in-out infinite;
+}
+
+@keyframes ambientBreath {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ── Send ripple ── */
+.send-ripple {
+  position: absolute;
+  left: 50%;
+  bottom: 80px;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ambient-primary, rgba(135, 206, 235, 0.3));
+  transform: translate(-50%, 50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ripple-fx-enter-active {
+  animation: rippleExpand 0.8s ease-out forwards;
+}
+.ripple-fx-leave-active {
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+@keyframes rippleExpand {
+  0% { width: 0; height: 0; opacity: 0.8; }
+  100% { width: 500px; height: 500px; opacity: 0; }
+}
+
+/* ── Header ── */
 .chat-header {
   display: flex;
   align-items: center;
-  padding: 24px 56px 16px 24px; /* right padding clears the overlay close button */
+  padding: 24px 56px 16px 24px;
   flex-shrink: 0;
   gap: 12px;
-}
-
-.chat-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
+  position: relative;
+  z-index: 2;
 }
 
 .memory-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s, transform 0.15s;
 }
 
 .memory-btn:hover {
-  background: rgba(255, 215, 0, 0.12);
-  border-color: rgba(255, 215, 0, 0.2);
-  color: var(--accent-warm);
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.08);
 }
 
-/* Memory toast */
+/* ── Memory toast ── */
 .memory-toast {
   position: absolute;
   top: 64px;
@@ -312,133 +403,142 @@ async function onSend() {
 .toast-enter-active {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
-
 .toast-leave-active {
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
-
 .toast-enter-from {
   opacity: 0;
   transform: translateX(-50%) translateY(-6px);
 }
-
 .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(-4px);
 }
 
+/* ── Messages ── */
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 0 24px 16px;
+  padding: 0 32px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overscroll-behavior: contain;
+  position: relative;
+  z-index: 2;
+}
+
+.msg-center {
+  text-align: center;
+  width: 100%;
+  max-width: 560px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  overscroll-behavior: contain;
+  align-items: center;
+  gap: 20px;
 }
 
+/* ── Empty state ── */
 .chat-empty {
   text-align: center;
-  padding: 60px 0 20px;
   color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 2;
-}
-
-.message {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-.message.user {
-  justify-content: flex-end;
+.empty-greeting {
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--text-primary);
+  opacity: 0.8;
 }
 
-.message.assistant {
-  justify-content: flex-start;
+.empty-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
-.msg-bubble {
-  max-width: 80%;
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 15px;
-  line-height: 1.6;
+/* ── Replace transition ── */
+.msg-replace-enter-active {
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.msg-replace-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.msg-replace-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.msg-replace-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ── Text styles ── */
+.msg-text {
   word-break: break-word;
 }
 
-.message.user .msg-bubble {
-  background: var(--accent-warm);
-  color: #fff;
-  border-bottom-right-radius: 6px;
+.user-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
-.message.assistant .msg-bubble {
-  background: rgba(255, 255, 255, 0.1);
+.assistant-text {
+  font-size: 20px;
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom-left-radius: 6px;
-  transition: background 0.6s ease, box-shadow 0.6s ease;
+  font-weight: 300;
+  line-height: 1.8;
+  max-width: 480px;
+  transition: text-shadow 0.6s ease;
 }
 
-/* Visual effects */
-.effect-ripple {
-  animation: effectRipple 3s ease-out forwards;
-}
-
-.effect-sunlight {
-  animation: effectSunlight 3s ease-out forwards;
-}
-
-.effect-calm {
-  animation: effectCalm 3s ease-in-out forwards;
-}
-
-.effect-warm_glow {
-  animation: effectWarmGlow 3s ease-out forwards;
-}
-
-.effect-gentle_wave {
-  animation: effectGentleWave 3s ease-in-out forwards;
-}
+/* ── Visual effects ── */
+.effect-ripple { animation: effectRipple 3s ease-out forwards; }
+.effect-sunlight { animation: effectSunlight 3s ease-out forwards; }
+.effect-calm { animation: effectCalm 3s ease-in-out forwards; }
+.effect-warm_glow { animation: effectWarmGlow 3s ease-out forwards; }
+.effect-gentle_wave { animation: effectGentleWave 3s ease-in-out forwards; }
 
 @keyframes effectRipple {
-  0% { box-shadow: 0 0 0 0 var(--effect-color, rgba(255, 255, 255, 0.1)); }
-  30% { box-shadow: 0 0 14px 6px var(--effect-color, rgba(255, 255, 255, 0.1)); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0% { text-shadow: 0 0 0 var(--effect-color, rgba(255, 255, 255, 0.1)); }
+  30% { text-shadow: 0 0 20px var(--effect-color, rgba(255, 255, 255, 0.3)); }
+  100% { text-shadow: 0 0 0 transparent; }
 }
-
 @keyframes effectSunlight {
-  0% { box-shadow: inset 10px 0 24px -10px var(--effect-color, rgba(255, 215, 0, 0.15)); }
-  100% { box-shadow: inset 0 0 0 0 transparent; }
+  0% { text-shadow: 4px 0 24px var(--effect-color, rgba(255, 215, 0, 0.3)); }
+  100% { text-shadow: 0 0 0 transparent; }
 }
-
 @keyframes effectCalm {
-  0% { transform: scale(1); box-shadow: 0 0 10px 0 var(--effect-color, rgba(255, 255, 255, 0.1)); }
-  50% { transform: scale(1.008); box-shadow: 0 0 14px 3px var(--effect-color, rgba(255, 255, 255, 0.1)); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+  0% { transform: scale(1); text-shadow: 0 0 10px var(--effect-color, rgba(255, 255, 255, 0.2)); }
+  50% { transform: scale(1.01); text-shadow: 0 0 18px var(--effect-color, rgba(255, 255, 255, 0.3)); }
+  100% { transform: scale(1); text-shadow: 0 0 0 transparent; }
 }
-
 @keyframes effectWarmGlow {
-  0% { box-shadow: 0 0 18px 4px var(--effect-color, rgba(255, 215, 0, 0.12)); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0% { text-shadow: 0 0 24px var(--effect-color, rgba(255, 215, 0, 0.3)); }
+  100% { text-shadow: 0 0 0 transparent; }
 }
-
 @keyframes effectGentleWave {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(1.5px); }
-  40% { transform: translateX(-1.5px); }
-  60% { transform: translateX(1px); }
-  80% { transform: translateX(-0.5px); }
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-2px); }
+  75% { transform: translateY(2px); }
 }
 
-/* Typing indicator */
-.msg-bubble.typing {
+/* ── Typing indicator ── */
+.typing-dots {
   display: flex;
-  gap: 5px;
-  padding: 14px 18px;
+  gap: 6px;
+  justify-content: center;
+  padding: 8px 0;
 }
 
-.msg-bubble.typing span {
+.typing-dots span {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -446,37 +546,41 @@ async function onSend() {
   animation: typingDot 1.2s infinite ease-in-out;
 }
 
-.msg-bubble.typing span:nth-child(2) { animation-delay: 0.15s; }
-.msg-bubble.typing span:nth-child(3) { animation-delay: 0.3s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
 
 @keyframes typingDot {
   0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-  30% { opacity: 1; transform: translateY(-4px); }
+  30% { opacity: 1; transform: translateY(-6px); }
 }
 
-/* Input area */
+/* ── Input area ── */
 .chat-input-area {
   display: flex;
   gap: 10px;
-  padding: 16px 24px 24px;
+  padding: 0 24px 24px;
   flex-shrink: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  z-index: 2;
 }
 
 .chat-input {
   flex: 1;
-  padding: 12px 16px;
+  padding: 14px 20px;
   background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
+  border-radius: 24px;
   color: var(--text-primary);
   font-size: 15px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.3s;
 }
 
 .chat-input:focus {
   border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.06);
 }
 
 .chat-input::placeholder {
@@ -484,8 +588,8 @@ async function onSend() {
 }
 
 .send-btn {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -494,11 +598,15 @@ async function onSend() {
   border-radius: 50%;
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   flex-shrink: 0;
+  box-shadow: 0 2px 12px rgba(255, 170, 85, 0.2);
 }
 
-.send-btn:hover { background: var(--accent-warm-hover); }
-.send-btn:active { transform: scale(0.95); }
-.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.send-btn:hover {
+  background: var(--accent-warm-hover);
+  box-shadow: 0 4px 20px rgba(255, 170, 85, 0.3);
+}
+.send-btn:active { transform: scale(0.93); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 </style>

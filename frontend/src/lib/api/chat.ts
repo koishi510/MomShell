@@ -41,6 +41,16 @@ export interface MemoryFactsResponse {
   total: number
 }
 
+export interface ConversationTurn {
+  user_input: string
+  assistant_response: string
+}
+
+export interface ConversationHistoryResponse {
+  turns: ConversationTurn[]
+  summary: string
+}
+
 export function sendChatMessage(data: ChatRequest): Promise<ChatResponse> {
   return apiClient.post('/api/v1/companion/chat', data).then((r) => r.data)
 }
@@ -55,4 +65,12 @@ export function getMemories(): Promise<MemoryFactsResponse> {
 
 export function deleteMemory(id: string): Promise<void> {
   return apiClient.delete(`/api/v1/companion/memories/${id}`).then(() => undefined)
+}
+
+export function getConversationHistory(): Promise<ConversationHistoryResponse> {
+  return apiClient.get('/api/v1/companion/history').then((r) => r.data)
+}
+
+export function clearConversationHistory(): Promise<void> {
+  return apiClient.delete('/api/v1/companion/history').then(() => undefined)
 }
