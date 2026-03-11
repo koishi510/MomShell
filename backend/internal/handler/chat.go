@@ -71,6 +71,27 @@ func (h *ChatHandler) GetMemories(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GET /api/v1/companion/history
+func (h *ChatHandler) GetHistory(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	resp, err := h.chatService.GetConversationHistory(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// DELETE /api/v1/companion/history
+func (h *ChatHandler) ClearHistory(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if err := h.chatService.ClearConversationHistory(userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "对话历史已清除"})
+}
+
 // DELETE /api/v1/companion/memories/:id
 func (h *ChatHandler) DeleteMemory(c *gin.Context) {
 	userID := middleware.GetUserID(c)

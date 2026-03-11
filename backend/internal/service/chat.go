@@ -531,6 +531,31 @@ func (s *ChatService) DeleteMemory(userID, factID string) error {
 	return s.chatRepo.DeleteFact(factID)
 }
 
+// GetConversationHistory returns the user's conversation turns and summary.
+func (s *ChatService) GetConversationHistory(userID string) (*dto.ConversationHistoryResponse, error) {
+	_, turns, summary := s.loadUserMemory(userID)
+
+	dtoTurns := make([]dto.ConversationTurn, 0, len(turns))
+	for _, t := range turns {
+		userInput, _ := t["user_input"].(string)
+		assistantResp, _ := t["assistant_response"].(string)
+		dtoTurns = append(dtoTurns, dto.ConversationTurn{
+			UserInput:         userInput,
+			AssistantResponse: assistantResp,
+		})
+	}
+
+	return &dto.ConversationHistoryResponse{
+		Turns:   dtoTurns,
+		Summary: summary,
+	}, nil
+}
+
+// ClearConversationHistory resets the user's conversation turns and summary.
+func (s *ChatService) ClearConversationHistory(userID string) error {
+	return s.chatRepo.UpdateSummaryAndTurns(userID, "", "[]")
+}
+
 // --- Existing helpers (updated) ---
 
 func (s *ChatService) searchWebForChat(ctx context.Context, userMessage string) string {
