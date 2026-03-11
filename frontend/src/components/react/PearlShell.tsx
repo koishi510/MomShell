@@ -148,7 +148,6 @@ export default function PearlShell({
 
   const upperShellRef = useRef<THREE.InstancedMesh | null>(null);
   const lowerShellRef = useRef<THREE.InstancedMesh | null>(null);
-  const pearlRef = useRef<THREE.Mesh | null>(null);
   const photoGroupRef = useRef<THREE.Group | null>(null);
   const shellGroupRef = useRef<THREE.Group | null>(null);
   const targetShellRotationRef = useRef({ x: 0, y: 0 });
@@ -242,33 +241,6 @@ export default function PearlShell({
     const shellGroup = new THREE.Group();
     scene.add(shellGroup);
     shellGroupRef.current = shellGroup;
-
-    // Pearl
-    const pearlGeo = new THREE.SphereGeometry(1.5, 64, 64);
-    const pearlMat = new THREE.MeshPhysicalMaterial({
-      color: 0xfff5ee,
-      emissive: 0x22110a,
-      roughness: 0.1,
-      metalness: 0.1,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      iridescence: 1.0,
-      iridescenceIOR: 1.5,
-      iridescenceThicknessRange: [100, 400],
-      transparent: true,
-      opacity: 1,
-    });
-    const pearl = new THREE.Mesh(pearlGeo, pearlMat);
-    pearl.position.set(0, -2, 0);
-    shellGroup.add(pearl);
-    pearlRef.current = pearl;
-
-    const pearlLight = new THREE.PointLight(0xffaa55, 2, 20);
-    pearlLight.position.copy(pearl.position);
-    shellGroup.add(pearlLight);
-
-    const pearlLightRef = { current: pearlLight };
-    const pearlMatRef = { current: pearlMat };
 
     // Shells
     const particleCount = 8000;
@@ -400,12 +372,6 @@ export default function PearlShell({
 
       if (!isAnimatingCameraRef.current) {
         controls.update();
-      }
-
-      if (pearlLightRef.current && pearlMatRef.current) {
-        const pulse = stateRef.current.bloomIntensity;
-        pearlLightRef.current.intensity = 2 + pulse * 2;
-        pearlMatRef.current.emissiveIntensity = 1 + pulse;
       }
 
       shellMat.uniforms.time.value = time;
@@ -605,20 +571,11 @@ export default function PearlShell({
 
     if (newState === 'CLOSED') {
       const photosVisible = prevState === 'OPEN' || prevState === 'PHOTO_ZOOM';
-      const fromScattered = prevState === 'SCATTERED';
       const shellDelay = photosVisible ? 1.5 : 0;
-      const pearlDelay = fromScattered ? 2 : shellDelay;
 
       gsap.to(state, { shellOpenAngle: 0, duration: 1.5, delay: shellDelay, ease: 'power2.inOut' });
       gsap.to(state, { scatterProgress: 0, duration: 2, ease: 'power2.inOut' });
       gsap.to(state, { bloomIntensity: 0.2, duration: 1, delay: shellDelay });
-
-      if (pearlRef.current) {
-        gsap.killTweensOf(pearlRef.current.material, 'opacity');
-        pearlRef.current.visible = true;
-        (pearlRef.current.material as THREE.MeshPhysicalMaterial).opacity = 0;
-        gsap.to(pearlRef.current.material, { opacity: 1, duration: 1.5, delay: pearlDelay });
-      }
 
       if (photoGroupRef.current) {
         photoGroupRef.current.children.forEach((child) => {
@@ -641,16 +598,6 @@ export default function PearlShell({
       gsap.to(state, { scatterProgress: 0, duration: 2, ease: 'power2.inOut' });
       gsap.to(state, { bloomIntensity: 0.8, duration: 2 });
 
-      if (pearlRef.current) {
-        gsap.killTweensOf(pearlRef.current.material, 'opacity');
-        gsap.to(pearlRef.current.material, {
-          opacity: 0, duration: 1.5,
-          onComplete: () => {
-            if (pearlRef.current) pearlRef.current.visible = false;
-          },
-        });
-      }
-
       if (photoGroupRef.current) {
         photoGroupRef.current.children.forEach((child) => {
           gsap.to((child as THREE.Mesh).material, { opacity: 1, duration: 2, delay: 1.5 });
@@ -660,12 +607,6 @@ export default function PearlShell({
       gsap.to(state, { shellOpenAngle: 0, duration: 1, ease: 'power2.inOut' });
       gsap.to(state, { scatterProgress: 1, duration: 3, ease: 'power2.inOut' });
       gsap.to(state, { bloomIntensity: 0.3, duration: 2 });
-
-      if (pearlRef.current) {
-        gsap.killTweensOf(pearlRef.current.material, 'opacity');
-        (pearlRef.current.material as THREE.MeshPhysicalMaterial).opacity = 0;
-        pearlRef.current.visible = false;
-      }
 
       if (photoGroupRef.current) {
         photoGroupRef.current.children.forEach((child) => {
