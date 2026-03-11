@@ -35,7 +35,7 @@
 
         <!-- RIGHT: Avatar Frames + Profile Entry -->
         <div class="right-section">
-          <div class="avatars">
+          <div class="avatars" @click="openProfile">
             <div class="avatar-wrapper">
               <img class="avatar-photo" :class="{ 'avatar-custom': hasPartnerCustomAvatar }" :src="partnerAvatarUrl" alt="partner avatar" @error="onAvatarImgError" />
               <img class="avatar-frame" :src="avatarFrame" alt="partner frame" />
@@ -45,9 +45,6 @@
               <img class="avatar-frame" :src="avatarFrame" alt="my frame" />
             </div>
           </div>
-          <button class="profile-entry" @click="openProfile">
-            个人资料
-          </button>
 
           <!-- Box -->
           <div ref="boxRef" class="overflow-box" @click="openSuitcase">
@@ -1087,12 +1084,19 @@ watch(visible, async (isVisible) => {
 .avatars {
   display: flex;
   gap: 40px;
+  cursor: pointer;
 }
 
 .avatar-wrapper {
   position: relative;
   width: 160px;
   height: 160px;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.avatar-wrapper:hover {
+  transform: scale(1.08);
+  filter: brightness(1.12);
 }
 
 .avatar-photo {
@@ -1118,25 +1122,6 @@ watch(visible, async (isVisible) => {
   height: 100%;
   object-fit: contain;
   pointer-events: none;
-}
-
-.profile-entry {
-  padding: 16px 44px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 34px;
-  color: var(--text-primary, #fff);
-  font-size: 22px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
-}
-
-.profile-entry:hover {
-  background: rgba(255, 255, 255, 0.18);
-  transform: scale(1.04);
 }
 
 /* ── Overflow Box ── */

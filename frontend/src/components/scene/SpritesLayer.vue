@@ -41,12 +41,15 @@ import { useUiStore } from '@/stores/ui'
 const CRAB_HINTS: readonly string[] = [
   '想聊聊心事，就点那块石头呀。',
   '想看看大家在讨论什么，就去木屋吧。',
-  '贝壳、海星和海螺，会带你去记忆小站。',
+  '点点贝壳，唤醒沉睡的记忆碎片。',
+  '海星那边有今日任务，完成了会成长哦。',
+  '对着海螺说出心里话吧，它会替你好好收藏。',
   '小车那边，藏着你们关系的小秘密哦。',
   '个人资料页里，可以慢慢整理你的专属设置。',
   '不知道先去哪？先点石头试试看吧。',
   '想更懂自己，就先去记忆小站逛逛。',
   '跟着好奇心走，你会找到想去的地方。',
+  '嘿，我是小螃蟹，随时都在这里给你指路哦。',
 ] as const
 
 const layerEl = ref<HTMLElement | null>(null)
@@ -201,9 +204,8 @@ onUnmounted(() => {
   line-height: 1.55;
   padding: 0.8em 1em;
   border-radius: 1.1em;
-  white-space: normal;
-  width: 18rem;
-  max-width: none;
+  white-space: nowrap;
+  width: max-content;
   pointer-events: none;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
   border: 1px solid rgba(255, 214, 170, 0.7);
