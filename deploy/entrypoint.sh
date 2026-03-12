@@ -19,8 +19,13 @@ start_embedded_pg() {
     # Allow local connections without password + md5 for TCP
     printf 'local all all trust\nhost all all 127.0.0.1/32 md5\nhost all all ::1/128 md5\n' > "$PG_DATA/pg_hba.conf"
     chown postgres:postgres "$PG_DATA/pg_hba.conf"
-    # Reduce shared_buffers for container environments with limited /dev/shm
-    sed -i "s/^shared_buffers.*/shared_buffers = 32MB/" "$PG_DATA/postgresql.conf"
+    # Tune for container environments with limited /dev/shm
+    cat >> "$PG_DATA/postgresql.conf" <<'PGCONF'
+# Container-friendly settings (appended by entrypoint)
+shared_buffers = 32MB
+dynamic_shared_memory_type = posix
+PGCONF
+    chown postgres:postgres "$PG_DATA/postgresql.conf"
   fi
 
   # Ensure log file is writable
@@ -29,9 +34,13 @@ start_embedded_pg() {
 
   # Start PostgreSQL
   echo "[entrypoint] Starting PostgreSQL..."
-  if ! su -s /bin/sh postgres -c "pg_ctl -D $PG_DATA -l /var/log/postgresql.log start -w -t 30"; then
-    echo "[entrypoint] PostgreSQL failed to start. Log output:"
-    cat /var/log/postgresql.log
+  set +e
+  su -s /bin/sh postgres -c "pg_ctl -D $PG_DATA -l /var/log/postgresql.log start -w -t 30"
+  pg_exit=$?
+  set -e
+  if [ "$pg_exit" -ne 0 ]; then
+    echo "[entrypoint] PostgreSQL failed to start (exit code $pg_exit). Log output:"
+    cat /var/log/postgresql.log 2>/dev/null || echo "(no log file found)"
     exit 1
   fi
   echo "[entrypoint] PostgreSQL started."
