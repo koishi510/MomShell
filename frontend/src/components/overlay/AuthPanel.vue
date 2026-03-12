@@ -61,7 +61,7 @@
         </label>
         <label class="auth-label">
           <span>密码</span>
-          <input v-model="regForm.password" type="password" class="auth-input" required minlength="6" autocomplete="new-password" />
+          <input v-model="regForm.password" type="password" class="auth-input" required minlength="8" autocomplete="new-password" />
         </label>
         <label class="auth-label">
           <span>确认密码</span>
