@@ -185,15 +185,15 @@ onUnmounted(() => {
 .sprite.clickable {
   pointer-events: auto;
   cursor: pointer;
-  transition: filter 0.25s;
+  transition: transform 0.2s;
 }
 
 .sprite.clickable:hover {
-  filter: brightness(1.15) drop-shadow(0 0 12px rgba(255, 210, 140, 0.4));
+  transform: scale(1.08);
 }
 
 .sprite.clickable:active {
-  filter: brightness(0.9);
+  transform: scale(0.97);
 }
 
 .speech-bubble {

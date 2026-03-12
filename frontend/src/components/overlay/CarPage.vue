@@ -1235,12 +1235,11 @@ watch(visible, async (isVisible) => {
   position: relative;
   width: 160px;
   height: 160px;
-  transition: transform 0.2s, filter 0.2s;
+  transition: transform 0.2s;
 }
 
 .avatar-wrapper:hover {
   transform: scale(1.08);
-  filter: brightness(1.12);
 }
 
 .avatar-photo {
