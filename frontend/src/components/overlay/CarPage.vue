@@ -1044,8 +1044,10 @@ watch(visible, async (isVisible) => {
   position: relative;
   flex: 1;
   display: flex;
-  align-items: center;
+  align-self: stretch;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 21vh;
 }
 
 .photo-grid {
