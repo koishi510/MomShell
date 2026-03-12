@@ -350,7 +350,7 @@ func truncate(s string, maxLen int) string {
 
 // buildImagePrompt wraps the user's content description with style guidance.
 // Rules:
-//  1. Use flat cartoon / warm illustration style
+//  1. Use sticker illustration style with white border and vector feel
 //  2. Treat the user input as scene content, not a literal title
 //  3. Default protagonist gender is based on user role: dad → male, otherwise female
 func buildImagePrompt(userContent, userRole string) string {
@@ -360,9 +360,9 @@ func buildImagePrompt(userContent, userRole string) string {
 	}
 
 	return fmt.Sprintf(
-		"Flat cartoon style, warm pastel color illustration, soft lighting, cozy atmosphere. "+
-			"Scene description: %s. "+
+		"Sticker illustration: %s. "+
 			"If the scene includes a person and no gender is specified, %s. "+
+			"White border, vector style, high quality. "+
 			"No text, no watermark, no signature.",
 		userContent, genderHint,
 	)
