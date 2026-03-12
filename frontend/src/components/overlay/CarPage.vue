@@ -56,6 +56,24 @@
             </div>
           </div>
 
+          <!-- Pearl Timeline -->
+          <div v-if="timelineNodes.length > 0" class="pearl-timeline">
+            <div class="timeline-line" />
+            <div
+              v-for="(node, idx) in timelineNodes"
+              :key="node.id"
+              class="timeline-node"
+              :style="{ animationDelay: `${idx * 0.15}s` }"
+              @click.stop="activatePearlShell()"
+            >
+              <div class="pearl-dot" />
+              <div class="timeline-label">
+                <span class="timeline-date">{{ node.date }}</span>
+                <span class="timeline-title">{{ node.label }}</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Box -->
           <div ref="boxRef" class="overflow-box" @click="openSuitcase">
             <img :src="boxImg" class="box-icon" alt="overflow box" />
@@ -483,6 +501,34 @@ const allPhotoUrls = computed(() =>
 )
 
 const emptySlots = computed(() => Math.max(0, 10 - wallPhotos.value.length))
+
+const timelineNodes = computed(() => {
+  const photos = allPhotos.value
+  if (photos.length === 0) return []
+
+  const sorted = [...photos].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
+
+  let picked: Photo[]
+  if (sorted.length <= 5) {
+    picked = sorted
+  } else {
+    picked = [sorted[0]]
+    const inner = sorted.length - 2
+    for (let i = 1; i <= 3; i++) {
+      const idx = Math.round((i * inner) / 4)
+      picked.push(sorted[idx])
+    }
+    picked.push(sorted[sorted.length - 1])
+  }
+
+  return picked.map((p, i) => ({
+    id: p.id,
+    date: formatDate(p.created_at),
+    label: p.title || (i === 0 ? '第一张照片' : i === picked.length - 1 ? '最近的回忆' : '记忆碎片'),
+  }))
+})
 
 // ── Photo management state ──
 const photoInput = ref<HTMLInputElement | null>(null)
@@ -1306,6 +1352,108 @@ watch(visible, async (isVisible) => {
   font-size: 12px;
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Pearl Timeline ── */
+.pearl-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 80px;
+  max-height: 320px;
+  padding: 16px 0;
+}
+
+.timeline-line {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 180, 200, 0.05),
+    rgba(255, 180, 200, 0.3) 15%,
+    rgba(255, 210, 80, 0.3) 85%,
+    rgba(255, 210, 80, 0.05)
+  );
+}
+
+.timeline-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  cursor: pointer;
+  padding: 4px 0;
+  opacity: 0;
+  animation: timeline-node-enter 0.5s ease forwards;
+}
+
+@keyframes timeline-node-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pearl-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: radial-gradient(circle at 40% 35%,
+    rgba(255, 230, 200, 0.95),
+    rgba(255, 180, 200, 0.8) 50%,
+    rgba(255, 210, 80, 0.6));
+  box-shadow: 0 0 8px 2px rgba(255, 180, 200, 0.4),
+              0 0 16px 4px rgba(255, 210, 80, 0.2);
+  animation: pearl-glow-pulse 3s ease-in-out infinite;
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+
+@keyframes pearl-glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 180, 200, 0.4), 0 0 16px 4px rgba(255, 210, 80, 0.2); }
+  50% { box-shadow: 0 0 12px 4px rgba(255, 180, 200, 0.6), 0 0 24px 8px rgba(255, 210, 80, 0.35); }
+}
+
+.timeline-node:hover .pearl-dot {
+  transform: scale(1.25);
+  box-shadow: 0 0 14px 4px rgba(255, 180, 200, 0.7),
+              0 0 28px 10px rgba(255, 210, 80, 0.45);
+}
+
+.timeline-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.timeline-node:hover .timeline-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.timeline-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 210, 80, 0.85);
+}
+
+.timeline-title {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Modal Overlay ── */
