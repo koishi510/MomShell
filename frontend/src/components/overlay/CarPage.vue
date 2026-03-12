@@ -524,13 +524,13 @@ const timelineNodes = computed(() => {
   )
 
   let picked: Photo[]
-  if (sorted.length <= 5) {
+  if (sorted.length <= 4) {
     picked = sorted
   } else {
     picked = [sorted[0]]
     const inner = sorted.length - 2
-    for (let i = 1; i <= 3; i++) {
-      const idx = Math.round((i * inner) / 4)
+    for (let i = 1; i <= 2; i++) {
+      const idx = Math.round((i * inner) / 3)
       picked.push(sorted[idx])
     }
     picked.push(sorted[sorted.length - 1])
@@ -1376,8 +1376,9 @@ watch(visible, async (isVisible) => {
   justify-content: center;
   flex: 1;
   min-height: 80px;
-  max-height: 320px;
+  max-height: 420px;
   padding: 16px 0;
+  transform: translateX(-36px);
 }
 
 .timeline-line {
