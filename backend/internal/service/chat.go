@@ -306,10 +306,14 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 	memoryUpdated := updateProfileFromExtract(profile, parsed["memory_extract"])
 
 	// Save structured facts (Phase 3) - with OwnerUserID
-	s.saveFactsFromExtract(userID, familyIDs, parsed["memory_extract"])
+	if s.saveFactsFromExtract(userID, familyIDs, parsed["memory_extract"]) {
+		memoryUpdated = true
+	}
 
 	// Process corrections (delete outdated facts) in family scope
-	s.processMemoryCorrections(familyIDs, parsed["memory_extract"], profile)
+	if s.processMemoryCorrections(familyIDs, parsed["memory_extract"], profile) {
+		memoryUpdated = true
+	}
 
 	// Append new turn
 	turns = append(turns, map[string]interface{}{
@@ -461,19 +465,20 @@ func (s *ChatService) generateAndSaveSummary(userID string, existingSummary stri
 
 // --- Phase 3: Structured Memory Facts ---
 
-func (s *ChatService) saveFactsFromExtract(userID string, familyIDs []string, extract interface{}) {
+func (s *ChatService) saveFactsFromExtract(userID string, familyIDs []string, extract interface{}) bool {
 	if extract == nil {
-		return
+		return false
 	}
 	extractMap, ok := extract.(map[string]interface{})
 	if !ok {
-		return
+		return false
 	}
 	facts, ok := extractMap["facts"].([]interface{})
 	if !ok || len(facts) == 0 {
-		return
+		return false
 	}
 
+	saved := false
 	for _, v := range facts {
 		var content string
 		var aiCategory string
@@ -515,22 +520,25 @@ func (s *ChatService) saveFactsFromExtract(userID string, familyIDs []string, ex
 		}
 		if err := s.chatRepo.CreateFact(fact); err != nil {
 			log.Printf("[ChatService] failed to save fact for user %s: %v", userID, err)
+		} else {
+			saved = true
 		}
 	}
+	return saved
 }
 
 // processMemoryCorrections handles user corrections by fuzzy-deleting matching facts in family scope.
-func (s *ChatService) processMemoryCorrections(familyIDs []string, extract interface{}, profile map[string]interface{}) {
+func (s *ChatService) processMemoryCorrections(familyIDs []string, extract interface{}, profile map[string]interface{}) bool {
 	if extract == nil {
-		return
+		return false
 	}
 	extractMap, ok := extract.(map[string]interface{})
 	if !ok {
-		return
+		return false
 	}
 	corrections, ok := extractMap["corrections"].([]interface{})
 	if !ok || len(corrections) == 0 {
-		return
+		return false
 	}
 
 	phrases := make([]string, 0, len(corrections))
@@ -540,11 +548,14 @@ func (s *ChatService) processMemoryCorrections(familyIDs []string, extract inter
 		}
 	}
 	if len(phrases) == 0 {
-		return
+		return false
 	}
 
+	corrected := false
 	if err := s.chatRepo.DeleteFactsByContentLikeFamily(familyIDs, phrases); err != nil {
 		log.Printf("[ChatService] failed to process memory corrections: %v", err)
+	} else {
+		corrected = true
 	}
 
 	// Also clean legacy profile facts
@@ -565,6 +576,7 @@ func (s *ChatService) processMemoryCorrections(familyIDs []string, extract inter
 		}
 		profile["facts"] = remaining
 	}
+	return corrected
 }
 
 // resolveFactCategory uses the AI-provided category if valid, otherwise falls back to keyword detection.
