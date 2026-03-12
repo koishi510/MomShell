@@ -10,9 +10,9 @@
       </Transition>
 
       <div class="chat-header">
-        <button v-if="authStore.isAuthenticated" class="memory-btn" @click="uiStore.openPanel('ai-memory')" title="AI 记忆管理">
+        <button v-if="authStore.isAuthenticated" class="memory-btn" @click="uiStore.openPanel('ai-memory')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="currentColor" />
+            <path d="M12 3C6.5 3 2 6.58 2 11c0 2.42 1.34 4.58 3.43 6.04L4 21l4.53-2.21C9.62 19.26 10.78 19.5 12 19.5c5.5 0 10-3.58 10-8S17.5 3 12 3z" fill="currentColor" />
           </svg>
         </button>
       </div>
