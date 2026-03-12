@@ -94,6 +94,7 @@ export function apiGetMe(accessToken: string): Promise<User> {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
+      "X-Access-Token": accessToken,
     },
   });
 }
@@ -107,6 +108,7 @@ export function apiSetRole(
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
+      "X-Access-Token": accessToken,
     },
     body: JSON.stringify({ role }),
   });
@@ -116,6 +118,7 @@ export function apiLogout(accessToken?: string): Promise<void> {
   const headers: Record<string, string> = {};
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
+    headers["X-Access-Token"] = accessToken;
   }
   return fetch(`${AUTH_API}/logout`, {
     method: "POST",

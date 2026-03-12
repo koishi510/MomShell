@@ -52,6 +52,7 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (currentAccessToken && config.headers) {
       config.headers.Authorization = `Bearer ${currentAccessToken}`;
+      config.headers["X-Access-Token"] = currentAccessToken;
     }
     // Let browser set Content-Type with boundary for FormData
     if (config.data instanceof FormData) {
