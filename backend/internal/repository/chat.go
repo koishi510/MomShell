@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"strings"
+	"time"
+
 	"github.com/momshell/backend/internal/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -84,4 +87,29 @@ func (r *ChatRepo) TouchFactReferencedAt(ids []string) error {
 	return r.db.Model(&model.ChatMemoryFact{}).
 		Where("id IN ?", ids).
 		Update("last_referenced_at", gorm.Expr("NOW()")).Error
+}
+
+// FindDeletedFactsByUserID returns soft-deleted facts from the last 90 days.
+func (r *ChatRepo) FindDeletedFactsByUserID(userID string) ([]model.ChatMemoryFact, error) {
+	var facts []model.ChatMemoryFact
+	cutoff := time.Now().AddDate(0, 0, -90)
+	err := r.db.Unscoped().
+		Where("user_id = ? AND deleted_at IS NOT NULL AND deleted_at > ?", userID, cutoff).
+		Find(&facts).Error
+	return facts, err
+}
+
+// DeleteFactsByContentLike soft-deletes facts whose content matches any of the given phrases.
+func (r *ChatRepo) DeleteFactsByContentLike(userID string, phrases []string) error {
+	for _, phrase := range phrases {
+		phrase = strings.TrimSpace(phrase)
+		if phrase == "" {
+			continue
+		}
+		if err := r.db.Where("user_id = ? AND content LIKE ?", userID, "%"+phrase+"%").
+			Delete(&model.ChatMemoryFact{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
