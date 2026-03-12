@@ -9,7 +9,10 @@
 
       <div class="car-layout">
         <!-- LEFT: Photo Wall -->
-        <div class="photo-wall" @click="!showPearlShell && activatePearlShell()">
+        <div class="photo-wall">
+          <!-- Dedicated PearlShell activation zone -->
+          <div v-if="!showPearlShell" class="pearl-shell-trigger-zone" @click="activatePearlShell()" />
+
           <!-- Original grid (visible when PearlShell not active or in fullscreen) -->
           <div v-if="!showPearlShell || pearlShellFullscreen" class="photo-grid">
             <div
@@ -17,7 +20,7 @@
               :key="photo.id"
               class="photo-frame"
               :style="getStickerStyle(idx)"
-              @click="openDetail(photo)"
+              @click.stop="openDetail(photo)"
             >
               <img :src="photo.image_url" :alt="photo.title || 'photo'" />
             </div>
@@ -1050,7 +1053,23 @@ watch(visible, async (isVisible) => {
   padding-top: 21vh;
 }
 
+/* ── PearlShell Trigger Zone ── */
+.pearl-shell-trigger-zone {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 936px;
+  height: 544px;
+  margin-top: -17px;
+  margin-left: 0px;
+  z-index: 1; /* Below photos but above background */
+  cursor: pointer;
+}
+
 .photo-grid {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 18px;
