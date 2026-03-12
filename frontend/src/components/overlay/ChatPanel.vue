@@ -383,7 +383,7 @@ async function onSend() {
 /* ── Memory toast ── */
 .memory-toast {
   position: absolute;
-  top: 64px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
   padding: 6px 16px;
