@@ -1405,8 +1405,8 @@ watch(visible, async (isVisible) => {
 }
 
 .pearl-dot {
-  width: 24px;
-  height: 24px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   object-fit: contain;
   filter: drop-shadow(0 0 6px rgba(255, 210, 80, 0.5));
