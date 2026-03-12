@@ -1231,7 +1231,6 @@ watch(visible, async (isVisible) => {
   gap: 0;
   cursor: pointer;
   margin-bottom: 48px;
-  animation: floating-group 6s ease-in-out infinite;
 }
 
 @keyframes floating-group {
