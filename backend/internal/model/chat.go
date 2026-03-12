@@ -35,6 +35,7 @@ const (
 type ChatMemoryFact struct {
 	ID               string         `gorm:"type:varchar(36);primaryKey" json:"id"`
 	UserID           string         `gorm:"type:varchar(36);index;not null" json:"user_id"`
+	OwnerUserID      string         `gorm:"type:varchar(36);index" json:"owner_user_id"`
 	Content          string         `gorm:"type:text;not null" json:"content"`
 	Category         FactCategory   `gorm:"type:varchar(30);default:'other'" json:"category"`
 	CreatedAt        time.Time      `json:"created_at"`

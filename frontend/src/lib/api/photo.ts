@@ -9,6 +9,8 @@ export interface Photo {
   is_on_wall: boolean
   wall_position: number | null
   source: 'upload' | 'ai_generated'
+  owner_id: string
+  owner_nickname: string
   created_at: string
   updated_at: string
 }

@@ -38,6 +38,9 @@ func Migrate(db *gorm.DB) error {
 		"role":     "mom",
 	})
 
+	// Backfill OwnerUserID for existing ChatMemoryFacts
+	db.Exec("UPDATE chat_memory_facts SET owner_user_id = user_id WHERE owner_user_id IS NULL OR owner_user_id = ''")
+
 	return nil
 }
 

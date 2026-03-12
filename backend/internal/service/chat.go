@@ -212,6 +212,27 @@ func NewChatService(client *openai.Client, chatRepo *repository.ChatRepo, userRe
 	}
 }
 
+func (s *ChatService) getFamilyIDs(userID string) []string {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return []string{userID}
+	}
+	if user.PartnerID != nil && *user.PartnerID != "" {
+		return []string{userID, *user.PartnerID}
+	}
+	return []string{userID}
+}
+
+func (s *ChatService) buildNicknameMap(familyIDs []string) map[string]string {
+	m := make(map[string]string, len(familyIDs))
+	for _, id := range familyIDs {
+		if u, err := s.userRepo.FindByID(id); err == nil {
+			m[id] = u.Nickname
+		}
+	}
+	return m
+}
+
 func (s *ChatService) Chat(ctx context.Context, msg dto.UserMessage, userID string) (*dto.VisualResponse, error) {
 	if userID != "" {
 		return s.chatAuthenticated(ctx, msg, userID)
@@ -220,25 +241,45 @@ func (s *ChatService) Chat(ctx context.Context, msg dto.UserMessage, userID stri
 }
 
 func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage, userID string) (*dto.VisualResponse, error) {
-	// Look up user role
+	// Look up user role and partner info
 	role := model.RoleMom
 	isAdmin := false
+	var partnerID string
+	var partnerRole model.UserRole
 	if user, err := s.userRepo.FindByID(userID); err == nil {
 		role = user.Role
 		isAdmin = user.IsAdmin
+		if user.PartnerID != nil && *user.PartnerID != "" {
+			partnerID = *user.PartnerID
+			if partner, err := s.userRepo.FindByID(partnerID); err == nil {
+				partnerRole = partner.Role
+			}
+		}
 	}
 	pronoun := pronounFor(role)
 
-	// Load memory from DB
+	familyIDs := []string{userID}
+	if partnerID != "" {
+		familyIDs = append(familyIDs, partnerID)
+	}
+
+	// Load memory from DB (per-user, not shared)
 	profile, turns, summary := s.loadUserMemory(userID)
 
-	// Load structured facts for prompt
-	factsText, deletedFactsText := s.loadFactsForPrompt(userID)
+	// Load structured facts for prompt (family-scoped)
+	factsText, deletedFactsText := s.loadFactsForPrompt(userID, familyIDs, role, partnerRole)
 
 	systemPrompt := fmt.Sprintf(getCompanionPrompt(role, isAdmin),
 		formatProfile(profile, pronoun, factsText),
 		formatTurns(turns, summary, pronoun),
 	)
+
+	// Update memory section header for family mode
+	if partnerID != "" {
+		for _, old := range []string{"你记得关于她的重要信息", "你记得关于他的重要信息", "你记得关于对方的重要信息"} {
+			systemPrompt = strings.Replace(systemPrompt, old, "你记得关于这个家庭的重要信息", 1)
+		}
+	}
 
 	if deletedFactsText != "" {
 		systemPrompt += "\n\n### 已删除的记忆（用户已删除或更正，请勿重新记录）\n" + deletedFactsText
@@ -264,11 +305,11 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 	// Update profile from extract
 	memoryUpdated := updateProfileFromExtract(profile, parsed["memory_extract"])
 
-	// Save structured facts (Phase 3)
-	s.saveFactsFromExtract(userID, parsed["memory_extract"])
+	// Save structured facts (Phase 3) - with OwnerUserID
+	s.saveFactsFromExtract(userID, familyIDs, parsed["memory_extract"])
 
-	// Process corrections (delete outdated facts)
-	s.processMemoryCorrections(userID, parsed["memory_extract"], profile)
+	// Process corrections (delete outdated facts) in family scope
+	s.processMemoryCorrections(familyIDs, parsed["memory_extract"], profile)
 
 	// Append new turn
 	turns = append(turns, map[string]interface{}{
@@ -420,7 +461,7 @@ func (s *ChatService) generateAndSaveSummary(userID string, existingSummary stri
 
 // --- Phase 3: Structured Memory Facts ---
 
-func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) {
+func (s *ChatService) saveFactsFromExtract(userID string, familyIDs []string, extract interface{}) {
 	if extract == nil {
 		return
 	}
@@ -455,8 +496,8 @@ func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) {
 			continue
 		}
 
-		// Skip if identical fact already exists (including soft-deleted)
-		exists, err := s.chatRepo.FactExistsByContent(userID, content)
+		// Skip if identical fact already exists in family scope (including soft-deleted)
+		exists, err := s.chatRepo.FactExistsByContentFamily(familyIDs, content)
 		if err != nil {
 			log.Printf("[ChatService] failed to check fact existence: %v", err)
 			continue
@@ -467,9 +508,10 @@ func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) {
 
 		category := resolveFactCategory(aiCategory, content)
 		fact := &model.ChatMemoryFact{
-			UserID:   userID,
-			Content:  content,
-			Category: category,
+			UserID:      userID,
+			OwnerUserID: userID,
+			Content:     content,
+			Category:    category,
 		}
 		if err := s.chatRepo.CreateFact(fact); err != nil {
 			log.Printf("[ChatService] failed to save fact for user %s: %v", userID, err)
@@ -477,8 +519,8 @@ func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) {
 	}
 }
 
-// processMemoryCorrections handles user corrections by fuzzy-deleting matching facts.
-func (s *ChatService) processMemoryCorrections(userID string, extract interface{}, profile map[string]interface{}) {
+// processMemoryCorrections handles user corrections by fuzzy-deleting matching facts in family scope.
+func (s *ChatService) processMemoryCorrections(familyIDs []string, extract interface{}, profile map[string]interface{}) {
 	if extract == nil {
 		return
 	}
@@ -501,8 +543,8 @@ func (s *ChatService) processMemoryCorrections(userID string, extract interface{
 		return
 	}
 
-	if err := s.chatRepo.DeleteFactsByContentLike(userID, phrases); err != nil {
-		log.Printf("[ChatService] failed to process memory corrections for user %s: %v", userID, err)
+	if err := s.chatRepo.DeleteFactsByContentLikeFamily(familyIDs, phrases); err != nil {
+		log.Printf("[ChatService] failed to process memory corrections: %v", err)
 	}
 
 	// Also clean legacy profile facts
@@ -580,8 +622,10 @@ func categorizeFactContent(content string) model.FactCategory {
 	}
 }
 
-func (s *ChatService) loadFactsForPrompt(userID string) (string, string) {
-	facts, err := s.chatRepo.FindFactsByUserID(userID)
+func (s *ChatService) loadFactsForPrompt(userID string, familyIDs []string, userRole model.UserRole, partnerRole model.UserRole) (string, string) {
+	hasPartner := len(familyIDs) > 1
+
+	facts, err := s.chatRepo.FindFactsByFamilyIDs(familyIDs)
 	if err != nil {
 		facts = nil
 	}
@@ -590,7 +634,19 @@ func (s *ChatService) loadFactsForPrompt(userID string) (string, string) {
 	ids := make([]string, 0, len(facts))
 	var sb strings.Builder
 	for _, f := range facts {
-		fmt.Fprintf(&sb, "  · %s\n", f.Content)
+		if hasPartner {
+			var label string
+			if f.Category == model.FactCategoryFamily {
+				label = "家庭"
+			} else if f.OwnerUserID == userID {
+				label = pronounFor(userRole)
+			} else {
+				label = pronounFor(partnerRole)
+			}
+			fmt.Fprintf(&sb, "  · [%s] %s\n", label, f.Content)
+		} else {
+			fmt.Fprintf(&sb, "  · %s\n", f.Content)
+		}
 		ids = append(ids, f.ID)
 	}
 
@@ -603,9 +659,9 @@ func (s *ChatService) loadFactsForPrompt(userID string) (string, string) {
 		}()
 	}
 
-	// Deleted facts (prevent re-learning)
+	// Deleted facts in family scope (prevent re-learning)
 	var deletedSB strings.Builder
-	deletedFacts, err := s.chatRepo.FindDeletedFactsByUserID(userID)
+	deletedFacts, err := s.chatRepo.FindDeletedFactsByFamilyIDs(familyIDs)
 	if err == nil {
 		for _, f := range deletedFacts {
 			fmt.Fprintf(&deletedSB, "- %s\n", f.Content)
@@ -615,20 +671,29 @@ func (s *ChatService) loadFactsForPrompt(userID string) (string, string) {
 	return sb.String(), deletedSB.String()
 }
 
-// GetMemories returns all structured memory facts for a user (Phase 3 API).
+// GetMemories returns all structured memory facts for the family (Phase 3 API).
 func (s *ChatService) GetMemories(userID string) (*dto.ChatMemoryFactsResponse, error) {
-	facts, err := s.chatRepo.FindFactsByUserID(userID)
+	familyIDs := s.getFamilyIDs(userID)
+	nicknameMap := s.buildNicknameMap(familyIDs)
+
+	facts, err := s.chatRepo.FindFactsByFamilyIDs(familyIDs)
 	if err != nil {
 		return &dto.ChatMemoryFactsResponse{Facts: []dto.ChatMemoryFactDTO{}, Total: 0}, nil
 	}
 
 	items := make([]dto.ChatMemoryFactDTO, 0, len(facts))
 	for _, f := range facts {
+		ownerID := f.OwnerUserID
+		if ownerID == "" {
+			ownerID = f.UserID
+		}
 		item := dto.ChatMemoryFactDTO{
-			ID:        f.ID,
-			Content:   f.Content,
-			Category:  string(f.Category),
-			CreatedAt: f.CreatedAt.Format(time.RFC3339),
+			ID:            f.ID,
+			Content:       f.Content,
+			Category:      string(f.Category),
+			OwnerUserID:   ownerID,
+			OwnerNickname: nicknameMap[ownerID],
+			CreatedAt:     f.CreatedAt.Format(time.RFC3339),
 		}
 		if f.LastReferencedAt != nil {
 			t := f.LastReferencedAt.Format(time.RFC3339)
@@ -640,13 +705,22 @@ func (s *ChatService) GetMemories(userID string) (*dto.ChatMemoryFactsResponse, 
 	return &dto.ChatMemoryFactsResponse{Facts: items, Total: len(items)}, nil
 }
 
-// DeleteMemory deletes a single memory fact, verifying ownership.
+// DeleteMemory deletes a single memory fact, verifying family ownership.
 func (s *ChatService) DeleteMemory(userID, factID string) error {
 	fact, err := s.chatRepo.FindFactByID(factID)
 	if err != nil {
 		return fmt.Errorf("记忆条目不存在")
 	}
-	if fact.UserID != userID {
+	// Allow deletion if the fact belongs to any family member
+	familyIDs := s.getFamilyIDs(userID)
+	allowed := false
+	for _, id := range familyIDs {
+		if fact.UserID == id {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
 		return fmt.Errorf("无权删除此记忆")
 	}
 	return s.chatRepo.DeleteFact(factID)

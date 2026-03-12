@@ -22,7 +22,7 @@
 
       <!-- Facts Tab -->
       <template v-if="activeTab === 'facts'">
-        <p class="panel-subtitle">这些是 AI 记住的关于你的信息，你可以随时删除</p>
+        <p class="panel-subtitle">这些是小石光记住的关于你们的信息，你可以随时删除</p>
 
         <div v-if="loading" class="loading-state">加载中...</div>
 
@@ -35,6 +35,7 @@
           <div v-for="fact in facts" :key="fact.id" class="fact-card">
             <div class="fact-content">
               <span class="fact-category" :data-category="fact.category">{{ categoryLabel(fact.category) }}</span>
+              <span v-if="hasMultipleOwners" class="fact-owner">{{ ownerLabel(fact) }}</span>
               <span class="fact-text">{{ fact.content }}</span>
             </div>
             <button
@@ -106,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import {
@@ -144,6 +145,16 @@ const categoryLabels: Record<string, string> = {
 
 function categoryLabel(category: string): string {
   return categoryLabels[category] ?? '其他'
+}
+
+const hasMultipleOwners = computed(() => {
+  const ids = new Set(facts.value.map((f) => f.owner_user_id).filter(Boolean))
+  return ids.size > 1
+})
+
+function ownerLabel(fact: MemoryFact): string {
+  if (fact.category === 'family') return '共同'
+  return fact.owner_nickname || ''
 }
 
 watch(
@@ -370,6 +381,17 @@ async function onClearHistory() {
 .fact-category[data-category="preference"] {
   background: rgba(143, 188, 143, 0.18);
   color: #8fbc8f;
+}
+
+.fact-owner {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
 }
 
 .fact-text {

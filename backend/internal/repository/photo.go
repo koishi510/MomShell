@@ -147,3 +147,69 @@ func (r *PhotoRepo) FindAllPaginated(search, userID, source, onWall string, limi
 	err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&photos).Error
 	return photos, total, err
 }
+
+// --- Family (partner-shared) query methods ---
+
+func (r *PhotoRepo) FindByFamilyIDs(familyIDs []string, limit, offset int) ([]model.Photo, int64, error) {
+	query := r.db.Model(&model.Photo{}).Where("user_id IN ?", familyIDs)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var photos []model.Photo
+	err := query.Order("created_at desc").Offset(offset).Limit(limit).Find(&photos).Error
+	return photos, total, err
+}
+
+func (r *PhotoRepo) FindWallPhotosByFamily(familyIDs []string) ([]model.Photo, error) {
+	var photos []model.Photo
+	err := r.db.Where("user_id IN ? AND is_on_wall = ?", familyIDs, true).
+		Order("wall_position asc").Find(&photos).Error
+	return photos, err
+}
+
+func (r *PhotoRepo) CountByFamilyIDs(familyIDs []string) (int64, error) {
+	var count int64
+	err := r.db.Model(&model.Photo{}).Where("user_id IN ?", familyIDs).Count(&count).Error
+	return count, err
+}
+
+func (r *PhotoRepo) CountWallPhotosByFamily(familyIDs []string) (int64, error) {
+	var count int64
+	err := r.db.Model(&model.Photo{}).Where("user_id IN ? AND is_on_wall = ?", familyIDs, true).Count(&count).Error
+	return count, err
+}
+
+func (r *PhotoRepo) FindByIDAndFamilyIDs(id string, familyIDs []string) (*model.Photo, error) {
+	var photo model.Photo
+	err := r.db.Where("id = ? AND user_id IN ?", id, familyIDs).First(&photo).Error
+	if err != nil {
+		return nil, err
+	}
+	return &photo, nil
+}
+
+func (r *PhotoRepo) BatchUpdateWallFamily(familyIDs []string, updates []WallUpdate) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.Photo{}).
+			Where("user_id IN ? AND is_on_wall = ?", familyIDs, true).
+			Updates(map[string]any{"is_on_wall": false, "wall_position": nil}).Error; err != nil {
+			return err
+		}
+		for _, u := range updates {
+			pos := u.Position
+			if err := tx.Model(&model.Photo{}).
+				Where("id = ? AND user_id IN ?", u.PhotoID, familyIDs).
+				Updates(map[string]any{"is_on_wall": true, "wall_position": pos}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (r *PhotoRepo) DeleteByFamily(id string, familyIDs []string) error {
+	return r.db.Where("id = ? AND user_id IN ?", id, familyIDs).Delete(&model.Photo{}).Error
+}
