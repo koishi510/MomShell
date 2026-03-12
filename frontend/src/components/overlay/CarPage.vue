@@ -66,12 +66,7 @@
               :style="{ animationDelay: `${idx * 0.15}s` }"
               @click.stop="activatePearlShell()"
             >
-              <div class="pearl-dot" :style="{
-                '--pearl-hi': PEARL_COLORS[node.colorIdx].hi,
-                '--pearl-mid': PEARL_COLORS[node.colorIdx].mid,
-                '--pearl-lo': PEARL_COLORS[node.colorIdx].lo,
-                '--pearl-glow': PEARL_COLORS[node.colorIdx].glow,
-              }" />
+              <img :src="starImg" class="pearl-dot" :style="{ transform: `rotate(${node.rotate}deg)` }" />
               <div class="timeline-label">
                 <span class="timeline-date">{{ node.date }}</span>
                 <span class="timeline-title">{{ node.label }}</span>
@@ -478,6 +473,7 @@ import { useBackgroundMusicControls } from '@/composables/useBackgroundMusicLoop
 import avatarFrame from '@/assets/images/frame.png'
 import avatarDefault from '@/assets/images/avatar.png'
 import boxImg from '@/assets/images/box.png'
+import starImg from '@/assets/images/star.png'
 import PearlShellWrapper from '@/components/react/PearlShellWrapper.vue'
 
 const uiStore = useUiStore()
@@ -507,13 +503,7 @@ const allPhotoUrls = computed(() =>
 
 const emptySlots = computed(() => Math.max(0, 10 - wallPhotos.value.length))
 
-const PEARL_COLORS = [
-  { hi: '255,220,230', mid: '255,180,200', lo: '255,140,170', glow: '255,180,200' }, // 粉
-  { hi: '255,240,200', mid: '255,210,80',  lo: '230,180,50',  glow: '255,210,80'  }, // 金
-  { hi: '230,220,255', mid: '190,170,240', lo: '160,140,220', glow: '190,170,240' }, // 薰衣草
-  { hi: '255,230,210', mid: '255,190,150', lo: '240,160,120', glow: '255,190,150' }, // 蜜桃
-  { hi: '210,255,240', mid: '150,225,200', lo: '120,200,175', glow: '150,225,200' }, // 薄荷
-]
+const STAR_ROTATIONS = [0, 35, -25]
 
 const timelineNodes = computed(() => {
   const photos = allPhotos.value
@@ -540,7 +530,7 @@ const timelineNodes = computed(() => {
     id: p.id,
     date: formatDate(p.created_at),
     label: p.title || (i === 0 ? '第一张照片' : i === picked.length - 1 ? '最近的回忆' : '记忆碎片'),
-    colorIdx: i % PEARL_COLORS.length,
+    rotate: STAR_ROTATIONS[i % STAR_ROTATIONS.length],
   }))
 })
 
@@ -1415,29 +1405,23 @@ watch(visible, async (isVisible) => {
 }
 
 .pearl-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
-  background: radial-gradient(circle at 40% 35%,
-    rgba(var(--pearl-hi), 0.95),
-    rgba(var(--pearl-mid), 0.8) 50%,
-    rgba(var(--pearl-lo), 0.6));
-  box-shadow: 0 0 8px 2px rgba(var(--pearl-glow), 0.4),
-              0 0 16px 4px rgba(var(--pearl-glow), 0.2);
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(255, 210, 80, 0.5));
   animation: pearl-glow-pulse 3s ease-in-out infinite;
-  transition: box-shadow 0.3s, transform 0.3s;
+  transition: filter 0.3s, transform 0.3s;
 }
 
 @keyframes pearl-glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(var(--pearl-glow), 0.4), 0 0 16px 4px rgba(var(--pearl-glow), 0.2); }
-  50% { box-shadow: 0 0 12px 4px rgba(var(--pearl-glow), 0.6), 0 0 24px 8px rgba(var(--pearl-glow), 0.35); }
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 210, 80, 0.5)); }
+  50% { filter: drop-shadow(0 0 12px rgba(255, 210, 80, 0.7)); }
 }
 
 .timeline-node:hover .pearl-dot {
+  filter: drop-shadow(0 0 14px rgba(255, 210, 80, 0.9));
   transform: scale(1.25);
-  box-shadow: 0 0 14px 4px rgba(var(--pearl-glow), 0.7),
-              0 0 28px 10px rgba(var(--pearl-glow), 0.45);
 }
 
 .timeline-label {
