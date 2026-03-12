@@ -113,3 +113,42 @@ func (r *ChatRepo) DeleteFactsByContentLike(userID string, phrases []string) err
 	}
 	return nil
 }
+
+// --- Family (partner-shared) query methods ---
+
+func (r *ChatRepo) FindFactsByFamilyIDs(familyIDs []string) ([]model.ChatMemoryFact, error) {
+	var facts []model.ChatMemoryFact
+	err := r.db.Where("user_id IN ?", familyIDs).Order("created_at desc").Find(&facts).Error
+	return facts, err
+}
+
+func (r *ChatRepo) FindDeletedFactsByFamilyIDs(familyIDs []string) ([]model.ChatMemoryFact, error) {
+	var facts []model.ChatMemoryFact
+	cutoff := time.Now().AddDate(0, 0, -90)
+	err := r.db.Unscoped().
+		Where("user_id IN ? AND deleted_at IS NOT NULL AND deleted_at > ?", familyIDs, cutoff).
+		Find(&facts).Error
+	return facts, err
+}
+
+func (r *ChatRepo) FactExistsByContentFamily(familyIDs []string, content string) (bool, error) {
+	var count int64
+	err := r.db.Unscoped().Model(&model.ChatMemoryFact{}).
+		Where("user_id IN ? AND content = ?", familyIDs, content).
+		Count(&count).Error
+	return count > 0, err
+}
+
+func (r *ChatRepo) DeleteFactsByContentLikeFamily(familyIDs []string, phrases []string) error {
+	for _, phrase := range phrases {
+		phrase = strings.TrimSpace(phrase)
+		if phrase == "" {
+			continue
+		}
+		if err := r.db.Where("user_id IN ? AND content LIKE ?", familyIDs, "%"+phrase+"%").
+			Delete(&model.ChatMemoryFact{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}

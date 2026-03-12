@@ -32,6 +32,8 @@ export interface MemoryFact {
   id: string
   content: string
   category: string
+  owner_user_id: string
+  owner_nickname: string
   created_at: string
   last_referenced_at: string | null
 }
