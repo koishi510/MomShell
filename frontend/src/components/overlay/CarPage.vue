@@ -1207,12 +1207,12 @@ watch(visible, async (isVisible) => {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .modal-content {
@@ -1462,11 +1462,12 @@ watch(visible, async (isVisible) => {
   width: 600px;
   max-width: 90vw;
   max-height: 85vh;
-  background: rgba(40, 34, 28, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-radius: var(--glass-radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
@@ -1477,7 +1478,7 @@ watch(visible, async (isVisible) => {
   max-height: 400px;
   object-fit: contain;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--glass-radius) var(--glass-radius) 0 0;
 }
 
 .detail-info {
@@ -2159,20 +2160,34 @@ watch(visible, async (isVisible) => {
 
 /* macOS-like zoom animation */
 .modal-zoom-enter-active {
-  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.35s ease;
+}
+
+.modal-zoom-enter-active .detail-modal {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-zoom-leave-active {
-  transition: opacity 0.2s ease, transform 0.25s ease;
+  transition: opacity 0.25s ease;
+}
+
+.modal-zoom-leave-active .detail-modal {
+  transition: transform 0.25s ease;
 }
 
 .modal-zoom-enter-from {
   opacity: 0;
-  transform: scale(0.15);
+}
+
+.modal-zoom-enter-from .detail-modal {
+  transform: scale(0.85) translateY(20px);
 }
 
 .modal-zoom-leave-to {
   opacity: 0;
-  transform: scale(0.15);
+}
+
+.modal-zoom-leave-to .detail-modal {
+  transform: scale(0.95) translateY(10px);
 }
 </style>
