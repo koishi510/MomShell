@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Partner Data Sharing
+
+- **Shared photo library**: Bound partners (linked via `PartnerID`) see a merged photo library; family photo limit raised to 50
+- **Shared photo wall**: Both partners share the same wall (max 10); either can add/remove/reorder
+- **Shared AI memory facts**: Memory facts visible across bound partners with source attribution (`OwnerUserID`); AI prompt labels facts with `[她]/[他]/[家庭]` for family context
+- **Owner badges in memory panel**: When multiple family members exist, memory facts show owner nickname badge
+- **Memory update toast**: "记住了" toast now fires reliably when new facts are saved or corrections applied (previously only triggered on legacy profile updates)
+
+#### Beach Scene Decorations
+
+- **Stars**: Interactive starfish decorations on beach scene (CarPage)
+- **Pearls**: Pearl collection/decoration elements on beach scene (CarPage)
+- **Bloom effect**: Bloom post-processing effect in pearl shell 3D scene
+- **Photo wall filter**: Changed photo wall stickers from grayscale to brightness-based filter
+- **AI image stickers**: Improved AI-generated image sticker rendering and positioning
+
+#### AI Memory Improvements
+
+- **Memory extraction hardening**: Improved AI memory fact extraction with category-based classification, soft-delete aware deduplication, correction handling, and last-referenced tracking
+- **Memory toast relocation**: Repositioned memory update toast for better visibility
+
+### Changed
+
+- **Photo detail modal style**: Unified photo detail modal with glassmorphism variables to match profile modal style
+
+### Fixed
+
+- **Per-user fact dedup**: Memory fact deduplication is now per-user instead of per-family, so both partners can independently record the same fact (e.g., both saying "我喜欢吃苹果")
+- **AI reference fix**: Fixed AI reference handling in chat prompts
+- **Suitcase position**: Adjusted suitcase position to align with background ground level
+- **Pearl shell trigger zone**: Decoupled pearl shell trigger zone from photo wall to prevent interaction conflicts
+- **Pearl shell position**: Fixed pearl shell positioning issues
+
+### Added
+
 #### AI Memory & Conversation History
 
 - **Conversation summary (Phase 2)**: Auto-summarize older conversation turns via AI when history exceeds 20 turns; keeps recent 15 turns + compressed summary for long-term context
