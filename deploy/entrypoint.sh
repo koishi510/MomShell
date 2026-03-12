@@ -17,11 +17,10 @@ start_embedded_pg() {
     chown postgres:postgres "$PG_DATA"
     su -s /bin/sh postgres -c "initdb -D $PG_DATA --no-locale --encoding=UTF8"
     # Allow local connections without password + md5 for TCP
-    su -s /bin/sh postgres -c "cat > $PG_DATA/pg_hba.conf << 'PGEOF'
-local all all trust
-host all all 127.0.0.1/32 md5
-host all all ::1/128 md5
-PGEOF"
+    printf 'local all all trust\nhost all all 127.0.0.1/32 md5\nhost all all ::1/128 md5\n' > "$PG_DATA/pg_hba.conf"
+    chown postgres:postgres "$PG_DATA/pg_hba.conf"
+    # Reduce shared_buffers for container environments with limited /dev/shm
+    sed -i "s/^shared_buffers.*/shared_buffers = 32MB/" "$PG_DATA/postgresql.conf"
   fi
 
   # Ensure log file is writable
@@ -30,7 +29,11 @@ PGEOF"
 
   # Start PostgreSQL
   echo "[entrypoint] Starting PostgreSQL..."
-  su -s /bin/sh postgres -c "pg_ctl -D $PG_DATA -l /var/log/postgresql.log start -w -t 30"
+  if ! su -s /bin/sh postgres -c "pg_ctl -D $PG_DATA -l /var/log/postgresql.log start -w -t 30"; then
+    echo "[entrypoint] PostgreSQL failed to start. Log output:"
+    cat /var/log/postgresql.log
+    exit 1
+  fi
   echo "[entrypoint] PostgreSQL started."
 
   # Wait until PostgreSQL is ready to accept connections
