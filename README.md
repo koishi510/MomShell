@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-AI-powered postpartum recovery platform with emotional support, community connection, and an embedded admin panel.
+AI-powered wellness platform combining emotional companionship, community support, and self-reflection tools in a calming beach-themed experience.
 
 ## Features
 
