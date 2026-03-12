@@ -306,7 +306,7 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 	memoryUpdated := updateProfileFromExtract(profile, parsed["memory_extract"])
 
 	// Save structured facts (Phase 3) - with OwnerUserID
-	if s.saveFactsFromExtract(userID, familyIDs, parsed["memory_extract"]) {
+	if s.saveFactsFromExtract(userID, parsed["memory_extract"]) {
 		memoryUpdated = true
 	}
 
@@ -465,7 +465,7 @@ func (s *ChatService) generateAndSaveSummary(userID string, existingSummary stri
 
 // --- Phase 3: Structured Memory Facts ---
 
-func (s *ChatService) saveFactsFromExtract(userID string, familyIDs []string, extract interface{}) bool {
+func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) bool {
 	if extract == nil {
 		return false
 	}
@@ -501,8 +501,8 @@ func (s *ChatService) saveFactsFromExtract(userID string, familyIDs []string, ex
 			continue
 		}
 
-		// Skip if identical fact already exists in family scope (including soft-deleted)
-		exists, err := s.chatRepo.FactExistsByContentFamily(familyIDs, content)
+		// Skip if identical fact already exists for this user (including soft-deleted)
+		exists, err := s.chatRepo.FactExistsByContent(userID, content)
 		if err != nil {
 			log.Printf("[ChatService] failed to check fact existence: %v", err)
 			continue
