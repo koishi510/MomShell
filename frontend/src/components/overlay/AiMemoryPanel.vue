@@ -35,7 +35,7 @@
           <div v-for="fact in facts" :key="fact.id" class="fact-card">
             <div class="fact-content">
               <span class="fact-category" :data-category="fact.category">{{ categoryLabel(fact.category) }}</span>
-              <span v-if="hasMultipleOwners" class="fact-owner">{{ ownerLabel(fact) }}</span>
+              <span v-if="fact.owner_nickname" class="fact-owner">{{ ownerLabel(fact) }}</span>
               <span class="fact-text">{{ fact.content }}</span>
             </div>
             <button
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import {
@@ -146,11 +146,6 @@ const categoryLabels: Record<string, string> = {
 function categoryLabel(category: string): string {
   return categoryLabels[category] ?? '其他'
 }
-
-const hasMultipleOwners = computed(() => {
-  const ids = new Set(facts.value.map((f) => f.owner_user_id).filter(Boolean))
-  return ids.size > 1
-})
 
 function ownerLabel(fact: MemoryFact): string {
   if (fact.category === 'family') return '共同'
