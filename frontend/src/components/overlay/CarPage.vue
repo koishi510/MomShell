@@ -1131,10 +1131,9 @@ watch(visible, async (isVisible) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 48px;
   min-width: 400px;
-  align-self: flex-start;
-  margin-top: 18vh;
+  align-self: stretch;
+  padding-top: 18vh;
   margin-right: 8vw;
 }
 
@@ -1142,6 +1141,7 @@ watch(visible, async (isVisible) => {
   display: flex;
   gap: 40px;
   cursor: pointer;
+  margin-bottom: 48px;
 }
 
 .avatar-wrapper {
@@ -1187,7 +1187,8 @@ watch(visible, async (isVisible) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 55px;
+  margin-top: auto;
+  margin-bottom: -3vh; /* 落地基准调试：进一步向下移动 */
   cursor: pointer;
   transition: transform 0.2s;
 }
