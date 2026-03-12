@@ -6,6 +6,8 @@ services:
     container_name: momshell
     restart: unless-stopped
     env_file: ../.env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-momshell}:${POSTGRES_PASSWORD:-momshell}@postgres:5432/${POSTGRES_DB:-momshell}?sslmode=disable
     ports:
       - "7860:7860"
     depends_on:
