@@ -66,7 +66,12 @@
               :style="{ animationDelay: `${idx * 0.15}s` }"
               @click.stop="activatePearlShell()"
             >
-              <div class="pearl-dot" />
+              <div class="pearl-dot" :style="{
+                '--pearl-hi': PEARL_COLORS[node.colorIdx].hi,
+                '--pearl-mid': PEARL_COLORS[node.colorIdx].mid,
+                '--pearl-lo': PEARL_COLORS[node.colorIdx].lo,
+                '--pearl-glow': PEARL_COLORS[node.colorIdx].glow,
+              }" />
               <div class="timeline-label">
                 <span class="timeline-date">{{ node.date }}</span>
                 <span class="timeline-title">{{ node.label }}</span>
@@ -502,6 +507,14 @@ const allPhotoUrls = computed(() =>
 
 const emptySlots = computed(() => Math.max(0, 10 - wallPhotos.value.length))
 
+const PEARL_COLORS = [
+  { hi: '255,220,230', mid: '255,180,200', lo: '255,140,170', glow: '255,180,200' }, // 粉
+  { hi: '255,240,200', mid: '255,210,80',  lo: '230,180,50',  glow: '255,210,80'  }, // 金
+  { hi: '230,220,255', mid: '190,170,240', lo: '160,140,220', glow: '190,170,240' }, // 薰衣草
+  { hi: '255,230,210', mid: '255,190,150', lo: '240,160,120', glow: '255,190,150' }, // 蜜桃
+  { hi: '210,255,240', mid: '150,225,200', lo: '120,200,175', glow: '150,225,200' }, // 薄荷
+]
+
 const timelineNodes = computed(() => {
   const photos = allPhotos.value
   if (photos.length === 0) return []
@@ -527,6 +540,7 @@ const timelineNodes = computed(() => {
     id: p.id,
     date: formatDate(p.created_at),
     label: p.title || (i === 0 ? '第一张照片' : i === picked.length - 1 ? '最近的回忆' : '记忆碎片'),
+    colorIdx: i % PEARL_COLORS.length,
   }))
 })
 
@@ -1387,10 +1401,10 @@ watch(visible, async (isVisible) => {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex: 1;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 8px 0;
   opacity: 0;
   animation: timeline-node-enter 0.5s ease forwards;
 }
@@ -1406,24 +1420,24 @@ watch(visible, async (isVisible) => {
   border-radius: 50%;
   flex-shrink: 0;
   background: radial-gradient(circle at 40% 35%,
-    rgba(255, 230, 200, 0.95),
-    rgba(255, 180, 200, 0.8) 50%,
-    rgba(255, 210, 80, 0.6));
-  box-shadow: 0 0 8px 2px rgba(255, 180, 200, 0.4),
-              0 0 16px 4px rgba(255, 210, 80, 0.2);
+    rgba(var(--pearl-hi), 0.95),
+    rgba(var(--pearl-mid), 0.8) 50%,
+    rgba(var(--pearl-lo), 0.6));
+  box-shadow: 0 0 8px 2px rgba(var(--pearl-glow), 0.4),
+              0 0 16px 4px rgba(var(--pearl-glow), 0.2);
   animation: pearl-glow-pulse 3s ease-in-out infinite;
   transition: box-shadow 0.3s, transform 0.3s;
 }
 
 @keyframes pearl-glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 180, 200, 0.4), 0 0 16px 4px rgba(255, 210, 80, 0.2); }
-  50% { box-shadow: 0 0 12px 4px rgba(255, 180, 200, 0.6), 0 0 24px 8px rgba(255, 210, 80, 0.35); }
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(var(--pearl-glow), 0.4), 0 0 16px 4px rgba(var(--pearl-glow), 0.2); }
+  50% { box-shadow: 0 0 12px 4px rgba(var(--pearl-glow), 0.6), 0 0 24px 8px rgba(var(--pearl-glow), 0.35); }
 }
 
 .timeline-node:hover .pearl-dot {
   transform: scale(1.25);
-  box-shadow: 0 0 14px 4px rgba(255, 180, 200, 0.7),
-              0 0 28px 10px rgba(255, 210, 80, 0.45);
+  box-shadow: 0 0 14px 4px rgba(var(--pearl-glow), 0.7),
+              0 0 28px 10px rgba(var(--pearl-glow), 0.45);
 }
 
 .timeline-label {
@@ -1443,14 +1457,14 @@ watch(visible, async (isVisible) => {
 }
 
 .timeline-date {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 210, 80, 0.85);
+  color: rgba(255, 210, 80, 1);
 }
 
 .timeline-title {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
