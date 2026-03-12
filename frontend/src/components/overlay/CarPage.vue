@@ -1073,8 +1073,8 @@ watch(visible, async (isVisible) => {
   transform: translate(var(--sticker-x, 0), var(--sticker-y, 0))
              rotate(var(--sticker-rotate, 0deg));
 
-  /* 默认：黑白 + 半透明（沉睡的记忆） */
-  filter: grayscale(1);
+  /* 默认：原色 + 半透明（沉睡的记忆） */
+  filter: brightness(0.8);
   opacity: 0.8;
 
   transition: transform 0.5s ease, filter 0.5s ease,
@@ -1085,7 +1085,7 @@ watch(visible, async (isVisible) => {
 .photo-frame:hover:not(.empty) {
   transform: translate(var(--sticker-x, 0), var(--sticker-y, 0))
              rotate(0deg) scale(1.5);
-  filter: grayscale(0);
+  filter: brightness(1);
   opacity: 1;
   box-shadow: 0 0 24px rgba(255, 255, 255, 0.15);
   z-index: 10;
