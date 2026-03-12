@@ -2088,7 +2088,7 @@ watch(visible, async (isVisible) => {
   width: 936px;
   height: 544px;
   margin-top: -17px;
-  margin-left: 108px;
+  margin-left: 0px;
   border-radius: 2px;
   overflow: hidden;
 }
