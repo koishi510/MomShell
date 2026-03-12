@@ -1394,11 +1394,16 @@ watch(visible, async (isVisible) => {
   padding: 8px 0;
   opacity: 0;
   animation: timeline-node-enter 0.5s ease forwards;
+  transition: transform 0.25s;
+}
+
+.timeline-node:hover {
+  transform: scale(1.15);
 }
 
 @keyframes timeline-node-enter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .pearl-dot {
@@ -1418,7 +1423,6 @@ watch(visible, async (isVisible) => {
 
 .timeline-node:hover .pearl-dot {
   filter: drop-shadow(0 0 14px rgba(255, 210, 80, 0.9));
-  transform: scale(1.25);
 }
 
 .timeline-label {
@@ -1427,14 +1431,6 @@ watch(visible, async (isVisible) => {
   gap: 2px;
   white-space: nowrap;
   pointer-events: none;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 0.25s, transform 0.25s;
-}
-
-.timeline-node:hover .timeline-label {
-  opacity: 1;
-  transform: translateX(0);
 }
 
 .timeline-date {
