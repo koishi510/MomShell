@@ -59,7 +59,7 @@ func Load() *Config {
 		FirecrawlAPIKey:           getEnv("FIRECRAWL_API_KEY", ""),
 		ImageModel:                getEnv("IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo"),
 		Port:                      getEnv("PORT", "8000"),
-		CORSOrigins:               getEnv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8000,http://localhost:3000"),
+		CORSOrigins:               getEnv("CORS_ORIGINS", "*"),
 		DBLogLevel:                getEnv("DB_LOG_LEVEL", "warn"),
 		AdminUsername:             getEnv("ADMIN_USERNAME", ""),
 		AdminEmail:                getEnv("ADMIN_EMAIL", ""),
