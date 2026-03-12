@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     env_file: ../.env
     ports:
-      - "80:80"
+      - "7860:7860"
     depends_on:
       postgres:
         condition: service_healthy
