@@ -1,16 +1,18 @@
 package dto
 
 type PhotoResponse struct {
-	ID           string   `json:"id"`
-	Title        string   `json:"title"`
-	Description  string   `json:"description"`
-	Tags         []string `json:"tags"`
-	ImageURL     string   `json:"image_url"`
-	IsOnWall     bool     `json:"is_on_wall"`
-	WallPosition *int     `json:"wall_position"`
-	Source       string   `json:"source"`
-	CreatedAt    string   `json:"created_at"`
-	UpdatedAt    string   `json:"updated_at"`
+	ID            string   `json:"id"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	Tags          []string `json:"tags"`
+	ImageURL      string   `json:"image_url"`
+	IsOnWall      bool     `json:"is_on_wall"`
+	WallPosition  *int     `json:"wall_position"`
+	Source        string   `json:"source"`
+	OwnerID       string   `json:"owner_id"`
+	OwnerNickname string   `json:"owner_nickname"`
+	CreatedAt     string   `json:"created_at"`
+	UpdatedAt     string   `json:"updated_at"`
 }
 
 type PhotoListResponse struct {

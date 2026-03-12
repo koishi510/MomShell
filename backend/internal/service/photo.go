@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	maxPhotosPerUser = 25
-	maxWallPhotos    = 10
+	maxPhotosPerFamily = 50
+	maxWallPhotos      = 10
 )
 
 type PhotoService struct {
@@ -44,6 +44,27 @@ func NewPhotoService(photoRepo *repository.PhotoRepo, userRepo *repository.UserR
 	}
 }
 
+func (s *PhotoService) getFamilyIDs(userID string) []string {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return []string{userID}
+	}
+	if user.PartnerID != nil && *user.PartnerID != "" {
+		return []string{userID, *user.PartnerID}
+	}
+	return []string{userID}
+}
+
+func (s *PhotoService) buildNicknameMap(familyIDs []string) map[string]string {
+	m := make(map[string]string, len(familyIDs))
+	for _, id := range familyIDs {
+		if u, err := s.userRepo.FindByID(id); err == nil {
+			m[id] = u.Nickname
+		}
+	}
+	return m
+}
+
 func (s *PhotoService) ListPhotos(userID string, page, pageSize int) (*dto.PhotoListResponse, error) {
 	if page < 1 {
 		page = 1
@@ -53,16 +74,18 @@ func (s *PhotoService) ListPhotos(userID string, page, pageSize int) (*dto.Photo
 	}
 	offset := (page - 1) * pageSize
 
-	photos, total, err := s.photoRepo.FindByUserID(userID, pageSize, offset)
+	familyIDs := s.getFamilyIDs(userID)
+	photos, total, err := s.photoRepo.FindByFamilyIDs(familyIDs, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list photos: %w", err)
 	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+	nicknameMap := s.buildNicknameMap(familyIDs)
 
 	items := make([]dto.PhotoResponse, 0, len(photos))
 	for _, p := range photos {
-		items = append(items, toPhotoResponse(p))
+		items = append(items, toPhotoResponse(p, nicknameMap[p.UserID]))
 	}
 
 	return &dto.PhotoListResponse{
@@ -75,21 +98,24 @@ func (s *PhotoService) ListPhotos(userID string, page, pageSize int) (*dto.Photo
 }
 
 func (s *PhotoService) GetPhoto(id, userID string) (*dto.PhotoResponse, error) {
-	photo, err := s.photoRepo.FindByIDAndUserID(id, userID)
+	familyIDs := s.getFamilyIDs(userID)
+	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
 		return nil, fmt.Errorf("photo not found")
 	}
-	resp := toPhotoResponse(*photo)
+	nicknameMap := s.buildNicknameMap(familyIDs)
+	resp := toPhotoResponse(*photo, nicknameMap[photo.UserID])
 	return &resp, nil
 }
 
 func (s *PhotoService) CreateFromUpload(userID, title, imageURL string) (*dto.PhotoResponse, error) {
-	count, err := s.photoRepo.CountByUserID(userID)
+	familyIDs := s.getFamilyIDs(userID)
+	count, err := s.photoRepo.CountByFamilyIDs(familyIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check photo count: %w", err)
 	}
-	if count >= maxPhotosPerUser {
-		return nil, fmt.Errorf("photo limit reached (max %d)", maxPhotosPerUser)
+	if count >= maxPhotosPerFamily {
+		return nil, fmt.Errorf("photo limit reached (max %d)", maxPhotosPerFamily)
 	}
 
 	photo := &model.Photo{
@@ -103,7 +129,8 @@ func (s *PhotoService) CreateFromUpload(userID, title, imageURL string) (*dto.Ph
 		return nil, fmt.Errorf("failed to create photo: %w", err)
 	}
 
-	resp := toPhotoResponse(*photo)
+	nicknameMap := s.buildNicknameMap(familyIDs)
+	resp := toPhotoResponse(*photo, nicknameMap[userID])
 	return &resp, nil
 }
 
@@ -112,12 +139,13 @@ func (s *PhotoService) GeneratePhoto(ctx context.Context, userID string, req dto
 		return nil, fmt.Errorf("image generation is not configured")
 	}
 
-	count, err := s.photoRepo.CountByUserID(userID)
+	familyIDs := s.getFamilyIDs(userID)
+	count, err := s.photoRepo.CountByFamilyIDs(familyIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check photo count: %w", err)
 	}
-	if count >= maxPhotosPerUser {
-		return nil, fmt.Errorf("photo limit reached (max %d)", maxPhotosPerUser)
+	if count >= maxPhotosPerFamily {
+		return nil, fmt.Errorf("photo limit reached (max %d)", maxPhotosPerFamily)
 	}
 
 	var userRole string
@@ -148,12 +176,14 @@ func (s *PhotoService) GeneratePhoto(ctx context.Context, userID string, req dto
 		return nil, fmt.Errorf("failed to create photo: %w", err)
 	}
 
-	resp := toPhotoResponse(*photo)
+	nicknameMap := s.buildNicknameMap(familyIDs)
+	resp := toPhotoResponse(*photo, nicknameMap[userID])
 	return &resp, nil
 }
 
 func (s *PhotoService) UpdatePhoto(id, userID string, req dto.UpdatePhotoRequest) (*dto.PhotoResponse, error) {
-	photo, err := s.photoRepo.FindByIDAndUserID(id, userID)
+	familyIDs := s.getFamilyIDs(userID)
+	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
 		return nil, fmt.Errorf("photo not found")
 	}
@@ -176,12 +206,14 @@ func (s *PhotoService) UpdatePhoto(id, userID string, req dto.UpdatePhotoRequest
 		return nil, fmt.Errorf("failed to update photo: %w", err)
 	}
 
-	resp := toPhotoResponse(*photo)
+	nicknameMap := s.buildNicknameMap(familyIDs)
+	resp := toPhotoResponse(*photo, nicknameMap[photo.UserID])
 	return &resp, nil
 }
 
 func (s *PhotoService) DeletePhoto(id, userID string) error {
-	photo, err := s.photoRepo.FindByIDAndUserID(id, userID)
+	familyIDs := s.getFamilyIDs(userID)
+	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
 		return fmt.Errorf("photo not found")
 	}
@@ -189,17 +221,18 @@ func (s *PhotoService) DeletePhoto(id, userID string) error {
 	// Remove file from disk if it's a local upload
 	fileutil.RemoveUploadedFile(photo.ImageURL)
 
-	return s.photoRepo.Delete(id, userID)
+	return s.photoRepo.DeleteByFamily(id, familyIDs)
 }
 
 func (s *PhotoService) ToggleWall(id, userID string, req dto.ToggleWallRequest) (*dto.PhotoResponse, error) {
-	photo, err := s.photoRepo.FindByIDAndUserID(id, userID)
+	familyIDs := s.getFamilyIDs(userID)
+	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
 		return nil, fmt.Errorf("photo not found")
 	}
 
 	if req.IsOnWall && !photo.IsOnWall {
-		wallCount, countErr := s.photoRepo.CountWallPhotos(userID)
+		wallCount, countErr := s.photoRepo.CountWallPhotosByFamily(familyIDs)
 		if countErr != nil {
 			return nil, fmt.Errorf("failed to check wall count: %w", countErr)
 		}
@@ -218,7 +251,8 @@ func (s *PhotoService) ToggleWall(id, userID string, req dto.ToggleWallRequest) 
 		return nil, fmt.Errorf("failed to update photo: %w", err)
 	}
 
-	resp := toPhotoResponse(*photo)
+	nicknameMap := s.buildNicknameMap(familyIDs)
+	resp := toPhotoResponse(*photo, nicknameMap[photo.UserID])
 	return &resp, nil
 }
 
@@ -226,6 +260,8 @@ func (s *PhotoService) BatchUpdateWall(userID string, req dto.BatchWallUpdateReq
 	if len(req.Photos) > maxWallPhotos {
 		return nil, fmt.Errorf("too many wall photos (max %d)", maxWallPhotos)
 	}
+
+	familyIDs := s.getFamilyIDs(userID)
 
 	updates := make([]repository.WallUpdate, 0, len(req.Photos))
 	for _, item := range req.Photos {
@@ -235,18 +271,19 @@ func (s *PhotoService) BatchUpdateWall(userID string, req dto.BatchWallUpdateReq
 		})
 	}
 
-	if err := s.photoRepo.BatchUpdateWall(userID, updates); err != nil {
+	if err := s.photoRepo.BatchUpdateWallFamily(familyIDs, updates); err != nil {
 		return nil, fmt.Errorf("failed to update wall: %w", err)
 	}
 
-	wallPhotos, err := s.photoRepo.FindWallPhotos(userID)
+	wallPhotos, err := s.photoRepo.FindWallPhotosByFamily(familyIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch wall photos: %w", err)
 	}
 
+	nicknameMap := s.buildNicknameMap(familyIDs)
 	results := make([]dto.PhotoResponse, 0, len(wallPhotos))
 	for _, p := range wallPhotos {
-		results = append(results, toPhotoResponse(p))
+		results = append(results, toPhotoResponse(p, nicknameMap[p.UserID]))
 	}
 	return results, nil
 }
@@ -317,7 +354,7 @@ func (s *PhotoService) downloadFromURL(imageURL, savePath string) (string, error
 	return "/uploads/photos/" + filepath.Base(savePath), nil
 }
 
-func toPhotoResponse(p model.Photo) dto.PhotoResponse {
+func toPhotoResponse(p model.Photo, ownerNickname string) dto.PhotoResponse {
 	var tags []string
 	if p.Tags != "" {
 		_ = json.Unmarshal([]byte(p.Tags), &tags)
@@ -327,16 +364,18 @@ func toPhotoResponse(p model.Photo) dto.PhotoResponse {
 	}
 
 	return dto.PhotoResponse{
-		ID:           p.ID,
-		Title:        p.Title,
-		Description:  p.Description,
-		Tags:         tags,
-		ImageURL:     p.ImageURL,
-		IsOnWall:     p.IsOnWall,
-		WallPosition: p.WallPosition,
-		Source:       p.Source,
-		CreatedAt:    p.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:    p.UpdatedAt.Format(time.RFC3339),
+		ID:            p.ID,
+		Title:         p.Title,
+		Description:   p.Description,
+		Tags:          tags,
+		ImageURL:      p.ImageURL,
+		IsOnWall:      p.IsOnWall,
+		WallPosition:  p.WallPosition,
+		Source:        p.Source,
+		OwnerID:       p.UserID,
+		OwnerNickname: ownerNickname,
+		CreatedAt:     p.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     p.UpdatedAt.Format(time.RFC3339),
 	}
 }
 

@@ -38,6 +38,8 @@ type ChatMemoryFactDTO struct {
 	ID               string  `json:"id"`
 	Content          string  `json:"content"`
 	Category         string  `json:"category"`
+	OwnerUserID      string  `json:"owner_user_id"`
+	OwnerNickname    string  `json:"owner_nickname"`
 	CreatedAt        string  `json:"created_at"`
 	LastReferencedAt *string `json:"last_referenced_at"`
 }
