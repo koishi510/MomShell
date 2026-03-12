@@ -514,15 +514,12 @@ const timelineNodes = computed(() => {
   )
 
   let picked: Photo[]
-  if (sorted.length <= 4) {
+  if (sorted.length <= 3) {
     picked = sorted
   } else {
     picked = [sorted[0]]
-    const inner = sorted.length - 2
-    for (let i = 1; i <= 2; i++) {
-      const idx = Math.round((i * inner) / 3)
-      picked.push(sorted[idx])
-    }
+    const mid = Math.round((sorted.length - 1) / 2)
+    picked.push(sorted[mid])
     picked.push(sorted[sorted.length - 1])
   }
 
