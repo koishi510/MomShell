@@ -1368,7 +1368,7 @@ watch(visible, async (isVisible) => {
   min-height: 80px;
   max-height: 420px;
   padding: 16px 0;
-  transform: translateX(-36px);
+  transform: translateX(-24px);
 }
 
 .timeline-line {
@@ -1450,7 +1450,7 @@ watch(visible, async (isVisible) => {
   font-size: 15px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
-  max-width: 120px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
