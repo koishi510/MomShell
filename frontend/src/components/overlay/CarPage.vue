@@ -44,6 +44,12 @@
               <img class="avatar-photo" :class="{ 'avatar-custom': hasPartnerCustomAvatar }" :src="partnerAvatarUrl" alt="partner avatar" @error="onAvatarImgError" />
               <img class="avatar-frame" :src="avatarFrame" alt="partner frame" />
             </div>
+            <div class="ecg-link">
+              <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                <path class="ecg-path-bg" d="M0 20 L35 20 L38 16 L41 24 L45 4 L49 36 L52 20 L100 20" />
+                <path class="ecg-path-pulse" d="M0 20 L35 20 L38 16 L41 24 L45 4 L49 36 L52 20 L100 20" />
+              </svg>
+            </div>
             <div class="avatar-wrapper">
               <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="my avatar" @error="onAvatarImgError" />
               <img class="avatar-frame" :src="avatarFrame" alt="my frame" />
@@ -1065,6 +1071,23 @@ watch(visible, async (isVisible) => {
   margin-left: 0px;
   z-index: 1; /* Below photos but above background */
   cursor: pointer;
+  border-radius: 0;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: inset 0 0 40px 20px rgba(255, 180, 200, 0.05), inset 0 0 25px 12px rgba(255, 210, 80, 0.05); }
+  50% { box-shadow: inset 0 0 80px 40px rgba(255, 180, 200, 0.2), inset 0 0 60px 30px rgba(255, 210, 80, 0.3); }
+}
+
+.pearl-shell-trigger-zone:hover {
+  animation-name: pulse-glow-hover;
+  animation-duration: 2s;
+}
+
+@keyframes pulse-glow-hover {
+  0%, 100% { box-shadow: inset 0 0 60px 30px rgba(255, 170, 190, 0.2), inset 0 0 40px 20px rgba(255, 210, 80, 0.25); }
+  50% { box-shadow: inset 0 0 120px 60px rgba(255, 150, 180, 0.5), inset 0 0 90px 45px rgba(255, 210, 80, 0.55); }
 }
 
 .photo-grid {
@@ -1075,6 +1098,7 @@ watch(visible, async (isVisible) => {
   gap: 18px;
   width: 100%;
   max-width: 880px;
+  pointer-events: none;
 }
 
 /* 玻璃拟态 + 散落 + 黑白默认 */
@@ -1098,6 +1122,10 @@ watch(visible, async (isVisible) => {
 
   transition: transform 0.5s ease, filter 0.5s ease,
               opacity 0.5s ease, box-shadow 0.5s ease, z-index 0s;
+}
+
+.photo-frame:not(.empty) {
+  pointer-events: auto;
 }
 
 /* hover：唤醒回忆 */
@@ -1139,9 +1167,68 @@ watch(visible, async (isVisible) => {
 
 .avatars {
   display: flex;
-  gap: 40px;
+  align-items: center;
+  gap: 0;
   cursor: pointer;
   margin-bottom: 48px;
+  animation: floating-group 6s ease-in-out infinite;
+}
+
+@keyframes floating-group {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.ecg-link {
+  width: 120px;
+  height: 60px;
+  margin: 0 -30px;
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ecg-link svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ecg-path-bg {
+  fill: none;
+  stroke: rgba(255, 140, 160, 0.2);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ecg-path-pulse {
+  fill: none;
+  stroke: #ff8ca0;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  filter: drop-shadow(0 0 8px rgba(255, 140, 160, 0.9));
+  animation: ecg-pulse 3s linear infinite;
+}
+
+@keyframes ecg-pulse {
+  0% { stroke-dashoffset: 200; opacity: 0; }
+  10% { opacity: 1; }
+  40% { stroke-dashoffset: 0; opacity: 1; }
+  50% { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(255, 140, 160, 0.6)); }
+  14% { transform: scale(1.1); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.1); filter: drop-shadow(0 0 12px rgba(255, 140, 160, 0.9)); }
+  70% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(255, 140, 160, 0.6)); }
 }
 
 .avatar-wrapper {
