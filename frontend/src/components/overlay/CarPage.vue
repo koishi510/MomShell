@@ -13,9 +13,10 @@
           <!-- Original grid (visible when PearlShell not active or in fullscreen) -->
           <div v-if="!showPearlShell || pearlShellFullscreen" class="photo-grid">
             <div
-              v-for="photo in wallPhotos"
+              v-for="(photo, idx) in wallPhotos"
               :key="photo.id"
               class="photo-frame"
+              :style="getStickerStyle(idx)"
               @click="openDetail(photo)"
             >
               <img :src="photo.image_url" :alt="photo.title || 'photo'" />
@@ -679,6 +680,19 @@ async function onDeletePhoto(id: string) {
   }
 }
 
+// ── Sticker scatter style ──
+function getStickerStyle(index: number) {
+  const seed = (index + 1) * 137.5
+  const offsetX = Math.sin(seed) * 30
+  const offsetY = Math.cos(seed * 1.3) * 20
+  const rotate = Math.sin(seed * 0.7) * 15
+  return {
+    '--sticker-x': `${offsetX}px`,
+    '--sticker-y': `${offsetY}px`,
+    '--sticker-rotate': `${rotate}deg`,
+  }
+}
+
 // ── Detail modal ──
 function openDetail(photo: Photo) {
   detailPhoto.value = photo
@@ -1037,24 +1051,42 @@ watch(visible, async (isVisible) => {
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  gap: 18px;
   width: 100%;
   max-width: 880px;
 }
 
+/* 玻璃拟态 + 散落 + 黑白默认 */
 .photo-frame {
   aspect-ratio: 3 / 4;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.06);
   cursor: pointer;
+
+  /* 散落定位 */
+  transform: translate(var(--sticker-x, 0), var(--sticker-y, 0))
+             rotate(var(--sticker-rotate, 0deg));
+
+  /* 默认：黑白 + 半透明（沉睡的记忆） */
+  filter: grayscale(1);
+  opacity: 0.8;
+
+  transition: transform 0.5s ease, filter 0.5s ease,
+              opacity 0.5s ease, box-shadow 0.5s ease, z-index 0s;
 }
 
+/* hover：唤醒回忆 */
 .photo-frame:hover:not(.empty) {
-  transform: scale(1.03);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: translate(var(--sticker-x, 0), var(--sticker-y, 0))
+             rotate(0deg) scale(1.5);
+  filter: grayscale(0);
+  opacity: 1;
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.15);
+  z-index: 10;
 }
 
 .photo-frame img {
@@ -1064,9 +1096,13 @@ watch(visible, async (isVisible) => {
 }
 
 .photo-frame.empty {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
   cursor: default;
+  filter: none;
+  opacity: 0.4;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 /* ── Right Section ── */
