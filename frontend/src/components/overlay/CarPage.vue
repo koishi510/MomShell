@@ -1457,13 +1457,14 @@ watch(visible, async (isVisible) => {
 }
 
 .timeline-date {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: rgba(255, 210, 80, 1);
 }
 
 .timeline-title {
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
   max-width: 120px;
   overflow: hidden;
