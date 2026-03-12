@@ -230,7 +230,7 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
 	if webResults != "" {
-		systemPrompt += "\n\n## 联网搜索参考\n" + webResults + "\n如有引用搜索内容，请自然融入回答，标注来源。不确定的信息请标明。"
+		systemPrompt += "\n\n## 联网搜索参考\n" + webResults + "\n日常聊天不需要引用来源。仅在提供专业性建议时才引用，引用时直接写出具体来源名称（如「根据XX的一篇文章...」），不要使用[来源1]这样的标注。不确定的信息请标明。"
 	}
 
 	messages := []openai.Message{
@@ -319,7 +319,7 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
 	if webResults != "" {
-		systemPrompt += "\n\n## 联网搜索参考\n" + webResults + "\n如有引用搜索内容，请自然融入回答，标注来源。不确定的信息请标明。"
+		systemPrompt += "\n\n## 联网搜索参考\n" + webResults + "\n日常聊天不需要引用来源。仅在提供专业性建议时才引用，引用时直接写出具体来源名称（如「根据XX的一篇文章...」），不要使用[来源1]这样的标注。不确定的信息请标明。"
 	}
 
 	messages := []openai.Message{
@@ -571,7 +571,7 @@ func (s *ChatService) searchWebForChat(ctx context.Context, userMessage string) 
 		return ""
 	}
 	var sb strings.Builder
-	for i, r := range results {
+	for _, r := range results {
 		content := r.Markdown
 		if content == "" {
 			content = r.Description
@@ -579,7 +579,7 @@ func (s *ChatService) searchWebForChat(ctx context.Context, userMessage string) 
 		if len([]rune(content)) > 300 {
 			content = string([]rune(content)[:300]) + "..."
 		}
-		fmt.Fprintf(&sb, "[来源%d] %s (%s): %s\n", i+1, r.Title, r.URL, content)
+		fmt.Fprintf(&sb, "来源「%s」（%s）：%s\n", r.Title, r.URL, content)
 	}
 	return sb.String()
 }
