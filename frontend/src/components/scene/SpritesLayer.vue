@@ -37,29 +37,44 @@ import { PARALLAX_KEY } from '@/composables/useParallax'
 import { LAYERS } from '@/constants/layers'
 import { SPRITES } from '@/constants/sprites'
 import { useUiStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 
-const CRAB_HINTS: readonly string[] = [
+const SHARED_HINTS: readonly string[] = [
   '想聊聊心事，就点那块石头呀。',
   '想看看大家在讨论什么，就去木屋吧。',
   '点点贝壳，唤醒沉睡的记忆碎片。',
-  '海星那边有今日任务，完成了会成长哦。',
-  '对着海螺说出心里话吧，它会替你好好收藏。',
   '小车那边，藏着你们关系的小秘密哦。',
   '个人资料页里，可以慢慢整理你的专属设置。',
   '不知道先去哪？先点石头试试看吧。',
   '想更懂自己，就先去记忆小站逛逛。',
   '跟着好奇心走，你会找到想去的地方。',
   '嘿，我是小螃蟹，随时都在这里给你指路哦。',
-] as const
+]
+
+const MOM_HINTS: readonly string[] = [
+  '海星那边可以查看任务完成情况，去给他打个分吧。',
+  '对着海螺说出心里话吧，它会替你好好收藏。',
+]
+
+const DAD_HINTS: readonly string[] = [
+  '海星那边有今日任务，完成了会成长哦。',
+  '去海螺那边看看她的心语，也许能更懂她。',
+]
 
 const layerEl = ref<HTMLElement | null>(null)
 const bubbleLayerEl = ref<HTMLElement | null>(null)
 const crabSpriteEl = ref<HTMLImageElement | null>(null)
 const ctx = inject(PARALLAX_KEY)!
 const uiStore = useUiStore()
+const authStore = useAuthStore()
+
+const crabHints = computed(() => {
+  const roleHints = authStore.user?.role === 'dad' ? DAD_HINTS : MOM_HINTS
+  return [...SHARED_HINTS, ...roleHints]
+})
 
 const showBubble = ref(false)
-const currentHint = ref<string>(CRAB_HINTS[0])
+const currentHint = ref<string>(SHARED_HINTS[0])
 const crabBubblePosition = ref<{ left: string, top: string } | null>(null)
 let bubbleTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -107,13 +122,14 @@ function hideCrabHint() {
 }
 
 function pickRandomHint() {
-  if (CRAB_HINTS.length === 1) {
-    return CRAB_HINTS[0]
+  const hints = crabHints.value
+  if (hints.length === 1) {
+    return hints[0]
   }
 
   let nextHint = currentHint.value
   while (nextHint === currentHint.value) {
-    nextHint = CRAB_HINTS[Math.floor(Math.random() * CRAB_HINTS.length)]
+    nextHint = hints[Math.floor(Math.random() * hints.length)]
   }
   return nextHint
 }
