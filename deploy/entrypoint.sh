@@ -28,6 +28,10 @@ PGCONF
     chown postgres:postgres "$PG_DATA/postgresql.conf"
   fi
 
+  # Ensure runtime directories exist
+  mkdir -p /run/postgresql
+  chown postgres:postgres /run/postgresql
+
   # Ensure log file is writable
   touch /var/log/postgresql.log
   chown postgres:postgres /var/log/postgresql.log
