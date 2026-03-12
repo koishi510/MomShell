@@ -64,14 +64,6 @@
               <!-- Compose mode -->
               <template v-if="paperMode === 'compose'">
                 <h3 class="paper-title">发布帖子</h3>
-                <label class="channel-toggle">
-                  <input type="checkbox"
-                    :checked="newPost.channel === 'professional'"
-                    @change="newPost.channel = ($event.target as HTMLInputElement).checked ? 'professional' : 'experience'"
-                  />
-                  <span>专家帖</span>
-                  <span class="channel-hint">仅认证专家可回复</span>
-                </label>
                 <input
                   v-model="newPost.title"
                   class="paper-input"
@@ -83,13 +75,22 @@
                   placeholder="写点什么..."
                   rows="6"
                 />
-                <button
-                  class="paper-submit"
-                  :disabled="posting || !newPost.title.trim() || !newPost.content.trim()"
-                  @click="onCreatePost"
-                >
-                  {{ posting ? '发布中...' : '发布' }}
-                </button>
+                <label class="channel-toggle">
+                  <input
+                    type="checkbox"
+                    :checked="newPost.channel === 'professional'"
+                    @change="newPost.channel = ($event.target as HTMLInputElement).checked ? 'professional' : 'experience'"
+                  />
+                  <span>专家帖</span>
+                  <span class="channel-hint">仅认证专家可回复</span>
+                  <button
+                    class="paper-submit"
+                    :disabled="posting || !newPost.title.trim() || !newPost.content.trim()"
+                    @click="onCreatePost"
+                  >
+                    {{ posting ? '发布中...' : '发布' }}
+                  </button>
+                </label>
               </template>
 
               <!-- Detail mode -->
@@ -1157,7 +1158,7 @@ onUnmounted(() => {
 }
 
 .side-btn:last-child {
-  transform: translateY(65px) scale(1.3);
+  transform: translateY(45px) scale(1.3);
 }
 
 .side-btn:first-child:hover {
@@ -1165,7 +1166,7 @@ onUnmounted(() => {
 }
 
 .side-btn:last-child:hover {
-  transform: translateY(65px) scale(1.4);
+  transform: translateY(45px) scale(1.4);
 }
 
 /* Paper overlay */
@@ -1261,7 +1262,7 @@ onUnmounted(() => {
 }
 
 .paper-submit {
-  align-self: flex-end;
+  margin-left: auto;
   padding: 8px 24px;
   background: #8a6a4a;
   border: none;
