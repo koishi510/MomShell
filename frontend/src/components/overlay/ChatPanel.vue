@@ -45,7 +45,7 @@
               ]"
               :style="getBubbleStyle(latestAssistantMsg)"
             >
-              {{ latestAssistantMsg.text }}
+              {{ displayedAssistantText }}<span v-if="!typingComplete" class="typing-cursor" />
             </p>
           </div>
         </Transition>
@@ -109,6 +109,23 @@ const messagesEl = ref<HTMLElement | null>(null)
 const preferredName = ref<string | null>(_preferredName)
 const showMemoryToast = ref(false)
 const showRipple = ref(false)
+const typedLength = ref(0)
+const typingComplete = ref(true)
+let typingTimer: ReturnType<typeof setInterval> | null = null
+
+function startTypewriter(text: string) {
+  typedLength.value = 0
+  typingComplete.value = false
+  if (typingTimer) clearInterval(typingTimer)
+  typingTimer = setInterval(() => {
+    typedLength.value++
+    if (typedLength.value >= text.length) {
+      typingComplete.value = true
+      clearInterval(typingTimer!)
+      typingTimer = null
+    }
+  }, 30)
+}
 
 const isOpen = computed(() => uiStore.activePanel === 'chat')
 
@@ -132,6 +149,16 @@ const ambientColorMap: Record<string, { primary: string; secondary: string }> = 
   sage: { primary: 'rgba(143,188,143,0.2)', secondary: 'rgba(193,225,193,0.08)' },
 }
 
+const focusColorMap: Record<string, { border: string; glow: string }> = {
+  soft_pink:     { border: 'rgba(255,182,193,0.35)', glow: 'rgba(255,182,193,0.10)' },
+  warm_gold:     { border: 'rgba(255,215,0,0.35)',   glow: 'rgba(255,215,0,0.10)' },
+  gentle_blue:   { border: 'rgba(135,206,235,0.35)', glow: 'rgba(135,206,235,0.10)' },
+  lavender:      { border: 'rgba(200,162,255,0.35)', glow: 'rgba(200,162,255,0.10)' },
+  neutral_white: { border: 'rgba(255,255,255,0.25)', glow: 'rgba(255,255,255,0.06)' },
+  coral:         { border: 'rgba(255,127,80,0.35)',   glow: 'rgba(255,127,80,0.10)' },
+  sage:          { border: 'rgba(143,188,143,0.35)', glow: 'rgba(143,188,143,0.10)' },
+}
+
 const latestColorTone = computed(() => {
   for (let i = messages.value.length - 1; i >= 0; i--) {
     const m = messages.value[i]
@@ -143,6 +170,8 @@ const latestColorTone = computed(() => {
 const ambientStyle = computed(() => ({
   '--ambient-primary': ambientColorMap[latestColorTone.value]?.primary ?? ambientColorMap.gentle_blue.primary,
   '--ambient-secondary': ambientColorMap[latestColorTone.value]?.secondary ?? ambientColorMap.gentle_blue.secondary,
+  '--focus-border': focusColorMap[latestColorTone.value]?.border ?? focusColorMap.gentle_blue.border,
+  '--focus-glow': focusColorMap[latestColorTone.value]?.glow ?? focusColorMap.gentle_blue.glow,
 }))
 
 const ambientGradientStyle = computed(() => ({
@@ -161,6 +190,12 @@ const latestAssistantMsg = computed(() => {
     if (messages.value[i].role === 'assistant') return messages.value[i]
   }
   return null
+})
+
+const displayedAssistantText = computed(() => {
+  if (!latestAssistantMsg.value) return ''
+  if (typingComplete.value) return latestAssistantMsg.value.text
+  return latestAssistantMsg.value.text.slice(0, typedLength.value)
 })
 
 function generateSessionId(): string {
@@ -258,18 +293,26 @@ async function onSend() {
       role: 'assistant',
       text: res.text,
       visualMeta: res.visual_metadata,
-      showEffect: hasVisual,
+      showEffect: false,
     }
     messages.value = [...messages.value, assistantMsg]
+    startTypewriter(res.text)
 
     if (hasVisual) {
+      const effectDelay = res.text.length * 30 + 200
+      setTimeout(() => {
+        const idx = messages.value.findIndex(m => m.id === msgId)
+        if (idx !== -1) {
+          messages.value[idx] = { ...messages.value[idx], showEffect: true }
+        }
+      }, effectDelay)
       setTimeout(() => {
         const idx = messages.value.findIndex(m => m.id === msgId)
         if (idx !== -1) {
           messages.value[idx] = { ...messages.value[idx], showEffect: false }
         }
         syncPersistent()
-      }, 3000)
+      }, effectDelay + 3000)
     }
 
     if (res.memory_updated) {
@@ -579,8 +622,8 @@ async function onSend() {
 }
 
 .chat-input:focus {
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.06);
+  border-color: var(--focus-border, rgba(255, 255, 255, 0.25));
+  box-shadow: 0 0 16px var(--focus-glow, rgba(255, 255, 255, 0.06));
 }
 
 .chat-input::placeholder {
@@ -609,4 +652,20 @@ async function onSend() {
 }
 .send-btn:active { transform: scale(0.93); }
 .send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* ── Typing cursor ── */
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--text-primary);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursorBlink 0.8s steps(2) infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 </style>
