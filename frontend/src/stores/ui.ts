@@ -10,6 +10,17 @@ export const useUiStore = defineStore('ui', () => {
   const authMode = ref<AuthMode>('login')
   const showLanding = ref(true)
 
+  // Parallax scrollTo bridge: set by BeachScene, called by tutorial
+  let _parallaxScrollTo: ((offset: number) => void) | null = null
+
+  function setParallaxScrollTo(fn: (offset: number) => void) {
+    _parallaxScrollTo = fn
+  }
+
+  function parallaxScrollTo(offset: number) {
+    _parallaxScrollTo?.(offset)
+  }
+
   function openPanel(panel: PanelName) {
     activePanel.value = panel
   }
@@ -50,5 +61,7 @@ export const useUiStore = defineStore('ui', () => {
     closeLanding,
     openAuth,
     openFeature,
+    setParallaxScrollTo,
+    parallaxScrollTo,
   }
 })

@@ -10,6 +10,7 @@ import {
   apiRefresh,
   apiSetRole,
   apiLogout,
+  apiCompleteTutorial,
 } from "@/lib/auth";
 import { setAccessToken, setOnTokenRefreshed } from "@/lib/apiClient";
 
@@ -95,6 +96,16 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  async function completeTutorial() {
+    if (!accessToken.value || !user.value) return;
+    try {
+      await apiCompleteTutorial(accessToken.value);
+      user.value = { ...user.value, tutorial_completed: true };
+    } catch {
+      // Silently fail — tutorial state is not critical
+    }
+  }
+
   return {
     user,
     accessToken,
@@ -108,5 +119,6 @@ export const useAuthStore = defineStore("auth", () => {
     logout,
     enterGuestMode,
     refreshAuth,
+    completeTutorial,
   };
 });

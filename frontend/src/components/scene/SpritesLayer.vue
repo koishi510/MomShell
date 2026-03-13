@@ -6,6 +6,7 @@
       :ref="(element) => setSpriteEl(s.id, element)"
       :src="s.src"
       :alt="s.id"
+      :id="`sprite-${s.id}`"
       :class="['sprite', { clickable: isSpriteClickable(s.id) }]"
       :style="{
         left: s.left,
@@ -22,9 +23,9 @@
     />
   </div>
 
-  <div class="sprite-bubble-layer layer" ref="bubbleLayerEl" aria-hidden="true">
+  <div class="sprite-bubble-layer layer" ref="bubbleLayerEl" aria-hidden="true" id="sprite-bubble-layer">
     <Transition name="bubble-fade">
-      <div v-if="showBubble" class="speech-bubble crab-bubble" :style="crabBubbleStyle">
+      <div v-if="showBubble" class="speech-bubble crab-bubble" :style="crabBubbleStyle" id="sprite-bubble-crab">
         {{ currentHint }}
       </div>
     </Transition>

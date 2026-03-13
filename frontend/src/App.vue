@@ -30,9 +30,12 @@ import WhisperPanel from '@/components/overlay/WhisperPanel.vue'
 import TaskPanel from '@/components/overlay/TaskPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
+import { useTutorial } from '@/composables/useTutorial'
+import { watch } from 'vue'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
+const { startTutorial, stopTutorial, cancelPending } = useTutorial()
 
 useBackgroundMusicLoop()
 
@@ -42,4 +45,34 @@ onMounted(async () => {
     uiStore.closeLanding()
   }
 })
+
+// Trigger tutorial when landing closes + user is authenticated + no panel open
+watch(
+  () => ({
+    landing: uiStore.showLanding,
+    auth: authStore.isAuthenticated || authStore.isGuest,
+    panel: uiStore.activePanel,
+  }),
+  (state) => {
+    if (!state.landing && state.auth && !state.panel) {
+      setTimeout(() => {
+        startTutorial()
+      }, 1000)
+    }
+  },
+  { deep: true, immediate: true }
+)
+
+// If a panel opens while the tutorial is pending or active, stop/cancel it
+watch(
+  () => uiStore.activePanel,
+  (panel) => {
+    if (panel) {
+      cancelPending()
+      stopTutorial()
+    }
+  }
+)
+
+
 </script>

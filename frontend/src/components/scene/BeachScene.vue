@@ -38,6 +38,7 @@
 <script setup lang="ts">
 import { useParallax } from '@/composables/useParallax'
 import { WAVE_LAYERS } from '@/constants/waves'
+import { useUiStore } from '@/stores/ui'
 import SkyLayer from './SkyLayer.vue'
 import CloudLayer from './CloudLayer.vue'
 import SeagullLayer from './SeagullLayer.vue'
@@ -49,8 +50,12 @@ import SandLayer from './SandLayer.vue'
 import SpritesLayer from './SpritesLayer.vue'
 import HintOverlay from './HintOverlay.vue'
 
-const { hintHidden } = useParallax()
+const { hintHidden, scrollTo } = useParallax()
 const waveLayers = WAVE_LAYERS
+
+// Expose scrollTo to UI store so the tutorial can use it
+const uiStore = useUiStore()
+uiStore.setParallaxScrollTo(scrollTo)
 </script>
 
 <style scoped>

@@ -10,6 +10,7 @@ export interface User {
   role: string;
   is_admin: boolean;
   is_certified: boolean;
+  tutorial_completed: boolean;
   certification_title: string | null;
   baby_birth_date: string | null;
   postpartum_weeks: number | null;
@@ -132,5 +133,16 @@ export function apiLogout(accessToken?: string): Promise<void> {
       }
       throw new Error("退出登录失败");
     }
+  });
+}
+
+export function apiCompleteTutorial(accessToken: string): Promise<void> {
+  return fetchJson(`${AUTH_API}/me/tutorial`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "X-Access-Token": accessToken,
+    },
   });
 }
