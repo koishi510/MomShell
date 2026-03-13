@@ -45,6 +45,7 @@ type UserResponse struct {
 	Role               string     `json:"role"`
 	IsAdmin            bool       `json:"is_admin"`
 	IsCertified        bool       `json:"is_certified"`
+	TutorialCompleted  bool       `json:"tutorial_completed"`
 	CertificationTitle *string    `json:"certification_title"`
 	BabyBirthDate      *time.Time `json:"baby_birth_date"`
 	PostpartumWeeks    *int       `json:"postpartum_weeks"`

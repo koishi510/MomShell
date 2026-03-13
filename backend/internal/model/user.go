@@ -60,8 +60,9 @@ type User struct {
 	PostpartumWeeks *int       `json:"postpartum_weeks"`
 
 	// Status
-	IsActive bool `gorm:"default:true" json:"is_active"`
-	IsBanned bool `gorm:"default:false" json:"is_banned"`
+	IsActive          bool `gorm:"default:true" json:"is_active"`
+	IsBanned          bool `gorm:"default:false" json:"is_banned"`
+	TutorialCompleted bool `gorm:"default:false" json:"tutorial_completed"`
 
 	// Timestamps
 	CreatedAt    time.Time  `json:"created_at"`

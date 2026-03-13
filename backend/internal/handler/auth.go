@@ -229,3 +229,15 @@ func (h *AuthHandler) UpdateRole(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+// PATCH /api/v1/auth/me/tutorial
+func (h *AuthHandler) CompleteTutorial(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	if err := h.authService.CompleteTutorial(userID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "新手教程已完成"})
+}

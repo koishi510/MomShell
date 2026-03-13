@@ -59,6 +59,7 @@ func Setup(
 			authRequired.POST("/change-password", authHandler.ChangePassword)
 			authRequired.GET("/me", authHandler.GetMe)
 			authRequired.PATCH("/me/role", authHandler.UpdateRole)
+			authRequired.PATCH("/me/tutorial", authHandler.CompleteTutorial)
 			authRequired.POST("/logout", authHandler.Logout)
 		}
 	}

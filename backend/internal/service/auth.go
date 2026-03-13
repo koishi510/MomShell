@@ -180,6 +180,14 @@ func (s *AuthService) UpdateRole(userID, role string) (*dto.UserResponse, error)
 	return s.buildUserResponse(user), nil
 }
 
+func (s *AuthService) CompleteTutorial(userID string) error {
+	_, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return errors.New("用户不存在")
+	}
+	return s.userRepo.UpdateTutorialCompleted(userID, true)
+}
+
 func (s *AuthService) GetUserByID(userID string) (*model.User, error) {
 	return s.userRepo.FindByID(userID)
 }
@@ -208,16 +216,17 @@ func (s *AuthService) generateTokens(userID string) (*dto.TokenResponse, error) 
 
 func (s *AuthService) buildUserResponse(user *model.User) *dto.UserResponse {
 	resp := &dto.UserResponse{
-		ID:              user.ID,
-		Username:        user.Username,
-		Email:           user.Email,
-		Nickname:        user.Nickname,
-		AvatarURL:       user.AvatarURL,
-		Role:            string(user.Role),
-		IsAdmin:         user.IsAdmin,
-		BabyBirthDate:   user.BabyBirthDate,
-		PostpartumWeeks: user.PostpartumWeeks,
-		CreatedAt:       user.CreatedAt,
+		ID:                user.ID,
+		Username:          user.Username,
+		Email:             user.Email,
+		Nickname:          user.Nickname,
+		AvatarURL:         user.AvatarURL,
+		Role:              string(user.Role),
+		IsAdmin:           user.IsAdmin,
+		TutorialCompleted: user.TutorialCompleted,
+		BabyBirthDate:     user.BabyBirthDate,
+		PostpartumWeeks:   user.PostpartumWeeks,
+		CreatedAt:         user.CreatedAt,
 	}
 
 	if user.Certification != nil && user.Certification.Status == model.CertApproved {

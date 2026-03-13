@@ -82,3 +82,7 @@ func (r *UserRepo) Update(user *model.User) error {
 func (r *UserRepo) UpdatePassword(id, passwordHash string) error {
 	return r.db.Model(&model.User{}).Where("id = ?", id).Update("password_hash", passwordHash).Error
 }
+
+func (r *UserRepo) UpdateTutorialCompleted(id string, completed bool) error {
+	return r.db.Model(&model.User{}).Where("id = ?", id).Update("tutorial_completed", completed).Error
+}
