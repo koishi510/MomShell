@@ -92,16 +92,17 @@ func (s *AdminService) ListUsers(params dto.AdminUserListParams) (*dto.Paginated
 	items := make([]dto.AdminUserListItem, len(users))
 	for i, u := range users {
 		items[i] = dto.AdminUserListItem{
-			ID:        u.ID,
-			Username:  u.Username,
-			Email:     u.Email,
-			Nickname:  u.Nickname,
-			Role:      string(u.Role),
-			IsAdmin:   u.IsAdmin,
-			IsActive:  u.IsActive,
-			IsBanned:  u.IsBanned,
-			IsGuest:   u.IsGuest,
-			CreatedAt: u.CreatedAt,
+			ID:                u.ID,
+			Username:          u.Username,
+			Email:             u.Email,
+			Nickname:          u.Nickname,
+			Role:              string(u.Role),
+			IsAdmin:           u.IsAdmin,
+			IsActive:          u.IsActive,
+			IsBanned:          u.IsBanned,
+			IsGuest:           u.IsGuest,
+			TutorialCompleted: u.TutorialCompleted,
+			CreatedAt:         u.CreatedAt,
 		}
 	}
 
@@ -117,22 +118,23 @@ func (s *AdminService) GetUser(id string) (*dto.AdminUserDetail, error) {
 	}
 
 	detail := &dto.AdminUserDetail{
-		ID:            user.ID,
-		Username:      user.Username,
-		Email:         user.Email,
-		Nickname:      user.Nickname,
-		AvatarURL:     user.AvatarURL,
-		Role:          string(user.Role),
-		IsAdmin:       user.IsAdmin,
-		ShellCode:     user.ShellCode,
-		IsGuest:       user.IsGuest,
-		IsActive:      user.IsActive,
-		IsBanned:      user.IsBanned,
-		PartnerID:     user.PartnerID,
-		BabyBirthDate: user.BabyBirthDate,
-		CreatedAt:     user.CreatedAt,
-		UpdatedAt:     user.UpdatedAt,
-		LastActiveAt:  user.LastActiveAt,
+		ID:                user.ID,
+		Username:          user.Username,
+		Email:             user.Email,
+		Nickname:          user.Nickname,
+		AvatarURL:         user.AvatarURL,
+		Role:              string(user.Role),
+		IsAdmin:           user.IsAdmin,
+		ShellCode:         user.ShellCode,
+		IsGuest:           user.IsGuest,
+		IsActive:          user.IsActive,
+		IsBanned:          user.IsBanned,
+		TutorialCompleted: user.TutorialCompleted,
+		PartnerID:         user.PartnerID,
+		BabyBirthDate:     user.BabyBirthDate,
+		CreatedAt:         user.CreatedAt,
+		UpdatedAt:         user.UpdatedAt,
+		LastActiveAt:      user.LastActiveAt,
 	}
 
 	if user.Certification != nil {

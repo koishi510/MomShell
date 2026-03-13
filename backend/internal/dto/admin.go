@@ -12,36 +12,38 @@ type AdminUserListParams struct {
 
 // AdminUserListItem is a user row in admin user list
 type AdminUserListItem struct {
-	ID        string    `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	Nickname  string    `json:"nickname"`
-	Role      string    `json:"role"`
-	IsAdmin   bool      `json:"is_admin"`
-	IsActive  bool      `json:"is_active"`
-	IsBanned  bool      `json:"is_banned"`
-	IsGuest   bool      `json:"is_guest"`
-	CreatedAt time.Time `json:"created_at"`
+	ID                string    `json:"id"`
+	Username          string    `json:"username"`
+	Email             string    `json:"email"`
+	Nickname          string    `json:"nickname"`
+	Role              string    `json:"role"`
+	IsAdmin           bool      `json:"is_admin"`
+	IsActive          bool      `json:"is_active"`
+	IsBanned          bool      `json:"is_banned"`
+	IsGuest           bool      `json:"is_guest"`
+	TutorialCompleted bool      `json:"tutorial_completed"`
+	CreatedAt         time.Time `json:"created_at"`
 }
 
 // AdminUserDetail is the full user detail for admin view
 type AdminUserDetail struct {
-	ID            string     `json:"id"`
-	Username      string     `json:"username"`
-	Email         string     `json:"email"`
-	Nickname      string     `json:"nickname"`
-	AvatarURL     *string    `json:"avatar_url"`
-	Role          string     `json:"role"`
-	IsAdmin       bool       `json:"is_admin"`
-	ShellCode     *string    `json:"shell_code"`
-	IsGuest       bool       `json:"is_guest"`
-	IsActive      bool       `json:"is_active"`
-	IsBanned      bool       `json:"is_banned"`
-	PartnerID     *string    `json:"partner_id"`
-	BabyBirthDate *time.Time `json:"baby_birth_date"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
-	LastActiveAt  *time.Time `json:"last_active_at"`
+	ID                string     `json:"id"`
+	Username          string     `json:"username"`
+	Email             string     `json:"email"`
+	Nickname          string     `json:"nickname"`
+	AvatarURL         *string    `json:"avatar_url"`
+	Role              string     `json:"role"`
+	IsAdmin           bool       `json:"is_admin"`
+	ShellCode         *string    `json:"shell_code"`
+	IsGuest           bool       `json:"is_guest"`
+	IsActive          bool       `json:"is_active"`
+	IsBanned          bool       `json:"is_banned"`
+	TutorialCompleted bool       `json:"tutorial_completed"`
+	PartnerID         *string    `json:"partner_id"`
+	BabyBirthDate     *time.Time `json:"baby_birth_date"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
+	LastActiveAt      *time.Time `json:"last_active_at"`
 
 	// Certification info
 	CertificationStatus *string `json:"certification_status,omitempty"`
