@@ -18,7 +18,7 @@ defineProps<{
   transform: translateX(-50%);
   z-index: 100;
   color: rgba(180, 130, 80, 0.6);
-  font-family: 'Georgia', serif;
+  font-family: inherit;
   font-size: 14px;
   letter-spacing: 1px;
   pointer-events: none;
