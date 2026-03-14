@@ -61,7 +61,7 @@ func (h *AnswerHandler) Create(c *gin.Context) {
 		status := http.StatusBadRequest
 		if err.Error() == "问题不存在" {
 			status = http.StatusNotFound
-		} else if err.Error() == "专业频道仅限认证专业人士回答" {
+		} else if err.Error() == "仅认证专业人士可发布专家帖" {
 			status = http.StatusForbidden
 		}
 		c.JSON(status, gin.H{"error": err.Error()})

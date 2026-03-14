@@ -85,6 +85,10 @@ type Answer struct {
 	AuthorRole     UserRole `gorm:"type:varchar(30);index" json:"author_role"`
 	IsProfessional bool     `gorm:"index;default:false" json:"is_professional"`
 
+	// Expert post: only certified professionals can publish
+	IsExpertPost bool    `gorm:"index;default:false" json:"is_expert_post"`
+	Sources      *string `gorm:"type:text" json:"sources"` // Required for expert posts
+
 	// Status
 	Status ContentStatus `gorm:"type:varchar(20);index;default:'pending_review'" json:"status"`
 

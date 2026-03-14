@@ -4,19 +4,24 @@ import "time"
 
 // AnswerCreate is the request body for creating an answer
 type AnswerCreate struct {
-	Content   string   `json:"content" binding:"required,min=1,max=50000"`
-	ImageURLs []string `json:"image_urls"`
+	Content      string   `json:"content" binding:"required,min=1,max=50000"`
+	ImageURLs    []string `json:"image_urls"`
+	IsExpertPost bool     `json:"is_expert_post"`
+	Sources      string   `json:"sources"`
 }
 
 // AnswerUpdate is the request body for updating an answer
 type AnswerUpdate struct {
-	Content *string `json:"content" binding:"omitempty,min=1,max=50000"`
+	Content      *string `json:"content" binding:"omitempty,min=1,max=50000"`
+	IsExpertPost *bool   `json:"is_expert_post"`
+	Sources      *string `json:"sources"`
 }
 
 // AnswerListParams holds query parameters for listing answers
 type AnswerListParams struct {
 	PaginationParams
 	IsProfessional *bool  `form:"is_professional"`
+	IsExpertPost   *bool  `form:"is_expert_post"`
 	SortBy         string `form:"sort_by" binding:"omitempty,oneof=created_at like_count"`
 	Order          string `form:"order" binding:"omitempty,oneof=asc desc"`
 }
@@ -43,6 +48,8 @@ type AnswerListItem struct {
 	Content        string     `json:"content"`
 	ContentPreview string     `json:"content_preview"`
 	IsProfessional bool       `json:"is_professional"`
+	IsExpertPost   bool       `json:"is_expert_post"`
+	Sources        *string    `json:"sources"`
 	IsAccepted     bool       `json:"is_accepted"`
 	LikeCount      int        `json:"like_count"`
 	CommentCount   int        `json:"comment_count"`
@@ -56,6 +63,8 @@ type MyAnswerListItem struct {
 	ContentPreview string        `json:"content_preview"`
 	Question       QuestionBrief `json:"question"`
 	IsProfessional bool          `json:"is_professional"`
+	IsExpertPost   bool          `json:"is_expert_post"`
+	Sources        *string       `json:"sources"`
 	IsAccepted     bool          `json:"is_accepted"`
 	LikeCount      int           `json:"like_count"`
 	CommentCount   int           `json:"comment_count"`

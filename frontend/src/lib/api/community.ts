@@ -82,6 +82,8 @@ export interface AnswerListItem {
   content: string
   content_preview: string
   is_professional: boolean
+  is_expert_post: boolean
+  sources: string | null
   is_accepted: boolean
   like_count: number
   comment_count: number
@@ -169,9 +171,13 @@ export function getAnswers(
 export function createAnswer(
   questionId: string,
   content: string,
+  options?: { is_expert_post?: boolean; sources?: string },
 ): Promise<AnswerListItem> {
   return apiClient
-    .post(`/api/v1/community/questions/${questionId}/answers`, { content })
+    .post(`/api/v1/community/questions/${questionId}/answers`, {
+      content,
+      ...options,
+    })
     .then((r) => r.data)
 }
 
