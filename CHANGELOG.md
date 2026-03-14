@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Onboarding Tutorial
+
+- **Interactive guided tour**: 7-step onboarding tutorial using driver.js, walking new users through beach scene sprites with auto-scrolling parallax viewport
+- **Tutorial completion persistence**: `TutorialCompleted` field on User model with `PATCH /api/v1/auth/me/tutorial` endpoint; logged-in users see the tutorial only once, guests see it every visit
+- **Admin tutorial status**: Tutorial completion badge displayed in admin user table for at-a-glance onboarding tracking
+- **Skip & cancel support**: Users can skip via close button or ESC with confirmation; tutorial auto-cancels if a feature panel opens mid-tour
+
 #### Partner Data Sharing
 
 - **Shared photo library**: Bound partners (linked via `PartnerID`) see a merged photo library; family photo limit raised to 50
