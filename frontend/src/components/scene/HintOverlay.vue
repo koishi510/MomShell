@@ -1,13 +1,17 @@
 <template>
   <div class="hint" :class="{ hidden: isHidden }">
-    Drag or press arrow keys to explore the coastline
+    {{ isMobile ? '滑动探索海岸线' : '拖拽或按方向键探索海岸线' }}
   </div>
 </template>
 
 <script setup lang="ts">
+import { useIsMobile } from '@/composables/useIsMobile'
+
 defineProps<{
   isHidden: boolean
 }>()
+
+const { isMobile } = useIsMobile()
 </script>
 
 <style scoped>
@@ -26,5 +30,14 @@ defineProps<{
 }
 .hint.hidden {
   opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .hint {
+    font-size: 12px;
+    bottom: 16px;
+    max-width: 80vw;
+    text-align: center;
+  }
 }
 </style>

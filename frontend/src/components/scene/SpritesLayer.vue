@@ -5,12 +5,7 @@
       :key="s.id"
       :id="`sprite-${s.id}`"
       :class="['sprite-wrapper', { clickable: isSpriteClickable(s.id) }]"
-      :style="{
-        left: s.left,
-        top: s.top,
-        width: s.width,
-        zIndex: s.zIndex ?? undefined,
-      }"
+      :style="spriteStyle(s)"
     >
       <img
         :ref="(element) => setSpriteEl(s.id, element)"
@@ -50,9 +45,21 @@ import { LAYERS } from '@/constants/layers'
 import { SPRITES } from '@/constants/sprites'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { useIsMobile } from '@/composables/useIsMobile'
 import { createSeededRandom } from '@/utils/random'
 
 const rand = createSeededRandom(400)
+const { isMobile } = useIsMobile()
+
+function spriteStyle(s: typeof SPRITES[number]) {
+  const m = isMobile.value ? s.mobile : undefined
+  return {
+    left: m?.left ?? s.left,
+    top: m?.top ?? s.top,
+    width: m?.width ?? s.width,
+    zIndex: s.zIndex ?? undefined,
+  }
+}
 
 const SHARED_HINTS: readonly string[] = [
   '想聊聊心事，就点那块石头呀。',
@@ -78,7 +85,7 @@ const DAD_HINTS: readonly string[] = [
 
 const layerEl = ref<HTMLElement | null>(null)
 const bubbleLayerEl = ref<HTMLElement | null>(null)
-const crabSpriteEl = ref<HTMLImageElement | null>(null)
+const crabSpriteEl = ref<HTMLElement | null>(null)
 const ctx = inject(PARALLAX_KEY)!
 const uiStore = useUiStore()
 const authStore = useAuthStore()
@@ -106,7 +113,7 @@ function setSpriteEl(id: string, element: Element | ComponentPublicInstance | nu
     return
   }
 
-  crabSpriteEl.value = element instanceof HTMLImageElement ? element : null
+  crabSpriteEl.value = element instanceof HTMLElement ? element : null
 }
 
 function updateCrabBubblePosition() {
@@ -247,6 +254,17 @@ onUnmounted(() => {
   user-select: none;
 }
 
+@media (max-width: 768px) {
+  .sprite-wrapper.clickable {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .sprite-label {
+    font-size: 0.7rem;
+  }
+}
+
 .speech-bubble {
   position: absolute;
   background: rgba(255, 252, 246, 0.96);
@@ -257,10 +275,20 @@ onUnmounted(() => {
   border-radius: 1.1em;
   white-space: nowrap;
   width: max-content;
+  max-width: 80vw;
   pointer-events: none;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
   border: 1px solid rgba(255, 214, 170, 0.7);
   z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .speech-bubble {
+    white-space: normal;
+    width: auto;
+    max-width: min(280px, 70vw);
+    font-size: 0.85rem;
+  }
 }
 
 .crab-bubble {
