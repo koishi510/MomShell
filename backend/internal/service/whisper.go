@@ -13,6 +13,11 @@ import (
 	"github.com/momshell/backend/pkg/openai"
 )
 
+const (
+	errWhisperUserNotFound    = "用户不存在"
+	errWhisperPartnerRequired = "请先完成伴侣绑定"
+)
+
 type WhisperService struct {
 	whisperRepo *repository.WhisperRepo
 	userRepo    *repository.UserRepo
@@ -35,13 +40,13 @@ func NewWhisperService(
 func (s *WhisperService) CreateWhisper(authorID, content string) (*dto.WhisperItem, error) {
 	user, err := s.userRepo.FindByID(authorID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errWhisperUserNotFound)
 	}
 	if user.Role != model.RoleMom {
 		return nil, fmt.Errorf("只有妈妈角色可以写心语")
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf("请先完成伴侣绑定")
+		return nil, fmt.Errorf(errWhisperPartnerRequired)
 	}
 
 	w := &model.Whisper{
@@ -64,10 +69,10 @@ func (s *WhisperService) CreateWhisper(authorID, content string) (*dto.WhisperIt
 func (s *WhisperService) GetWhispers(callerID string) ([]dto.WhisperItem, error) {
 	user, err := s.userRepo.FindByID(callerID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errWhisperUserNotFound)
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf("请先完成伴侣绑定")
+		return nil, fmt.Errorf(errWhisperPartnerRequired)
 	}
 
 	// Determine whose whispers to fetch
@@ -110,13 +115,13 @@ const whisperTipsPrompt = `你是「小石光」，一位温柔的家庭关系�
 func (s *WhisperService) GetWhisperTips(callerID string) (*dto.WhisperTips, error) {
 	user, err := s.userRepo.FindByID(callerID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errWhisperUserNotFound)
 	}
 	if user.Role != model.RoleDad {
 		return nil, fmt.Errorf("只有爸爸角色可以获取提示")
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf("请先完成伴侣绑定")
+		return nil, fmt.Errorf(errWhisperPartnerRequired)
 	}
 
 	whispers, err := s.whisperRepo.FindByAuthorID(*user.PartnerID, 10)

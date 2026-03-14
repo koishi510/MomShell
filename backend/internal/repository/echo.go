@@ -15,7 +15,7 @@ func NewEchoRepo(db *gorm.DB) *EchoRepo {
 
 func (r *EchoRepo) FindIdentityTagsByUserID(userID string) ([]model.IdentityTag, error) {
 	var tags []model.IdentityTag
-	err := r.db.Where("user_id = ?", userID).Order("created_at desc").Find(&tags).Error
+	err := r.db.Where(whereUserID, userID).Order(orderCreatedAtDesc).Find(&tags).Error
 	return tags, err
 }
 
@@ -25,7 +25,7 @@ func (r *EchoRepo) CreateIdentityTag(tag *model.IdentityTag) error {
 
 func (r *EchoRepo) FindIdentityTagByIDAndUserID(id, userID string) (*model.IdentityTag, error) {
 	var tag model.IdentityTag
-	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&tag).Error
+	err := r.db.Where(whereIDAndUserID, id, userID).First(&tag).Error
 	if err != nil {
 		return nil, err
 	}
@@ -33,11 +33,11 @@ func (r *EchoRepo) FindIdentityTagByIDAndUserID(id, userID string) (*model.Ident
 }
 
 func (r *EchoRepo) DeleteIdentityTag(id, userID string) error {
-	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&model.IdentityTag{}).Error
+	return r.db.Where(whereIDAndUserID, id, userID).Delete(&model.IdentityTag{}).Error
 }
 
 func (r *EchoRepo) FindMemoirsByUserID(userID string, limit, offset int) ([]model.Memoir, int64, error) {
-	query := r.db.Model(&model.Memoir{}).Where("user_id = ?", userID)
+	query := r.db.Model(&model.Memoir{}).Where(whereUserID, userID)
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -45,12 +45,12 @@ func (r *EchoRepo) FindMemoirsByUserID(userID string, limit, offset int) ([]mode
 	}
 
 	var memoirs []model.Memoir
-	err := query.Order("created_at desc").Offset(offset).Limit(limit).Find(&memoirs).Error
+	err := query.Order(orderCreatedAtDesc).Offset(offset).Limit(limit).Find(&memoirs).Error
 	return memoirs, total, err
 }
 
 func (r *EchoRepo) FindMemoirsByUserIDs(userIDs []string, limit, offset int) ([]model.Memoir, int64, error) {
-	query := r.db.Model(&model.Memoir{}).Where("user_id IN ?", userIDs)
+	query := r.db.Model(&model.Memoir{}).Where(whereUserIDIn, userIDs)
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -58,7 +58,7 @@ func (r *EchoRepo) FindMemoirsByUserIDs(userIDs []string, limit, offset int) ([]
 	}
 
 	var memoirs []model.Memoir
-	err := query.Order("created_at desc").Offset(offset).Limit(limit).Find(&memoirs).Error
+	err := query.Order(orderCreatedAtDesc).Offset(offset).Limit(limit).Find(&memoirs).Error
 	return memoirs, total, err
 }
 
@@ -68,7 +68,7 @@ func (r *EchoRepo) CreateMemoir(memoir *model.Memoir) error {
 
 func (r *EchoRepo) FindMemoirByIDAndUserID(id, userID string) (*model.Memoir, error) {
 	var memoir model.Memoir
-	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&memoir).Error
+	err := r.db.Where(whereIDAndUserID, id, userID).First(&memoir).Error
 	if err != nil {
 		return nil, err
 	}

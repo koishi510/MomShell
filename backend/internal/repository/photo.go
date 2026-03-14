@@ -16,7 +16,7 @@ func NewPhotoRepo(db *gorm.DB) *PhotoRepo {
 }
 
 func (r *PhotoRepo) FindByUserID(userID string, limit, offset int) ([]model.Photo, int64, error) {
-	query := r.db.Model(&model.Photo{}).Where("user_id = ?", userID)
+	query := r.db.Model(&model.Photo{}).Where(whereUserID, userID)
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -24,20 +24,20 @@ func (r *PhotoRepo) FindByUserID(userID string, limit, offset int) ([]model.Phot
 	}
 
 	var photos []model.Photo
-	err := query.Order("created_at desc").Offset(offset).Limit(limit).Find(&photos).Error
+	err := query.Order(orderCreatedAtDesc).Offset(offset).Limit(limit).Find(&photos).Error
 	return photos, total, err
 }
 
 func (r *PhotoRepo) FindWallPhotos(userID string) ([]model.Photo, error) {
 	var photos []model.Photo
-	err := r.db.Where("user_id = ? AND is_on_wall = ?", userID, true).
+	err := r.db.Where(whereUserIDAndIsOnWall, userID, true).
 		Order("wall_position asc").Find(&photos).Error
 	return photos, err
 }
 
 func (r *PhotoRepo) FindByID(id string) (*model.Photo, error) {
 	var photo model.Photo
-	err := r.db.Where("id = ?", id).First(&photo).Error
+	err := r.db.Where(whereID, id).First(&photo).Error
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (r *PhotoRepo) FindByID(id string) (*model.Photo, error) {
 
 func (r *PhotoRepo) FindByIDAndUserID(id, userID string) (*model.Photo, error) {
 	var photo model.Photo
-	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&photo).Error
+	err := r.db.Where(whereIDAndUserID, id, userID).First(&photo).Error
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +55,13 @@ func (r *PhotoRepo) FindByIDAndUserID(id, userID string) (*model.Photo, error) {
 
 func (r *PhotoRepo) CountByUserID(userID string) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.Photo{}).Where("user_id = ?", userID).Count(&count).Error
+	err := r.db.Model(&model.Photo{}).Where(whereUserID, userID).Count(&count).Error
 	return count, err
 }
 
 func (r *PhotoRepo) CountWallPhotos(userID string) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.Photo{}).Where("user_id = ? AND is_on_wall = ?", userID, true).Count(&count).Error
+	err := r.db.Model(&model.Photo{}).Where(whereUserIDAndIsOnWall, userID, true).Count(&count).Error
 	return count, err
 }
 
@@ -74,14 +74,14 @@ func (r *PhotoRepo) Update(photo *model.Photo) error {
 }
 
 func (r *PhotoRepo) Delete(id, userID string) error {
-	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&model.Photo{}).Error
+	return r.db.Where(whereIDAndUserID, id, userID).Delete(&model.Photo{}).Error
 }
 
 func (r *PhotoRepo) BatchUpdateWall(userID string, updates []WallUpdate) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// Clear all wall positions for user first
 		if err := tx.Model(&model.Photo{}).
-			Where("user_id = ? AND is_on_wall = ?", userID, true).
+			Where(whereUserIDAndIsOnWall, userID, true).
 			Updates(map[string]interface{}{"is_on_wall": false, "wall_position": nil}).Error; err != nil {
 			return err
 		}
@@ -90,7 +90,7 @@ func (r *PhotoRepo) BatchUpdateWall(userID string, updates []WallUpdate) error {
 		for _, u := range updates {
 			pos := u.Position
 			if err := tx.Model(&model.Photo{}).
-				Where("id = ? AND user_id = ?", u.PhotoID, userID).
+				Where(whereIDAndUserID, u.PhotoID, userID).
 				Updates(map[string]interface{}{"is_on_wall": true, "wall_position": pos}).Error; err != nil {
 				return err
 			}
@@ -107,14 +107,14 @@ type WallUpdate struct {
 // FindExpiredOffWall returns photos not on the wall created before the given time.
 func (r *PhotoRepo) FindExpiredOffWall(before time.Time, limit int) ([]model.Photo, error) {
 	var photos []model.Photo
-	err := r.db.Where("is_on_wall = ? AND created_at < ?", false, before).
+	err := r.db.Where(whereIsOnWall+" AND created_at < ?", false, before).
 		Order("created_at asc").Limit(limit).Find(&photos).Error
 	return photos, err
 }
 
 // DeleteByID deletes a photo by ID without user scoping (admin use).
 func (r *PhotoRepo) DeleteByID(id string) error {
-	return r.db.Where("id = ?", id).Delete(&model.Photo{}).Error
+	return r.db.Where(whereID, id).Delete(&model.Photo{}).Error
 }
 
 // FindAllPaginated returns all photos with optional filters for admin listing.
@@ -126,16 +126,16 @@ func (r *PhotoRepo) FindAllPaginated(search, userID, source, onWall string, limi
 		query = query.Where("title ILIKE ?", like)
 	}
 	if userID != "" {
-		query = query.Where("user_id = ?", userID)
+		query = query.Where(whereUserID, userID)
 	}
 	if source != "" {
 		query = query.Where("source = ?", source)
 	}
 	switch onWall {
 	case "true":
-		query = query.Where("is_on_wall = ?", true)
+		query = query.Where(whereIsOnWall, true)
 	case "false":
-		query = query.Where("is_on_wall = ?", false)
+		query = query.Where(whereIsOnWall, false)
 	}
 
 	var total int64
@@ -151,7 +151,7 @@ func (r *PhotoRepo) FindAllPaginated(search, userID, source, onWall string, limi
 // --- Family (partner-shared) query methods ---
 
 func (r *PhotoRepo) FindByFamilyIDs(familyIDs []string, limit, offset int) ([]model.Photo, int64, error) {
-	query := r.db.Model(&model.Photo{}).Where("user_id IN ?", familyIDs)
+	query := r.db.Model(&model.Photo{}).Where(whereUserIDIn, familyIDs)
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -159,32 +159,32 @@ func (r *PhotoRepo) FindByFamilyIDs(familyIDs []string, limit, offset int) ([]mo
 	}
 
 	var photos []model.Photo
-	err := query.Order("created_at desc").Offset(offset).Limit(limit).Find(&photos).Error
+	err := query.Order(orderCreatedAtDesc).Offset(offset).Limit(limit).Find(&photos).Error
 	return photos, total, err
 }
 
 func (r *PhotoRepo) FindWallPhotosByFamily(familyIDs []string) ([]model.Photo, error) {
 	var photos []model.Photo
-	err := r.db.Where("user_id IN ? AND is_on_wall = ?", familyIDs, true).
+	err := r.db.Where(whereUserIDInAndIsOnWall, familyIDs, true).
 		Order("wall_position asc").Find(&photos).Error
 	return photos, err
 }
 
 func (r *PhotoRepo) CountByFamilyIDs(familyIDs []string) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.Photo{}).Where("user_id IN ?", familyIDs).Count(&count).Error
+	err := r.db.Model(&model.Photo{}).Where(whereUserIDIn, familyIDs).Count(&count).Error
 	return count, err
 }
 
 func (r *PhotoRepo) CountWallPhotosByFamily(familyIDs []string) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.Photo{}).Where("user_id IN ? AND is_on_wall = ?", familyIDs, true).Count(&count).Error
+	err := r.db.Model(&model.Photo{}).Where(whereUserIDInAndIsOnWall, familyIDs, true).Count(&count).Error
 	return count, err
 }
 
 func (r *PhotoRepo) FindByIDAndFamilyIDs(id string, familyIDs []string) (*model.Photo, error) {
 	var photo model.Photo
-	err := r.db.Where("id = ? AND user_id IN ?", id, familyIDs).First(&photo).Error
+	err := r.db.Where(whereIDAndUserIDIn, id, familyIDs).First(&photo).Error
 	if err != nil {
 		return nil, err
 	}
@@ -194,14 +194,14 @@ func (r *PhotoRepo) FindByIDAndFamilyIDs(id string, familyIDs []string) (*model.
 func (r *PhotoRepo) BatchUpdateWallFamily(familyIDs []string, updates []WallUpdate) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&model.Photo{}).
-			Where("user_id IN ? AND is_on_wall = ?", familyIDs, true).
+			Where(whereUserIDInAndIsOnWall, familyIDs, true).
 			Updates(map[string]any{"is_on_wall": false, "wall_position": nil}).Error; err != nil {
 			return err
 		}
 		for _, u := range updates {
 			pos := u.Position
 			if err := tx.Model(&model.Photo{}).
-				Where("id = ? AND user_id IN ?", u.PhotoID, familyIDs).
+				Where(whereIDAndUserIDIn, u.PhotoID, familyIDs).
 				Updates(map[string]any{"is_on_wall": true, "wall_position": pos}).Error; err != nil {
 				return err
 			}
@@ -211,5 +211,5 @@ func (r *PhotoRepo) BatchUpdateWallFamily(familyIDs []string, updates []WallUpda
 }
 
 func (r *PhotoRepo) DeleteByFamily(id string, familyIDs []string) error {
-	return r.db.Where("id = ? AND user_id IN ?", id, familyIDs).Delete(&model.Photo{}).Error
+	return r.db.Where(whereIDAndUserIDIn, id, familyIDs).Delete(&model.Photo{}).Error
 }

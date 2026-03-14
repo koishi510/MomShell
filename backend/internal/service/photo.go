@@ -26,6 +26,7 @@ import (
 const (
 	maxPhotosPerFamily = 50
 	maxWallPhotos      = 10
+	errPhotoNotFound   = "photo not found"
 )
 
 type PhotoService struct {
@@ -101,7 +102,7 @@ func (s *PhotoService) GetPhoto(id, userID string) (*dto.PhotoResponse, error) {
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return nil, fmt.Errorf("photo not found")
+		return nil, fmt.Errorf(errPhotoNotFound)
 	}
 	nicknameMap := s.buildNicknameMap(familyIDs)
 	resp := toPhotoResponse(*photo, nicknameMap[photo.UserID])
@@ -185,7 +186,7 @@ func (s *PhotoService) UpdatePhoto(id, userID string, req dto.UpdatePhotoRequest
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return nil, fmt.Errorf("photo not found")
+		return nil, fmt.Errorf(errPhotoNotFound)
 	}
 
 	if req.Title != nil {
@@ -215,7 +216,7 @@ func (s *PhotoService) DeletePhoto(id, userID string) error {
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return fmt.Errorf("photo not found")
+		return fmt.Errorf(errPhotoNotFound)
 	}
 
 	// Remove file from disk if it's a local upload
@@ -228,7 +229,7 @@ func (s *PhotoService) ToggleWall(id, userID string, req dto.ToggleWallRequest) 
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return nil, fmt.Errorf("photo not found")
+		return nil, fmt.Errorf(errPhotoNotFound)
 	}
 
 	if req.IsOnWall && !photo.IsOnWall {

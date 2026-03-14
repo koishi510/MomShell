@@ -19,7 +19,7 @@ func NewChatRepo(db *gorm.DB) *ChatRepo {
 
 func (r *ChatRepo) FindByUserID(userID string) (*model.ChatMemory, error) {
 	var m model.ChatMemory
-	err := r.db.Where("user_id = ?", userID).First(&m).Error
+	err := r.db.Where(whereUserID, userID).First(&m).Error
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (r *ChatRepo) Create(m *model.ChatMemory) error {
 // UpdateSummaryAndTurns updates only the summary and turns fields.
 func (r *ChatRepo) UpdateSummaryAndTurns(userID string, summary string, turns string) error {
 	return r.db.Model(&model.ChatMemory{}).
-		Where("user_id = ?", userID).
+		Where(whereUserID, userID).
 		Updates(map[string]any{
 			"conversation_summary": summary,
 			"conversation_turns":   turns,
@@ -51,13 +51,13 @@ func (r *ChatRepo) UpdateSummaryAndTurns(userID string, summary string, turns st
 
 func (r *ChatRepo) FindFactsByUserID(userID string) ([]model.ChatMemoryFact, error) {
 	var facts []model.ChatMemoryFact
-	err := r.db.Where("user_id = ?", userID).Order("created_at desc").Find(&facts).Error
+	err := r.db.Where(whereUserID, userID).Order(orderCreatedAtDesc).Find(&facts).Error
 	return facts, err
 }
 
 func (r *ChatRepo) FindFactByID(id string) (*model.ChatMemoryFact, error) {
 	var f model.ChatMemoryFact
-	err := r.db.Where("id = ?", id).First(&f).Error
+	err := r.db.Where(whereID, id).First(&f).Error
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (r *ChatRepo) CreateFact(f *model.ChatMemoryFact) error {
 }
 
 func (r *ChatRepo) DeleteFact(id string) error {
-	return r.db.Where("id = ?", id).Delete(&model.ChatMemoryFact{}).Error
+	return r.db.Where(whereID, id).Delete(&model.ChatMemoryFact{}).Error
 }
 
 func (r *ChatRepo) FactExistsByContent(userID, content string) (bool, error) {
@@ -118,7 +118,7 @@ func (r *ChatRepo) DeleteFactsByContentLike(userID string, phrases []string) err
 
 func (r *ChatRepo) FindFactsByFamilyIDs(familyIDs []string) ([]model.ChatMemoryFact, error) {
 	var facts []model.ChatMemoryFact
-	err := r.db.Where("user_id IN ?", familyIDs).Order("created_at desc").Find(&facts).Error
+	err := r.db.Where(whereUserIDIn, familyIDs).Order(orderCreatedAtDesc).Find(&facts).Error
 	return facts, err
 }
 

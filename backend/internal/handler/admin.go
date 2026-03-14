@@ -10,6 +10,8 @@ import (
 	"github.com/momshell/backend/internal/service"
 )
 
+const errParamPrefix = "参数错误: "
+
 type AdminHandler struct {
 	adminService *service.AdminService
 	authService  *service.AuthService
@@ -80,7 +82,7 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 func (h *AdminHandler) CreateUser(c *gin.Context) {
 	var req dto.AdminCreateUser
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errParamPrefix + err.Error()})
 		return
 	}
 
@@ -100,7 +102,7 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var req dto.AdminUserUpdate
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errParamPrefix + err.Error()})
 		return
 	}
 
@@ -136,7 +138,7 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 func (h *AdminHandler) UpdateConfig(c *gin.Context) {
 	var req dto.ConfigUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errParamPrefix + err.Error()})
 		return
 	}
 

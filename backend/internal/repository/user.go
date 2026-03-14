@@ -15,7 +15,7 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 
 func (r *UserRepo) FindByID(id string) (*model.User, error) {
 	var user model.User
-	err := r.db.Preload("Certification").First(&user, "id = ?", id).Error
+	err := r.db.Preload(preloadCertification).First(&user, whereID, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (r *UserRepo) FindByID(id string) (*model.User, error) {
 
 func (r *UserRepo) FindByUsernameOrEmail(login string) (*model.User, error) {
 	var user model.User
-	err := r.db.Preload("Certification").
+	err := r.db.Preload(preloadCertification).
 		Where("username = ? OR email = ?", login, login).
 		First(&user).Error
 	if err != nil {
@@ -80,9 +80,9 @@ func (r *UserRepo) Update(user *model.User) error {
 }
 
 func (r *UserRepo) UpdatePassword(id, passwordHash string) error {
-	return r.db.Model(&model.User{}).Where("id = ?", id).Update("password_hash", passwordHash).Error
+	return r.db.Model(&model.User{}).Where(whereID, id).Update("password_hash", passwordHash).Error
 }
 
 func (r *UserRepo) UpdateTutorialCompleted(id string, completed bool) error {
-	return r.db.Model(&model.User{}).Where("id = ?", id).Update("tutorial_completed", completed).Error
+	return r.db.Model(&model.User{}).Where(whereID, id).Update("tutorial_completed", completed).Error
 }
