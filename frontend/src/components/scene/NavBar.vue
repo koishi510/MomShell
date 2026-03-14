@@ -254,6 +254,28 @@ const showNav = computed(() => {
   opacity: 0;
   transform: translateY(-8px) scale(0.95);
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .nav-toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .nav-item {
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+
+  .nav-label {
+    font-size: 14px;
+  }
+
+  .nav-icon {
+    width: 22px;
+    height: 22px;
+  }
+}
 </style>
 
 <!-- Global (non-scoped) styles for sprite highlight animation -->
