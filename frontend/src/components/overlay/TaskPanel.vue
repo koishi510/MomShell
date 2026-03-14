@@ -16,7 +16,7 @@
           <span class="xp-text">{{ stats.xp }} XP</span>
         </div>
 
-        <div v-if="loading" class="loading-state">加载中...</div>
+        <div v-if="loading" class="loading-state">{{ currentAge ? '正在生成任务...' : '加载中...' }}</div>
 
         <div v-else-if="tasks.length === 0" class="empty-state">今天没有任务</div>
 
@@ -61,7 +61,7 @@
           <span class="xp-text">{{ stats.xp }} XP</span>
         </div>
 
-        <div v-if="loading" class="loading-state">加载中...</div>
+        <div v-if="loading" class="loading-state">{{ currentAge ? '正在生成任务...' : '加载中...' }}</div>
 
         <div v-else-if="tasks.length === 0" class="empty-state">今天还没有任务</div>
 

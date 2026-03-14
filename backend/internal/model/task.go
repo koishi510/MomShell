@@ -53,19 +53,19 @@ const (
 
 // UserTask is a concrete task assigned to a user on a given date.
 type UserTask struct {
-	ID     string `gorm:"type:varchar(36);primaryKey" json:"id"`
-	UserID string `gorm:"type:varchar(36);not null;index" json:"user_id"`
-	TaskID string `gorm:"type:varchar(36)" json:"task_id"` // empty for AI tasks
+	ID     string  `gorm:"type:varchar(36);primaryKey" json:"id"`
+	UserID string  `gorm:"type:varchar(36);not null;index" json:"user_id"`
+	TaskID *string `gorm:"type:varchar(36)" json:"task_id"` // nil for AI tasks
 
 	Date   time.Time  `gorm:"type:date;not null;index" json:"date"`
 	Status TaskStatus `gorm:"type:varchar(20);default:'pending'" json:"status"`
 
 	// AI-generated task fields (populated when Source == "ai")
 	Source        TaskSource `gorm:"type:varchar(20);default:'template'" json:"source"`
-	AITitle       string     `gorm:"type:varchar(200)" json:"ai_title,omitempty"`
-	AIDescription string     `gorm:"type:text" json:"ai_description,omitempty"`
-	AICategory    string     `gorm:"type:varchar(50)" json:"ai_category,omitempty"`
-	AIDifficulty  int        `gorm:"default:0" json:"ai_difficulty,omitempty"`
+	AITitle       string     `gorm:"column:ai_title;type:varchar(200)" json:"ai_title,omitempty"`
+	AIDescription string     `gorm:"column:ai_description;type:text" json:"ai_description,omitempty"`
+	AICategory    string     `gorm:"column:ai_category;type:varchar(50)" json:"ai_category,omitempty"`
+	AIDifficulty  int        `gorm:"column:ai_difficulty;default:0" json:"ai_difficulty,omitempty"`
 
 	// Verification by partner
 	Score      *int       `gorm:"type:int" json:"score"`
@@ -78,9 +78,9 @@ type UserTask struct {
 	UpdatedAt   time.Time  `json:"updated_at"`
 
 	// Relationships
-	User     User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Task     DailyTask `gorm:"foreignKey:TaskID" json:"task,omitempty"`
-	ScoredBy *User     `gorm:"foreignKey:ScoredByID" json:"scored_by,omitempty"`
+	User     User       `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Task     *DailyTask `gorm:"foreignKey:TaskID" json:"task,omitempty"`
+	ScoredBy *User      `gorm:"foreignKey:ScoredByID" json:"scored_by,omitempty"`
 }
 
 // AIGeneratedTask caches the AI-generated task set per couple per day.

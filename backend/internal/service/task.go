@@ -262,7 +262,7 @@ func toTaskItem(ut model.UserTask) dto.UserTaskItem {
 		item.Description = ut.AIDescription
 		item.Category = ut.AICategory
 		item.Difficulty = ut.AIDifficulty
-	} else {
+	} else if ut.Task != nil {
 		item.Title = ut.Task.Title
 		item.Description = ut.Task.Description
 		item.Category = string(ut.Task.Category)
@@ -320,9 +320,10 @@ func (s *TaskService) createTasksForUser(user *model.User, userID string, date t
 		return fmt.Errorf("no templates available")
 	}
 	for _, tmpl := range templates {
+		tid := tmpl.ID
 		ut := &model.UserTask{
 			UserID: userID,
-			TaskID: tmpl.ID,
+			TaskID: &tid,
 			Date:   date,
 			Status: model.TaskPending,
 			Source: model.TaskSourceTemplate,

@@ -42,6 +42,13 @@ func Migrate(db *gorm.DB) error {
 	// Backfill OwnerUserID for existing ChatMemoryFacts
 	db.Exec("UPDATE chat_memory_facts SET owner_user_id = user_id WHERE owner_user_id IS NULL OR owner_user_id = ''")
 
+	// Drop legacy NOT NULL and FK constraint on user_tasks.task_id (now nullable for AI tasks)
+	db.Exec("ALTER TABLE user_tasks ALTER COLUMN task_id DROP NOT NULL")
+	db.Exec("ALTER TABLE user_tasks DROP CONSTRAINT IF EXISTS fk_user_tasks_task")
+
+	// Fix column names from GORM's default naming (a_idescription → ai_description)
+	db.Exec("ALTER TABLE user_tasks RENAME COLUMN a_idescription TO ai_description")
+	db.Exec("ALTER TABLE user_tasks RENAME COLUMN a_idifficulty TO ai_difficulty")
 	return nil
 }
 
