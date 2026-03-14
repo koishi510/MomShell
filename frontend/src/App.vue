@@ -1,10 +1,10 @@
 <template>
   <BeachScene />
+  <NavBar />
   <LandingOverlay />
   <AuthPanel />
   <RoleSelectPanel />
   <CarPage />
-  <MemoryPanel />
   <CommunityPanel />
   <BarPage />
   <ChatPanel />
@@ -17,11 +17,11 @@
 import { onMounted } from 'vue'
 import { useBackgroundMusicLoop } from '@/composables/useBackgroundMusicLoop'
 import BeachScene from '@/components/scene/BeachScene.vue'
+import NavBar from '@/components/scene/NavBar.vue'
 import LandingOverlay from '@/components/overlay/LandingOverlay.vue'
 import AuthPanel from '@/components/overlay/AuthPanel.vue'
 import RoleSelectPanel from '@/components/overlay/RoleSelectPanel.vue'
 import CarPage from '@/components/overlay/CarPage.vue'
-import MemoryPanel from '@/components/overlay/MemoryPanel.vue'
 import CommunityPanel from '@/components/overlay/CommunityPanel.vue'
 import BarPage from '@/components/overlay/BarPage.vue'
 import ChatPanel from '@/components/overlay/ChatPanel.vue'
