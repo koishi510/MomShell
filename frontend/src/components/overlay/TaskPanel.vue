@@ -3,11 +3,8 @@
     <div class="task-panel">
       <!-- Dad view: daily tasks -->
       <template v-if="isDad">
-        <div class="panel-header-row">
-          <div class="panel-header-left" />
-          <h2 class="panel-title">今日任务</h2>
-          <button class="menu-btn" @click="showAgeMenu = !showAgeMenu" title="设置宝宝年龄">⋯</button>
-        </div>
+        <button class="age-menu-btn" @click="showAgeMenu = !showAgeMenu" title="修改宝宝年龄">⋯</button>
+        <h2 class="panel-title">今日任务</h2>
         <p class="panel-subtitle">
           完成任务，一起成长
           <span v-if="currentAge" class="age-badge">{{ ageLabel(currentAge) }}</span>
@@ -51,11 +48,8 @@
 
       <!-- Mom view: partner tasks review -->
       <template v-else>
-        <div class="panel-header-row">
-          <div class="panel-header-left" />
-          <h2 class="panel-title">伴侣任务</h2>
-          <button class="menu-btn" @click="showAgeMenu = !showAgeMenu" title="设置宝宝年龄">⋯</button>
-        </div>
+        <button class="age-menu-btn" @click="showAgeMenu = !showAgeMenu" title="修改宝宝年龄">⋯</button>
+        <h2 class="panel-title">伴侣任务</h2>
         <p class="panel-subtitle">
           查看他的完成情况
           <span v-if="currentAge" class="age-badge">{{ ageLabel(currentAge) }}</span>
@@ -392,6 +386,7 @@ function difficultyStars(d: number) {
 
 <style scoped>
 .task-panel {
+  position: relative;
   padding: 32px 28px 28px;
 }
 
@@ -629,16 +624,15 @@ function difficultyStars(d: number) {
   margin-bottom: 6px;
 }
 
-.panel-header-left {
-  width: 32px;
-}
-
-.menu-btn {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+.age-menu-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
   color: var(--text-secondary);
   font-size: 18px;
   cursor: pointer;
@@ -648,10 +642,12 @@ function difficultyStars(d: number) {
   transition: background 0.2s;
   line-height: 1;
   letter-spacing: 1px;
+  z-index: 2;
 }
 
-.menu-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+.age-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text-primary);
 }
 
 .age-badge {
