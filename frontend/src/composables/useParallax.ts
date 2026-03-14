@@ -41,7 +41,7 @@ export function useParallax() {
 
   function recalcParallax() {
     const vw = window.innerWidth;
-    maxOffset.value = vw * 1.5;
+    maxOffset.value = vw * 1.2;
     layerMeta.forEach((m) => {
       m.centerShift = -(m.el.offsetWidth - vw) / 2;
     });
