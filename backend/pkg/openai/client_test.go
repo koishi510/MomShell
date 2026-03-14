@@ -217,8 +217,8 @@ func TestHandleAsyncTask_NoTaskIDOrRequestID(t *testing.T) {
 
 func TestHandleAsyncTask_PollWithTaskID(t *testing.T) {
 	// Set up test server that returns SUCCEED on first poll
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(taskStatusResponse{
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(taskStatusResponse{
 			TaskStatus:   "SUCCEED",
 			OutputImages: []string{"https://example.com/polled.png"},
 		})
@@ -243,8 +243,8 @@ func TestHandleAsyncTask_PollWithTaskID(t *testing.T) {
 }
 
 func TestHandleAsyncTask_PollWithRequestID(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(taskStatusResponse{
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(taskStatusResponse{
 			TaskStatus:   "SUCCEED",
 			OutputImages: []string{"https://example.com/fallback.png"},
 		})
@@ -269,8 +269,8 @@ func TestHandleAsyncTask_PollWithRequestID(t *testing.T) {
 }
 
 func TestHandleAsyncTask_PollError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(taskStatusResponse{
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(taskStatusResponse{
 			Error: &struct {
 				Message string `json:"message"`
 			}{Message: "quota exceeded"},
@@ -300,9 +300,9 @@ func TestChat_InvalidURL(t *testing.T) {
 }
 
 func TestChat_ServerError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "internal error")
+		_, _ = fmt.Fprint(w, "internal error")
 	}))
 	defer srv.Close()
 
@@ -316,7 +316,7 @@ func TestChat_ServerError(t *testing.T) {
 }
 
 func TestChat_Success(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		resp := map[string]interface{}{
 			"choices": []map[string]interface{}{
 				{
@@ -326,7 +326,7 @@ func TestChat_Success(t *testing.T) {
 				},
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -343,9 +343,9 @@ func TestChat_Success(t *testing.T) {
 }
 
 func TestGenerateImage_ServerError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "bad request")
+		_, _ = fmt.Fprint(w, "bad request")
 	}))
 	defer srv.Close()
 
@@ -357,7 +357,7 @@ func TestGenerateImage_ServerError(t *testing.T) {
 }
 
 func TestGenerateImage_SyncResponse(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		resp := ImageResponse{
 			Data: []struct {
 				URL     string `json:"url,omitempty"`
@@ -366,7 +366,7 @@ func TestGenerateImage_SyncResponse(t *testing.T) {
 				{URL: "https://example.com/generated.png"},
 			},
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
