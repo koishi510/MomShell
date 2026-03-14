@@ -16,9 +16,11 @@ export function useIsMobile() {
   );
 
   function update() {
-    isMobile.value = window.matchMedia(MQ_MOBILE).matches;
-    isSmall.value = window.matchMedia(MQ_SMALL).matches;
-    isLandscape.value = window.matchMedia(MQ_LANDSCAPE).matches;
+    if (mql768 && mql480 && mqlLandscape) {
+      isMobile.value = mql768.matches;
+      isSmall.value = mql480.matches;
+      isLandscape.value = mqlLandscape.matches;
+    }
   }
 
   let mql768: MediaQueryList | undefined;
