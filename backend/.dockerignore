@@ -1,0 +1,26 @@
+# Secrets & environment
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+bin
+.cache
+uploads
+
+# IDE & editor
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Docker config
+Dockerfile
+.dockerignore
+
+# Docs & misc
+*.md
+*.log
+.DS_Store
+Makefile
