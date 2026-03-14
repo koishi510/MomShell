@@ -41,11 +41,12 @@ detect_pm() {
 # Ask to install a package; $1=command to verify, $2=package name(s), $3=display name
 try_install() {
     local cmd="$1" pkg="$2" name="${3:-$1}"
-    if [ -n "$PM_INSTALL" ]; then
+    if [[ -n "$PM_INSTALL" ]]; then
         echo -en "  Install ${name} via ${PM}? ${YELLOW}[Y/n]${NC}: "
         read -r ans
         case "$ans" in
             [nN]*) return 1 ;;
+            *) ;;
         esac
         info "Installing ${name}..."
         $PM_INSTALL $pkg
@@ -153,7 +154,7 @@ else
     esac
 fi
 
-if [ "$FAILED" -ne 0 ]; then
+if [[ "$FAILED" -ne 0 ]]; then
     echo ""
     fail "Some required dependencies are missing. Please install them and re-run this script."
     exit 1
@@ -238,16 +239,16 @@ echo -e "${BLUE}=== 3. Configure Environment Variables ===${NC}"
 # Usage: ask "PROMPT" "DEFAULT" -> sets REPLY
 ask() {
     local prompt="$1" default="$2"
-    if [ -n "$default" ]; then
+    if [[ -n "$default" ]]; then
         echo -en "  ${prompt} ${YELLOW}[${default}]${NC}: "
     else
         echo -en "  ${prompt}: "
     fi
     read -r REPLY
-    [ -z "$REPLY" ] && REPLY="$default" || true
+    [[ -z "$REPLY" ]] && REPLY="$default" || true
 }
 
-if [ -f .env ]; then
+if [[ -f .env ]]; then
     success ".env already exists, skipping interactive config"
 else
     info "Creating .env — press Enter to accept defaults, leave blank to skip"
@@ -387,7 +388,7 @@ if [[ "$CURRENT_NPM_REGISTRY" == *"registry.npmjs.org"* ]]; then
 fi
 
 info "Installing npm dependencies..."
-if [ -d "$PROJECT_ROOT/frontend/node_modules" ]; then
+if [[ -d "$PROJECT_ROOT/frontend/node_modules" ]]; then
     info "Cleaning stale node_modules..."
     rm -rf "$PROJECT_ROOT/frontend/node_modules"
 fi
@@ -441,7 +442,7 @@ else
     warn "Backend build failed (database config may be missing)"
 fi
 
-if [ -d "$PROJECT_ROOT/frontend/node_modules" ]; then
+if [[ -d "$PROJECT_ROOT/frontend/node_modules" ]]; then
     success "Frontend node_modules installed"
 else
     warn "Frontend node_modules not found"
