@@ -4,6 +4,9 @@
   body {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .scene {
     touch-action: pan-x;
   }
 
@@ -17,21 +20,17 @@
 
 /* ── Portrait orientation on mobile ── */
 @media (max-width: 768px) and (orientation: portrait) {
-  /* In portrait mode, the scene is tall and narrow.
-     The parallax still works horizontally. */
   .scene {
-    height: 100dvh;
     height: 100vh;
+    height: 100dvh;
   }
 }
 
 /* ── Landscape orientation on mobile ── */
 @media (max-height: 500px) and (orientation: landscape) {
-  /* In landscape, viewport is short but wide.
-     Ensure the scene fills the height. */
   .scene {
-    height: 100dvh;
     height: 100vh;
+    height: 100dvh;
   }
 
   /* NavBar needs to be more compact in landscape */
