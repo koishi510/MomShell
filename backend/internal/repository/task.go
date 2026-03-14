@@ -5,6 +5,7 @@ import (
 
 	"github.com/momshell/backend/internal/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type TaskRepo struct {
@@ -91,7 +92,8 @@ func (r *TaskRepo) SumScoreByUserID(userID string) (int, error) {
 
 func (r *TaskRepo) FindAICache(coupleKey, date string) (*model.AIGeneratedTask, error) {
 	var cache model.AIGeneratedTask
-	err := r.db.Where("couple_key = ? AND date = ?", coupleKey, date).First(&cache).Error
+	err := r.db.Session(&gorm.Session{Logger: r.db.Logger.LogMode(logger.Silent)}).
+		Where("couple_key = ? AND date = ?", coupleKey, date).First(&cache).Error
 	if err != nil {
 		return nil, err
 	}
