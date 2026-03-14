@@ -3,8 +3,15 @@
     <div class="task-panel">
       <!-- Dad view: daily tasks -->
       <template v-if="isDad">
-        <h2 class="panel-title">今日任务</h2>
-        <p class="panel-subtitle">完成任务，一起成长</p>
+        <div class="panel-header-row">
+          <div class="panel-header-left" />
+          <h2 class="panel-title">今日任务</h2>
+          <button class="menu-btn" @click="showAgeMenu = !showAgeMenu" title="设置宝宝年龄">⋯</button>
+        </div>
+        <p class="panel-subtitle">
+          完成任务，一起成长
+          <span v-if="currentAge" class="age-badge">{{ ageLabel(currentAge) }}</span>
+        </p>
 
         <!-- Stats bar -->
         <div v-if="stats" class="stats-bar">
@@ -44,8 +51,15 @@
 
       <!-- Mom view: partner tasks review -->
       <template v-else>
-        <h2 class="panel-title">伴侣任务</h2>
-        <p class="panel-subtitle">查看他的完成情况</p>
+        <div class="panel-header-row">
+          <div class="panel-header-left" />
+          <h2 class="panel-title">伴侣任务</h2>
+          <button class="menu-btn" @click="showAgeMenu = !showAgeMenu" title="设置宝宝年龄">⋯</button>
+        </div>
+        <p class="panel-subtitle">
+          查看他的完成情况
+          <span v-if="currentAge" class="age-badge">{{ ageLabel(currentAge) }}</span>
+        </p>
 
         <!-- Stats bar -->
         <div v-if="stats" class="stats-bar">
@@ -113,6 +127,26 @@
       </template>
 
       <p v-if="error" class="error-msg">{{ error }}</p>
+
+      <!-- Age picker popup -->
+      <Transition name="age-fade">
+        <div v-if="showAgeMenu" class="age-picker-overlay" @click.self="showAgeMenu = false">
+          <div class="age-picker">
+            <h3 class="age-picker-title">选择宝宝年龄</h3>
+            <div class="age-options">
+              <button
+                v-for="opt in AGE_OPTIONS"
+                :key="opt.value"
+                :class="['age-option', { active: currentAge === opt.value }]"
+                :disabled="settingAge"
+                @click="onSelectAge(opt.value)"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </div>
   </OverlayPanel>
 </template>
@@ -129,6 +163,8 @@ import {
   scoreTask,
   rejectTask,
   getTaskStats,
+  getBabyAge,
+  setBabyAge,
   type UserTaskItem,
   type TaskStats,
 } from '@/lib/api/task'
@@ -147,6 +183,56 @@ const completing = ref('')
 const scoring = ref('')
 const scoreMap = reactive<Record<string, { score: number; comment: string }>>({})
 let pollTimer: ReturnType<typeof setInterval> | null = null
+
+const AGE_OPTIONS = [
+  { value: 'pregnancy', label: '孕期' },
+  { value: '0-3m', label: '0-3个月' },
+  { value: '3-6m', label: '3-6个月' },
+  { value: '6-12m', label: '6-12个月' },
+  { value: '1-2y', label: '1-2岁' },
+  { value: '2-3y', label: '2-3岁' },
+  { value: '3-4y', label: '3-4岁' },
+  { value: '4-5y', label: '4-5岁' },
+] as const
+
+const ageLabelMap: Record<string, string> = Object.fromEntries(
+  AGE_OPTIONS.map((o) => [o.value, o.label]),
+)
+
+const showAgeMenu = ref(false)
+const currentAge = ref('')
+const settingAge = ref(false)
+
+function ageLabel(value: string): string {
+  return ageLabelMap[value] || value
+}
+
+async function fetchBabyAge() {
+  try {
+    const resp = await getBabyAge()
+    currentAge.value = resp.age_stage || ''
+  } catch {
+    // ignore
+  }
+}
+
+async function onSelectAge(value: string) {
+  settingAge.value = true
+  error.value = ''
+  try {
+    await setBabyAge(value)
+    currentAge.value = value
+    showAgeMenu.value = false
+    // Refresh tasks immediately
+    loading.value = true
+    await fetchTasks()
+  } catch (e) {
+    error.value = getErrorMessage(e)
+  } finally {
+    settingAge.value = false
+    loading.value = false
+  }
+}
 
 async function fetchTasks() {
   const [taskList, taskStats] = await Promise.all([
@@ -220,7 +306,7 @@ watch(
       error.value = ''
       loading.value = true
       try {
-        await fetchTasks()
+        await Promise.all([fetchTasks(), fetchBabyAge()])
       } catch (e) {
         error.value = getErrorMessage(e)
       } finally {
@@ -534,5 +620,120 @@ function difficultyStars(d: number) {
   padding: 40px 20px;
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.panel-header-left {
+  width: 32px;
+}
+
+.menu-btn {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+
+.menu-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.age-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 10px;
+  background: rgba(255, 200, 80, 0.15);
+  color: #ffc060;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.age-picker-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: inherit;
+}
+
+.age-picker {
+  background: var(--surface-elevated, #2a2a3a);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 24px;
+  width: 280px;
+  max-width: 90%;
+}
+
+.age-picker-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.age-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.age-option {
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.age-option:hover {
+  background: rgba(255, 200, 80, 0.12);
+  border-color: rgba(255, 200, 80, 0.3);
+}
+
+.age-option.active {
+  background: rgba(255, 200, 80, 0.2);
+  border-color: rgba(255, 200, 80, 0.5);
+  color: #ffc060;
+  font-weight: 600;
+}
+
+.age-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.age-fade-enter-active,
+.age-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.age-fade-enter-from,
+.age-fade-leave-to {
+  opacity: 0;
 }
 </style>
