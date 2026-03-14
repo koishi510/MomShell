@@ -342,7 +342,7 @@ func (s *TaskService) SetBabyAge(userID string, ageStage string) error {
 
 	user.BabyAgeStage = &ageStage
 	if err := s.userRepo.Update(user); err != nil {
-		return fmt.Errorf("failed to update age stage: %w", err)
+		return fmt.Errorf("保存失败，请重试")
 	}
 
 	// Immediate regeneration: delete today's pending tasks and AI cache

@@ -147,7 +147,13 @@ func (h *TaskHandler) SetBabyAge(c *gin.Context) {
 	}
 
 	if err := h.taskService.SetBabyAge(userID, req.AgeStage); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		status := http.StatusInternalServerError
+		if err.Error() == "用户不存在" {
+			status = http.StatusNotFound
+		} else if err.Error() != "保存失败，请重试" {
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -86,26 +86,32 @@ func resolveAgeStage(
 	return "", ""
 }
 
+// agePattern pairs an age stage key with its keyword patterns.
+type agePattern struct {
+	stage    string
+	patterns []string
+}
+
+// agePatterns is an ordered list so matching is deterministic.
+var agePatterns = []agePattern{
+	{"pregnancy", []string{"怀孕", "孕期", "pregnant", "孕"}},
+	{"0-3m", []string{"新生儿", "月子", "0个月", "1个月", "2个月", "3个月", "刚出生"}},
+	{"3-6m", []string{"4个月", "5个月", "6个月", "半岁"}},
+	{"6-12m", []string{"7个月", "8个月", "9个月", "10个月", "11个月"}},
+	{"1-2y", []string{"1岁", "一岁", "12个月"}},
+	{"2-3y", []string{"2岁", "两岁"}},
+	{"3-4y", []string{"3岁", "三岁"}},
+	{"4-5y", []string{"4岁", "四岁", "5岁", "五岁"}},
+}
+
 // inferAgeStageFromMemory attempts to extract an age stage from a memory fact.
 func inferAgeStageFromMemory(content string) string {
 	lower := strings.ToLower(content)
 
-	// Check for explicit age mentions
-	agePatterns := map[string][]string{
-		"pregnancy": {"怀孕", "孕期", "pregnant", "孕"},
-		"0-3m":      {"新生儿", "月子", "0个月", "1个月", "2个月", "3个月", "刚出生"},
-		"3-6m":      {"4个月", "5个月", "6个月", "半岁"},
-		"6-12m":     {"7个月", "8个月", "9个月", "10个月", "11个月"},
-		"1-2y":      {"1岁", "一岁", "12个月"},
-		"2-3y":      {"2岁", "两岁"},
-		"3-4y":      {"3岁", "三岁"},
-		"4-5y":      {"4岁", "四岁", "5岁", "五岁"},
-	}
-
-	for stage, patterns := range agePatterns {
-		for _, p := range patterns {
+	for _, ap := range agePatterns {
+		for _, p := range ap.patterns {
 			if strings.Contains(lower, p) {
-				return stage
+				return ap.stage
 			}
 		}
 	}
@@ -200,7 +206,9 @@ func getOrGenerateAITasks(
 		if err := json.Unmarshal([]byte(cache.TasksJSON), &tasks); err == nil {
 			return tasks, nil
 		}
-		log.Printf("[TaskAI] cache parse error for %s/%s, regenerating", ck, date)
+		// Bad cache entry — delete it so the unique index won't block re-save
+		log.Printf("[TaskAI] cache parse error for %s/%s, deleting and regenerating", ck, date)
+		_ = taskRepo.DeleteAICacheByCouple(ck, date)
 	}
 
 	// Generate
