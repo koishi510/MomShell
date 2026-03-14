@@ -19,6 +19,11 @@ export interface TaskStats {
   level: number;
 }
 
+export interface BabyAgeResponse {
+  age_stage: string;
+  source: string;
+}
+
 export function getDailyTasks(): Promise<UserTaskItem[]> {
   return apiClient.get("/api/v1/tasks/daily").then((r) => r.data);
 }
@@ -49,4 +54,14 @@ export function rejectTask(
 
 export function getTaskStats(): Promise<TaskStats> {
   return apiClient.get("/api/v1/tasks/stats").then((r) => r.data);
+}
+
+export function getBabyAge(): Promise<BabyAgeResponse> {
+  return apiClient.get("/api/v1/tasks/baby-age").then((r) => r.data);
+}
+
+export function setBabyAge(ageStage: string): Promise<void> {
+  return apiClient
+    .put("/api/v1/tasks/baby-age", { age_stage: ageStage })
+    .then(() => undefined);
 }
