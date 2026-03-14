@@ -1006,16 +1006,25 @@ export default function PearlShell({
         await video.play();
 
         let lastInferenceTime = 0;
+        let inferenceInFlight = false;
         const processFrame = async () => {
           if (cancelled) return;
           inferenceFrameId = requestAnimationFrame(processFrame);
 
           const now = performance.now();
           if (now - lastInferenceTime < MEDIAPIPE_FRAME_INTERVAL_MS) return;
+          if (inferenceInFlight) return;
           lastInferenceTime = now;
 
           if (video.readyState >= 2) {
-            await hands.send({ image: video });
+            inferenceInFlight = true;
+            try {
+              await hands.send({ image: video });
+            } catch (err) {
+              console.warn("MediaPipe hands.send failed:", err);
+            } finally {
+              inferenceInFlight = false;
+            }
           }
         };
         inferenceFrameId = requestAnimationFrame(processFrame);
