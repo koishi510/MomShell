@@ -209,6 +209,14 @@ export function useParallax() {
       cancelAnimationFrame(resizeRaf);
       resizeRaf = requestAnimationFrame(recalcParallax);
     });
+    window.addEventListener("orientationchange", () => {
+      // Delay recalc to let the browser settle after orientation change
+      setTimeout(() => {
+        recalcParallax();
+        applyParallax();
+        startLoop();
+      }, 150);
+    });
 
     setTimeout(() => {
       hintHidden.value = true;

@@ -63,6 +63,8 @@ uiStore.setParallaxScrollTo(scrollTo)
   position: relative;
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+  background: #f5e0c8;
 }
 </style>
