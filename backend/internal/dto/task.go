@@ -9,6 +9,7 @@ type UserTaskItem struct {
 	Category    string     `json:"category"`
 	Difficulty  int        `json:"difficulty"`
 	Status      string     `json:"status"`
+	Source      string     `json:"source"`
 	Score       *int       `json:"score"`
 	Comment     *string    `json:"comment"`
 	CompletedAt *time.Time `json:"completed_at"`
@@ -24,4 +25,13 @@ type TaskScore struct {
 type TaskStats struct {
 	XP    int `json:"xp"`
 	Level int `json:"level"`
+}
+
+type SetBabyAgeRequest struct {
+	AgeStage string `json:"age_stage" binding:"required,oneof=pregnancy 0-3m 3-6m 6-12m 1-2y 2-3y 3-4y 4-5y"`
+}
+
+type BabyAgeResponse struct {
+	AgeStage string `json:"age_stage"`
+	Source   string `json:"source"` // "manual", "partner", "memory", ""
 }

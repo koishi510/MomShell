@@ -58,6 +58,7 @@ type User struct {
 	// Postpartum info
 	BabyBirthDate   *time.Time `json:"baby_birth_date"`
 	PostpartumWeeks *int       `json:"postpartum_weeks"`
+	BabyAgeStage    *string    `gorm:"type:varchar(20)" json:"baby_age_stage"`
 
 	// Status
 	IsActive          bool `gorm:"default:true" json:"is_active"`
