@@ -165,4 +165,56 @@ function onBackdropClick() {
   transform: scale(0.97);
   opacity: 0;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .overlay-center {
+    width: 100vw;
+    height: 100dvh;
+    height: 100vh;
+    max-height: 100dvh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .overlay-right {
+    width: 100vw;
+    height: 100dvh;
+    height: 100vh;
+    max-height: 100dvh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .overlay-fullscreen {
+    height: 100dvh;
+    height: 100vh;
+  }
+
+  .overlay-panel {
+    border-radius: 0;
+  }
+
+  .overlay-close {
+    width: 44px;
+    height: 44px;
+    top: 12px;
+    right: 12px;
+  }
+}
+
+/* ── Mobile landscape ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .overlay-center,
+  .overlay-right {
+    width: 80vw;
+    max-height: 100dvh;
+    max-height: 100vh;
+    border-radius: 12px;
+  }
+
+  .overlay-panel {
+    border-radius: 12px;
+  }
+}
 </style>

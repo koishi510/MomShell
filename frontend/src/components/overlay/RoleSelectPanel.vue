@@ -154,12 +154,38 @@ async function onConfirm() {
   color: rgba(255, 255, 255, 0.5);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .role-select {
     flex-direction: column;
+    height: 100dvh;
+    height: 100vh;
   }
   .role-half {
+    height: 50dvh;
     height: 50vh;
+    padding: 24px 16px;
+  }
+  .role-title {
+    font-size: 24px;
+  }
+  .role-subtitle {
+    font-size: 13px;
+  }
+}
+
+/* Mobile landscape: side-by-side layout */
+@media (max-height: 500px) and (orientation: landscape) {
+  .role-select {
+    flex-direction: row;
+    height: 100dvh;
+    height: 100vh;
+  }
+  .role-half {
+    height: 100%;
+    padding: 16px;
+  }
+  .role-title {
+    font-size: 22px;
   }
 }
 </style>
