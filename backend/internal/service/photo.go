@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -102,7 +103,7 @@ func (s *PhotoService) GetPhoto(id, userID string) (*dto.PhotoResponse, error) {
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return nil, fmt.Errorf(errPhotoNotFound)
+		return nil, errors.New(errPhotoNotFound)
 	}
 	nicknameMap := s.buildNicknameMap(familyIDs)
 	resp := toPhotoResponse(*photo, nicknameMap[photo.UserID])
@@ -186,7 +187,7 @@ func (s *PhotoService) UpdatePhoto(id, userID string, req dto.UpdatePhotoRequest
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return nil, fmt.Errorf(errPhotoNotFound)
+		return nil, errors.New(errPhotoNotFound)
 	}
 
 	if req.Title != nil {
@@ -216,7 +217,7 @@ func (s *PhotoService) DeletePhoto(id, userID string) error {
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return fmt.Errorf(errPhotoNotFound)
+		return errors.New(errPhotoNotFound)
 	}
 
 	// Remove file from disk if it's a local upload
@@ -229,7 +230,7 @@ func (s *PhotoService) ToggleWall(id, userID string, req dto.ToggleWallRequest) 
 	familyIDs := s.getFamilyIDs(userID)
 	photo, err := s.photoRepo.FindByIDAndFamilyIDs(id, familyIDs)
 	if err != nil {
-		return nil, fmt.Errorf(errPhotoNotFound)
+		return nil, errors.New(errPhotoNotFound)
 	}
 
 	if req.IsOnWall && !photo.IsOnWall {
