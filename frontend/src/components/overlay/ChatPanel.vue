@@ -83,6 +83,7 @@ interface ChatMessage {
 
 const _messages: ChatMessage[] = []
 let _sessionId: string | null = null
+let _sessionCounter = 0
 let _profileLoaded = false
 let _preferredName: string | null = null
 </script>
@@ -204,10 +205,15 @@ function generateSessionId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
   }
-  // crypto.getRandomValues is available in all modern browsers
-  const bytes = new Uint8Array(16)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  // crypto.getRandomValues is available in all modern browsers;
+  // guard retained for SSR / test environments where crypto may be absent.
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  }
+  // Fallback: timestamp + counter (non-crypto, but unique per session)
+  return Date.now().toString(36) + (++_sessionCounter).toString(36)
 }
 
 function syncPersistent() {
