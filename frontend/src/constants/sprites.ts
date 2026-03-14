@@ -14,8 +14,8 @@ import barImg from '@/assets/images/bar.png'
 import stoneImg from '@/assets/images/stone.png'
 import crabImg from '@/assets/images/crab.png'
 import shellImg from '@/assets/images/shell.png'
-import starImg from '@/assets/images/star.png'
-import conqueImg from '@/assets/images/conque.png'
+import chairImg from '@/assets/images/chairs.png'
+import mailboxImg from '@/assets/images/mailbox.png'
 
 export const SPRITES: SpriteData[] = [
 
@@ -35,8 +35,8 @@ export const SPRITES: SpriteData[] = [
 
   { id: 'shell', src: shellImg, left: '52.5%', top: '45%', width: '5vw', rotate: 0 },
 
-  { id: 'star', src: starImg, left: '54.5%', top: '75%', width: '5vw', rotate: 0 },
+  { id: 'chair', src: chairImg, left: '54.5%', top: '75%', width: '5vw', rotate: 0 },
 
-  { id: 'conque', src: conqueImg, left: '57%', top: '48%', width: '5vw', rotate: 0 },
+  { id: 'mailbox', src: mailboxImg, left: '57%', top: '48%', width: '5vw', rotate: 0 },
 
 ]
