@@ -39,6 +39,7 @@ import { LAYERS } from '@/constants/layers'
 import { SPRITES } from '@/constants/sprites'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { seededRandom } from '@/utils/random'
 
 const SHARED_HINTS: readonly string[] = [
   '想聊聊心事，就点那块石头呀。',
@@ -130,7 +131,7 @@ function pickRandomHint() {
 
   let nextHint = currentHint.value
   while (nextHint === currentHint.value) {
-    nextHint = hints[Math.floor(Math.random() * hints.length)]
+    nextHint = hints[Math.floor(seededRandom() * hints.length)]
   }
   return nextHint
 }
