@@ -6,8 +6,11 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o /server cmd/server/main.go
 
 FROM alpine:3.20
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata \
+    && addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 COPY --from=builder /server .
+RUN chown -R appuser:appgroup /app
+USER appuser
 EXPOSE 8000
 CMD ["./server"]

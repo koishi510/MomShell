@@ -4,33 +4,38 @@ import type {
   ReflectionStreakStyle,
   ReflectionGlowStyle,
   WaveParticleStyle,
-} from '@/types/scene'
-import { GLOW_BLOCKS, REFLECTION_WIDTH_CURVE, REFLECTION_STREAK_COUNT } from '@/constants/reflections'
+} from "@/types/scene";
+import {
+  GLOW_BLOCKS,
+  REFLECTION_WIDTH_CURVE,
+  REFLECTION_STREAK_COUNT,
+} from "@/constants/reflections";
+import { seededRandom } from "@/utils/random";
 
 export function generateShimmers(count: number): ShimmerStyle[] {
-  const items: ShimmerStyle[] = []
+  const items: ShimmerStyle[] = [];
   for (let i = 0; i < count; i++) {
     items.push({
-      top: `${10 + Math.random() * 80}%`,
-      left: `${Math.random() * 100}%`,
-      width: `${30 + Math.random() * 80}px`,
-      animationDelay: `${Math.random() * 5}s`,
-      animationDuration: `${3 + Math.random() * 4}s`,
-    })
+      top: `${10 + seededRandom() * 80}%`,
+      left: `${seededRandom() * 100}%`,
+      width: `${30 + seededRandom() * 80}px`,
+      animationDelay: `${seededRandom() * 5}s`,
+      animationDuration: `${3 + seededRandom() * 4}s`,
+    });
   }
-  return items
+  return items;
 }
 
 export function generateWaveLines(count: number): WaveLineStyle[] {
-  const items: WaveLineStyle[] = []
+  const items: WaveLineStyle[] = [];
   for (let i = 0; i < count; i++) {
     items.push({
       top: `${5 + i * 8}%`,
       animationDelay: `${i * 0.5}s`,
-      opacity: `${0.2 + Math.random() * 0.3}`,
-    })
+      opacity: `${0.2 + seededRandom() * 0.3}`,
+    });
   }
-  return items
+  return items;
 }
 
 export function generateReflectionGlows(): ReflectionGlowStyle[] {
@@ -41,46 +46,48 @@ export function generateReflectionGlows(): ReflectionGlowStyle[] {
     background: `radial-gradient(ellipse, rgba(255,215,140,${b.alpha}) 0%, rgba(255,200,120,${(b.alpha * 0.5).toFixed(3)}) 40%, transparent 70%)`,
     filter: `blur(${b.blur}px)`,
     animation: `glowShimmer ${b.dur}s ease-in-out ${(i * 1.3).toFixed(1)}s infinite`,
-    animationFillMode: 'backwards',
-  }))
+    animationFillMode: "backwards",
+  }));
 }
 
 export function generateReflectionStreaks(): ReflectionStreakStyle[] {
-  const items: ReflectionStreakStyle[] = []
+  const items: ReflectionStreakStyle[] = [];
   for (let i = 0; i < REFLECTION_STREAK_COUNT; i++) {
-    const t = i / REFLECTION_STREAK_COUNT
-    const ci = t * (REFLECTION_WIDTH_CURVE.length - 1)
-    const lo = Math.floor(ci)
-    const hi = Math.min(lo + 1, REFLECTION_WIDTH_CURVE.length - 1)
-    const wFactor = REFLECTION_WIDTH_CURVE[lo] + (REFLECTION_WIDTH_CURVE[hi] - REFLECTION_WIDTH_CURVE[lo]) * (ci - lo)
-    const w = 30 + wFactor * 27 + Math.random() * 20
-    const h = 1.5 + t * 3.5 + Math.random() * 1.5
-    const offsetX = (Math.random() - 0.5) * (8 + wFactor * 5)
-    const brightness = 0.72 - t * 0.52
-    const r = 255
-    const g = 190 + Math.floor(Math.random() * 30)
-    const b = 80 + Math.floor(Math.random() * 40)
+    const t = i / REFLECTION_STREAK_COUNT;
+    const ci = t * (REFLECTION_WIDTH_CURVE.length - 1);
+    const lo = Math.floor(ci);
+    const hi = Math.min(lo + 1, REFLECTION_WIDTH_CURVE.length - 1);
+    const wFactor =
+      REFLECTION_WIDTH_CURVE[lo] +
+      (REFLECTION_WIDTH_CURVE[hi] - REFLECTION_WIDTH_CURVE[lo]) * (ci - lo);
+    const w = 30 + wFactor * 27 + seededRandom() * 20;
+    const h = 1.5 + t * 3.5 + seededRandom() * 1.5;
+    const offsetX = (seededRandom() - 0.5) * (8 + wFactor * 5);
+    const brightness = 0.72 - t * 0.52;
+    const r = 255;
+    const g = 190 + Math.floor(seededRandom() * 30);
+    const b = 80 + Math.floor(seededRandom() * 40);
 
-    let animName: string
-    let animDur: string
-    let animDir: string
+    let animName: string;
+    let animDur: string;
+    let animDir: string;
 
     if (t > 0.55) {
-      animName = 'streakWaveStrong'
-      animDur = (4 + Math.random() * 3).toFixed(1)
-      animDir = 'normal'
+      animName = "streakWaveStrong";
+      animDur = (4 + seededRandom() * 3).toFixed(1);
+      animDir = "normal";
     } else if (t > 0.3) {
-      animName = 'streakWaveMid'
-      animDur = (5 + Math.random() * 3).toFixed(1)
-      animDir = 'normal'
+      animName = "streakWaveMid";
+      animDur = (5 + seededRandom() * 3).toFixed(1);
+      animDir = "normal";
     } else if (t > 0.12) {
-      animName = 'streakWaveGentle'
-      animDur = (6 + Math.random() * 3).toFixed(1)
-      animDir = 'normal'
+      animName = "streakWaveGentle";
+      animDur = (6 + seededRandom() * 3).toFixed(1);
+      animDir = "normal";
     } else {
-      animName = 'streakCalm'
-      animDur = (2.5 + Math.random() * 2.5).toFixed(1)
-      animDir = 'alternate'
+      animName = "streakCalm";
+      animDur = (2.5 + seededRandom() * 2.5).toFixed(1);
+      animDir = "alternate";
     }
 
     items.push({
@@ -90,38 +97,42 @@ export function generateReflectionStreaks(): ReflectionStreakStyle[] {
       height: `${h}px`,
       background: `rgba(${r},${g},${b},${brightness.toFixed(2)})`,
       animation: `${animName} ${animDur}s ease-in-out infinite ${animDir}`,
-      animationDelay: `${(Math.random() * 4).toFixed(1)}s`,
-      animationFillMode: 'backwards',
-    })
+      animationDelay: `${(seededRandom() * 4).toFixed(1)}s`,
+      animationFillMode: "backwards",
+    });
   }
-  return items
+  return items;
 }
 
-export function generateWaveParticles(count: number, topMin: number, topMax: number): WaveParticleStyle[] {
-  const items: WaveParticleStyle[] = []
+export function generateWaveParticles(
+  count: number,
+  topMin: number,
+  topMax: number,
+): WaveParticleStyle[] {
+  const items: WaveParticleStyle[] = [];
   const colors = [
     (a: number) => `rgba(255,245,220,${a.toFixed(2)})`,
     (a: number) => `rgba(255,235,200,${a.toFixed(2)})`,
     (a: number) => `rgba(255,225,180,${a.toFixed(2)})`,
     (a: number) => `rgba(255,255,240,${a.toFixed(2)})`,
-  ]
+  ];
   const alphaRanges = [
     [0.3, 0.5],
     [0.25, 0.45],
     [0.2, 0.4],
     [0.35, 0.45],
-  ]
+  ];
 
   for (let i = 0; i < count; i++) {
-    const size = 2 + Math.random() * 3
-    const x = Math.random() * 100
-    const y = topMin + Math.random() * (topMax - topMin)
-    const dur = 3 + Math.random() * 5
-    const delay = Math.random() * dur
-    const ci = Math.floor(Math.random() * colors.length)
-    const [aMin, aRange] = alphaRanges[ci]
-    const alpha = aMin + Math.random() * aRange
-    const color = colors[ci](alpha)
+    const size = 2 + seededRandom() * 3;
+    const x = seededRandom() * 100;
+    const y = topMin + seededRandom() * (topMax - topMin);
+    const dur = 3 + seededRandom() * 5;
+    const delay = seededRandom() * dur;
+    const ci = Math.floor(seededRandom() * colors.length);
+    const [aMin, aRange] = alphaRanges[ci];
+    const alpha = aMin + seededRandom() * aRange;
+    const color = colors[ci](alpha);
 
     items.push({
       left: `${x.toFixed(1)}%`,
@@ -131,7 +142,7 @@ export function generateWaveParticles(count: number, topMin: number, topMax: num
       background: `radial-gradient(circle,${color} 0%,transparent 70%)`,
       boxShadow: `0 0 ${(size * 1.5).toFixed(0)}px ${color}`,
       animation: `particleGlow ${dur.toFixed(1)}s ease-in-out ${delay.toFixed(1)}s infinite`,
-    })
+    });
   }
-  return items
+  return items;
 }
