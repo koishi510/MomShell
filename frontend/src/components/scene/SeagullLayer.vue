@@ -16,7 +16,9 @@ import { ref, onMounted, onUnmounted, inject } from 'vue'
 import { PARALLAX_KEY } from '@/composables/useParallax'
 import { LAYERS } from '@/constants/layers'
 import { SEAGULL_DATA } from '@/constants/seagulls'
-import { seededRandom } from '@/utils/random'
+import { createSeededRandom } from '@/utils/random'
+
+const rand = createSeededRandom(300)
 
 const layerEl = ref<HTMLElement | null>(null)
 const ctx = inject(PARALLAX_KEY)!
@@ -24,7 +26,7 @@ const ctx = inject(PARALLAX_KEY)!
 const injectedStyles: HTMLStyleElement[] = []
 
 const gullStyles = SEAGULL_DATA.map((g, i) => {
-  const delay = (i * 4 + seededRandom() * 3).toFixed(1)
+  const delay = (i * 4 + rand() * 3).toFixed(1)
   return {
     left: `${g.x}%`,
     top: `${g.y}%`,
@@ -42,9 +44,9 @@ onMounted(() => {
 
   // Inject dynamic flight path keyframes
   SEAGULL_DATA.forEach((g, i) => {
-    const amp = 15 + seededRandom() * 30
-    const freq = 1.5 + seededRandom() * 2
-    const phase = seededRandom() * Math.PI * 2
+    const amp = 15 + rand() * 30
+    const freq = 1.5 + rand() * 2
+    const phase = rand() * Math.PI * 2
     const waypoints = [0, 12, 24, 37, 50, 63, 76, 88, 100]
 
     let kf = `@keyframes gullFly${i} {\n`

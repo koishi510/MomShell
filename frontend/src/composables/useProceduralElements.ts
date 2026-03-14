@@ -10,17 +10,19 @@ import {
   REFLECTION_WIDTH_CURVE,
   REFLECTION_STREAK_COUNT,
 } from "@/constants/reflections";
-import { seededRandom } from "@/utils/random";
+import { createSeededRandom } from "@/utils/random";
+
+const rand = createSeededRandom(100);
 
 export function generateShimmers(count: number): ShimmerStyle[] {
   const items: ShimmerStyle[] = [];
   for (let i = 0; i < count; i++) {
     items.push({
-      top: `${10 + seededRandom() * 80}%`,
-      left: `${seededRandom() * 100}%`,
-      width: `${30 + seededRandom() * 80}px`,
-      animationDelay: `${seededRandom() * 5}s`,
-      animationDuration: `${3 + seededRandom() * 4}s`,
+      top: `${10 + rand() * 80}%`,
+      left: `${rand() * 100}%`,
+      width: `${30 + rand() * 80}px`,
+      animationDelay: `${rand() * 5}s`,
+      animationDuration: `${3 + rand() * 4}s`,
     });
   }
   return items;
@@ -32,7 +34,7 @@ export function generateWaveLines(count: number): WaveLineStyle[] {
     items.push({
       top: `${5 + i * 8}%`,
       animationDelay: `${i * 0.5}s`,
-      opacity: `${0.2 + seededRandom() * 0.3}`,
+      opacity: `${0.2 + rand() * 0.3}`,
     });
   }
   return items;
@@ -60,13 +62,13 @@ export function generateReflectionStreaks(): ReflectionStreakStyle[] {
     const wFactor =
       REFLECTION_WIDTH_CURVE[lo] +
       (REFLECTION_WIDTH_CURVE[hi] - REFLECTION_WIDTH_CURVE[lo]) * (ci - lo);
-    const w = 30 + wFactor * 27 + seededRandom() * 20;
-    const h = 1.5 + t * 3.5 + seededRandom() * 1.5;
-    const offsetX = (seededRandom() - 0.5) * (8 + wFactor * 5);
+    const w = 30 + wFactor * 27 + rand() * 20;
+    const h = 1.5 + t * 3.5 + rand() * 1.5;
+    const offsetX = (rand() - 0.5) * (8 + wFactor * 5);
     const brightness = 0.72 - t * 0.52;
     const r = 255;
-    const g = 190 + Math.floor(seededRandom() * 30);
-    const b = 80 + Math.floor(seededRandom() * 40);
+    const g = 190 + Math.floor(rand() * 30);
+    const b = 80 + Math.floor(rand() * 40);
 
     let animName: string;
     let animDur: string;
@@ -74,19 +76,19 @@ export function generateReflectionStreaks(): ReflectionStreakStyle[] {
 
     if (t > 0.55) {
       animName = "streakWaveStrong";
-      animDur = (4 + seededRandom() * 3).toFixed(1);
+      animDur = (4 + rand() * 3).toFixed(1);
       animDir = "normal";
     } else if (t > 0.3) {
       animName = "streakWaveMid";
-      animDur = (5 + seededRandom() * 3).toFixed(1);
+      animDur = (5 + rand() * 3).toFixed(1);
       animDir = "normal";
     } else if (t > 0.12) {
       animName = "streakWaveGentle";
-      animDur = (6 + seededRandom() * 3).toFixed(1);
+      animDur = (6 + rand() * 3).toFixed(1);
       animDir = "normal";
     } else {
       animName = "streakCalm";
-      animDur = (2.5 + seededRandom() * 2.5).toFixed(1);
+      animDur = (2.5 + rand() * 2.5).toFixed(1);
       animDir = "alternate";
     }
 
@@ -97,7 +99,7 @@ export function generateReflectionStreaks(): ReflectionStreakStyle[] {
       height: `${h}px`,
       background: `rgba(${r},${g},${b},${brightness.toFixed(2)})`,
       animation: `${animName} ${animDur}s ease-in-out infinite ${animDir}`,
-      animationDelay: `${(seededRandom() * 4).toFixed(1)}s`,
+      animationDelay: `${(rand() * 4).toFixed(1)}s`,
       animationFillMode: "backwards",
     });
   }
@@ -124,14 +126,14 @@ export function generateWaveParticles(
   ];
 
   for (let i = 0; i < count; i++) {
-    const size = 2 + seededRandom() * 3;
-    const x = seededRandom() * 100;
-    const y = topMin + seededRandom() * (topMax - topMin);
-    const dur = 3 + seededRandom() * 5;
-    const delay = seededRandom() * dur;
-    const ci = Math.floor(seededRandom() * colors.length);
+    const size = 2 + rand() * 3;
+    const x = rand() * 100;
+    const y = topMin + rand() * (topMax - topMin);
+    const dur = 3 + rand() * 5;
+    const delay = rand() * dur;
+    const ci = Math.floor(rand() * colors.length);
     const [aMin, aRange] = alphaRanges[ci];
-    const alpha = aMin + seededRandom() * aRange;
+    const alpha = aMin + rand() * aRange;
     const color = colors[ci](alpha);
 
     items.push({
