@@ -43,14 +43,29 @@ func (t *DailyTask) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// TaskSource indicates how a UserTask was created.
+type TaskSource string
+
+const (
+	TaskSourceTemplate TaskSource = "template"
+	TaskSourceAI       TaskSource = "ai"
+)
+
 // UserTask is a concrete task assigned to a user on a given date.
 type UserTask struct {
 	ID     string `gorm:"type:varchar(36);primaryKey" json:"id"`
 	UserID string `gorm:"type:varchar(36);not null;index" json:"user_id"`
-	TaskID string `gorm:"type:varchar(36);not null" json:"task_id"`
+	TaskID string `gorm:"type:varchar(36)" json:"task_id"` // empty for AI tasks
 
 	Date   time.Time  `gorm:"type:date;not null;index" json:"date"`
 	Status TaskStatus `gorm:"type:varchar(20);default:'pending'" json:"status"`
+
+	// AI-generated task fields (populated when Source == "ai")
+	Source        TaskSource `gorm:"type:varchar(20);default:'template'" json:"source"`
+	AITitle       string     `gorm:"type:varchar(200)" json:"ai_title,omitempty"`
+	AIDescription string     `gorm:"type:text" json:"ai_description,omitempty"`
+	AICategory    string     `gorm:"type:varchar(50)" json:"ai_category,omitempty"`
+	AIDifficulty  int        `gorm:"default:0" json:"ai_difficulty,omitempty"`
 
 	// Verification by partner
 	Score      *int       `gorm:"type:int" json:"score"`
@@ -66,6 +81,16 @@ type UserTask struct {
 	User     User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Task     DailyTask `gorm:"foreignKey:TaskID" json:"task,omitempty"`
 	ScoredBy *User     `gorm:"foreignKey:ScoredByID" json:"scored_by,omitempty"`
+}
+
+// AIGeneratedTask caches the AI-generated task set per couple per day.
+type AIGeneratedTask struct {
+	ID        uint      `gorm:"primaryKey"`
+	CoupleKey string    `gorm:"type:varchar(80);uniqueIndex:idx_couple_date" json:"couple_key"`
+	Date      string    `gorm:"type:varchar(10);uniqueIndex:idx_couple_date" json:"date"`
+	AgeStage  string    `gorm:"type:varchar(20)" json:"age_stage"`
+	TasksJSON string    `gorm:"type:text" json:"tasks_json"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (ut *UserTask) BeforeCreate(tx *gorm.DB) error {

@@ -86,3 +86,28 @@ func (r *TaskRepo) SumScoreByUserID(userID string) (int, error) {
 	}
 	return *total, nil
 }
+
+// AI cache operations
+
+func (r *TaskRepo) FindAICache(coupleKey, date string) (*model.AIGeneratedTask, error) {
+	var cache model.AIGeneratedTask
+	err := r.db.Where("couple_key = ? AND date = ?", coupleKey, date).First(&cache).Error
+	if err != nil {
+		return nil, err
+	}
+	return &cache, nil
+}
+
+func (r *TaskRepo) SaveAICache(cache *model.AIGeneratedTask) error {
+	return r.db.Create(cache).Error
+}
+
+func (r *TaskRepo) DeleteAICacheByCouple(coupleKey, date string) error {
+	return r.db.Where("couple_key = ? AND date = ?", coupleKey, date).
+		Delete(&model.AIGeneratedTask{}).Error
+}
+
+func (r *TaskRepo) DeletePendingUserTasksByDate(userID string, date time.Time) error {
+	return r.db.Where("user_id = ? AND date = ? AND status = ?", userID, date.Format("2006-01-02"), model.TaskPending).
+		Delete(&model.UserTask{}).Error
+}
