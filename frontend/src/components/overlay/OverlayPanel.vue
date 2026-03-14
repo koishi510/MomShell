@@ -170,25 +170,25 @@ function onBackdropClick() {
 @media (max-width: 768px) {
   .overlay-center {
     width: 100vw;
-    height: 100dvh;
     height: 100vh;
-    max-height: 100dvh;
+    height: 100dvh;
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
   }
 
   .overlay-right {
     width: 100vw;
-    height: 100dvh;
     height: 100vh;
-    max-height: 100dvh;
+    height: 100dvh;
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
   }
 
   .overlay-fullscreen {
-    height: 100dvh;
     height: 100vh;
+    height: 100dvh;
   }
 
   .overlay-panel {
@@ -208,8 +208,8 @@ function onBackdropClick() {
   .overlay-center,
   .overlay-right {
     width: 80vw;
-    max-height: 100dvh;
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 12px;
   }
 
