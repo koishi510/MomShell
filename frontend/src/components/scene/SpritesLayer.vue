@@ -1,26 +1,37 @@
 <template>
   <div class="sprites-layer layer" ref="layerEl">
-    <img
+    <div
       v-for="s in SPRITES"
       :key="s.id"
-      :ref="(element) => setSpriteEl(s.id, element)"
-      :src="s.src"
-      :alt="s.id"
       :id="`sprite-${s.id}`"
-      :class="['sprite', { clickable: isSpriteClickable(s.id) }]"
+      :class="['sprite-wrapper', { clickable: isSpriteClickable(s.id) }]"
       :style="{
         left: s.left,
         top: s.top,
         width: s.width,
-        transform: [
-          s.rotate ? `rotate(${s.rotate}deg)` : '',
-          s.scaleX ? `scaleX(${s.scaleX})` : '',
-          s.scaleY ? `scaleY(${s.scaleY})` : '',
-        ].filter(Boolean).join(' ') || undefined,
+        zIndex: s.zIndex ?? undefined,
       }"
-      draggable="false"
       @click="onSpriteClick(s.id)"
-    />
+    >
+      <img
+        :ref="(element) => setSpriteEl(s.id, element)"
+        :src="s.src"
+        :alt="s.id"
+        class="sprite-img"
+        :style="{
+          transform: [
+            s.rotate ? `rotate(${s.rotate}deg)` : '',
+            s.scaleX ? `scaleX(${s.scaleX})` : '',
+            s.scaleY ? `scaleY(${s.scaleY})` : '',
+          ].filter(Boolean).join(' ') || undefined,
+        }"
+        draggable="false"
+      />
+      <span v-if="s.label" class="sprite-label" :style="{
+        fontSize: s.labelSize ?? undefined,
+        marginTop: s.labelOffsetY ?? undefined,
+      }">{{ s.label }}</span>
+    </div>
   </div>
 
   <div class="sprite-bubble-layer layer" ref="bubbleLayerEl" aria-hidden="true" id="sprite-bubble-layer">
@@ -82,7 +93,7 @@ const currentHint = ref<string>(SHARED_HINTS[0])
 const crabBubblePosition = ref<{ left: string, top: string } | null>(null)
 let bubbleTimer: ReturnType<typeof setTimeout> | null = null
 
-const CLICKABLE_SPRITES = new Set(['car', 'shell', 'star', 'conque', 'bar', 'stone', 'crab'])
+const CLICKABLE_SPRITES = new Set(['car', 'shell', 'chair', 'mailbox', 'bar', 'stone', 'crab'])
 
 const crabBubbleStyle = computed(() => crabBubblePosition.value ?? undefined)
 
@@ -152,8 +163,8 @@ function onSpriteClick(id: string) {
   if (ctx.wasDrag()) return
   if (id === 'car') uiStore.openFeature('car')
   else if (id === 'shell') uiStore.openFeature('memory')
-  else if (id === 'star') uiStore.openFeature('task')
-  else if (id === 'conque') uiStore.openFeature('whisper')
+  else if (id === 'chair') uiStore.openFeature('task')
+  else if (id === 'mailbox') uiStore.openFeature('whisper')
   else if (id === 'bar') uiStore.openFeature('bar')
   else if (id === 'stone') uiStore.openFeature('chat')
   else if (id === 'crab') showCrabHint()
@@ -196,24 +207,47 @@ onUnmounted(() => {
   overflow: visible;
 }
 
-.sprite {
+.sprite-wrapper {
   position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.sprite-img {
+  width: 100%;
   height: auto;
   pointer-events: none;
 }
 
-.sprite.clickable {
+.sprite-wrapper.clickable {
   pointer-events: auto;
   cursor: pointer;
-  transition: transform 0.2s;
 }
 
-.sprite.clickable:hover {
+.sprite-wrapper.clickable .sprite-img {
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.sprite-wrapper.clickable:hover .sprite-img {
   transform: scale(1.08);
+  filter: drop-shadow(0 0 8px rgba(255, 230, 180, 0.7)) drop-shadow(0 0 16px rgba(255, 200, 120, 0.4));
 }
 
-.sprite.clickable:active {
+.sprite-wrapper.clickable:active .sprite-img {
   transform: scale(0.97);
+}
+
+.sprite-label {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(90, 62, 43, 0.85);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
 }
 
 .speech-bubble {

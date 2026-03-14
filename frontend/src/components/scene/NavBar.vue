@@ -95,8 +95,8 @@ const NAV_ITEMS: NavItem[] = [
   { iconComponent: IconCar, label: '关系', spriteId: 'car' },
   { iconComponent: IconShell, label: '记忆', spriteId: 'shell' },
   { iconComponent: IconBoard, label: '公告板', spriteId: 'bar' },
-  { iconComponent: IconConque, label: '悄悄话', spriteId: 'conque' },
-  { iconComponent: IconStar, label: '任务', spriteId: 'star' },
+  { iconComponent: IconConque, label: '悄悄话', spriteId: 'mailbox' },
+  { iconComponent: IconStar, label: '任务', spriteId: 'chair' },
 ]
 
 function highlightSprite(spriteId: string) {

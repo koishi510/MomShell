@@ -2277,7 +2277,7 @@ watch(visible, async (isVisible) => {
 }
 
 .shell-code-display {
-  font-family: 'Courier New', monospace;
+  font-family: inherit;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 4px;
