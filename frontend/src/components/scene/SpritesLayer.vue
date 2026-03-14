@@ -11,13 +11,13 @@
         width: s.width,
         zIndex: s.zIndex ?? undefined,
       }"
-      @click="onSpriteClick(s.id)"
     >
       <img
         :ref="(element) => setSpriteEl(s.id, element)"
         :src="s.src"
         :alt="s.id"
         class="sprite-img"
+        @click="onSpriteClick(s.id)"
         :style="{
           transform: [
             s.rotate ? `rotate(${s.rotate}deg)` : '',
@@ -221,21 +221,18 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.sprite-wrapper.clickable {
+.sprite-wrapper.clickable .sprite-img {
   pointer-events: auto;
   cursor: pointer;
-}
-
-.sprite-wrapper.clickable .sprite-img {
   transition: transform 0.2s, filter 0.2s;
 }
 
-.sprite-wrapper.clickable:hover .sprite-img {
+.sprite-wrapper.clickable .sprite-img:hover {
   transform: scale(1.08);
   filter: drop-shadow(0 0 8px rgba(255, 230, 180, 0.7)) drop-shadow(0 0 16px rgba(255, 200, 120, 0.4));
 }
 
-.sprite-wrapper.clickable:active .sprite-img {
+.sprite-wrapper.clickable .sprite-img:active {
   transform: scale(0.97);
 }
 
