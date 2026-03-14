@@ -271,4 +271,26 @@ async function onRegister() {
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .auth-panel {
+    padding: 24px 16px 20px;
+  }
+
+  .auth-input {
+    font-size: 16px;
+    padding: 14px 16px;
+  }
+
+  .auth-tab {
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .auth-submit {
+    min-height: 48px;
+    font-size: 16px;
+  }
+}
 </style>

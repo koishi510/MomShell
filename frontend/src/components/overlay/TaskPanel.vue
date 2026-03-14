@@ -732,4 +732,42 @@ function difficultyStars(d: number) {
 .age-fade-leave-to {
   opacity: 0;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .task-panel {
+    padding: 24px 16px 20px;
+  }
+
+  .panel-title {
+    font-size: 20px;
+  }
+
+  .task-card {
+    padding: 14px;
+  }
+
+  .task-title {
+    font-size: 15px;
+  }
+
+  .task-desc {
+    font-size: 12px;
+  }
+
+  .star-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .score-input {
+    font-size: 16px;
+  }
+
+  .age-menu-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
 </style>

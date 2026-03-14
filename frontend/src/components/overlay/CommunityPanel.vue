@@ -1470,4 +1470,36 @@ function clearCommentTarget() {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .community-panel {
+    padding: 24px 16px;
+  }
+
+  .panel-title {
+    font-size: 20px;
+  }
+
+  .channel-tab {
+    font-size: 13px;
+    padding: 8px 0;
+  }
+
+  .question-card {
+    padding: 14px;
+  }
+
+  .q-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .compose-input,
+  .compose-textarea,
+  .answer-input,
+  .reply-input {
+    font-size: 16px;
+  }
+}
 </style>

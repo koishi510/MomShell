@@ -329,4 +329,24 @@ function formatTime(iso: string) {
   color: var(--text-secondary);
   font-size: 14px;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .whisper-panel {
+    padding: 24px 16px 20px;
+  }
+
+  .panel-title {
+    font-size: 20px;
+  }
+
+  .whisper-textarea {
+    font-size: 16px;
+  }
+
+  .submit-btn,
+  .tips-btn {
+    min-height: 44px;
+  }
+}
 </style>

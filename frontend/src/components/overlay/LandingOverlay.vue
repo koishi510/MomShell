@@ -104,4 +104,36 @@ function onOpen() {
 .landing-enter-active { transition: opacity 0.5s ease; }
 .landing-leave-active { transition: opacity 0.6s ease; }
 .landing-enter-from, .landing-leave-to { opacity: 0; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .landing-glow {
+    width: 200px;
+    height: 200px;
+  }
+
+  .landing-btn {
+    padding: 16px 40px;
+  }
+
+  .landing-btn-text {
+    font-size: 18px;
+    letter-spacing: 3px;
+  }
+
+  .landing-subtitle {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-glow {
+    width: 160px;
+    height: 160px;
+  }
+
+  .landing-btn-text {
+    font-size: 16px;
+  }
+}
 </style>
