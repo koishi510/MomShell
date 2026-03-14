@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Navigation & Scene Interaction
+
+- **Collapsible NavBar**: Glassmorphism floating navigation menu in the top-right corner; collapsed by default, expands on click with frosted glass styling and monochrome outline icons
+- **Scroll-based navigation**: NavBar items scroll the parallax beach scene to center each feature sprite instead of directly opening panels
+- **Sprite highlight animation**: Golden pulse glow effect (drop-shadow) on feature sprites after navigating to them, with automatic cleanup on animation end
+- **Horizontal scroll support**: Trackpad two-finger horizontal swipe and mouse horizontal wheel scrolling now navigate the parallax beach scene; shift+scroll fallback for mice without horizontal scroll; overlay panels excluded from scroll capture
+
+#### AI Chat Improvements
+
+- **Memory filtering rules**: Added filtering to prevent persisting negative or harmful content in AI memory extraction
+
+#### Community Board
+
+- **Improved post layout**: Increased row spacing, reduced position jitter, and index-based z-ordering so newer posts appear on top of older ones
+
+### Fixed
+
+- **Go static analysis**: Replaced `fmt.Errorf` with `errors.New` for constant error strings across `photo.go`, `task.go`, and `whisper.go` (12 occurrences, SA1006)
+
+### Performance
+
+- **Gesture control optimization**: Reduced GPU contention on Mac by switching to MediaPipe lite model, lowering camera resolution to 320×240, throttling inference to ~10fps with manual rAF loop, and adding GSAP camera follow throttle with `overwrite: true`
+
 ---
 
 ## [1.1.0] - 2026-03-14
