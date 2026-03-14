@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -40,13 +41,13 @@ func NewWhisperService(
 func (s *WhisperService) CreateWhisper(authorID, content string) (*dto.WhisperItem, error) {
 	user, err := s.userRepo.FindByID(authorID)
 	if err != nil {
-		return nil, fmt.Errorf(errWhisperUserNotFound)
+		return nil, errors.New(errWhisperUserNotFound)
 	}
 	if user.Role != model.RoleMom {
 		return nil, fmt.Errorf("只有妈妈角色可以写心语")
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf(errWhisperPartnerRequired)
+		return nil, errors.New(errWhisperPartnerRequired)
 	}
 
 	w := &model.Whisper{
@@ -69,10 +70,10 @@ func (s *WhisperService) CreateWhisper(authorID, content string) (*dto.WhisperIt
 func (s *WhisperService) GetWhispers(callerID string) ([]dto.WhisperItem, error) {
 	user, err := s.userRepo.FindByID(callerID)
 	if err != nil {
-		return nil, fmt.Errorf(errWhisperUserNotFound)
+		return nil, errors.New(errWhisperUserNotFound)
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf(errWhisperPartnerRequired)
+		return nil, errors.New(errWhisperPartnerRequired)
 	}
 
 	// Determine whose whispers to fetch
@@ -115,13 +116,13 @@ const whisperTipsPrompt = `你是「小石光」，一位温柔的家庭关系�
 func (s *WhisperService) GetWhisperTips(callerID string) (*dto.WhisperTips, error) {
 	user, err := s.userRepo.FindByID(callerID)
 	if err != nil {
-		return nil, fmt.Errorf(errWhisperUserNotFound)
+		return nil, errors.New(errWhisperUserNotFound)
 	}
 	if user.Role != model.RoleDad {
 		return nil, fmt.Errorf("只有爸爸角色可以获取提示")
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf(errWhisperPartnerRequired)
+		return nil, errors.New(errWhisperPartnerRequired)
 	}
 
 	whispers, err := s.whisperRepo.FindByAuthorID(*user.PartnerID, 10)
