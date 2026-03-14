@@ -63,6 +63,18 @@ Goal-setting and tracking system.
 - **Partner support**: Partners can participate in tasks with accept/reject workflow
 - **Progress polling**: Real-time status updates on partner task completion
 
+## Beach Scene Navigation
+
+Interactive navigation and exploration of the beach scene.
+
+- **Collapsible NavBar**: Glassmorphism floating menu in the top-right corner with monochrome outline icons; expands on click to reveal navigation items
+- **Scroll-to-sprite**: NavBar items scroll the parallax view to center each feature sprite on screen
+- **Sprite highlight**: Golden pulse glow animation on feature sprites after scrolling to them
+- **Horizontal scrolling**: Trackpad horizontal swipe and mouse wheel horizontal scroll to pan the beach scene; shift+scroll fallback for standard mice
+- **Keyboard navigation**: Arrow keys for horizontal panning
+- **Drag navigation**: Click-and-drag to pan the scene
+- **Interactive tutorial**: 7-step onboarding tour using driver.js, walking new users through each beach scene sprite with auto-scrolling parallax viewport
+
 ## Admin Panel
 
 Embedded management interface at `/admin`.
