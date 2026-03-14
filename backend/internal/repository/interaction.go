@@ -59,7 +59,7 @@ func (r *InteractionRepo) DeleteLikesByTarget(targetType, targetID string) error
 
 func (r *InteractionRepo) FindCollection(userID, questionID string) (*model.Collection, error) {
 	var c model.Collection
-	err := r.db.Where("user_id = ? AND question_id = ?", userID, questionID).First(&c).Error
+	err := r.db.Where(whereUserIDAndQuestionID, userID, questionID).First(&c).Error
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (r *InteractionRepo) FindCollectedQuestionIDs(userID string, questionIDs []
 		return make(map[string]bool), nil
 	}
 	var collections []model.Collection
-	err := r.db.Where("user_id = ? AND question_id IN ?", userID, questionIDs).Find(&collections).Error
+	err := r.db.Where(whereUserID+" AND question_id IN ?", userID, questionIDs).Find(&collections).Error
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +84,13 @@ func (r *InteractionRepo) FindCollectedQuestionIDs(userID string, questionIDs []
 
 func (r *InteractionRepo) FindUserCollections(userID string, offset, limit int) ([]model.Collection, int64, error) {
 	var total int64
-	r.db.Model(&model.Collection{}).Where("user_id = ?", userID).Count(&total)
+	r.db.Model(&model.Collection{}).Where(whereUserID, userID).Count(&total)
 
 	var collections []model.Collection
 	err := r.db.Preload("Question.Author.Certification").
 		Preload("Question.Tags").
-		Where("user_id = ?", userID).
-		Order("created_at desc").
+		Where(whereUserID, userID).
+		Order(orderCreatedAtDesc).
 		Offset(offset).Limit(limit).
 		Find(&collections).Error
 	return collections, total, err
@@ -101,9 +101,9 @@ func (r *InteractionRepo) CreateCollection(c *model.Collection) error {
 }
 
 func (r *InteractionRepo) DeleteCollection(userID, questionID string) error {
-	return r.db.Where("user_id = ? AND question_id = ?", userID, questionID).Delete(&model.Collection{}).Error
+	return r.db.Where(whereUserIDAndQuestionID, userID, questionID).Delete(&model.Collection{}).Error
 }
 
 func (r *InteractionRepo) DeleteCollectionsByQuestion(questionID string) error {
-	return r.db.Where("question_id = ?", questionID).Delete(&model.Collection{}).Error
+	return r.db.Where(whereQuestionID, questionID).Delete(&model.Collection{}).Error
 }

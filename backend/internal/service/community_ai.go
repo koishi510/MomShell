@@ -16,6 +16,8 @@ import (
 
 var mentionPattern = regexp.MustCompile(`@小石光`)
 
+const logFindQuestionFailed = "[CommunityAI] failed to find question %s: %v"
+
 type CommunityAIService struct {
 	client       *openai.Client
 	firecrawl    *firecrawl.Client
@@ -84,7 +86,7 @@ func (s *CommunityAIService) HandleNewQuestion(questionID string) {
 
 	q, err := s.questionRepo.FindByID(questionID)
 	if err != nil {
-		log.Printf("[CommunityAI] failed to find question %s: %v", questionID, err)
+		log.Printf(logFindQuestionFailed, questionID, err)
 		return
 	}
 
@@ -123,7 +125,7 @@ func (s *CommunityAIService) HandleNewAnswer(questionID, answerID string) {
 
 	q, err := s.questionRepo.FindByID(questionID)
 	if err != nil {
-		log.Printf("[CommunityAI] failed to find question %s: %v", questionID, err)
+		log.Printf(logFindQuestionFailed, questionID, err)
 		return
 	}
 
@@ -176,7 +178,7 @@ func (s *CommunityAIService) HandleNewComment(answerID, commentID string) {
 
 	q, err := s.questionRepo.FindByID(answer.QuestionID)
 	if err != nil {
-		log.Printf("[CommunityAI] failed to find question %s: %v", answer.QuestionID, err)
+		log.Printf(logFindQuestionFailed, answer.QuestionID, err)
 		return
 	}
 

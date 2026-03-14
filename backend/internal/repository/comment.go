@@ -26,7 +26,7 @@ func (r *CommentRepo) FindByAnswerID(answerID string) ([]model.Comment, error) {
 func (r *CommentRepo) FindByID(id string) (*model.Comment, error) {
 	var c model.Comment
 	err := r.db.Preload("Author.Certification").
-		First(&c, "id = ?", id).Error
+		First(&c, whereID, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (r *CommentRepo) Create(c *model.Comment) error {
 }
 
 func (r *CommentRepo) Delete(id string) error {
-	return r.db.Where("id = ?", id).Delete(&model.Comment{}).Error
+	return r.db.Where(whereID, id).Delete(&model.Comment{}).Error
 }
 
 func (r *CommentRepo) Update(c *model.Comment) error {
@@ -61,6 +61,6 @@ func (r *CommentRepo) DeleteByAnswerID(answerID string) error {
 }
 
 func (r *CommentRepo) UpdateLikeCount(id string, delta int) error {
-	return r.db.Model(&model.Comment{}).Where("id = ?", id).
+	return r.db.Model(&model.Comment{}).Where(whereID, id).
 		UpdateColumn("like_count", gorm.Expr("like_count + ?", delta)).Error
 }

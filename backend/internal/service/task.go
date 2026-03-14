@@ -10,6 +10,12 @@ import (
 	"github.com/momshell/backend/internal/repository"
 )
 
+const (
+	errUserNotFound    = "用户不存在"
+	errPartnerRequired = "请先完成伴侣绑定"
+	errTaskNotFound    = "任务不存在"
+)
+
 type TaskService struct {
 	taskRepo *repository.TaskRepo
 	userRepo *repository.UserRepo
@@ -28,13 +34,13 @@ func today() time.Time {
 func (s *TaskService) GetDailyTasks(userID string) ([]dto.UserTaskItem, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errUserNotFound)
 	}
 	if user.Role != model.RoleDad {
 		return nil, fmt.Errorf("只有爸爸角色可以查看任务")
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf("请先完成伴侣绑定")
+		return nil, fmt.Errorf(errPartnerRequired)
 	}
 
 	date := today()
@@ -73,7 +79,7 @@ func (s *TaskService) GetDailyTasks(userID string) ([]dto.UserTaskItem, error) {
 func (s *TaskService) CompleteTask(userID, taskID string) (*dto.UserTaskItem, error) {
 	ut, err := s.taskRepo.FindUserTaskByID(taskID)
 	if err != nil {
-		return nil, fmt.Errorf("任务不存在")
+		return nil, fmt.Errorf(errTaskNotFound)
 	}
 	if ut.UserID != userID {
 		return nil, fmt.Errorf("无权操作此任务")
@@ -98,13 +104,13 @@ func (s *TaskService) CompleteTask(userID, taskID string) (*dto.UserTaskItem, er
 func (s *TaskService) GetPartnerTasks(callerID string) ([]dto.UserTaskItem, error) {
 	user, err := s.userRepo.FindByID(callerID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errUserNotFound)
 	}
 	if user.Role != model.RoleMom {
 		return nil, fmt.Errorf("只有妈妈角色可以查看伴侣任务")
 	}
 	if user.PartnerID == nil {
-		return nil, fmt.Errorf("请先完成伴侣绑定")
+		return nil, fmt.Errorf(errPartnerRequired)
 	}
 
 	date := today()
@@ -143,18 +149,18 @@ func (s *TaskService) GetPartnerTasks(callerID string) ([]dto.UserTaskItem, erro
 func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dto.UserTaskItem, error) {
 	caller, err := s.userRepo.FindByID(callerID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errUserNotFound)
 	}
 	if caller.Role != model.RoleMom {
 		return nil, fmt.Errorf("只有妈妈角色可以验收任务")
 	}
 	if caller.PartnerID == nil {
-		return nil, fmt.Errorf("请先完成伴侣绑定")
+		return nil, fmt.Errorf(errPartnerRequired)
 	}
 
 	ut, err := s.taskRepo.FindUserTaskByID(taskID)
 	if err != nil {
-		return nil, fmt.Errorf("任务不存在")
+		return nil, fmt.Errorf(errTaskNotFound)
 	}
 	if ut.UserID != *caller.PartnerID {
 		return nil, fmt.Errorf("只能验收伴侣的任务")
@@ -184,18 +190,18 @@ func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dt
 func (s *TaskService) RejectTask(callerID, taskID string, comment string) (*dto.UserTaskItem, error) {
 	caller, err := s.userRepo.FindByID(callerID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errUserNotFound)
 	}
 	if caller.Role != model.RoleMom {
 		return nil, fmt.Errorf("只有妈妈角色可以验收任务")
 	}
 	if caller.PartnerID == nil {
-		return nil, fmt.Errorf("请先完成伴侣绑定")
+		return nil, fmt.Errorf(errPartnerRequired)
 	}
 
 	ut, err := s.taskRepo.FindUserTaskByID(taskID)
 	if err != nil {
-		return nil, fmt.Errorf("任务不存在")
+		return nil, fmt.Errorf(errTaskNotFound)
 	}
 	if ut.UserID != *caller.PartnerID {
 		return nil, fmt.Errorf("只能验收伴侣的任务")
@@ -222,7 +228,7 @@ func (s *TaskService) RejectTask(callerID, taskID string, comment string) (*dto.
 func (s *TaskService) GetTaskStats(userID string) (*dto.TaskStats, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("用户不存在")
+		return nil, fmt.Errorf(errUserNotFound)
 	}
 	if user.PartnerID == nil {
 		return &dto.TaskStats{XP: 0, Level: 1}, nil

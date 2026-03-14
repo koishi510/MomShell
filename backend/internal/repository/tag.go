@@ -15,13 +15,13 @@ func NewTagRepo(db *gorm.DB) *TagRepo {
 
 func (r *TagRepo) FindAll() ([]model.Tag, error) {
 	var tags []model.Tag
-	err := r.db.Where("is_active = ?", true).Order("name asc").Find(&tags).Error
+	err := r.db.Where(whereIsActive, true).Order("name asc").Find(&tags).Error
 	return tags, err
 }
 
 func (r *TagRepo) FindHot(limit int) ([]model.Tag, error) {
 	var tags []model.Tag
-	err := r.db.Where("is_active = ?", true).
+	err := r.db.Where(whereIsActive, true).
 		Order("question_count desc").
 		Limit(limit).
 		Find(&tags).Error
@@ -30,7 +30,7 @@ func (r *TagRepo) FindHot(limit int) ([]model.Tag, error) {
 
 func (r *TagRepo) FindByID(id string) (*model.Tag, error) {
 	var tag model.Tag
-	err := r.db.First(&tag, "id = ?", id).Error
+	err := r.db.First(&tag, whereID, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -46,11 +46,11 @@ func (r *TagRepo) Update(tag *model.Tag) error {
 }
 
 func (r *TagRepo) Delete(id string) error {
-	return r.db.Where("id = ?", id).Delete(&model.Tag{}).Error
+	return r.db.Where(whereID, id).Delete(&model.Tag{}).Error
 }
 
 func (r *TagRepo) IncrementQuestionCount(id string) error {
-	return r.db.Model(&model.Tag{}).Where("id = ?", id).
+	return r.db.Model(&model.Tag{}).Where(whereID, id).
 		UpdateColumn("question_count", gorm.Expr("question_count + 1")).Error
 }
 
@@ -61,5 +61,5 @@ func (r *TagRepo) CreateQuestionTag(qt *model.QuestionTag) error {
 }
 
 func (r *TagRepo) DeleteQuestionTags(questionID string) error {
-	return r.db.Where("question_id = ?", questionID).Delete(&model.QuestionTag{}).Error
+	return r.db.Where(whereQuestionID, questionID).Delete(&model.QuestionTag{}).Error
 }

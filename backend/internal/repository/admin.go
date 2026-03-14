@@ -90,7 +90,7 @@ func (r *AdminRepo) CountUsers() (total, active, banned, guest int64, err error)
 
 // DeleteUser hard-deletes a user by ID
 func (r *AdminRepo) DeleteUser(id string) error {
-	return r.db.Where("id = ?", id).Delete(&model.User{}).Error
+	return r.db.Where(whereID, id).Delete(&model.User{}).Error
 }
 
 // CountQuestions returns total question count
@@ -119,6 +119,6 @@ func (r *AdminRepo) CountPhotos() (total, wall int64, err error) {
 	if err = r.db.Model(&model.Photo{}).Count(&total).Error; err != nil {
 		return
 	}
-	err = r.db.Model(&model.Photo{}).Where("is_on_wall = ?", true).Count(&wall).Error
+	err = r.db.Model(&model.Photo{}).Where(whereIsOnWall, true).Count(&wall).Error
 	return
 }

@@ -69,7 +69,7 @@ func (r *QuestionRepo) FindByID(id string) (*model.Question, error) {
 	var q model.Question
 	err := r.db.Preload("Author.Certification").
 		Preload("Tags").
-		First(&q, "id = ?", id).Error
+		First(&q, whereID, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -78,12 +78,12 @@ func (r *QuestionRepo) FindByID(id string) (*model.Question, error) {
 
 func (r *QuestionRepo) FindByAuthorID(authorID string, offset, limit int) ([]model.Question, int64, error) {
 	var total int64
-	r.db.Model(&model.Question{}).Where("author_id = ?", authorID).Count(&total)
+	r.db.Model(&model.Question{}).Where(whereAuthorID, authorID).Count(&total)
 
 	var questions []model.Question
 	err := r.db.Preload("Tags").
-		Where("author_id = ?", authorID).
-		Order("created_at desc").
+		Where(whereAuthorID, authorID).
+		Order(orderCreatedAtDesc).
 		Offset(offset).Limit(limit).
 		Find(&questions).Error
 	return questions, total, err
@@ -98,30 +98,30 @@ func (r *QuestionRepo) Update(q *model.Question) error {
 }
 
 func (r *QuestionRepo) Delete(id string) error {
-	return r.db.Where("id = ?", id).Delete(&model.Question{}).Error
+	return r.db.Where(whereID, id).Delete(&model.Question{}).Error
 }
 
 func (r *QuestionRepo) IncrementViewCount(id string) error {
-	return r.db.Model(&model.Question{}).Where("id = ?", id).
+	return r.db.Model(&model.Question{}).Where(whereID, id).
 		UpdateColumn("view_count", gorm.Expr("view_count + 1")).Error
 }
 
 func (r *QuestionRepo) IncrementAnswerCount(id string) error {
-	return r.db.Model(&model.Question{}).Where("id = ?", id).
+	return r.db.Model(&model.Question{}).Where(whereID, id).
 		UpdateColumn("answer_count", gorm.Expr("answer_count + 1")).Error
 }
 
 func (r *QuestionRepo) DecrementAnswerCount(id string) error {
-	return r.db.Model(&model.Question{}).Where("id = ?", id).
+	return r.db.Model(&model.Question{}).Where(whereID, id).
 		UpdateColumn("answer_count", gorm.Expr("answer_count - 1")).Error
 }
 
 func (r *QuestionRepo) UpdateLikeCount(id string, delta int) error {
-	return r.db.Model(&model.Question{}).Where("id = ?", id).
+	return r.db.Model(&model.Question{}).Where(whereID, id).
 		UpdateColumn("like_count", gorm.Expr("like_count + ?", delta)).Error
 }
 
 func (r *QuestionRepo) UpdateCollectionCount(id string, delta int) error {
-	return r.db.Model(&model.Question{}).Where("id = ?", id).
+	return r.db.Model(&model.Question{}).Where(whereID, id).
 		UpdateColumn("collection_count", gorm.Expr("collection_count + ?", delta)).Error
 }
