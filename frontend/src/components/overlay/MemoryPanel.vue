@@ -434,4 +434,38 @@ function onRegenerateImage() {
   color: var(--text-secondary);
   font-size: 14px;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .memory-panel {
+    padding: 24px 16px 20px;
+  }
+
+  .memory-title {
+    font-size: 20px;
+  }
+
+  .memory-input-area {
+    flex-direction: column;
+  }
+
+  .memory-input {
+    font-size: 16px;
+  }
+
+  .generate-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .result-actions {
+    flex-wrap: wrap;
+  }
+
+  .result-action-btn {
+    min-height: 44px;
+    flex: 1;
+    min-width: 120px;
+  }
+}
 </style>

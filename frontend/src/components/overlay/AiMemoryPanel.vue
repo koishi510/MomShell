@@ -578,4 +578,33 @@ async function onClearHistory() {
   background: rgba(255, 255, 255, 0.14);
   color: var(--text-primary);
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .ai-memory-panel {
+    padding: 24px 16px 20px;
+  }
+
+  .panel-title {
+    font-size: 20px;
+  }
+
+  .facts-list {
+    max-height: 55dvh;
+    max-height: 55vh;
+  }
+
+  .fact-card {
+    padding: 12px;
+  }
+
+  .fact-delete {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .fact-text {
+    font-size: 13px;
+  }
+}
 </style>
