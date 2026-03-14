@@ -410,7 +410,7 @@ const NOTE_VARIANTS = [note1, note2, note3]
 function simpleHash(str: string): number {
   let h = 0
   for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h + str.charCodeAt(i)) | 0
+    h = Math.trunc((h << 5) - h + str.charCodeAt(i))
   }
   return Math.abs(h)
 }

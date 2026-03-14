@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { Hands, Results } from '@mediapipe/hands';
-import { Camera } from '@mediapipe/camera_utils';
-import gsap from 'gsap';
+import React, { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { Hands, Results } from "@mediapipe/hands";
+import { Camera } from "@mediapipe/camera_utils";
+import gsap from "gsap";
 
 // --- Props Interface ---
 export interface PearlShellProps {
@@ -19,22 +19,22 @@ export interface PearlShellProps {
 
 // --- Helper: Create Texture Atlas for Particles ---
 const createAtlasTexture = () => {
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 512;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
   ctx.clearRect(0, 0, 512, 512);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '120px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "120px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
-  ctx.fillText('★', 128, 128);
-  ctx.fillText('●', 384, 128);
-  ctx.fillText('✦', 128, 384);
-  ctx.fillText('✿', 384, 384);
+  ctx.fillText("★", 128, 128);
+  ctx.fillText("●", 384, 128);
+  ctx.fillText("✦", 128, 384);
+  ctx.fillText("✿", 384, 384);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
@@ -124,6 +124,62 @@ const shellFragmentShader = `
   }
 `;
 
+// --- Gesture Helpers (module-level to avoid deep nesting) ---
+type Landmark = { x: number; y: number };
+
+const getDist2D = (p1: Landmark, p2: Landmark) => {
+  return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+};
+
+const isFingerExtended = (
+  landmarks: Landmark[],
+  tipIdx: number,
+  pipIdx: number,
+) => {
+  return (
+    getDist2D(landmarks[tipIdx], landmarks[0]) >
+    getDist2D(landmarks[pipIdx], landmarks[0])
+  );
+};
+
+const detectGesture = (landmarks: Landmark[]): string => {
+  const palmSize = getDist2D(landmarks[0], landmarks[9]);
+
+  const indexExt = isFingerExtended(landmarks, 8, 6);
+  const middleExt = isFingerExtended(landmarks, 12, 10);
+  const ringExt = isFingerExtended(landmarks, 16, 14);
+  const pinkyExt = isFingerExtended(landmarks, 20, 18);
+
+  const allExt = indexExt && middleExt && ringExt && pinkyExt;
+  const noneExt = !indexExt && !middleExt && !ringExt && !pinkyExt;
+  const peaceExt = indexExt && middleExt && !ringExt && !pinkyExt;
+
+  const thumbFingerDists = [
+    getDist2D(landmarks[4], landmarks[8]),
+    getDist2D(landmarks[4], landmarks[12]),
+    getDist2D(landmarks[4], landmarks[16]),
+    getDist2D(landmarks[4], landmarks[20]),
+  ];
+  const minThumbFingerDist = Math.min(...thumbFingerDists) / palmSize;
+
+  if (noneExt) return "FIST";
+  if (peaceExt) return "PEACE";
+  if (minThumbFingerDist < 0.3) return "OK";
+  if (allExt) return "OPEN";
+  return "UNKNOWN";
+};
+
+const computeShellTarget = (landmark9: Landmark) => {
+  const posX = Math.max(-15, Math.min(15, -(landmark9.x - 0.5) * 30));
+  const posY = Math.max(-10, Math.min(10, -(landmark9.y - 0.5) * 20));
+  const targetY = (landmark9.x - 0.5) * Math.PI * 2;
+  const targetX = (landmark9.y - 0.5) * Math.PI;
+  return {
+    position: { x: posX, y: posY, z: 0 },
+    rotation: { x: targetX, y: targetY },
+  };
+};
+
 // --- Main Component ---
 export default function PearlShell({
   photoUrls,
@@ -135,7 +191,7 @@ export default function PearlShell({
   const mountRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const [gesture, setGesture] = useState<string>('UNKNOWN');
+  const [gesture, setGesture] = useState<string>("UNKNOWN");
   const processedPhotosCount = useRef(0);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -154,22 +210,22 @@ export default function PearlShell({
   const targetShellPositionRef = useRef({ x: 0, y: 0, z: 0 });
   const handPositionRef = useRef<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
   const gestureBufferRef = useRef<string[]>([]);
-  const stableGestureRef = useRef<string>('UNKNOWN');
+  const stableGestureRef = useRef<string>("UNKNOWN");
   const GESTURE_STABILITY_FRAMES = 5;
 
   // Debug refs
-  const rawGestureRef = useRef<string>('UNKNOWN');
+  const rawGestureRef = useRef<string>("UNKNOWN");
   const landmark9Ref = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [debugInfo, setDebugInfo] = useState({
-    rawGesture: 'UNKNOWN',
-    stableGesture: 'UNKNOWN',
+    rawGesture: "UNKNOWN",
+    stableGesture: "UNKNOWN",
     landmark9: { x: 0, y: 0 },
     targetPos: { x: 0, y: 0, z: 0 },
     shellPos: { x: 0, y: 0, z: 0 },
   });
 
   const stateRef = useRef({
-    currentState: 'CLOSED',
+    currentState: "CLOSED",
     scatterProgress: 0,
     shellOpenAngle: 0,
     bloomIntensity: 0.2,
@@ -220,7 +276,12 @@ export default function PearlShell({
 
     // Post-processing
     const renderScene = new RenderPass(scene, camera);
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 0.4, 0.5, 0.85);
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(width, height),
+      0.4,
+      0.5,
+      0.85,
+    );
     bloomPass.threshold = 0.5;
     bloomPass.strength = 0.6;
     bloomPass.radius = 0.7;
@@ -264,7 +325,11 @@ export default function PearlShell({
     });
 
     const createShellHalf = (isUpper: boolean) => {
-      const instancedMesh = new THREE.InstancedMesh(scaleGeo, shellMat, particleCount);
+      const instancedMesh = new THREE.InstancedMesh(
+        scaleGeo,
+        shellMat,
+        particleCount,
+      );
       const dummy = new THREE.Object3D();
 
       const targetPosArray = new Float32Array(particleCount * 3);
@@ -282,7 +347,9 @@ export default function PearlShell({
         const type = Math.random();
         if (type < 0.5) {
           const ribU = u * (numRibs - 1);
-          u = (Math.floor(ribU + 0.5) + (Math.random() - 0.5) * 0.15) / (numRibs - 1);
+          u =
+            (Math.floor(ribU + 0.5) + (Math.random() - 0.5) * 0.15) /
+            (numRibs - 1);
           u = Math.max(0, Math.min(1, u));
         } else if (type < 0.7) {
           v = 1.0 - Math.pow(Math.random(), 4.0);
@@ -328,10 +395,22 @@ export default function PearlShell({
         surfaceVArray[i] = v;
       }
 
-      instancedMesh.geometry.setAttribute('targetPos', new THREE.InstancedBufferAttribute(targetPosArray, 3));
-      instancedMesh.geometry.setAttribute('randomOffset', new THREE.InstancedBufferAttribute(randomOffsetArray, 1));
-      instancedMesh.geometry.setAttribute('shapeIndex', new THREE.InstancedBufferAttribute(shapeIndexArray, 1));
-      instancedMesh.geometry.setAttribute('surfaceV', new THREE.InstancedBufferAttribute(surfaceVArray, 1));
+      instancedMesh.geometry.setAttribute(
+        "targetPos",
+        new THREE.InstancedBufferAttribute(targetPosArray, 3),
+      );
+      instancedMesh.geometry.setAttribute(
+        "randomOffset",
+        new THREE.InstancedBufferAttribute(randomOffsetArray, 1),
+      );
+      instancedMesh.geometry.setAttribute(
+        "shapeIndex",
+        new THREE.InstancedBufferAttribute(shapeIndexArray, 1),
+      );
+      instancedMesh.geometry.setAttribute(
+        "surfaceV",
+        new THREE.InstancedBufferAttribute(surfaceVArray, 1),
+      );
 
       instancedMesh.position.set(0, 0, 0);
       for (let i = 0; i < particleCount; i++) {
@@ -375,17 +454,33 @@ export default function PearlShell({
       }
 
       shellMat.uniforms.time.value = time;
-      shellMat.uniforms.scatterProgress.value = stateRef.current.scatterProgress;
+      shellMat.uniforms.scatterProgress.value =
+        stateRef.current.scatterProgress;
 
       if (shellGroupRef.current) {
-        shellGroupRef.current.rotation.x += (targetShellRotationRef.current.x - shellGroupRef.current.rotation.x) * 0.1;
-        shellGroupRef.current.rotation.y += (targetShellRotationRef.current.y - shellGroupRef.current.rotation.y) * 0.1;
+        shellGroupRef.current.rotation.x +=
+          (targetShellRotationRef.current.x -
+            shellGroupRef.current.rotation.x) *
+          0.1;
+        shellGroupRef.current.rotation.y +=
+          (targetShellRotationRef.current.y -
+            shellGroupRef.current.rotation.y) *
+          0.1;
       }
 
       if (shellGroupRef.current) {
-        shellGroupRef.current.position.x += (targetShellPositionRef.current.x - shellGroupRef.current.position.x) * 0.2;
-        shellGroupRef.current.position.y += (targetShellPositionRef.current.y - shellGroupRef.current.position.y) * 0.2;
-        shellGroupRef.current.position.z += (targetShellPositionRef.current.z - shellGroupRef.current.position.z) * 0.2;
+        shellGroupRef.current.position.x +=
+          (targetShellPositionRef.current.x -
+            shellGroupRef.current.position.x) *
+          0.2;
+        shellGroupRef.current.position.y +=
+          (targetShellPositionRef.current.y -
+            shellGroupRef.current.position.y) *
+          0.2;
+        shellGroupRef.current.position.z +=
+          (targetShellPositionRef.current.z -
+            shellGroupRef.current.position.z) *
+          0.2;
       }
 
       if (upperShellRef.current) {
@@ -404,8 +499,8 @@ export default function PearlShell({
 
         if (spd > 0.05) {
           const tailVal = shellMat.uniforms.cometTailDir.value;
-          tailVal.x += ((-dx / spd) - tailVal.x) * 0.08;
-          tailVal.y += ((-dy / spd) - tailVal.y) * 0.08;
+          tailVal.x += (-dx / spd - tailVal.x) * 0.08;
+          tailVal.y += (-dy / spd - tailVal.y) * 0.08;
           tailVal.normalize();
         }
 
@@ -415,7 +510,7 @@ export default function PearlShell({
       // Animate Photos
       if (photoGroupRef.current) {
         const zData = zoomedPhotoDataRef.current;
-        if (stateRef.current.currentState === 'PHOTO_ZOOM' && zData) {
+        if (stateRef.current.currentState === "PHOTO_ZOOM" && zData) {
           zData.mesh.position.y += Math.sin(time * 1.5) * 0.003;
           zData.mesh.rotation.y = Math.sin(time * 0.8) * 0.03;
         }
@@ -471,7 +566,7 @@ export default function PearlShell({
 
     const group = photoGroupRef.current;
     const textureLoader = new THREE.TextureLoader();
-    textureLoader.setCrossOrigin('anonymous');
+    textureLoader.setCrossOrigin("anonymous");
 
     const newPhotos = photoUrls.slice(processedPhotosCount.current);
     if (newPhotos.length === 0) return;
@@ -508,15 +603,15 @@ export default function PearlShell({
           group.add(mesh);
 
           const currentState = stateRef.current.currentState;
-          if (currentState === 'OPEN') {
+          if (currentState === "OPEN") {
             mat.opacity = 1;
-          } else if (currentState === 'PHOTO_ZOOM') {
+          } else if (currentState === "PHOTO_ZOOM") {
             mat.opacity = 0.3;
           }
         },
         undefined,
         (err) => {
-          console.error('Failed to load photo texture:', err);
+          console.error("Failed to load photo texture:", err);
         },
       );
     });
@@ -534,7 +629,7 @@ export default function PearlShell({
       y: originalPosition.y,
       z: originalPosition.z,
       duration: 0.5,
-      ease: 'power2.inOut',
+      ease: "power2.inOut",
     });
     gsap.to(mesh.quaternion, {
       x: originalQuaternion.x,
@@ -542,10 +637,173 @@ export default function PearlShell({
       z: originalQuaternion.z,
       w: originalQuaternion.w,
       duration: 0.5,
-      ease: 'power2.inOut',
+      ease: "power2.inOut",
     });
-    gsap.to(mesh.scale, { x: 1, y: 1, z: 1, duration: 0.5, ease: 'power2.inOut' });
+    gsap.to(mesh.scale, {
+      x: 1,
+      y: 1,
+      z: 1,
+      duration: 0.5,
+      ease: "power2.inOut",
+    });
     zoomedPhotoDataRef.current = null;
+  };
+
+  // State Transition Helpers
+  const animateToClosed = (
+    state: typeof stateRef.current,
+    prevState: string,
+  ) => {
+    const photosVisible = prevState === "OPEN" || prevState === "PHOTO_ZOOM";
+    const shellDelay = photosVisible ? 1.5 : 0;
+
+    gsap.to(state, {
+      shellOpenAngle: 0,
+      duration: 1.5,
+      delay: shellDelay,
+      ease: "power2.inOut",
+    });
+    gsap.to(state, { scatterProgress: 0, duration: 2, ease: "power2.inOut" });
+    gsap.to(state, { bloomIntensity: 0.2, duration: 1, delay: shellDelay });
+
+    if (photoGroupRef.current) {
+      photoGroupRef.current.children.forEach((child) => {
+        const mat = (child as THREE.Mesh).material;
+        gsap.killTweensOf(mat, "opacity");
+        gsap.to(mat, { opacity: 0, duration: 1 });
+      });
+    }
+
+    if (cameraRef.current && controlsRef.current) {
+      isAnimatingCameraRef.current = true;
+      gsap.to(cameraRef.current.position, {
+        x: 0,
+        y: 0,
+        z: 28,
+        duration: 2,
+        delay: shellDelay,
+      });
+      gsap.to(controlsRef.current.target, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 2,
+        delay: shellDelay,
+        onComplete: () => {
+          isAnimatingCameraRef.current = false;
+        },
+      });
+    }
+  };
+
+  const animateToOpen = (state: typeof stateRef.current) => {
+    gsap.to(state, {
+      shellOpenAngle: (Math.PI / 180) * 60,
+      duration: 2,
+      ease: "power2.inOut",
+    });
+    gsap.to(state, { scatterProgress: 0, duration: 2, ease: "power2.inOut" });
+    gsap.to(state, { bloomIntensity: 0.8, duration: 2 });
+
+    if (photoGroupRef.current) {
+      photoGroupRef.current.children.forEach((child) => {
+        gsap.to((child as THREE.Mesh).material, {
+          opacity: 1,
+          duration: 2,
+          delay: 1.5,
+        });
+      });
+    }
+  };
+
+  const animateToScattered = (state: typeof stateRef.current) => {
+    gsap.to(state, { shellOpenAngle: 0, duration: 1, ease: "power2.inOut" });
+    gsap.to(state, { scatterProgress: 1, duration: 3, ease: "power2.inOut" });
+    gsap.to(state, { bloomIntensity: 0.3, duration: 2 });
+
+    if (photoGroupRef.current) {
+      photoGroupRef.current.children.forEach((child) => {
+        gsap.to((child as THREE.Mesh).material, {
+          opacity: 0,
+          duration: 1.5,
+        });
+      });
+    }
+
+    if (cameraRef.current && controlsRef.current) {
+      isAnimatingCameraRef.current = true;
+      gsap.to(cameraRef.current.position, { x: 0, y: 5, z: 35, duration: 2 });
+      gsap.to(controlsRef.current.target, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 2,
+        onComplete: () => {
+          isAnimatingCameraRef.current = false;
+        },
+      });
+    }
+  };
+
+  const animateToPhotoZoom = (state: typeof stateRef.current) => {
+    targetShellPositionRef.current = { x: 0, y: 0, z: 0 };
+    targetShellRotationRef.current = { x: 0, y: 0 };
+
+    gsap.to(state, {
+      shellOpenAngle: (Math.PI / 180) * 60,
+      duration: 1,
+      ease: "power2.inOut",
+    });
+    gsap.to(state, { scatterProgress: 0, duration: 1, ease: "power2.inOut" });
+
+    const children = photoGroupRef.current!.children;
+    const count = children.length;
+    if (count === 0) return;
+
+    putBackZoomedPhoto();
+
+    const index = currentZoomIndexRef.current % count;
+    currentZoomIndexRef.current = (index + 1) % count;
+    const photo = children[index] as THREE.Mesh;
+
+    const originalPosition = photo.position.clone();
+    const originalQuaternion = photo.quaternion.clone();
+    zoomedPhotoDataRef.current = {
+      mesh: photo,
+      originalPosition,
+      originalQuaternion,
+    };
+
+    children.forEach((child) => {
+      gsap.to((child as THREE.Mesh).material, {
+        opacity: 0.3,
+        duration: 0.5,
+      });
+    });
+
+    gsap.to(photo.position, {
+      x: 0,
+      y: 0,
+      z: 18,
+      duration: 0.8,
+      ease: "back.out(1.4)",
+    });
+    gsap.to(photo.quaternion, {
+      x: 0,
+      y: 0,
+      z: 0,
+      w: 1,
+      duration: 0.8,
+      ease: "power2.out",
+    });
+    gsap.to(photo.scale, {
+      x: 2.5,
+      y: 2.5,
+      z: 2.5,
+      duration: 0.8,
+      ease: "back.out(1.2)",
+    });
+    gsap.to(photo.material, { opacity: 1, duration: 0.5 });
   };
 
   // State Transitions
@@ -553,7 +811,7 @@ export default function PearlShell({
     const state = stateRef.current;
     if (state.currentState === newState) return;
 
-    if (state.currentState === 'PHOTO_ZOOM' && newState !== 'PHOTO_ZOOM') {
+    if (state.currentState === "PHOTO_ZOOM" && newState !== "PHOTO_ZOOM") {
       putBackZoomedPhoto();
       if (photoGroupRef.current) {
         photoGroupRef.current.children.forEach((child) => {
@@ -562,101 +820,24 @@ export default function PearlShell({
       }
     }
 
-    if (newState === 'PHOTO_ZOOM' && (!photoGroupRef.current || photoGroupRef.current.children.length === 0)) {
+    if (
+      newState === "PHOTO_ZOOM" &&
+      (!photoGroupRef.current || photoGroupRef.current.children.length === 0)
+    ) {
       return;
     }
 
     const prevState = state.currentState;
     state.currentState = newState;
 
-    if (newState === 'CLOSED') {
-      const photosVisible = prevState === 'OPEN' || prevState === 'PHOTO_ZOOM';
-      const shellDelay = photosVisible ? 1.5 : 0;
-
-      gsap.to(state, { shellOpenAngle: 0, duration: 1.5, delay: shellDelay, ease: 'power2.inOut' });
-      gsap.to(state, { scatterProgress: 0, duration: 2, ease: 'power2.inOut' });
-      gsap.to(state, { bloomIntensity: 0.2, duration: 1, delay: shellDelay });
-
-      if (photoGroupRef.current) {
-        photoGroupRef.current.children.forEach((child) => {
-          const mat = (child as THREE.Mesh).material;
-          gsap.killTweensOf(mat, 'opacity');
-          gsap.to(mat, { opacity: 0, duration: 1 });
-        });
-      }
-
-      if (cameraRef.current && controlsRef.current) {
-        isAnimatingCameraRef.current = true;
-        gsap.to(cameraRef.current.position, { x: 0, y: 0, z: 28, duration: 2, delay: shellDelay });
-        gsap.to(controlsRef.current.target, {
-          x: 0, y: 0, z: 0, duration: 2, delay: shellDelay,
-          onComplete: () => { isAnimatingCameraRef.current = false; },
-        });
-      }
-    } else if (newState === 'OPEN') {
-      gsap.to(state, { shellOpenAngle: (Math.PI / 180) * 60, duration: 2, ease: 'power2.inOut' });
-      gsap.to(state, { scatterProgress: 0, duration: 2, ease: 'power2.inOut' });
-      gsap.to(state, { bloomIntensity: 0.8, duration: 2 });
-
-      if (photoGroupRef.current) {
-        photoGroupRef.current.children.forEach((child) => {
-          gsap.to((child as THREE.Mesh).material, { opacity: 1, duration: 2, delay: 1.5 });
-        });
-      }
-    } else if (newState === 'SCATTERED') {
-      gsap.to(state, { shellOpenAngle: 0, duration: 1, ease: 'power2.inOut' });
-      gsap.to(state, { scatterProgress: 1, duration: 3, ease: 'power2.inOut' });
-      gsap.to(state, { bloomIntensity: 0.3, duration: 2 });
-
-      if (photoGroupRef.current) {
-        photoGroupRef.current.children.forEach((child) => {
-          gsap.to((child as THREE.Mesh).material, { opacity: 0, duration: 1.5 });
-        });
-      }
-
-      if (cameraRef.current && controlsRef.current) {
-        isAnimatingCameraRef.current = true;
-        gsap.to(cameraRef.current.position, { x: 0, y: 5, z: 35, duration: 2 });
-        gsap.to(controlsRef.current.target, {
-          x: 0, y: 0, z: 0, duration: 2,
-          onComplete: () => { isAnimatingCameraRef.current = false; },
-        });
-      }
-    } else if (newState === 'PHOTO_ZOOM') {
-      targetShellPositionRef.current = { x: 0, y: 0, z: 0 };
-      targetShellRotationRef.current = { x: 0, y: 0 };
-
-      gsap.to(state, { shellOpenAngle: (Math.PI / 180) * 60, duration: 1, ease: 'power2.inOut' });
-      gsap.to(state, { scatterProgress: 0, duration: 1, ease: 'power2.inOut' });
-
-      const children = photoGroupRef.current!.children;
-      const count = children.length;
-      if (count === 0) return;
-
-      putBackZoomedPhoto();
-
-      const index = currentZoomIndexRef.current % count;
-      currentZoomIndexRef.current = (index + 1) % count;
-      const photo = children[index] as THREE.Mesh;
-
-      const originalPosition = photo.position.clone();
-      const originalQuaternion = photo.quaternion.clone();
-      zoomedPhotoDataRef.current = { mesh: photo, originalPosition, originalQuaternion };
-
-      children.forEach((child) => {
-        gsap.to((child as THREE.Mesh).material, { opacity: 0.3, duration: 0.5 });
-      });
-
-      gsap.to(photo.position, {
-        x: 0, y: 0, z: 18,
-        duration: 0.8, ease: 'back.out(1.4)',
-      });
-      gsap.to(photo.quaternion, {
-        x: 0, y: 0, z: 0, w: 1,
-        duration: 0.8, ease: 'power2.out',
-      });
-      gsap.to(photo.scale, { x: 2.5, y: 2.5, z: 2.5, duration: 0.8, ease: 'back.out(1.2)' });
-      gsap.to(photo.material, { opacity: 1, duration: 0.5 });
+    if (newState === "CLOSED") {
+      animateToClosed(state, prevState);
+    } else if (newState === "OPEN") {
+      animateToOpen(state);
+    } else if (newState === "SCATTERED") {
+      animateToScattered(state);
+    } else if (newState === "PHOTO_ZOOM") {
+      animateToPhotoZoom(state);
     }
   };
 
@@ -667,7 +848,7 @@ export default function PearlShell({
   useEffect(() => {
     if (photoUrls.length > 0 && !hasAutoOpened.current) {
       hasAutoOpened.current = true;
-      setTimeout(() => transitionToRef.current('OPEN'), 800);
+      setTimeout(() => transitionToRef.current("OPEN"), 800);
     }
   }, [photoUrls]);
 
@@ -686,7 +867,10 @@ export default function PearlShell({
         },
       });
 
-      if (cancelled) { hands.close(); return; }
+      if (cancelled) {
+        hands.close();
+        return;
+      }
       handsInstance = hands;
 
       hands.setOptions({
@@ -698,96 +882,73 @@ export default function PearlShell({
 
       hands.onResults((results: Results) => {
         if (cancelled) return;
-        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-          const landmarks = results.multiHandLandmarks[0];
+        if (
+          !results.multiHandLandmarks ||
+          results.multiHandLandmarks.length === 0
+        ) {
+          return;
+        }
 
-          const getDist2D = (p1: { x: number; y: number }, p2: { x: number; y: number }) => {
-            return Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          };
-          const palmSize = getDist2D(landmarks[0], landmarks[9]);
+        const landmarks = results.multiHandLandmarks[0];
+        const detectedGesture = detectGesture(landmarks);
 
-          const isExtended = (tipIdx: number, pipIdx: number) => {
-            return getDist2D(landmarks[tipIdx], landmarks[0]) > getDist2D(landmarks[pipIdx], landmarks[0]);
-          };
+        rawGestureRef.current = detectedGesture;
+        landmark9Ref.current = { x: landmarks[9].x, y: landmarks[9].y };
 
-          const indexExt = isExtended(8, 6);
-          const middleExt = isExtended(12, 10);
-          const ringExt = isExtended(16, 14);
-          const pinkyExt = isExtended(20, 18);
+        // Stabilize gesture via buffer
+        const buffer = gestureBufferRef.current;
+        buffer.push(detectedGesture);
+        if (buffer.length > GESTURE_STABILITY_FRAMES) buffer.shift();
 
-          const allExt = indexExt && middleExt && ringExt && pinkyExt;
-          const noneExt = !indexExt && !middleExt && !ringExt && !pinkyExt;
-          const peaceExt = indexExt && middleExt && !ringExt && !pinkyExt;
-
-          let detectedGesture = 'UNKNOWN';
-
-          const thumbFingerDists = [
-            getDist2D(landmarks[4], landmarks[8]),
-            getDist2D(landmarks[4], landmarks[12]),
-            getDist2D(landmarks[4], landmarks[16]),
-            getDist2D(landmarks[4], landmarks[20]),
-          ];
-          const minThumbFingerDist = Math.min(...thumbFingerDists) / palmSize;
-
-          if (noneExt) {
-            detectedGesture = 'FIST';
-          } else if (peaceExt) {
-            detectedGesture = 'PEACE';
-          } else if (minThumbFingerDist < 0.3) {
-            detectedGesture = 'OK';
-          } else if (allExt) {
-            detectedGesture = 'OPEN';
+        if (
+          buffer.length === GESTURE_STABILITY_FRAMES &&
+          buffer.every((g) => g === detectedGesture)
+        ) {
+          if (stableGestureRef.current !== detectedGesture) {
+            stableGestureRef.current = detectedGesture;
+            setGesture(detectedGesture);
           }
+        }
 
-          rawGestureRef.current = detectedGesture;
-          landmark9Ref.current = { x: landmarks[9].x, y: landmarks[9].y };
+        // Update shell position/rotation based on hand
+        if (stateRef.current.currentState === "PHOTO_ZOOM") {
+          targetShellPositionRef.current = { x: 0, y: 0, z: 0 };
+          targetShellRotationRef.current = { x: 0, y: 0 };
+        } else {
+          const target = computeShellTarget(landmarks[9]);
+          targetShellPositionRef.current = target.position;
+          targetShellRotationRef.current = target.rotation;
+        }
 
-          const buffer = gestureBufferRef.current;
-          buffer.push(detectedGesture);
-          if (buffer.length > GESTURE_STABILITY_FRAMES) buffer.shift();
+        if (detectedGesture === "OK") {
+          handPositionRef.current = { x: landmarks[9].x, y: landmarks[9].y };
+        }
 
-          if (buffer.length === GESTURE_STABILITY_FRAMES && buffer.every((g) => g === detectedGesture)) {
-            if (stableGestureRef.current !== detectedGesture) {
-              stableGestureRef.current = detectedGesture;
-              setGesture(detectedGesture);
-            }
-          }
+        // Camera follow in scattered mode
+        const shouldFollowCamera =
+          stateRef.current.currentState === "SCATTERED" &&
+          detectedGesture !== "OK" &&
+          detectedGesture !== "FIST" &&
+          detectedGesture !== "PEACE";
 
-          if (stateRef.current.currentState === 'PHOTO_ZOOM') {
-            targetShellPositionRef.current = { x: 0, y: 0, z: 0 };
-            targetShellRotationRef.current = { x: 0, y: 0 };
-          } else {
-            const posX = Math.max(-15, Math.min(15, -(landmarks[9].x - 0.5) * 30));
-            const posY = Math.max(-10, Math.min(10, -(landmarks[9].y - 0.5) * 20));
-            targetShellPositionRef.current = { x: posX, y: posY, z: 0 };
-
-            const targetY = (landmarks[9].x - 0.5) * Math.PI * 2;
-            const targetX = (landmarks[9].y - 0.5) * Math.PI;
-            targetShellRotationRef.current = { x: targetX, y: targetY };
-          }
-
-          if (detectedGesture === 'OK') {
-            handPositionRef.current = { x: landmarks[9].x, y: landmarks[9].y };
-          }
-
-          if (stateRef.current.currentState === 'SCATTERED' && detectedGesture !== 'OK' && detectedGesture !== 'FIST' && detectedGesture !== 'PEACE') {
-            if (cameraRef.current && controlsRef.current) {
-              const x = (landmarks[9].x - 0.5) * 2;
-              const y = -(landmarks[9].y - 0.5) * 2;
-              const targetX = x * 20;
-              const targetY = Math.max(2, y * 20 + 10);
-              gsap.to(cameraRef.current.position, {
-                x: targetX,
-                y: targetY,
-                duration: 0.5,
-                ease: 'power1.out',
-              });
-            }
-          }
+        if (shouldFollowCamera && cameraRef.current && controlsRef.current) {
+          const x = (landmarks[9].x - 0.5) * 2;
+          const y = -(landmarks[9].y - 0.5) * 2;
+          const targetX = x * 20;
+          const targetY = Math.max(2, y * 20 + 10);
+          gsap.to(cameraRef.current.position, {
+            x: targetX,
+            y: targetY,
+            duration: 0.5,
+            ease: "power1.out",
+          });
         }
       });
 
-      if (cancelled || !videoRef.current) { hands.close(); return; }
+      if (cancelled || !videoRef.current) {
+        hands.close();
+        return;
+      }
 
       const cam = new Camera(videoRef.current, {
         onFrame: async () => {
@@ -806,10 +967,13 @@ export default function PearlShell({
       try {
         await cam.start();
       } catch (err: unknown) {
-        console.error('Camera start failed:', err);
+        console.error("Camera start failed:", err);
         if (!cancelled) {
-          const message = err instanceof Error ? err.message : '';
-          setCameraError(message || 'Failed to access camera. Please ensure permissions are granted.');
+          const message = err instanceof Error ? err.message : "";
+          setCameraError(
+            message ||
+              "Failed to access camera. Please ensure permissions are granted.",
+          );
         }
       } finally {
         window.alert = originalAlert;
@@ -835,22 +999,22 @@ export default function PearlShell({
   useEffect(() => {
     const currentState = stateRef.current.currentState;
 
-    if (gesture === 'FIST') {
-      transitionTo('CLOSED');
-    } else if (currentState === 'PHOTO_ZOOM') {
-      if (gesture === 'OPEN') {
-        transitionTo('OPEN');
+    if (gesture === "FIST") {
+      transitionTo("CLOSED");
+    } else if (currentState === "PHOTO_ZOOM") {
+      if (gesture === "OPEN") {
+        transitionTo("OPEN");
       }
       return;
-    } else if (gesture === 'PEACE') {
-      transitionTo('OPEN');
-    } else if (gesture === 'OPEN') {
-      if (currentState !== 'OPEN') {
-        transitionTo('SCATTERED');
+    } else if (gesture === "PEACE") {
+      transitionTo("OPEN");
+    } else if (gesture === "OPEN") {
+      if (currentState !== "OPEN") {
+        transitionTo("SCATTERED");
       }
-    } else if (gesture === 'OK') {
-      if (currentState === 'OPEN') {
-        transitionTo('PHOTO_ZOOM');
+    } else if (gesture === "OK") {
+      if (currentState === "OPEN") {
+        transitionTo("PHOTO_ZOOM");
       }
     }
   }, [gesture]);
@@ -866,7 +1030,11 @@ export default function PearlShell({
         landmark9: { ...landmark9Ref.current },
         targetPos: { ...targetShellPositionRef.current },
         shellPos: shellGroup
-          ? { x: shellGroup.position.x, y: shellGroup.position.y, z: shellGroup.position.z }
+          ? {
+              x: shellGroup.position.x,
+              y: shellGroup.position.y,
+              z: shellGroup.position.z,
+            }
           : { x: 0, y: 0, z: 0 },
       });
     }, 200);
@@ -876,33 +1044,36 @@ export default function PearlShell({
   return (
     <div
       style={{
-        position: 'relative',
-        width: '100%',
-        height: isFullscreen ? '100vh' : '100%',
-        overflow: 'hidden',
-        backgroundColor: '#d48a56',
+        position: "relative",
+        width: "100%",
+        height: isFullscreen ? "100vh" : "100%",
+        overflow: "hidden",
+        backgroundColor: "#d48a56",
       }}
     >
       {/* Three.js mount point */}
-      <div ref={mountRef} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
+      <div
+        ref={mountRef}
+        style={{ position: "absolute", inset: 0, zIndex: 0 }}
+      />
 
       {/* Fullscreen toggle button */}
-      <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 20 }}>
+      <div style={{ position: "absolute", top: 12, right: 12, zIndex: 20 }}>
         {isFullscreen ? (
           <button
             onClick={onExitFullscreen}
             style={{
               width: 36,
               height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '50%',
-              color: '#fff',
-              cursor: 'pointer',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.3)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: "50%",
+              color: "#fff",
+              cursor: "pointer",
               fontSize: 18,
             }}
             aria-label="Exit fullscreen"
@@ -915,15 +1086,15 @@ export default function PearlShell({
             style={{
               width: 36,
               height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '50%',
-              color: '#fff',
-              cursor: 'pointer',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.3)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: "50%",
+              color: "#fff",
+              cursor: "pointer",
               fontSize: 14,
             }}
             aria-label="Expand to fullscreen"
@@ -936,54 +1107,91 @@ export default function PearlShell({
       {/* Gesture hints */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           bottom: 60,
           left: 12,
           zIndex: 10,
-          pointerEvents: 'none',
-          color: '#fff',
+          pointerEvents: "none",
+          color: "#fff",
           fontSize: 11,
-          background: 'rgba(0,0,0,0.2)',
-          padding: '8px 12px',
+          background: "rgba(0,0,0,0.2)",
+          padding: "8px 12px",
           borderRadius: 10,
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.15)',
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,0.15)",
           lineHeight: 1.8,
         }}
       >
         <div style={{ fontWeight: 700, marginBottom: 4 }}>GESTURE CONTROLS</div>
-        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>✊ FIST</span> Close Shell</div>
-        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>✌️ PEACE</span> Open Shell</div>
-        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>🖐️ OPEN</span> Scatter</div>
-        <div><span style={{ display: 'inline-block', width: 80, color: '#ffd8a8' }}>👌 OK</span> Zoom Photo</div>
+        <div>
+          <span
+            style={{ display: "inline-block", width: 80, color: "#ffd8a8" }}
+          >
+            ✊ FIST
+          </span>{" "}
+          Close Shell
+        </div>
+        <div>
+          <span
+            style={{ display: "inline-block", width: 80, color: "#ffd8a8" }}
+          >
+            ✌️ PEACE
+          </span>{" "}
+          Open Shell
+        </div>
+        <div>
+          <span
+            style={{ display: "inline-block", width: 80, color: "#ffd8a8" }}
+          >
+            🖐️ OPEN
+          </span>{" "}
+          Scatter
+        </div>
+        <div>
+          <span
+            style={{ display: "inline-block", width: 80, color: "#ffd8a8" }}
+          >
+            👌 OK
+          </span>{" "}
+          Zoom Photo
+        </div>
       </div>
 
       {/* Debug panel */}
       {showDebug && (
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             left: 12,
             zIndex: 10,
-            pointerEvents: 'none',
-            color: '#fff',
+            pointerEvents: "none",
+            color: "#fff",
             fontSize: 10,
-            background: 'rgba(0,0,0,0.3)',
-            padding: '8px 12px',
+            background: "rgba(0,0,0,0.3)",
+            padding: "8px 12px",
             borderRadius: 10,
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            fontFamily: 'monospace',
+            backdropFilter: "blur(8px)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            fontFamily: "monospace",
             lineHeight: 1.6,
           }}
         >
           <div>Raw: {debugInfo.rawGesture}</div>
           <div>Stable: {debugInfo.stableGesture}</div>
           <div>State: {stateRef.current.currentState}</div>
-          <div>Lm9: ({debugInfo.landmark9.x.toFixed(3)}, {debugInfo.landmark9.y.toFixed(3)})</div>
-          <div>Target: ({debugInfo.targetPos.x.toFixed(1)}, {debugInfo.targetPos.y.toFixed(1)})</div>
-          <div>Shell: ({debugInfo.shellPos.x.toFixed(1)}, {debugInfo.shellPos.y.toFixed(1)})</div>
+          <div>
+            Lm9: ({debugInfo.landmark9.x.toFixed(3)},{" "}
+            {debugInfo.landmark9.y.toFixed(3)})
+          </div>
+          <div>
+            Target: ({debugInfo.targetPos.x.toFixed(1)},{" "}
+            {debugInfo.targetPos.y.toFixed(1)})
+          </div>
+          <div>
+            Shell: ({debugInfo.shellPos.x.toFixed(1)},{" "}
+            {debugInfo.shellPos.y.toFixed(1)})
+          </div>
         </div>
       )}
 
@@ -991,33 +1199,37 @@ export default function PearlShell({
       {cameraError && (
         <div
           style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: 'rgba(220,50,50,0.9)',
-            color: '#fff',
-            padding: '24px 32px',
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "rgba(220,50,50,0.9)",
+            color: "#fff",
+            padding: "24px 32px",
             borderRadius: 16,
-            textAlign: 'center',
+            textAlign: "center",
             zIndex: 50,
-            backdropFilter: 'blur(12px)',
+            backdropFilter: "blur(12px)",
             maxWidth: 360,
-            border: '1px solid rgba(255,255,255,0.2)',
+            border: "1px solid rgba(255,255,255,0.2)",
           }}
         >
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Camera Access Denied</h3>
-          <p style={{ fontSize: 13, opacity: 0.9, marginBottom: 12 }}>{cameraError}</p>
+          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+            Camera Access Denied
+          </h3>
+          <p style={{ fontSize: 13, opacity: 0.9, marginBottom: 12 }}>
+            {cameraError}
+          </p>
           <button
             onClick={() => window.location.reload()}
             style={{
-              background: '#fff',
-              color: '#c33',
+              background: "#fff",
+              color: "#c33",
               fontWeight: 700,
-              padding: '8px 24px',
+              padding: "8px 24px",
               borderRadius: 20,
-              border: 'none',
-              cursor: 'pointer',
+              border: "none",
+              cursor: "pointer",
               fontSize: 14,
             }}
           >
@@ -1026,11 +1238,10 @@ export default function PearlShell({
         </div>
       )}
 
-
       {/* Hidden video element for MediaPipe hand tracking */}
       <video
         ref={videoRef}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         playsInline
         autoPlay
         muted
