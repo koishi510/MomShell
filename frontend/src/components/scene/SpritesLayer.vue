@@ -22,10 +22,7 @@
         }"
         draggable="false"
       />
-      <span v-if="s.label" class="sprite-label" :style="{
-        fontSize: s.labelSize ?? undefined,
-        marginTop: s.labelOffsetY ?? undefined,
-      }">{{ s.label }}</span>
+      <span v-if="s.label" class="sprite-label" :style="labelStyle(s)">{{ s.label }}</span>
     </div>
   </div>
 
@@ -58,6 +55,13 @@ function spriteStyle(s: typeof SPRITES[number]) {
     top: m?.top ?? s.top,
     width: m?.width ?? s.width,
     zIndex: s.zIndex ?? undefined,
+  }
+}
+
+function labelStyle(s: typeof SPRITES[number]) {
+  return {
+    fontSize: isMobile.value ? undefined : (s.labelSize ?? undefined),
+    marginTop: s.labelOffsetY ?? undefined,
   }
 }
 
