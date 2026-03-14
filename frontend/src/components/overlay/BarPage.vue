@@ -420,27 +420,59 @@ function getNoteImage(post: QuestionListItem): string {
   return NOTE_VARIANTS[simpleHash(post.id) % 3]
 }
 
+// Dynamic card layout: 4 cols with slight edge overlap, shuffled per row
+const CARD_WIDTH_PCT = 26 // card width in %
+const COLS = 4 // cards per row
+const ROW_HEIGHT_VH = 24 // vertical spacing between rows in vh
+const PADDING_LEFT = 3 // left margin in %
+
+// Step width < card width → slight overlap on edges (~20% of card width)
+const STEP_WIDTH = (100 - PADDING_LEFT * 2 - CARD_WIDTH_PCT) / (COLS - 1)
+
+// Seeded shuffle: deterministically shuffle column indices for each row
+function shuffledCols(cols: number, seed: number): number[] {
+  const arr = Array.from({ length: cols }, (_, i) => i)
+  let s = seed
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = Math.trunc((s * 1664525 + 1013904223) & 0x7fffffff)
+    const j = s % (i + 1)
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
 function getCardStyle(post: QuestionListItem) {
   const idx = posts.value.indexOf(post)
+  const total = posts.value.length
   const hash = simpleHash(post.id)
-  const col = idx % 3
-  const row = Math.floor(idx / 3)
-  const baseLeft = 8 + col * 30
-  const baseTop = 3 + row * 18
-  const jitterX = ((hash % 17) - 8) * 0.8
-  const jitterY = (((hash >> 4) % 13) - 6) * 0.5
+
+  const row = Math.floor(idx / COLS)
+  const posInRow = idx % COLS
+
+  // Shuffle column order per row for random horizontal placement
+  const rowSeed = row * 9973 + 42
+  const colOrder = shuffledCols(COLS, rowSeed)
+  const col = colOrder[posInRow]
+
+  const baseLeft = PADDING_LEFT + col * STEP_WIDTH
+  const baseTop = 3 + row * ROW_HEIGHT_VH
+
+  // Moderate jitter: enough scatter to feel organic, not enough to fully cover neighbors
+  const jitterX = ((hash % 11) - 5) * 0.4
+  const jitterY = (((hash >> 4) % 9) - 4) * 0.4
   const rotation = (((hash >> 8) % 21) - 10) * 0.8
+
   return {
     left: `${baseLeft + jitterX}%`,
     top: `${baseTop + jitterY}vh`,
     transform: `rotate(${rotation}deg)`,
-    zIndex: (hash % 5) + 2,
+    zIndex: total - idx,
   }
 }
 
 const scatterHeight = computed(() => {
-  const rows = Math.ceil(posts.value.length / 3)
-  const height = rows * 18 + 15
+  const rows = Math.ceil(posts.value.length / COLS)
+  const height = rows * ROW_HEIGHT_VH + 15
   return `${Math.max(50, height)}vh`
 })
 
@@ -1026,7 +1058,7 @@ onUnmounted(() => {
 
 .note-card:hover {
   transform: scale(1.05) !important;
-  z-index: 10 !important;
+  z-index: 999 !important;
 }
 
 .note-card-pro {
