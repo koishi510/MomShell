@@ -37,7 +37,7 @@ export const SPRITES: SpriteData[] = [
     label: "个人中心",
     labelSize: "1.2rem",
     labelOffsetY: "-7%",
-    mobile: { width: "70vw", top: "18%" },
+    mobile: { width: "60vw", left: "38%", top: "26%" },
   },
 
   {
@@ -49,7 +49,7 @@ export const SPRITES: SpriteData[] = [
     label: "智育社区",
     labelSize: "1.2rem",
     labelOffsetY: "-9%",
-    mobile: { width: "85vw", top: "12%" },
+    mobile: { width: "70vw", left: "21%", top: "22%" },
   },
 
   {
@@ -71,7 +71,7 @@ export const SPRITES: SpriteData[] = [
     top: "12%",
     width: "6vw",
     zIndex: 10,
-    mobile: { width: "10vw", top: "30%" },
+    mobile: { width: "8vw", left: "49%", top: "18%" },
   },
 
   {
@@ -84,7 +84,7 @@ export const SPRITES: SpriteData[] = [
     zIndex: 10,
     label: "生成相片",
     labelSize: "1.2rem",
-    mobile: { width: "10vw", top: "60%" },
+    mobile: { width: "12vw", left: "52%", top: "43%" },
   },
 
   {
@@ -97,7 +97,7 @@ export const SPRITES: SpriteData[] = [
     label: "同频任务",
     labelSize: "1.2rem",
     labelOffsetY: "-6%",
-    mobile: { width: "55vw", top: "10%" },
+    mobile: { width: "40vw", left: "60%", top: "30%" },
   },
 
   {
@@ -109,6 +109,6 @@ export const SPRITES: SpriteData[] = [
     rotate: 0,
     label: "心愿签",
     labelSize: "1.2rem",
-    mobile: { width: "18vw", top: "35%" },
+    mobile: { width: "15vw", left: "56%", top: "31%" },
   },
 ];
