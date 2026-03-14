@@ -41,7 +41,9 @@ export function useParallax() {
 
   function recalcParallax() {
     const vw = window.innerWidth;
-    maxOffset.value = vw * 1.2;
+    const isPortraitMobile =
+      vw <= 768 && window.innerHeight > window.innerWidth;
+    maxOffset.value = vw * (isPortraitMobile ? 1.5 : 1.2);
     layerMeta.forEach((m) => {
       m.centerShift = -(m.el.offsetWidth - vw) / 2;
     });
