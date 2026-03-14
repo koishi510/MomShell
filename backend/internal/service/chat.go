@@ -240,6 +240,14 @@ func (s *ChatService) Chat(ctx context.Context, msg dto.UserMessage, userID stri
 	return s.chatGuest(ctx, msg)
 }
 
+// appendWebSearchResults appends web search results to the system prompt if available.
+func appendWebSearchResults(systemPrompt string, webResults string) string {
+	if webResults == "" {
+		return systemPrompt
+	}
+	return systemPrompt + "\n\n## 联网搜索参考\n" + webResults + "\n日常聊天不需要引用来源。仅在提供专业性建议时才引用，引用时直接写出具体来源名称（如「根据XX的一篇文章...」），不要使用[来源1]这样的标注。不确定的信息请标明。"
+}
+
 func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage, userID string) (*dto.VisualResponse, error) {
 	// Look up user role and partner info
 	role := model.RoleMom
@@ -286,9 +294,7 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 	}
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
-	if webResults != "" {
-		systemPrompt += "\n\n## 联网搜索参考\n" + webResults + "\n日常聊天不需要引用来源。仅在提供专业性建议时才引用，引用时直接写出具体来源名称（如「根据XX的一篇文章...」），不要使用[来源1]这样的标注。不确定的信息请标明。"
-	}
+	systemPrompt = appendWebSearchResults(systemPrompt, webResults)
 
 	messages := []openai.Message{
 		{Role: "system", Content: systemPrompt},
@@ -334,6 +340,31 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 	return buildVisualResponse(parsed, memoryUpdated), nil
 }
 
+// evictOldestSessions removes the oldest 10% of guest sessions when at capacity.
+// Caller must hold s.mu.
+func (s *ChatService) evictOldestSessions() {
+	toDelete := maxGuestSessions / 10
+	if toDelete < 1 {
+		toDelete = 1
+	}
+	type sessionAge struct {
+		id string
+		ts time.Time
+	}
+	ages := make([]sessionAge, 0, len(s.guestLastAccess))
+	for k, t := range s.guestLastAccess {
+		ages = append(ages, sessionAge{k, t})
+	}
+	sort.Slice(ages, func(i, j int) bool {
+		return ages[i].ts.Before(ages[j].ts)
+	})
+	for i := 0; i < toDelete && i < len(ages); i++ {
+		delete(s.guestMemory, ages[i].id)
+		delete(s.guestProfiles, ages[i].id)
+		delete(s.guestLastAccess, ages[i].id)
+	}
+}
+
 func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.VisualResponse, error) {
 	sessionID := ""
 	if msg.SessionID != nil {
@@ -347,26 +378,7 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 	if _, ok := s.guestMemory[sessionID]; !ok {
 		// Evict least recently accessed sessions if at capacity
 		if len(s.guestMemory) >= maxGuestSessions {
-			toDelete := maxGuestSessions / 10
-			if toDelete < 1 {
-				toDelete = 1
-			}
-			type sessionAge struct {
-				id string
-				ts time.Time
-			}
-			ages := make([]sessionAge, 0, len(s.guestLastAccess))
-			for k, t := range s.guestLastAccess {
-				ages = append(ages, sessionAge{k, t})
-			}
-			sort.Slice(ages, func(i, j int) bool {
-				return ages[i].ts.Before(ages[j].ts)
-			})
-			for i := 0; i < toDelete && i < len(ages); i++ {
-				delete(s.guestMemory, ages[i].id)
-				delete(s.guestProfiles, ages[i].id)
-				delete(s.guestLastAccess, ages[i].id)
-			}
+			s.evictOldestSessions()
 		}
 		s.guestMemory[sessionID] = nil
 		s.guestProfiles[sessionID] = make(map[string]interface{})
@@ -382,9 +394,7 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 	)
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
-	if webResults != "" {
-		systemPrompt += "\n\n## 联网搜索参考\n" + webResults + "\n日常聊天不需要引用来源。仅在提供专业性建议时才引用，引用时直接写出具体来源名称（如「根据XX的一篇文章...」），不要使用[来源1]这样的标注。不确定的信息请标明。"
-	}
+	systemPrompt = appendWebSearchResults(systemPrompt, webResults)
 
 	messages := []openai.Message{
 		{Role: "system", Content: systemPrompt},
@@ -527,18 +537,18 @@ func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) b
 	return saved
 }
 
-// processMemoryCorrections handles user corrections by fuzzy-deleting matching facts in family scope.
-func (s *ChatService) processMemoryCorrections(familyIDs []string, extract interface{}, profile map[string]interface{}) bool {
+// extractCorrectionPhrases extracts trimmed non-empty correction strings from a memory_extract.
+func extractCorrectionPhrases(extract interface{}) []string {
 	if extract == nil {
-		return false
+		return nil
 	}
 	extractMap, ok := extract.(map[string]interface{})
 	if !ok {
-		return false
+		return nil
 	}
 	corrections, ok := extractMap["corrections"].([]interface{})
 	if !ok || len(corrections) == 0 {
-		return false
+		return nil
 	}
 
 	phrases := make([]string, 0, len(corrections))
@@ -547,6 +557,35 @@ func (s *ChatService) processMemoryCorrections(familyIDs []string, extract inter
 			phrases = append(phrases, strings.TrimSpace(str))
 		}
 	}
+	return phrases
+}
+
+// cleanLegacyProfileFacts removes legacy profile facts that match any of the correction phrases.
+func cleanLegacyProfileFacts(profile map[string]interface{}, phrases []string) {
+	legacyFacts, ok := profile["facts"].([]interface{})
+	if !ok || len(legacyFacts) == 0 {
+		return
+	}
+	var remaining []interface{}
+	for _, fact := range legacyFacts {
+		factStr := fmt.Sprintf("%v", fact)
+		matched := false
+		for _, phrase := range phrases {
+			if strings.Contains(factStr, phrase) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			remaining = append(remaining, fact)
+		}
+	}
+	profile["facts"] = remaining
+}
+
+// processMemoryCorrections handles user corrections by fuzzy-deleting matching facts in family scope.
+func (s *ChatService) processMemoryCorrections(familyIDs []string, extract interface{}, profile map[string]interface{}) bool {
+	phrases := extractCorrectionPhrases(extract)
 	if len(phrases) == 0 {
 		return false
 	}
@@ -558,24 +597,7 @@ func (s *ChatService) processMemoryCorrections(familyIDs []string, extract inter
 		corrected = true
 	}
 
-	// Also clean legacy profile facts
-	if legacyFacts, ok := profile["facts"].([]interface{}); ok && len(legacyFacts) > 0 {
-		var remaining []interface{}
-		for _, fact := range legacyFacts {
-			factStr := fmt.Sprintf("%v", fact)
-			matched := false
-			for _, phrase := range phrases {
-				if strings.Contains(factStr, phrase) {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				remaining = append(remaining, fact)
-			}
-		}
-		profile["facts"] = remaining
-	}
+	cleanLegacyProfileFacts(profile, phrases)
 	return corrected
 }
 
@@ -590,48 +612,45 @@ func resolveFactCategory(aiCategory string, content string) model.FactCategory {
 	return categorizeFactContent(content)
 }
 
+type factCategoryRule struct {
+	keywords []string
+	category model.FactCategory
+}
+
+var factCategoryRules = []factCategoryRule{
+	{
+		keywords: []string{"宝宝", "孩子", "老公", "老婆", "伴侣", "家人", "父母", "婆婆"},
+		category: model.FactCategoryFamily,
+	},
+	{
+		keywords: []string{"爱吃", "不爱吃", "最爱", "喜爱", "讨厌", "想吃", "常吃", "爱喝",
+			"爱看", "爱听", "最喜欢", "不想", "受不了", "喜欢", "偏好", "习惯", "不喜欢"},
+		category: model.FactCategoryPreference,
+	},
+	{
+		keywords: []string{"叫", "名字", "岁", "职业", "住在", "工作", "公司", "城市", "来自", "毕业", "专业"},
+		category: model.FactCategoryPersonalInfo,
+	},
+	{
+		keywords: []string{"担心", "焦虑", "害怕", "困扰", "希望", "愿望", "烦", "压力", "累", "纠结", "迷茫"},
+		category: model.FactCategoryConcern,
+	},
+	{
+		keywords: []string{"爱好", "兴趣", "在学", "爱", "在玩", "在看", "在读", "在听", "开始学", "报了"},
+		category: model.FactCategoryInterest,
+	},
+}
+
 func categorizeFactContent(content string) model.FactCategory {
 	lower := strings.ToLower(content)
-	switch {
-	case strings.Contains(lower, "宝宝") || strings.Contains(lower, "孩子") ||
-		strings.Contains(lower, "老公") || strings.Contains(lower, "老婆") ||
-		strings.Contains(lower, "伴侣") || strings.Contains(lower, "家人") ||
-		strings.Contains(lower, "父母") || strings.Contains(lower, "婆婆"):
-		return model.FactCategoryFamily
-	case strings.Contains(lower, "爱吃") || strings.Contains(lower, "不爱吃") ||
-		strings.Contains(lower, "最爱") || strings.Contains(lower, "喜爱") ||
-		strings.Contains(lower, "讨厌") || strings.Contains(lower, "想吃") ||
-		strings.Contains(lower, "常吃") || strings.Contains(lower, "爱喝") ||
-		strings.Contains(lower, "爱看") || strings.Contains(lower, "爱听") ||
-		strings.Contains(lower, "最喜欢") || strings.Contains(lower, "不想") ||
-		strings.Contains(lower, "受不了") ||
-		strings.Contains(lower, "喜欢") || strings.Contains(lower, "偏好") ||
-		strings.Contains(lower, "习惯") || strings.Contains(lower, "不喜欢"):
-		return model.FactCategoryPreference
-	case strings.Contains(lower, "叫") || strings.Contains(lower, "名字") ||
-		strings.Contains(lower, "岁") || strings.Contains(lower, "职业") ||
-		strings.Contains(lower, "住在") ||
-		strings.Contains(lower, "工作") || strings.Contains(lower, "公司") ||
-		strings.Contains(lower, "城市") || strings.Contains(lower, "来自") ||
-		strings.Contains(lower, "毕业") || strings.Contains(lower, "专业"):
-		return model.FactCategoryPersonalInfo
-	case strings.Contains(lower, "担心") || strings.Contains(lower, "焦虑") ||
-		strings.Contains(lower, "害怕") || strings.Contains(lower, "困扰") ||
-		strings.Contains(lower, "希望") || strings.Contains(lower, "愿望") ||
-		strings.Contains(lower, "烦") || strings.Contains(lower, "压力") ||
-		strings.Contains(lower, "累") || strings.Contains(lower, "纠结") ||
-		strings.Contains(lower, "迷茫"):
-		return model.FactCategoryConcern
-	case strings.Contains(lower, "爱好") || strings.Contains(lower, "兴趣") ||
-		strings.Contains(lower, "在学") ||
-		strings.Contains(lower, "爱") || strings.Contains(lower, "在玩") ||
-		strings.Contains(lower, "在看") || strings.Contains(lower, "在读") ||
-		strings.Contains(lower, "在听") || strings.Contains(lower, "开始学") ||
-		strings.Contains(lower, "报了"):
-		return model.FactCategoryInterest
-	default:
-		return model.FactCategoryOther
+	for _, rule := range factCategoryRules {
+		for _, kw := range rule.keywords {
+			if strings.Contains(lower, kw) {
+				return rule.category
+			}
+		}
 	}
+	return model.FactCategoryOther
 }
 
 func (s *ChatService) loadFactsForPrompt(userID string, familyIDs []string, userRole model.UserRole, partnerRole model.UserRole) (string, string) {
@@ -844,6 +863,24 @@ func (s *ChatService) saveUserMemory(userID string, profile map[string]interface
 	}
 }
 
+// formatSliceField formats a profile slice field (e.g. interests, concerns) as a comma-separated line.
+func formatSliceField(profile map[string]interface{}, key string, label string) string {
+	items, ok := profile[key].([]interface{})
+	if !ok || len(items) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString(label)
+	for i, v := range items {
+		if i > 0 {
+			sb.WriteString(", ")
+		}
+		fmt.Fprintf(&sb, "%v", v)
+	}
+	sb.WriteString("\n")
+	return sb.String()
+}
+
 func formatProfile(profile map[string]interface{}, pronoun string, factsText string) string {
 	if len(profile) == 0 && factsText == "" {
 		return "（暂无记录）"
@@ -863,26 +900,9 @@ func formatProfile(profile map[string]interface{}, pronoun string, factsText str
 		parts += "- 重要信息：\n" + factsText
 	}
 
-	if interests, ok := profile["interests"].([]interface{}); ok && len(interests) > 0 {
-		parts += fmt.Sprintf("- %s的兴趣：", pronoun)
-		for i, v := range interests {
-			if i > 0 {
-				parts += ", "
-			}
-			parts += fmt.Sprintf("%v", v)
-		}
-		parts += "\n"
-	}
-	if concerns, ok := profile["concerns"].([]interface{}); ok && len(concerns) > 0 {
-		parts += fmt.Sprintf("- %s曾表达的担忧：", pronoun)
-		for i, v := range concerns {
-			if i > 0 {
-				parts += ", "
-			}
-			parts += fmt.Sprintf("%v", v)
-		}
-		parts += "\n"
-	}
+	parts += formatSliceField(profile, "interests", fmt.Sprintf("- %s的兴趣：", pronoun))
+	parts += formatSliceField(profile, "concerns", fmt.Sprintf("- %s曾表达的担忧：", pronoun))
+
 	if parts == "" {
 		return "（暂无记录）"
 	}
@@ -1008,35 +1028,55 @@ func deduplicateAndCap(existing, newItems []interface{}, maxItems int) []interfa
 	return result
 }
 
+// parseVisualMetadata extracts visual metadata from parsed LLM response, returning defaults if absent.
+func parseVisualMetadata(parsed map[string]interface{}) dto.VisualMetadata {
+	vm := dto.VisualMetadata{
+		EffectType: "calm",
+		Intensity:  0.5,
+		ColorTone:  "gentle_blue",
+	}
+	vmData, ok := parsed["visual_metadata"].(map[string]interface{})
+	if !ok {
+		return vm
+	}
+	if et, ok := vmData["effect_type"].(string); ok {
+		vm.EffectType = et
+	}
+	if intensity, ok := vmData["intensity"].(float64); ok {
+		vm.Intensity = intensity
+	}
+	if ct, ok := vmData["color_tone"].(string); ok {
+		vm.ColorTone = ct
+	}
+	return vm
+}
+
 func buildVisualResponse(parsed map[string]interface{}, memoryUpdated bool) *dto.VisualResponse {
 	text := "我在这里陪着你。"
 	if t, ok := parsed["text"].(string); ok && t != "" {
 		text = t
 	}
 
-	vm := dto.VisualMetadata{
-		EffectType: "calm",
-		Intensity:  0.5,
-		ColorTone:  "gentle_blue",
-	}
-
-	if vmData, ok := parsed["visual_metadata"].(map[string]interface{}); ok {
-		if et, ok := vmData["effect_type"].(string); ok {
-			vm.EffectType = et
-		}
-		if intensity, ok := vmData["intensity"].(float64); ok {
-			vm.Intensity = intensity
-		}
-		if ct, ok := vmData["color_tone"].(string); ok {
-			vm.ColorTone = ct
-		}
-	}
-
 	return &dto.VisualResponse{
 		Text:           text,
-		VisualMetadata: vm,
+		VisualMetadata: parseVisualMetadata(parsed),
 		MemoryUpdated:  memoryUpdated,
 	}
+}
+
+// extractStringSlice extracts a string slice from a profile field that stores []interface{}.
+func extractStringSlice(profile map[string]interface{}, key string) []string {
+	items, ok := profile[key].([]interface{})
+	if !ok {
+		return nil
+	}
+	result := make([]string, 0, len(items))
+	for _, v := range items {
+		if s, ok := v.(string); ok {
+			result = append(result, s)
+		}
+	}
+	return result
 }
 
 func profileToDTO(profile map[string]interface{}) *dto.ChatProfile {
@@ -1057,33 +1097,17 @@ func profileToDTO(profile map[string]interface{}) *dto.ChatProfile {
 	if details, ok := profile["pet_details"].(string); ok {
 		cp.PetDetails = &details
 	}
-	if interests, ok := profile["interests"].([]interface{}); ok {
-		for _, v := range interests {
-			if s, ok := v.(string); ok {
-				cp.Interests = append(cp.Interests, s)
-			}
-		}
+	if v := extractStringSlice(profile, "interests"); len(v) > 0 {
+		cp.Interests = v
 	}
-	if concerns, ok := profile["concerns"].([]interface{}); ok {
-		for _, v := range concerns {
-			if s, ok := v.(string); ok {
-				cp.Concerns = append(cp.Concerns, s)
-			}
-		}
+	if v := extractStringSlice(profile, "concerns"); len(v) > 0 {
+		cp.Concerns = v
 	}
-	if facts, ok := profile["facts"].([]interface{}); ok {
-		for _, v := range facts {
-			if s, ok := v.(string); ok {
-				cp.Facts = append(cp.Facts, s)
-			}
-		}
+	if v := extractStringSlice(profile, "facts"); len(v) > 0 {
+		cp.Facts = v
 	}
-	if dates, ok := profile["important_dates"].([]interface{}); ok {
-		for _, v := range dates {
-			if s, ok := v.(string); ok {
-				cp.ImportantDates = append(cp.ImportantDates, s)
-			}
-		}
+	if v := extractStringSlice(profile, "important_dates"); len(v) > 0 {
+		cp.ImportantDates = v
 	}
 	if weeks, ok := profile["baby_age_weeks"].(float64); ok {
 		w := int(weeks)

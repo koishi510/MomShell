@@ -14,6 +14,8 @@ import (
 const (
 	maxChatResponseSize  = 1 << 20  // 1 MB
 	maxImageResponseSize = 10 << 20 // 10 MB
+	headerAuthorization  = "Authorization"
+	bearerPrefix         = "Bearer "
 )
 
 type Client struct {
@@ -78,7 +80,7 @@ func (c *Client) Chat(ctx context.Context, messages []Message) (string, error) {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set(headerAuthorization, bearerPrefix+c.apiKey)
 
 	resp, err := c.http.Do(req)
 	if err != nil {
@@ -133,6 +135,31 @@ type ImageResponse struct {
 	} `json:"error,omitempty"`
 }
 
+// handleAsyncTask detects and handles async task responses from ModelScope.
+// Returns an ImageResponse if the task completed synchronously or after polling.
+// Returns nil, nil if the response is not an async task.
+func (c *Client) handleAsyncTask(ctx context.Context, respBody []byte) (*ImageResponse, error) {
+	var taskResp taskStatusResponse
+	if err := json.Unmarshal(respBody, &taskResp); err != nil {
+		return nil, nil
+	}
+	// If already SUCCEED with images, return directly
+	if imgResp := extractImagesFromTaskStatus(&taskResp); imgResp != nil {
+		return imgResp, nil
+	}
+	// Has task_id - poll with it (ModelScope uses task_id, NOT request_id)
+	if taskResp.TaskID != "" {
+		log.Printf("[ImageGen] async task, task_id=%s, status=%s, polling...", taskResp.TaskID, taskResp.TaskStatus)
+		return c.pollImageTask(ctx, taskResp.TaskID)
+	}
+	// Fallback: try request_id if no task_id
+	if taskResp.RequestID != "" {
+		log.Printf("[ImageGen] async task (fallback), request_id=%s, status=%s, polling...", taskResp.RequestID, taskResp.TaskStatus)
+		return c.pollImageTask(ctx, taskResp.RequestID)
+	}
+	return nil, nil
+}
+
 func (c *Client) GenerateImage(ctx context.Context, model, prompt string) (*ImageResponse, error) {
 	reqBody := imageRequest{
 		Model:             model,
@@ -153,7 +180,7 @@ func (c *Client) GenerateImage(ctx context.Context, model, prompt string) (*Imag
 		return nil, fmt.Errorf("failed to create image request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set(headerAuthorization, bearerPrefix+c.apiKey)
 	req.Header.Set("X-ModelScope-Async-Mode", "true")
 
 	resp, err := c.http.Do(req)
@@ -175,22 +202,8 @@ func (c *Client) GenerateImage(ctx context.Context, model, prompt string) (*Imag
 	}
 
 	// Try parsing as an async task response (ModelScope returns task_id for polling)
-	var taskResp taskStatusResponse
-	if err := json.Unmarshal(respBody, &taskResp); err == nil {
-		// If already SUCCEED with images, return directly
-		if imgResp := extractImagesFromTaskStatus(&taskResp); imgResp != nil {
-			return imgResp, nil
-		}
-		// Has task_id - poll with it (ModelScope uses task_id, NOT request_id)
-		if taskResp.TaskID != "" {
-			log.Printf("[ImageGen] async task, task_id=%s, status=%s, polling...", taskResp.TaskID, taskResp.TaskStatus)
-			return c.pollImageTask(ctx, taskResp.TaskID)
-		}
-		// Fallback: try request_id if no task_id
-		if taskResp.RequestID != "" {
-			log.Printf("[ImageGen] async task (fallback), request_id=%s, status=%s, polling...", taskResp.RequestID, taskResp.TaskStatus)
-			return c.pollImageTask(ctx, taskResp.RequestID)
-		}
+	if asyncResp, err := c.handleAsyncTask(ctx, respBody); asyncResp != nil || err != nil {
+		return asyncResp, err
 	}
 
 	// Synchronous response (standard OpenAI format)
@@ -261,6 +274,28 @@ type taskStatusResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
+// handlePollStatus evaluates a poll response and returns a result, an error, or (nil, nil) to continue polling.
+func handlePollStatus(status *taskStatusResponse) (*ImageResponse, error) {
+	if status.Error != nil {
+		return nil, fmt.Errorf("image task failed: %s", status.Error.Message)
+	}
+	if imgResp := extractImagesFromTaskStatus(status); imgResp != nil {
+		return imgResp, nil
+	}
+	switch status.TaskStatus {
+	case "SUCCEED", "SUCCEEDED", "succeeded":
+		return nil, fmt.Errorf("image task succeeded but no results in response")
+	case "FAILED", "failed":
+		msg := status.Message
+		if msg == "" {
+			msg = "image generation task failed"
+		}
+		return nil, fmt.Errorf("%s", msg)
+	}
+	// PENDING, RUNNING - continue polling
+	return nil, nil
+}
+
 func (c *Client) pollImageTask(ctx context.Context, taskID string) (*ImageResponse, error) {
 	pollURL := c.baseURL + "/tasks/" + taskID
 
@@ -275,7 +310,7 @@ func (c *Client) pollImageTask(ctx context.Context, taskID string) (*ImageRespon
 		if err != nil {
 			return nil, fmt.Errorf("failed to create poll request: %w", err)
 		}
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+		req.Header.Set(headerAuthorization, bearerPrefix+c.apiKey)
 		req.Header.Set("X-ModelScope-Task-Type", "image_generation")
 
 		resp, err := c.http.Do(req)
@@ -298,25 +333,9 @@ func (c *Client) pollImageTask(ctx context.Context, taskID string) (*ImageRespon
 			continue
 		}
 
-		if status.Error != nil {
-			return nil, fmt.Errorf("image task failed: %s", status.Error.Message)
+		if imgResp, err := handlePollStatus(&status); imgResp != nil || err != nil {
+			return imgResp, err
 		}
-
-		if imgResp := extractImagesFromTaskStatus(&status); imgResp != nil {
-			return imgResp, nil
-		}
-
-		switch status.TaskStatus {
-		case "SUCCEED", "SUCCEEDED", "succeeded":
-			return nil, fmt.Errorf("image task succeeded but no results in response")
-		case "FAILED", "failed":
-			msg := status.Message
-			if msg == "" {
-				msg = "image generation task failed"
-			}
-			return nil, fmt.Errorf("%s", msg)
-		}
-		// PENDING, RUNNING - continue polling
 	}
 
 	return nil, fmt.Errorf("image generation timed out after polling")

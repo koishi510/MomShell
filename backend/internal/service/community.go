@@ -305,6 +305,23 @@ func (s *CommunityService) CreateQuestion(req dto.QuestionCreate, author *model.
 	return q, nil
 }
 
+// moderateAndUpdateTextField moderates text content and updates the target field on the question.
+// Returns an error if moderation rejects the content. Sets status to PendingReview if manual review is needed.
+func (s *CommunityService) moderateAndUpdateTextField(q *model.Question, newText *string, fieldName string, setter func(string)) error {
+	if newText == nil {
+		return nil
+	}
+	decision := s.moderation.ModerateText(*newText)
+	if decision.Result == model.ModerationRejected {
+		return fmt.Errorf("%s审核未通过: %s", fieldName, derefStr(decision.Reason))
+	}
+	setter(*newText)
+	if decision.Result == model.ModerationNeedManualReview {
+		q.Status = model.StatusPendingReview
+	}
+	return nil
+}
+
 func (s *CommunityService) UpdateQuestion(questionID string, req dto.QuestionUpdate, user *model.User) (*model.Question, error) {
 	q, err := s.questionRepo.FindByID(questionID)
 	if err != nil {
@@ -318,26 +335,11 @@ func (s *CommunityService) UpdateQuestion(questionID string, req dto.QuestionUpd
 		return nil, errors.New("无权修改此问题")
 	}
 
-	if req.Title != nil {
-		decision := s.moderation.ModerateText(*req.Title)
-		if decision.Result == model.ModerationRejected {
-			return nil, fmt.Errorf("标题审核未通过: %s", derefStr(decision.Reason))
-		}
-		q.Title = *req.Title
-		if decision.Result == model.ModerationNeedManualReview {
-			q.Status = model.StatusPendingReview
-		}
+	if err := s.moderateAndUpdateTextField(q, req.Title, "标题", func(v string) { q.Title = v }); err != nil {
+		return nil, err
 	}
-
-	if req.Content != nil {
-		decision := s.moderation.ModerateText(*req.Content)
-		if decision.Result == model.ModerationRejected {
-			return nil, fmt.Errorf("内容审核未通过: %s", derefStr(decision.Reason))
-		}
-		q.Content = *req.Content
-		if decision.Result == model.ModerationNeedManualReview {
-			q.Status = model.StatusPendingReview
-		}
+	if err := s.moderateAndUpdateTextField(q, req.Content, "内容", func(v string) { q.Content = v }); err != nil {
+		return nil, err
 	}
 
 	if req.TagIDs != nil {

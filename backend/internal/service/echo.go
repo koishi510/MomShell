@@ -14,6 +14,12 @@ import (
 	"github.com/momshell/backend/pkg/openai"
 )
 
+const (
+	memoirDefaultTitle = "一段温柔的回响"
+	memoirKeyTitle     = "title"
+	memoirKeyContent   = "content"
+)
+
 type EchoService struct {
 	client   *openai.Client
 	echoRepo *repository.EchoRepo
@@ -128,14 +134,14 @@ func (s *EchoService) GenerateMemoir(ctx context.Context, userID string, req dto
 	}
 
 	parsed := parseMemoirLLMResponse(rawContent)
-	title, _ := parsed["title"].(string)
-	content, _ := parsed["content"].(string)
+	title, _ := parsed[memoirKeyTitle].(string)
+	content, _ := parsed[memoirKeyContent].(string)
 
 	title = strings.TrimSpace(title)
 	content = strings.TrimSpace(content)
 
 	if title == "" {
-		title = "一段温柔的回响"
+		title = memoirDefaultTitle
 	}
 	if content == "" {
 		content = "那些被日常轻轻覆盖的瞬间，在回望时仍有温度。"
@@ -214,6 +220,57 @@ func buildMemoirSystemPrompt(tags []model.IdentityTag, theme *string) string {
 	)
 }
 
+// extractMemoirFieldsByRegex attempts to extract title and content from malformed JSON using regex.
+// Returns nil if no fields could be extracted.
+func extractMemoirFieldsByRegex(content string) map[string]interface{} {
+	titleRe := regexp.MustCompile(`"title"\s*:\s*"((?:[^"\\]|\\.)*)`)
+	contentRe := regexp.MustCompile(`"content"\s*:\s*"((?:[^"\\]|\\.)*)`)
+	titleMatch := titleRe.FindStringSubmatch(content)
+	contentMatch := contentRe.FindStringSubmatch(content)
+	if titleMatch == nil && contentMatch == nil {
+		return nil
+	}
+	title := memoirDefaultTitle
+	body := ""
+	if titleMatch != nil {
+		title = titleMatch[1]
+	}
+	if contentMatch != nil {
+		body = contentMatch[1]
+		// Unescape common JSON escapes
+		body = strings.ReplaceAll(body, `\n`, "\n")
+		body = strings.ReplaceAll(body, `\"`, `"`)
+		body = strings.ReplaceAll(body, `\\`, `\`)
+	}
+	return map[string]interface{}{
+		memoirKeyTitle:   cleanMemoirText(title),
+		memoirKeyContent: cleanMemoirText(body),
+	}
+}
+
+// tryParseJSONFromTruncatedBlock handles truncated ```json blocks (no closing ```).
+func tryParseJSONFromTruncatedBlock(content string) map[string]interface{} {
+	re3 := regexp.MustCompile("(?s)```json\\s*(.*)")
+	matches := re3.FindStringSubmatch(content)
+	if len(matches) <= 1 {
+		return nil
+	}
+	inner := strings.TrimSpace(matches[1])
+	inner = strings.TrimSuffix(inner, "```")
+	var result map[string]interface{}
+	if err := json.Unmarshal([]byte(inner), &result); err == nil {
+		return cleanParsedMemoir(result)
+	}
+	// Try to find JSON object inside
+	re2 := regexp.MustCompile(`(?s)\{.*\}`)
+	if match := re2.FindString(inner); match != "" {
+		if err := json.Unmarshal([]byte(match), &result); err == nil {
+			return cleanParsedMemoir(result)
+		}
+	}
+	return nil
+}
+
 func parseMemoirLLMResponse(content string) map[string]interface{} {
 	var result map[string]interface{}
 
@@ -242,49 +299,19 @@ func parseMemoirLLMResponse(content string) map[string]interface{} {
 		}
 	}
 
-	// Handle truncated ```json block (no closing ```) - extract everything after ```json
-	re3 := regexp.MustCompile("(?s)```json\\s*(.*)")
-	if matches := re3.FindStringSubmatch(content); len(matches) > 1 {
-		inner := strings.TrimSpace(matches[1])
-		inner = strings.TrimSuffix(inner, "```")
-		if err := json.Unmarshal([]byte(inner), &result); err == nil {
-			return cleanParsedMemoir(result)
-		}
-		// Try to find JSON object inside
-		if match := re2.FindString(inner); match != "" {
-			if err := json.Unmarshal([]byte(match), &result); err == nil {
-				return cleanParsedMemoir(result)
-			}
-		}
+	// Handle truncated ```json block (no closing ```)
+	if parsed := tryParseJSONFromTruncatedBlock(content); parsed != nil {
+		return parsed
 	}
 
 	// Last resort: try to extract title and content with regex from malformed JSON
-	titleRe := regexp.MustCompile(`"title"\s*:\s*"((?:[^"\\]|\\.)*)`)
-	contentRe := regexp.MustCompile(`"content"\s*:\s*"((?:[^"\\]|\\.)*)`)
-	titleMatch := titleRe.FindStringSubmatch(content)
-	contentMatch := contentRe.FindStringSubmatch(content)
-	if titleMatch != nil || contentMatch != nil {
-		title := "一段温柔的回响"
-		body := ""
-		if titleMatch != nil {
-			title = titleMatch[1]
-		}
-		if contentMatch != nil {
-			body = contentMatch[1]
-			// Unescape common JSON escapes
-			body = strings.ReplaceAll(body, `\n`, "\n")
-			body = strings.ReplaceAll(body, `\"`, `"`)
-			body = strings.ReplaceAll(body, `\\`, `\`)
-		}
-		return map[string]interface{}{
-			"title":   cleanMemoirText(title),
-			"content": cleanMemoirText(body),
-		}
+	if parsed := extractMemoirFieldsByRegex(content); parsed != nil {
+		return parsed
 	}
 
 	return map[string]interface{}{
-		"title":   "一段温柔的回响",
-		"content": cleanMemoirText(strings.TrimSpace(content)),
+		memoirKeyTitle:   memoirDefaultTitle,
+		memoirKeyContent: cleanMemoirText(strings.TrimSpace(content)),
 	}
 }
 
@@ -321,11 +348,11 @@ func cleanMemoirText(s string) string {
 
 // cleanParsedMemoir cleans title and content fields in a successfully parsed JSON map.
 func cleanParsedMemoir(m map[string]interface{}) map[string]interface{} {
-	if t, ok := m["title"].(string); ok {
-		m["title"] = cleanMemoirText(t)
+	if t, ok := m[memoirKeyTitle].(string); ok {
+		m[memoirKeyTitle] = cleanMemoirText(t)
 	}
-	if c, ok := m["content"].(string); ok {
-		m["content"] = cleanMemoirText(c)
+	if c, ok := m[memoirKeyContent].(string); ok {
+		m[memoirKeyContent] = cleanMemoirText(c)
 	}
 	return m
 }
