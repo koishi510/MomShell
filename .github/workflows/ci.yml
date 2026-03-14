@@ -8,13 +8,12 @@ on:
     branches:
       - "**"
 
-permissions:
-  contents: read
-
 jobs:
   frontend-cq:
     name: Frontend Code Quality
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     defaults:
       run:
@@ -47,6 +46,8 @@ jobs:
   go-cq:
     name: Go Code Quality
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     defaults:
       run:
