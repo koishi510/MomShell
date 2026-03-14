@@ -1,0 +1,42 @@
+/* ── Global mobile overrides ── */
+
+@media (max-width: 768px) {
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  /* Prevent any accidental overflow causing gray margins */
+  html, body, #app {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* ── Portrait orientation on mobile ── */
+@media (max-width: 768px) and (orientation: portrait) {
+  /* In portrait mode, the scene is tall and narrow.
+     The parallax still works horizontally. */
+  .scene {
+    height: 100dvh;
+    height: 100vh;
+  }
+}
+
+/* ── Landscape orientation on mobile ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* In landscape, viewport is short but wide.
+     Ensure the scene fills the height. */
+  .scene {
+    height: 100dvh;
+    height: 100vh;
+  }
+
+  /* NavBar needs to be more compact in landscape */
+  .nav-wrapper {
+    top: 8px;
+    right: 8px;
+  }
+}
