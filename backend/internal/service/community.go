@@ -427,6 +427,8 @@ func (s *CommunityService) GetAnswers(questionID string, params dto.AnswerListPa
 			Content:        a.Content,
 			ContentPreview: contentPreview(a.Content, 200),
 			IsProfessional: a.IsProfessional,
+			IsExpertPost:   a.IsExpertPost,
+			Sources:        a.Sources,
 			IsAccepted:     a.IsAccepted,
 			LikeCount:      a.LikeCount,
 			CommentCount:   a.CommentCount,
@@ -443,16 +445,18 @@ func (s *CommunityService) GetAnswers(questionID string, params dto.AnswerListPa
 
 func (s *CommunityService) CreateAnswer(questionID string, req dto.AnswerCreate, author *model.User) (*model.Answer, error) {
 	// Check question exists
-	q, err := s.questionRepo.FindByID(questionID)
+	_, err := s.questionRepo.FindByID(questionID)
 	if err != nil {
 		return nil, errors.New("问题不存在")
 	}
 
-	// Check permission for professional channel
-	if q.Channel == model.ChannelProfessional {
-		isAuthor := q.AuthorID == author.ID
-		if !s.IsCertifiedProfessional(author) && !author.IsAdmin && !isAuthor {
-			return nil, errors.New("专业频道仅限认证专业人士回答")
+	// Expert post: only certified professionals can publish, and sources are required
+	if req.IsExpertPost {
+		if !s.IsCertifiedProfessional(author) && !author.IsAdmin {
+			return nil, errors.New("仅认证专业人士可发布专家帖")
+		}
+		if req.Sources == "" {
+			return nil, errors.New("专家帖必须标注来源依据")
 		}
 	}
 
@@ -474,12 +478,19 @@ func (s *CommunityService) CreateAnswer(questionID string, req dto.AnswerCreate,
 		imageURLsJSON = &s
 	}
 
+	var sourcesPtr *string
+	if req.Sources != "" {
+		sourcesPtr = &req.Sources
+	}
+
 	answer := &model.Answer{
 		QuestionID:     questionID,
 		AuthorID:       author.ID,
 		Content:        req.Content,
 		AuthorRole:     author.Role,
 		IsProfessional: s.IsCertifiedProfessional(author),
+		IsExpertPost:   req.IsExpertPost,
+		Sources:        sourcesPtr,
 		Status:         status,
 		ImageURLs:      imageURLsJSON,
 	}
@@ -515,6 +526,34 @@ func (s *CommunityService) UpdateAnswer(answerID string, req dto.AnswerUpdate, u
 		if decision.Result == model.ModerationNeedManualReview {
 			a.Status = model.StatusPendingReview
 		}
+	}
+
+	// Update expert post fields
+	if req.IsExpertPost != nil {
+		if *req.IsExpertPost {
+			if !s.IsCertifiedProfessional(user) && !user.IsAdmin {
+				return nil, errors.New("仅认证专业人士可发布专家帖")
+			}
+			sources := ""
+			if req.Sources != nil {
+				sources = *req.Sources
+			} else if a.Sources != nil {
+				sources = *a.Sources
+			}
+			if sources == "" {
+				return nil, errors.New("专家帖必须标注来源依据")
+			}
+			a.IsExpertPost = true
+			a.Sources = &sources
+		} else {
+			a.IsExpertPost = false
+		}
+	}
+	if req.Sources != nil && (req.IsExpertPost == nil || !*req.IsExpertPost) {
+		if a.IsExpertPost && *req.Sources == "" {
+			return nil, errors.New("专家帖必须标注来源依据")
+		}
+		a.Sources = req.Sources
 	}
 
 	a.UpdatedAt = time.Now()

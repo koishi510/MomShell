@@ -343,6 +343,8 @@ func (s *UserService) GetUserAnswers(userID string, page, pageSize int) (*dto.Pa
 				Channel: string(a.Question.Channel),
 			},
 			IsProfessional: a.IsProfessional,
+			IsExpertPost:   a.IsExpertPost,
+			Sources:        a.Sources,
 			IsAccepted:     a.IsAccepted,
 			LikeCount:      a.LikeCount,
 			CommentCount:   a.CommentCount,

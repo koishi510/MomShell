@@ -163,6 +163,11 @@
                 </template>
                 <template v-else>
                   <p class="answer-content">{{ a.content }}</p>
+                  <div v-if="a.is_expert_post" class="expert-post-badge">专家帖</div>
+                  <div v-if="a.is_expert_post && a.sources" class="expert-sources">
+                    <span class="sources-label">来源依据：</span>
+                    <span class="sources-text">{{ a.sources }}</span>
+                  </div>
                 </template>
                 <div class="answer-meta">
                   <button class="like-btn" @click="onLikeAnswer(a)">
@@ -202,6 +207,18 @@
               {{ commentTarget.nickname ? `回复 @${commentTarget.nickname}` : '写评论' }}
               <button class="cancel-reply-btn" @click="clearCommentTarget">×</button>
             </div>
+            <div v-if="!commentTarget && isCertifiedUser" class="expert-post-controls">
+              <label class="expert-checkbox-label">
+                <input v-model="isExpertPost" type="checkbox" class="expert-checkbox" />
+                <span>发布为专家帖</span>
+              </label>
+              <input
+                v-if="isExpertPost"
+                v-model="expertSources"
+                class="expert-sources-input"
+                placeholder="请填写来源依据（必填）"
+              />
+            </div>
             <div class="reply-input-row">
               <input
                 ref="replyInputRef"
@@ -210,7 +227,7 @@
                 :placeholder="commentTarget ? (commentTarget.nickname ? `回复 @${commentTarget.nickname}...` : '写评论...') : '写下你的回答...'"
                 @keydown.enter="onSubmitReply"
               />
-              <button class="reply-btn" :disabled="!replyText.trim()" @click="onSubmitReply">发送</button>
+              <button class="reply-btn" :disabled="!replyText.trim() || (isExpertPost && !commentTarget && !expertSources.trim())" @click="onSubmitReply">发送</button>
             </div>
           </div>
         </div>
@@ -223,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import avatarDefault from '@/assets/images/avatar.png'
@@ -287,6 +304,13 @@ const editQuestionData = ref({ title: '', content: '' })
 const editingAnswerId = ref<string | null>(null)
 const editAnswerContent = ref('')
 const panelError = ref('')
+const isExpertPost = ref(false)
+const expertSources = ref('')
+
+const isCertifiedUser = computed(() => {
+  const role = authStore.user?.role
+  return role === 'certified_doctor' || role === 'certified_therapist' || role === 'certified_nurse'
+})
 
 function showPanelError(msg: string) {
   panelError.value = msg
@@ -521,8 +545,13 @@ async function onSubmitReply() {
       )
     } else {
       // Posting an answer
-      await createAnswer(selectedDetail.value.id, replyText.value)
+      const options = isExpertPost.value
+        ? { is_expert_post: true, sources: expertSources.value }
+        : undefined
+      await createAnswer(selectedDetail.value.id, replyText.value, options)
       replyText.value = ''
+      isExpertPost.value = false
+      expertSources.value = ''
       const answerRes = await getAnswers(selectedDetail.value.id, { page: 1, page_size: 50 })
       answers.value = answerRes.items
       selectedDetail.value = {
@@ -1305,6 +1334,74 @@ function clearCommentTarget() {
 
 .reply-btn:disabled {
   opacity: 0.5;
+}
+
+.expert-post-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: rgba(46, 139, 87, 0.15);
+  border: 1px solid rgba(46, 139, 87, 0.3);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(46, 180, 100, 0.9);
+  margin-bottom: 6px;
+}
+
+.expert-sources {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid rgba(46, 139, 87, 0.4);
+  padding: 6px 12px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.sources-label {
+  font-weight: 600;
+  color: rgba(46, 180, 100, 0.8);
+}
+
+.sources-text {
+  white-space: pre-wrap;
+}
+
+.expert-post-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.expert-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(46, 180, 100, 0.9);
+  cursor: pointer;
+  user-select: none;
+}
+
+.expert-checkbox {
+  accent-color: rgba(46, 139, 87, 0.8);
+  cursor: pointer;
+}
+
+.expert-sources-input {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(46, 139, 87, 0.3);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.expert-sources-input::placeholder {
+  color: var(--text-secondary);
 }
 
 .modify-actions {
