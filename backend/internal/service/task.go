@@ -9,6 +9,7 @@ import (
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
+	"github.com/momshell/backend/pkg/openai"
 )
 
 const (
@@ -18,12 +19,24 @@ const (
 )
 
 type TaskService struct {
-	taskRepo *repository.TaskRepo
-	userRepo *repository.UserRepo
+	taskRepo     *repository.TaskRepo
+	userRepo     *repository.UserRepo
+	chatRepo     *repository.ChatRepo
+	openaiClient *openai.Client
 }
 
-func NewTaskService(taskRepo *repository.TaskRepo, userRepo *repository.UserRepo) *TaskService {
-	return &TaskService{taskRepo: taskRepo, userRepo: userRepo}
+func NewTaskService(
+	taskRepo *repository.TaskRepo,
+	userRepo *repository.UserRepo,
+	chatRepo *repository.ChatRepo,
+	openaiClient *openai.Client,
+) *TaskService {
+	return &TaskService{
+		taskRepo:     taskRepo,
+		userRepo:     userRepo,
+		chatRepo:     chatRepo,
+		openaiClient: openaiClient,
+	}
 }
 
 func today() time.Time {
@@ -52,20 +65,8 @@ func (s *TaskService) GetDailyTasks(userID string) ([]dto.UserTaskItem, error) {
 
 	// Lazy initialization: assign tasks for today
 	if len(tasks) == 0 {
-		templates, err := s.taskRepo.FindRandomTemplates(4)
-		if err != nil || len(templates) == 0 {
+		if err := s.createTasksForUser(user, userID, date); err != nil {
 			return []dto.UserTaskItem{}, nil
-		}
-		for _, tmpl := range templates {
-			ut := &model.UserTask{
-				UserID: userID,
-				TaskID: tmpl.ID,
-				Date:   date,
-				Status: model.TaskPending,
-			}
-			if err := s.taskRepo.CreateUserTask(ut); err != nil {
-				continue
-			}
 		}
 		tasks, err = s.taskRepo.FindUserTasksByDate(userID, date)
 		if err != nil {
@@ -122,20 +123,12 @@ func (s *TaskService) GetPartnerTasks(callerID string) ([]dto.UserTaskItem, erro
 
 	// Lazily assign tasks for partner if none exist today
 	if len(tasks) == 0 {
-		templates, err := s.taskRepo.FindRandomTemplates(4)
-		if err != nil || len(templates) == 0 {
+		partner, pErr := s.userRepo.FindByID(*user.PartnerID)
+		if pErr != nil {
 			return []dto.UserTaskItem{}, nil
 		}
-		for _, tmpl := range templates {
-			ut := &model.UserTask{
-				UserID: *user.PartnerID,
-				TaskID: tmpl.ID,
-				Date:   date,
-				Status: model.TaskPending,
-			}
-			if err := s.taskRepo.CreateUserTask(ut); err != nil {
-				continue
-			}
+		if err := s.createTasksForUser(partner, *user.PartnerID, date); err != nil {
+			return []dto.UserTaskItem{}, nil
 		}
 		tasks, err = s.taskRepo.FindUserTasksByDate(*user.PartnerID, date)
 		if err != nil {
@@ -253,19 +246,34 @@ func (s *TaskService) GetTaskStats(userID string) (*dto.TaskStats, error) {
 }
 
 func toTaskItem(ut model.UserTask) dto.UserTaskItem {
-	return dto.UserTaskItem{
+	item := dto.UserTaskItem{
 		ID:          ut.ID,
-		Title:       ut.Task.Title,
-		Description: ut.Task.Description,
-		Category:    string(ut.Task.Category),
-		Difficulty:  ut.Task.Difficulty,
 		Status:      string(ut.Status),
+		Source:      string(ut.Source),
 		Score:       ut.Score,
 		Comment:     ut.Comment,
 		CompletedAt: ut.CompletedAt,
 		ScoredAt:    ut.ScoredAt,
 		Date:        ut.Date,
 	}
+
+	if ut.Source == model.TaskSourceAI {
+		item.Title = ut.AITitle
+		item.Description = ut.AIDescription
+		item.Category = ut.AICategory
+		item.Difficulty = ut.AIDifficulty
+	} else {
+		item.Title = ut.Task.Title
+		item.Description = ut.Task.Description
+		item.Category = string(ut.Task.Category)
+		item.Difficulty = ut.Task.Difficulty
+	}
+
+	if item.Source == "" {
+		item.Source = "template"
+	}
+
+	return item
 }
 
 func toTaskItems(tasks []model.UserTask) []dto.UserTaskItem {
@@ -274,4 +282,92 @@ func toTaskItems(tasks []model.UserTask) []dto.UserTaskItem {
 		items[i] = toTaskItem(t)
 	}
 	return items
+}
+
+// createTasksForUser creates today's tasks for a user.
+// Uses AI generation if age stage is available, otherwise falls back to templates.
+func (s *TaskService) createTasksForUser(user *model.User, userID string, date time.Time) error {
+	// Try AI generation
+	if s.openaiClient != nil && user.PartnerID != nil {
+		stage, _ := resolveAgeStage(user, s.userRepo, s.chatRepo)
+		if stage != "" {
+			ck := coupleKey(userID, *user.PartnerID)
+			dateStr := date.Format("2006-01-02")
+			aiTasks, err := getOrGenerateAITasks(s.openaiClient, s.taskRepo, ck, dateStr, stage)
+			if err == nil && len(aiTasks) > 0 {
+				for _, at := range aiTasks {
+					ut := &model.UserTask{
+						UserID:        userID,
+						Date:          date,
+						Status:        model.TaskPending,
+						Source:        model.TaskSourceAI,
+						AITitle:       at.Title,
+						AIDescription: at.Description,
+						AICategory:    at.Category,
+						AIDifficulty:  at.Difficulty,
+					}
+					_ = s.taskRepo.CreateUserTask(ut)
+				}
+				return nil
+			}
+			// AI failed — fall through to template
+		}
+	}
+
+	// Fallback: random templates
+	templates, err := s.taskRepo.FindRandomTemplates(4)
+	if err != nil || len(templates) == 0 {
+		return fmt.Errorf("no templates available")
+	}
+	for _, tmpl := range templates {
+		ut := &model.UserTask{
+			UserID: userID,
+			TaskID: tmpl.ID,
+			Date:   date,
+			Status: model.TaskPending,
+			Source: model.TaskSourceTemplate,
+		}
+		_ = s.taskRepo.CreateUserTask(ut)
+	}
+	return nil
+}
+
+// SetBabyAge sets the baby age stage for the user and immediately regenerates tasks.
+func (s *TaskService) SetBabyAge(userID string, ageStage string) error {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return errors.New(errUserNotFound)
+	}
+
+	user.BabyAgeStage = &ageStage
+	if err := s.userRepo.Update(user); err != nil {
+		return fmt.Errorf("failed to update age stage: %w", err)
+	}
+
+	// Immediate regeneration: delete today's pending tasks and AI cache
+	date := today()
+	_ = s.taskRepo.DeletePendingUserTasksByDate(userID, date)
+
+	if user.PartnerID != nil {
+		ck := coupleKey(userID, *user.PartnerID)
+		_ = s.taskRepo.DeleteAICacheByCouple(ck, date.Format("2006-01-02"))
+		// Also clear partner's pending tasks so they get regenerated too
+		_ = s.taskRepo.DeletePendingUserTasksByDate(*user.PartnerID, date)
+	}
+
+	return nil
+}
+
+// GetBabyAge returns the resolved baby age stage and its source.
+func (s *TaskService) GetBabyAge(userID string) (*dto.BabyAgeResponse, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New(errUserNotFound)
+	}
+
+	stage, source := resolveAgeStage(user, s.userRepo, s.chatRepo)
+	return &dto.BabyAgeResponse{
+		AgeStage: stage,
+		Source:   source,
+	}, nil
 }

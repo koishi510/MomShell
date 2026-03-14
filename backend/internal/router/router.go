@@ -193,6 +193,8 @@ func Setup(
 		tasks.POST("/:id/score", taskHandler.Score)
 		tasks.POST("/:id/reject", taskHandler.Reject)
 		tasks.GET("/stats", taskHandler.Stats)
+		tasks.GET("/baby-age", taskHandler.GetBabyAge)
+		tasks.PUT("/baby-age", taskHandler.SetBabyAge)
 	}
 
 	// ==================== Admin ====================

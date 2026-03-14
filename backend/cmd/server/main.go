@@ -78,7 +78,7 @@ func main() {
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
 	photoService := service.NewPhotoService(photoRepo, userRepo, chatClient, cfg.ImageModel)
 	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient)
-	taskService := service.NewTaskService(taskRepo, userRepo)
+	taskService := service.NewTaskService(taskRepo, userRepo, chatRepo, chatClient)
 
 	// Ensure AI user exists for community AI replies
 	aiUserID := ensureAIUser(userRepo)
