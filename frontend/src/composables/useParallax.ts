@@ -192,6 +192,21 @@ export function useParallax() {
   }
 
   let resizeRaf = 0;
+  let orientationTimer = 0;
+
+  function onResize() {
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(recalcParallax);
+  }
+
+  function onOrientationChange() {
+    clearTimeout(orientationTimer);
+    orientationTimer = window.setTimeout(() => {
+      recalcParallax();
+      applyParallax();
+      startLoop();
+    }, 150);
+  }
 
   onMounted(() => {
     recalcParallax();
@@ -207,18 +222,8 @@ export function useParallax() {
     document.addEventListener("touchstart", onTouchStart, { passive: true });
     document.addEventListener("touchmove", onTouchMove, { passive: true });
     document.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("resize", () => {
-      cancelAnimationFrame(resizeRaf);
-      resizeRaf = requestAnimationFrame(recalcParallax);
-    });
-    window.addEventListener("orientationchange", () => {
-      // Delay recalc to let the browser settle after orientation change
-      setTimeout(() => {
-        recalcParallax();
-        applyParallax();
-        startLoop();
-      }, 150);
-    });
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onOrientationChange);
 
     setTimeout(() => {
       hintHidden.value = true;
@@ -235,6 +240,9 @@ export function useParallax() {
     document.removeEventListener("touchstart", onTouchStart);
     document.removeEventListener("touchmove", onTouchMove);
     document.removeEventListener("wheel", onWheel);
+    window.removeEventListener("resize", onResize);
+    window.removeEventListener("orientationchange", onOrientationChange);
+    clearTimeout(orientationTimer);
   });
 
   function wasDrag(): boolean {

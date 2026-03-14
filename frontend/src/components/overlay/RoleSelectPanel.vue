@@ -157,12 +157,12 @@ async function onConfirm() {
 @media (max-width: 768px) {
   .role-select {
     flex-direction: column;
-    height: 100dvh;
     height: 100vh;
+    height: 100dvh;
   }
   .role-half {
-    height: 50dvh;
     height: 50vh;
+    height: 50dvh;
     padding: 24px 16px;
   }
   .role-title {
@@ -177,8 +177,8 @@ async function onConfirm() {
 @media (max-height: 500px) and (orientation: landscape) {
   .role-select {
     flex-direction: row;
-    height: 100dvh;
     height: 100vh;
+    height: 100dvh;
   }
   .role-half {
     height: 100%;
