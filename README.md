@@ -25,6 +25,7 @@ AI-powered wellness platform combining emotional companionship, community suppor
 | **Photo Gallery**   | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI        |
 | **Whisper**         | Audio-to-text conversation using speech recognition                                |
 | **Tasks**           | Goal-setting and task-tracking system with partner support                         |
+| **Mobile & PWA**    | Responsive mobile layout with portrait/landscape sprite configs, touch gestures, dynamic viewport units, and offline-capable service worker |
 | **Admin Panel**     | Embedded single-page admin at `/admin` — dashboard, user CRUD, config management   |
 
 ## Quick Start
@@ -55,7 +56,7 @@ MomShell/
 ├── frontend/           # Vue 3 (Vite + TypeScript + Pinia)
 │   └── src/
 │       ├── components/ # Overlay panels + beach scene + React 3D shell
-│       ├── composables/# Animation, parallax, waves, music
+│       ├── composables/# Animation, parallax, waves, music, mobile detection
 │       ├── lib/api/    # API client modules (chat, community, echo, photo, etc.)
 │       ├── stores/     # Pinia stores (auth, UI)
 │       ├── types/      # TypeScript type definitions
