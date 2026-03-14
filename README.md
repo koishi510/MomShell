@@ -1,6 +1,7 @@
 # MomShell
 
 [![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/koishi510/MomShell?style=flat&label=Release)](https://github.com/koishi510/MomShell/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue?style=flat)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?style=flat&logo=vue.js&logoColor=white)](https://vuejs.org/)
@@ -11,15 +12,15 @@ AI-powered wellness platform combining emotional companionship, community suppor
 
 ## Features
 
-| Module | Description |
-|--------|-------------|
-| **Soul Companion** | AI chat companion with conversation memory, history viewing, and emotional support |
-| **Sisterhood Bond** | Community Q&A with verified healthcare professionals and content moderation |
-| **Echo / Memoir** | Self-reflection space with AI-generated memoir stickers and partner connection |
-| **Photo Gallery** | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI |
-| **Whisper** | Audio-to-text conversation using speech recognition |
-| **Tasks** | Goal-setting and task-tracking system with partner support |
-| **Admin Panel** | Embedded single-page admin at `/admin` — dashboard, user CRUD, config management |
+| Module              | Description                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| **Soul Companion**  | AI chat companion with conversation memory, history viewing, and emotional support |
+| **Sisterhood Bond** | Community Q&A with verified healthcare professionals and content moderation        |
+| **Echo / Memoir**   | Self-reflection space with AI-generated memoir stickers and partner connection     |
+| **Photo Gallery**   | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI        |
+| **Whisper**         | Audio-to-text conversation using speech recognition                                |
+| **Tasks**           | Goal-setting and task-tracking system with partner support                         |
+| **Admin Panel**     | Embedded single-page admin at `/admin` — dashboard, user CRUD, config management   |
 
 ## Quick Start
 
@@ -71,16 +72,16 @@ make docker-build-backend
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Getting Started](docs/getting-started.md) | Installation and setup |
-| [Development](docs/development.md) | Development workflow |
-| [Configuration](docs/configuration.md) | Environment variables |
-| [Architecture](docs/architecture.md) | Technical overview |
-| [Deployment](docs/deployment.md) | Docker deployment |
-| [Features](docs/features.md) | Feature descriptions |
-| [Contributing](CONTRIBUTING.md) | Contribution guidelines |
-| [Changelog](CHANGELOG.md) | Version history |
+| Document                                   | Description             |
+| ------------------------------------------ | ----------------------- |
+| [Getting Started](docs/getting-started.md) | Installation and setup  |
+| [Development](docs/development.md)         | Development workflow    |
+| [Configuration](docs/configuration.md)     | Environment variables   |
+| [Architecture](docs/architecture.md)       | Technical overview      |
+| [Deployment](docs/deployment.md)           | Docker deployment       |
+| [Features](docs/features.md)               | Feature descriptions    |
+| [Contributing](CONTRIBUTING.md)            | Contribution guidelines |
+| [Changelog](CHANGELOG.md)                  | Version history         |
 
 ## License
 
