@@ -179,26 +179,22 @@ func (s *AdminService) CreateUser(req dto.AdminCreateUser) (*dto.AdminUserDetail
 	return s.GetUser(user.ID)
 }
 
-// UpdateUser updates user fields (role, is_active, is_banned, nickname, email)
-func (s *AdminService) UpdateUser(id, adminID string, req dto.AdminUserUpdate) (*dto.AdminUserDetail, error) {
-	if id == adminID {
-		// Prevent self-demotion / self-ban
-		if req.IsAdmin != nil && !*req.IsAdmin {
-			return nil, errors.New("不能取消自己的管理员权限")
-		}
-		if req.IsActive != nil && !*req.IsActive {
-			return nil, errors.New("不能停用自己的账号")
-		}
-		if req.IsBanned != nil && *req.IsBanned {
-			return nil, errors.New("不能封禁自己的账号")
-		}
+// validateSelfUpdate checks that an admin is not demoting, deactivating, or banning themselves.
+func validateSelfUpdate(req dto.AdminUserUpdate) error {
+	if req.IsAdmin != nil && !*req.IsAdmin {
+		return errors.New("不能取消自己的管理员权限")
 	}
-
-	user, err := s.userRepo.FindByID(id)
-	if err != nil {
-		return nil, errors.New("用户不存在")
+	if req.IsActive != nil && !*req.IsActive {
+		return errors.New("不能停用自己的账号")
 	}
+	if req.IsBanned != nil && *req.IsBanned {
+		return errors.New("不能封禁自己的账号")
+	}
+	return nil
+}
 
+// applyUserUpdates applies the non-nil fields from req onto the user model.
+func applyUserUpdates(user *model.User, req dto.AdminUserUpdate) {
 	if req.Role != nil {
 		user.Role = model.UserRole(*req.Role)
 	}
@@ -217,6 +213,22 @@ func (s *AdminService) UpdateUser(id, adminID string, req dto.AdminUserUpdate) (
 	if req.Email != nil {
 		user.Email = *req.Email
 	}
+}
+
+// UpdateUser updates user fields (role, is_active, is_banned, nickname, email)
+func (s *AdminService) UpdateUser(id, adminID string, req dto.AdminUserUpdate) (*dto.AdminUserDetail, error) {
+	if id == adminID {
+		if err := validateSelfUpdate(req); err != nil {
+			return nil, err
+		}
+	}
+
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return nil, errors.New("用户不存在")
+	}
+
+	applyUserUpdates(user, req)
 
 	if err := s.userRepo.Update(user); err != nil {
 		return nil, fmt.Errorf("更新用户失败: %w", err)

@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const errUserServiceUserNotFound = "用户不存在"
+
 type UserService struct {
 	db              *gorm.DB
 	userRepo        *repository.UserRepo
@@ -42,7 +44,7 @@ func (s *UserService) GetProfile(userID string) (*dto.UserProfile, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("用户不存在")
+			return nil, errors.New(errUserServiceUserNotFound)
 		}
 		return nil, err
 	}
@@ -84,16 +86,13 @@ func (s *UserService) GetProfile(userID string) (*dto.UserProfile, error) {
 	return profile, nil
 }
 
-func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*dto.UserProfile, error) {
-	user, err := s.userRepo.FindByID(userID)
-	if err != nil {
-		return nil, errors.New("用户不存在")
-	}
-
+// applyProfileFieldUpdates applies the individual field updates from the request to the user model.
+// Returns an error if any validation fails (e.g. duplicate username/email, invalid role).
+func (s *UserService) applyProfileFieldUpdates(user *model.User, req dto.UserProfileUpdate) error {
 	if req.Username != nil && *req.Username != user.Username {
-		exists, _ := s.userRepo.ExistsByUsername(*req.Username, userID)
+		exists, _ := s.userRepo.ExistsByUsername(*req.Username, user.ID)
 		if exists {
-			return nil, errors.New("该用户名已被使用")
+			return errors.New("该用户名已被使用")
 		}
 		user.Username = *req.Username
 	}
@@ -103,9 +102,9 @@ func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*
 	}
 
 	if req.Email != nil && *req.Email != user.Email {
-		exists, _ := s.userRepo.ExistsByEmail(*req.Email, userID)
+		exists, _ := s.userRepo.ExistsByEmail(*req.Email, user.ID)
 		if exists {
-			return nil, errors.New("该邮箱已被使用")
+			return errors.New("该邮箱已被使用")
 		}
 		user.Email = *req.Email
 	}
@@ -117,15 +116,28 @@ func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*
 	if req.Role != nil {
 		newRole := model.UserRole(*req.Role)
 		if !model.FamilyRoles[newRole] {
-			return nil, errors.New("角色只能是: mom, dad")
+			return errors.New("角色只能是: mom, dad")
 		}
 		if model.ProfessionalRoles[user.Role] {
-			return nil, errors.New("认证专业人员不能修改角色")
+			return errors.New("认证专业人员不能修改角色")
 		}
 		if user.PartnerID != nil {
-			return nil, errors.New("已绑定伴侣，无法更改身份")
+			return errors.New("已绑定伴侣，无法更改身份")
 		}
 		user.Role = newRole
+	}
+
+	return nil
+}
+
+func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*dto.UserProfile, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New(errUserServiceUserNotFound)
+	}
+
+	if err := s.applyProfileFieldUpdates(user, req); err != nil {
+		return nil, err
 	}
 
 	if err := s.userRepo.Update(user); err != nil {
@@ -139,7 +151,7 @@ func (s *UserService) UpdateProfile(userID string, req dto.UserProfileUpdate) (*
 func (s *UserService) GenerateShellCode(userID string) (*dto.UserProfile, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
-		return nil, errors.New("用户不存在")
+		return nil, errors.New(errUserServiceUserNotFound)
 	}
 
 	if user.Role != model.RoleMom {
@@ -169,7 +181,7 @@ func (s *UserService) GenerateShellCode(userID string) (*dto.UserProfile, error)
 func (s *UserService) BindPartner(userID string, shellCode string) (*dto.UserProfile, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
-		return nil, errors.New("用户不存在")
+		return nil, errors.New(errUserServiceUserNotFound)
 	}
 
 	if user.Role != model.RoleDad {
@@ -218,7 +230,7 @@ func (s *UserService) BindPartner(userID string, shellCode string) (*dto.UserPro
 func (s *UserService) UnbindPartner(userID string) (*dto.UserProfile, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
-		return nil, errors.New("用户不存在")
+		return nil, errors.New(errUserServiceUserNotFound)
 	}
 
 	if user.PartnerID == nil {
