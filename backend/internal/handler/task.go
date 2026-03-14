@@ -123,3 +123,33 @@ func (h *TaskHandler) Stats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
+
+// GET /api/v1/tasks/baby-age
+func (h *TaskHandler) GetBabyAge(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	resp, err := h.taskService.GetBabyAge(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// PUT /api/v1/tasks/baby-age
+func (h *TaskHandler) SetBabyAge(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req dto.SetBabyAgeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.taskService.SetBabyAge(userID, req.AgeStage); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
