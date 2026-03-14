@@ -3,7 +3,7 @@
     <div class="task-panel">
       <!-- Dad view: daily tasks -->
       <template v-if="isDad">
-        <button class="age-menu-btn" @click="showAgeMenu = !showAgeMenu" title="修改宝宝年龄">⋯</button>
+        <button class="age-menu-btn" @click="showAgeMenu = !showAgeMenu" title="修改宝宝年龄" aria-label="修改宝宝年龄" :aria-expanded="showAgeMenu">⋯</button>
         <h2 class="panel-title">今日任务</h2>
         <p class="panel-subtitle">
           完成任务，一起成长
@@ -48,7 +48,7 @@
 
       <!-- Mom view: partner tasks review -->
       <template v-else>
-        <button class="age-menu-btn" @click="showAgeMenu = !showAgeMenu" title="修改宝宝年龄">⋯</button>
+        <button class="age-menu-btn" @click="showAgeMenu = !showAgeMenu" title="修改宝宝年龄" aria-label="修改宝宝年龄" :aria-expanded="showAgeMenu">⋯</button>
         <h2 class="panel-title">伴侣任务</h2>
         <p class="panel-subtitle">
           查看他的完成情况

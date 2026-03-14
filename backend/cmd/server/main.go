@@ -65,7 +65,7 @@ func main() {
 	if cfg.OpenAIAPIKey != "" {
 		chatClient = openai.NewClient(cfg.OpenAIAPIKey, cfg.OpenAIBaseURL, cfg.OpenAIModel)
 	} else {
-		log.Println("[WARN] OPENAI_API_KEY not set, chat service will not work")
+		log.Println("[WARN] OPENAI_API_KEY not set, chat and AI task generation will not work")
 		chatClient = openai.NewClient("dummy", cfg.OpenAIBaseURL, cfg.OpenAIModel)
 	}
 
@@ -78,7 +78,13 @@ func main() {
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
 	photoService := service.NewPhotoService(photoRepo, userRepo, chatClient, cfg.ImageModel)
 	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient)
-	taskService := service.NewTaskService(taskRepo, userRepo, chatRepo, chatClient)
+
+	// Pass nil to task service when no real API key — avoids dummy client network calls
+	var taskAIClient *openai.Client
+	if cfg.OpenAIAPIKey != "" {
+		taskAIClient = chatClient
+	}
+	taskService := service.NewTaskService(taskRepo, userRepo, chatRepo, taskAIClient)
 
 	// Ensure AI user exists for community AI replies
 	aiUserID := ensureAIUser(userRepo)
