@@ -290,6 +290,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useUiStore } from '@/stores/ui'
+import { useIsMobile } from '@/composables/useIsMobile'
 import {
   getQuestions,
   getQuestion,
@@ -346,6 +347,7 @@ function onAvatarError(e: Event) {
 
 const uiStore = useUiStore()
 const auth = useAuthStore()
+const { isMobile } = useIsMobile()
 
 const visible = computed(() => uiStore.activePanel === 'bar')
 
@@ -420,14 +422,19 @@ function getNoteImage(post: QuestionListItem): string {
   return NOTE_VARIANTS[simpleHash(post.id) % 3]
 }
 
-// Dynamic card layout: 4 cols with slight edge overlap, shuffled per row
-const CARD_WIDTH_PCT = 26 // card width in %
-const COLS = 4 // cards per row
+// Dynamic card layout: responsive cols with slight edge overlap, shuffled per row
+const CARD_WIDTH_PCT_DESKTOP = 26
+const CARD_WIDTH_PCT_MOBILE = 42
+const COLS_DESKTOP = 4
+const COLS_MOBILE = 2
 const ROW_HEIGHT_VH = 24 // vertical spacing between rows in vh
 const PADDING_LEFT = 3 // left margin in %
 
+const COLS = computed(() => isMobile.value ? COLS_MOBILE : COLS_DESKTOP)
+const CARD_WIDTH_PCT = computed(() => isMobile.value ? CARD_WIDTH_PCT_MOBILE : CARD_WIDTH_PCT_DESKTOP)
+
 // Step width < card width → slight overlap on edges (~20% of card width)
-const STEP_WIDTH = (100 - PADDING_LEFT * 2 - CARD_WIDTH_PCT) / (COLS - 1)
+const STEP_WIDTH = computed(() => (100 - PADDING_LEFT * 2 - CARD_WIDTH_PCT.value) / (COLS.value - 1))
 
 // Seeded shuffle: deterministically shuffle column indices for each row
 function shuffledCols(cols: number, seed: number): number[] {
@@ -445,16 +452,17 @@ function getCardStyle(post: QuestionListItem) {
   const idx = posts.value.indexOf(post)
   const total = posts.value.length
   const hash = simpleHash(post.id)
+  const cols = COLS.value
 
-  const row = Math.floor(idx / COLS)
-  const posInRow = idx % COLS
+  const row = Math.floor(idx / cols)
+  const posInRow = idx % cols
 
   // Shuffle column order per row for random horizontal placement
   const rowSeed = row * 9973 + 42
-  const colOrder = shuffledCols(COLS, rowSeed)
+  const colOrder = shuffledCols(cols, rowSeed)
   const col = colOrder[posInRow]
 
-  const baseLeft = PADDING_LEFT + col * STEP_WIDTH
+  const baseLeft = PADDING_LEFT + col * STEP_WIDTH.value
   const baseTop = 3 + row * ROW_HEIGHT_VH
 
   // Moderate jitter: enough scatter to feel organic, not enough to fully cover neighbors
@@ -471,7 +479,7 @@ function getCardStyle(post: QuestionListItem) {
 }
 
 const scatterHeight = computed(() => {
-  const rows = Math.ceil(posts.value.length / COLS)
+  const rows = Math.ceil(posts.value.length / COLS.value)
   const height = rows * ROW_HEIGHT_VH + 15
   return `${Math.max(50, height)}vh`
 })
@@ -1706,5 +1714,86 @@ onUnmounted(() => {
   resize: vertical;
   font-family: inherit;
   box-sizing: border-box;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .close-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .bar-content {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .board-container {
+    width: 100%;
+    height: auto;
+    flex: 1;
+  }
+
+  .board-scroll-area {
+    padding-top: 60px;
+    padding-bottom: 120px;
+  }
+
+  .note-card {
+    width: 44%;
+  }
+
+  .note-card-pro {
+    width: 44%;
+  }
+
+  .note-content h4 {
+    font-size: 14px;
+  }
+
+  .note-content p {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+  }
+
+  .side-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    gap: 24px;
+    padding: 12px 16px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 10;
+    background: rgba(58, 47, 40, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .side-btn {
+    transform: none !important;
+  }
+
+  .side-btn img {
+    width: 56px;
+    height: auto;
+  }
+
+  .paper-textarea,
+  .paper-input {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .note-card,
+  .note-card-pro {
+    width: 44%;
+  }
+
+  .note-content h4 {
+    font-size: 13px;
+  }
 }
 </style>
