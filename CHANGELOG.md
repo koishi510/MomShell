@@ -5,9 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-03-15
 
 ### Added
+
+#### Mobile Responsive & PWA
+
+- **Mobile-first responsive design**: Full mobile adaptation for the beach scene, overlay panels, and all feature pages
+- **Responsive sprite positioning**: `SpriteData` interface extended with `mobile` and `landscape` override fields; `spriteStyle()` and `labelStyle()` functions select the correct tier (landscape > mobile > desktop)
+- **Landscape orientation support**: Separate sprite positioning config for landscape mode via `useIsMobile` composable returning `isMobile`, `isSmall`, and `isLandscape` reactive refs
+- **Portrait scroll range**: Increased horizontal parallax scroll distance on portrait mobile (`maxOffset` multiplier 1.5x vs 1.2x desktop)
+- **PWA service worker**: Service worker registration for offline caching, gated behind `import.meta.env.PROD` to prevent stale-cache issues during development
+- **Touch gesture support**: `touch-action: pan-x` on `.scene` element enables horizontal swipe navigation on mobile
+- **Dynamic viewport units**: `dvh`/`vh` fallback pattern across all mobile and landscape media queries for correct viewport height on mobile browsers with dynamic toolbars
 
 #### Navigation & Scene Interaction
 
@@ -26,7 +36,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **dvh/vh fallback order**: Corrected dynamic viewport height fallback across `mobile.css`, `OverlayPanel.vue`, and `RoleSelectPanel.vue` — `vh` first (fallback), `dvh` second (override)
+- **touch-action scope**: Moved `touch-action: pan-x` from `body` to `.scene` only, so overlay panel content can scroll vertically
+- **Event listener leaks**: Extracted anonymous `resize` and `orientationchange` handlers to named functions with proper cleanup in `onUnmounted` (`useParallax.ts`)
+- **useIsMobile layout flash**: Compute initial `isMobile`/`isSmall`/`isLandscape` values synchronously in `setup()` to prevent false → true flicker on first render
+- **useIsMobile MediaQueryList reuse**: `update()` reads `.matches` from stored MQL objects instead of recreating them on each call
 - **Go static analysis**: Replaced `fmt.Errorf` with `errors.New` for constant error strings across `photo.go`, `task.go`, and `whisper.go` (12 occurrences, SA1006)
+
+### Security
+
+- **Dockerfile hardening**: Replaced `COPY . .` with explicit file/directory copies in both `frontend/Dockerfile` and `backend/Dockerfile` to prevent leaking secrets, `.env` files, or unintended files into container images
+- **Go version alignment**: Updated `backend/Dockerfile` from `golang:1.23-alpine` to `golang:1.25-alpine` to match `go.mod` requirement
 
 ### Performance
 
