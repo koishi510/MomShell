@@ -166,22 +166,30 @@ function initScoreMap(taskList: UserTaskItem[]) {
   }
 }
 
+function mergeTaskFields(existing: UserTaskItem, incoming: UserTaskItem) {
+  if (existing.status !== incoming.status) existing.status = incoming.status
+  if (existing.score !== incoming.score) existing.score = incoming.score
+  if (existing.comment !== incoming.comment) existing.comment = incoming.comment
+  if (existing.completed_at !== incoming.completed_at) existing.completed_at = incoming.completed_at
+  if (existing.scored_at !== incoming.scored_at) existing.scored_at = incoming.scored_at
+}
+
+function mergeTaskList(taskList: UserTaskItem[]) {
+  for (const incoming of taskList) {
+    const existing = tasks.value.find((t) => t.id === incoming.id)
+    if (existing) {
+      mergeTaskFields(existing, incoming)
+    }
+  }
+}
+
 async function pollTasks() {
   try {
     const [taskList, taskStats] = await Promise.all([
       isDad.value ? getDailyTasks() : getPartnerTasks(),
       getTaskStats(),
     ])
-    for (const incoming of taskList) {
-      const existing = tasks.value.find((t) => t.id === incoming.id)
-      if (existing) {
-        if (existing.status !== incoming.status) existing.status = incoming.status
-        if (existing.score !== incoming.score) existing.score = incoming.score
-        if (existing.comment !== incoming.comment) existing.comment = incoming.comment
-        if (existing.completed_at !== incoming.completed_at) existing.completed_at = incoming.completed_at
-        if (existing.scored_at !== incoming.scored_at) existing.scored_at = incoming.scored_at
-      }
-    }
+    mergeTaskList(taskList)
     if (stats.value?.xp !== taskStats.xp || stats.value?.level !== taskStats.level) {
       stats.value = taskStats
     }
