@@ -393,7 +393,7 @@ if [ -d "$PROJECT_ROOT/frontend/node_modules" ]; then
 fi
 # Use Chinese mirror for Puppeteer's Chromium download if needed
 export PUPPETEER_DOWNLOAD_BASE_URL="${PUPPETEER_DOWNLOAD_BASE_URL:-https://registry.npmmirror.com/mirrors/chrome-for-testing}"
-(cd "$PROJECT_ROOT/frontend" && npm install)
+(cd "$PROJECT_ROOT/frontend" && npm install --ignore-scripts)
 success "Frontend dependencies installed"
 
 # ============================================
