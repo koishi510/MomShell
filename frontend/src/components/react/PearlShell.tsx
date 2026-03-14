@@ -5,8 +5,15 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { Hands, Results } from "@mediapipe/hands";
-import { Camera } from "@mediapipe/camera_utils";
 import gsap from "gsap";
+
+// --- Performance Tuning Constants ---
+const MEDIAPIPE_MODEL_COMPLEXITY = 0; // 0=lite (fast), 1=standard
+const MEDIAPIPE_FRAME_INTERVAL_MS = 100; // ms between inference calls (~10fps)
+const CAMERA_WIDTH = 320;
+const CAMERA_HEIGHT = 240;
+const RENDER_THROTTLE_MS = 33; // ~30fps cap when hand tracking active
+const CAMERA_FOLLOW_THROTTLE_MS = 100;
 
 // --- Props Interface ---
 export interface PearlShellProps {
@@ -211,7 +218,10 @@ export default function PearlShell({
   const handPositionRef = useRef<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
   const gestureBufferRef = useRef<string[]>([]);
   const stableGestureRef = useRef<string>("UNKNOWN");
-  const GESTURE_STABILITY_FRAMES = 5;
+  const streamRef = useRef<MediaStream | null>(null);
+  const handTrackingActiveRef = useRef(false);
+  const lastCameraFollowTimeRef = useRef(0);
+  const GESTURE_STABILITY_FRAMES = 3;
 
   // Debug refs
   const rawGestureRef = useRef<string>("UNKNOWN");
@@ -442,9 +452,17 @@ export default function PearlShell({
     const clock = new THREE.Clock();
     let animFrameId: number;
     const prevShellPos = new THREE.Vector3();
+    let lastRenderTime = 0;
 
     const animate = () => {
       animFrameId = requestAnimationFrame(animate);
+
+      // Throttle to ~30fps when hand tracking is active to reduce GPU contention
+      if (handTrackingActiveRef.current) {
+        const now = performance.now();
+        if (now - lastRenderTime < RENDER_THROTTLE_MS) return;
+        lastRenderTime = now;
+      }
 
       const time = clock.getElapsedTime();
       stateRef.current.time = time;
@@ -858,7 +876,7 @@ export default function PearlShell({
 
     let cancelled = false;
     let handsInstance: Hands | null = null;
-    let cameraInstance: Camera | null = null;
+    let inferenceFrameId: number | null = null;
 
     const initMediaPipe = async () => {
       const hands = new Hands({
@@ -875,13 +893,14 @@ export default function PearlShell({
 
       hands.setOptions({
         maxNumHands: 1,
-        modelComplexity: 1,
+        modelComplexity: MEDIAPIPE_MODEL_COMPLEXITY,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
       });
 
       hands.onResults((results: Results) => {
         if (cancelled) return;
+        handTrackingActiveRef.current = true;
         if (
           !results.multiHandLandmarks ||
           results.multiHandLandmarks.length === 0
@@ -932,6 +951,11 @@ export default function PearlShell({
           detectedGesture !== "PEACE";
 
         if (shouldFollowCamera && cameraRef.current && controlsRef.current) {
+          const now = performance.now();
+          if (now - lastCameraFollowTimeRef.current < CAMERA_FOLLOW_THROTTLE_MS)
+            return;
+          lastCameraFollowTimeRef.current = now;
+
           const x = (landmarks[9].x - 0.5) * 2;
           const y = -(landmarks[9].y - 0.5) * 2;
           const targetX = x * 20;
@@ -941,6 +965,7 @@ export default function PearlShell({
             y: targetY,
             duration: 0.5,
             ease: "power1.out",
+            overwrite: true,
           });
         }
       });
@@ -950,22 +975,36 @@ export default function PearlShell({
         return;
       }
 
-      const cam = new Camera(videoRef.current, {
-        onFrame: async () => {
-          if (!cancelled && videoRef.current) {
-            await hands.send({ image: videoRef.current });
-          }
-        },
-        width: 640,
-        height: 480,
-      });
-      cameraInstance = cam;
-
-      const originalAlert = window.alert;
-      window.alert = () => {};
-
+      // Custom getUserMedia + rAF loop (replaces @mediapipe/camera_utils Camera)
+      // Lower resolution + throttled inference to reduce GPU contention
       try {
-        await cam.start();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: CAMERA_WIDTH, height: CAMERA_HEIGHT },
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          hands.close();
+          return;
+        }
+        streamRef.current = stream;
+        const video = videoRef.current;
+        video.srcObject = stream;
+        await video.play();
+
+        let lastInferenceTime = 0;
+        const processFrame = async () => {
+          if (cancelled) return;
+          inferenceFrameId = requestAnimationFrame(processFrame);
+
+          const now = performance.now();
+          if (now - lastInferenceTime < MEDIAPIPE_FRAME_INTERVAL_MS) return;
+          lastInferenceTime = now;
+
+          if (video.readyState >= 2) {
+            await hands.send({ image: video });
+          }
+        };
+        inferenceFrameId = requestAnimationFrame(processFrame);
       } catch (err: unknown) {
         console.error("Camera start failed:", err);
         if (!cancelled) {
@@ -975,12 +1014,13 @@ export default function PearlShell({
               "Failed to access camera. Please ensure permissions are granted.",
           );
         }
-      } finally {
-        window.alert = originalAlert;
       }
 
       if (cancelled) {
-        cam.stop();
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((t) => t.stop());
+          streamRef.current = null;
+        }
         hands.close();
       }
     };
@@ -989,8 +1029,13 @@ export default function PearlShell({
 
     return () => {
       cancelled = true;
-      if (cameraInstance) cameraInstance.stop();
+      if (inferenceFrameId !== null) cancelAnimationFrame(inferenceFrameId);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
       if (handsInstance) handsInstance.close();
+      handTrackingActiveRef.current = false;
       gestureBufferRef.current = [];
     };
   }, []);
