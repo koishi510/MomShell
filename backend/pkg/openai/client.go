@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -224,7 +225,8 @@ func (c *Client) GenerateImage(ctx context.Context, model, prompt string) (*Imag
 }
 
 func extractImagesFromTaskStatus(status *taskStatusResponse) *ImageResponse {
-	if status.TaskStatus != "SUCCEED" && status.TaskStatus != "SUCCEEDED" {
+	upper := strings.ToUpper(status.TaskStatus)
+	if upper != "SUCCEED" && upper != "SUCCEEDED" {
 		return nil
 	}
 
@@ -282,10 +284,10 @@ func handlePollStatus(status *taskStatusResponse) (*ImageResponse, error) {
 	if imgResp := extractImagesFromTaskStatus(status); imgResp != nil {
 		return imgResp, nil
 	}
-	switch status.TaskStatus {
-	case "SUCCEED", "SUCCEEDED", "succeeded":
+	switch strings.ToUpper(status.TaskStatus) {
+	case "SUCCEED", "SUCCEEDED":
 		return nil, fmt.Errorf("image task succeeded but no results in response")
-	case "FAILED", "failed":
+	case "FAILED":
 		msg := status.Message
 		if msg == "" {
 			msg = "image generation task failed"
