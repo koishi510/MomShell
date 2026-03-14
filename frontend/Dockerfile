@@ -2,7 +2,9 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
-COPY . .
+COPY index.html tsconfig.json tsconfig.node.json vite.config.ts env.d.ts eslint.config.js ./
+COPY src/ src/
+COPY public/ public/
 ARG VITE_API_BASE_URL=
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
