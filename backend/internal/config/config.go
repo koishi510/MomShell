@@ -48,7 +48,7 @@ func Load() *Config {
 	_ = godotenv.Overload("../.env")
 
 	cfg := &Config{
-		DatabaseURL:               getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/momshell?sslmode=disable"),
+		DatabaseURL:               getEnv("DATABASE_URL", ""),
 		JWTSecretKey:              getEnv("JWT_SECRET_KEY", "change-me-in-production"),
 		JWTAlgorithm:              "HS256",
 		JWTAccessTokenExpireMin:   getEnvInt("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 30),
