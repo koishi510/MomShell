@@ -671,4 +671,37 @@ async function onSend() {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .chat-header {
+    padding: 16px 48px 12px 16px;
+  }
+
+  .messages {
+    padding: 0 16px 12px;
+  }
+
+  .msg-center {
+    max-width: 100%;
+  }
+
+  .assistant-text {
+    max-width: 100%;
+  }
+
+  .chat-input-area {
+    padding: 0 16px 16px;
+  }
+
+  .chat-input {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+
+  .memory-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
 </style>
