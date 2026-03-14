@@ -17,6 +17,12 @@ export interface SpriteData {
     top?: string;
     width?: string;
   };
+  /** Override position/size on mobile landscape (max-height: 500px, orientation: landscape) */
+  landscape?: {
+    left?: string;
+    top?: string;
+    width?: string;
+  };
 }
 
 import carImg from "@/assets/images/car.png";
@@ -38,6 +44,7 @@ export const SPRITES: SpriteData[] = [
     labelSize: "1.2rem",
     labelOffsetY: "-7%",
     mobile: { width: "60vw", left: "38%", top: "26%" },
+    landscape: { width: "40vw", left: "38%", top: "-8%" },
   },
 
   {
@@ -50,6 +57,7 @@ export const SPRITES: SpriteData[] = [
     labelSize: "1.2rem",
     labelOffsetY: "-9%",
     mobile: { width: "70vw", left: "21%", top: "22%" },
+    landscape: { width: "45vw", left: "26%", top: "-15%" },
   },
 
   {
@@ -61,7 +69,8 @@ export const SPRITES: SpriteData[] = [
     label: "智聊助手",
     labelSize: "1.2rem",
     labelOffsetY: "-18%",
-    mobile: { width: "45vw", top: "16%" },
+    mobile: { width: "45vw", top: "26%", left: "71%" },
+    landscape: { width: "25vw", left: "66%", top: "5%" },
   },
 
   {
@@ -72,6 +81,7 @@ export const SPRITES: SpriteData[] = [
     width: "6vw",
     zIndex: 10,
     mobile: { width: "8vw", left: "49%", top: "18%" },
+    landscape: { width: "6vw", left: "53%", top: "10%" },
   },
 
   {
@@ -85,6 +95,7 @@ export const SPRITES: SpriteData[] = [
     label: "生成相片",
     labelSize: "1.2rem",
     mobile: { width: "12vw", left: "52%", top: "43%" },
+    landscape: { width: "6vw", left: "48%", top: "53%" },
   },
 
   {
@@ -98,6 +109,7 @@ export const SPRITES: SpriteData[] = [
     labelSize: "1.2rem",
     labelOffsetY: "-6%",
     mobile: { width: "40vw", left: "60%", top: "30%" },
+    landscape: { width: "30vw", left: "56%", top: "-3%" },
   },
 
   {
@@ -110,5 +122,6 @@ export const SPRITES: SpriteData[] = [
     label: "心愿签",
     labelSize: "1.2rem",
     mobile: { width: "15vw", left: "56%", top: "31%" },
+    landscape: { width: "8vw", left: "50%", top: "15%" },
   },
 ];

@@ -46,10 +46,10 @@ import { useIsMobile } from '@/composables/useIsMobile'
 import { createSeededRandom } from '@/utils/random'
 
 const rand = createSeededRandom(400)
-const { isMobile } = useIsMobile()
+const { isMobile, isLandscape } = useIsMobile()
 
 function spriteStyle(s: typeof SPRITES[number]) {
-  const m = isMobile.value ? s.mobile : undefined
+  const m = isLandscape.value ? s.landscape : isMobile.value ? s.mobile : undefined
   return {
     left: m?.left ?? s.left,
     top: m?.top ?? s.top,
@@ -60,7 +60,7 @@ function spriteStyle(s: typeof SPRITES[number]) {
 
 function labelStyle(s: typeof SPRITES[number]) {
   return {
-    fontSize: isMobile.value ? undefined : (s.labelSize ?? undefined),
+    fontSize: (isMobile.value || isLandscape.value) ? undefined : (s.labelSize ?? undefined),
     marginTop: s.labelOffsetY ?? undefined,
   }
 }
