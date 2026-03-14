@@ -6,6 +6,16 @@
           <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
         </svg>
       </button>
+      <button class="mobile-profile-btn" @click="openProfile" aria-label="个人资料">
+        <img :src="profileAvatarUrl" alt="avatar" class="mobile-profile-avatar" @error="onAvatarImgError" />
+      </button>
+      <button class="mobile-suitcase-btn" @click="openSuitcase" aria-label="照片集">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="1.8"/>
+        </svg>
+        <span v-if="allPhotos.length > 0" class="mobile-suitcase-badge">{{ allPhotos.length }}</span>
+      </button>
 
       <div class="car-layout">
         <!-- LEFT: Photo Wall -->
@@ -1060,6 +1070,13 @@ watch(visible, async (isVisible) => {
   background-color: #3a2f28;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .car-page {
+    background-image: none;
+    background-color: #d4c4a8;
+  }
 }
 
 .close-btn {
@@ -2435,5 +2452,217 @@ watch(visible, async (isVisible) => {
 
 .modal-zoom-leave-to .detail-modal {
   transform: scale(0.95) translateY(10px);
+}
+
+/* ── Mobile profile button ── */
+.mobile-profile-btn {
+  display: none;
+}
+
+.mobile-suitcase-btn {
+  display: none;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .mobile-profile-btn {
+    display: flex;
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    overflow: hidden;
+  }
+
+  .mobile-profile-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.08);
+  }
+
+  .mobile-profile-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .mobile-suitcase-btn {
+    display: flex;
+    position: absolute;
+    bottom: 24px;
+    right: 16px;
+    z-index: 10;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background: rgba(138, 106, 74, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(200, 160, 108, 0.5);
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .mobile-suitcase-btn:hover {
+    background: rgba(138, 106, 74, 1);
+    transform: scale(1.08);
+  }
+
+  .mobile-suitcase-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: #e74c5e;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .close-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .car-layout {
+    flex-direction: column;
+    padding: 0;
+    gap: 0;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+  }
+
+  .right-section {
+    display: none;
+  }
+
+  .photo-wall {
+    flex: none;
+    width: 94vw;
+    max-width: none;
+    height: calc(100vh - 120px);
+    height: calc(100dvh - 120px);
+    padding: 0;
+    display: block;
+    align-self: center;
+    background: url('@/assets/images/board_med.png') repeat center / cover;
+    border: 8px solid #c8a06c;
+    border-radius: 6px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3),
+                inset 0 0 12px rgba(0, 0, 0, 0.06);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .pearl-shell-trigger-zone {
+    display: none;
+  }
+
+  .pearl-shell-embedded {
+    display: none;
+  }
+
+  .photo-grid {
+    position: relative;
+    z-index: auto;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 100%;
+    width: 100%;
+    gap: 10px;
+    padding: 16px;
+    pointer-events: auto;
+    box-sizing: border-box;
+  }
+
+  .photo-frame {
+    transform: none !important;
+    filter: brightness(1);
+    opacity: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .photo-frame:hover:not(.empty) {
+    transform: none !important;
+  }
+
+  .photo-frame.empty {
+    display: none;
+  }
+
+  .suitcase-modal {
+    width: 95vw;
+    max-height: 90dvh;
+    max-height: 90vh;
+    padding: 20px;
+  }
+
+  .suitcase-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .detail-modal {
+    width: 92vw;
+    max-height: 88dvh;
+    max-height: 88vh;
+  }
+
+  .detail-image {
+    max-height: 40vh;
+  }
+
+  .profile-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100dvh;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 24px 16px;
+  }
+
+  .modal-content {
+    width: 100vw;
+    max-height: 100dvh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .photo-wall {
+    width: 96vw;
+  }
+
+  .photo-grid {
+    gap: 8px;
+    padding: 12px;
+  }
 }
 </style>
