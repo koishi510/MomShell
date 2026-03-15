@@ -334,7 +334,7 @@ func (s *TaskService) createTasksForUser(user *model.User, userID string, date t
 }
 
 // SetBabyAge sets the baby age stage for the user and immediately regenerates tasks.
-func (s *TaskService) SetBabyAge(userID string, ageStage string) error {
+func (s *TaskService) SetBabyAge(userID, ageStage string) error {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
 		return errors.New(errUserNotFound)

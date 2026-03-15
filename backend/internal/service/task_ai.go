@@ -41,6 +41,24 @@ func coupleKey(a, b string) string {
 	return b + "-" + a
 }
 
+// resolveAgeStageFromChatMemory tries to infer the age stage from chat memory facts.
+func resolveAgeStageFromChatMemory(chatRepo *repository.ChatRepo, familyIDs []string) (string, bool) {
+	facts, err := chatRepo.FindFactsByFamilyIDs(familyIDs)
+	if err != nil {
+		return "", false
+	}
+	for _, f := range facts {
+		lower := strings.ToLower(f.Content)
+		if strings.Contains(lower, "宝宝") || strings.Contains(lower, "baby") || strings.Contains(lower, "孩子") {
+			stage := inferAgeStageFromMemory(f.Content)
+			if stage != "" {
+				return stage, true
+			}
+		}
+	}
+	return "", false
+}
+
 // resolveAgeStage returns the baby age stage for the couple, checking:
 // 1. The user's own BabyAgeStage
 // 2. The partner's BabyAgeStage
@@ -69,17 +87,8 @@ func resolveAgeStage(
 		if user.PartnerID != nil {
 			familyIDs = append(familyIDs, *user.PartnerID)
 		}
-		facts, err := chatRepo.FindFactsByFamilyIDs(familyIDs)
-		if err == nil {
-			for _, f := range facts {
-				lower := strings.ToLower(f.Content)
-				if strings.Contains(lower, "宝宝") || strings.Contains(lower, "baby") || strings.Contains(lower, "孩子") {
-					stage := inferAgeStageFromMemory(f.Content)
-					if stage != "" {
-						return stage, "memory"
-					}
-				}
-			}
+		if s, found := resolveAgeStageFromChatMemory(chatRepo, familyIDs); found {
+			return s, "memory"
 		}
 	}
 

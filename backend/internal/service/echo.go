@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	memoirDefaultTitle = "一段温柔的回响"
-	memoirKeyTitle     = "title"
-	memoirKeyContent   = "content"
+	memoirDefaultTitle  = "一段温柔的回响"
+	memoirKeyTitle      = "title"
+	memoirKeyContent    = "content"
+	trimWhitespaceChars = " \t\n\r"
 )
 
 type EchoService struct {
@@ -319,13 +320,13 @@ func parseMemoirLLMResponse(content string) map[string]interface{} {
 func cleanMemoirText(s string) string {
 	s = strings.TrimSpace(s)
 	// Remove trailing markdown code fences and JSON braces
-	s = strings.TrimRight(s, " \t\n\r")
+	s = strings.TrimRight(s, trimWhitespaceChars)
 	for {
 		trimmed := s
 		trimmed = strings.TrimSuffix(trimmed, "```")
 		trimmed = strings.TrimSuffix(trimmed, "}")
 		trimmed = strings.TrimSuffix(trimmed, `"`)
-		trimmed = strings.TrimRight(trimmed, " \t\n\r")
+		trimmed = strings.TrimRight(trimmed, trimWhitespaceChars)
 		if trimmed == s {
 			break
 		}
@@ -337,7 +338,7 @@ func cleanMemoirText(s string) string {
 		trimmed = strings.TrimPrefix(trimmed, "```json")
 		trimmed = strings.TrimPrefix(trimmed, "```")
 		trimmed = strings.TrimPrefix(trimmed, "{")
-		trimmed = strings.TrimLeft(trimmed, " \t\n\r")
+		trimmed = strings.TrimLeft(trimmed, trimWhitespaceChars)
 		if trimmed == s {
 			break
 		}
