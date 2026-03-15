@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -203,10 +205,15 @@ func ensureAIUser(userRepo *repository.UserRepo) string {
 		aiUsername = "xiaoshiguang"
 		log.Println("[WARN] AI_USER_USERNAME not set, using default: xiaoshiguang")
 	}
-	aiPassword := os.Getenv("AI_USER_PASSWORD")
-	if aiPassword == "" {
-		aiPassword = "ai-user-no-login"
-		log.Println("[WARN] AI_USER_PASSWORD not set, using default password")
+	aiPasswd := os.Getenv("AI_USER_PASSWORD")
+	if aiPasswd == "" {
+		// Generate a random password; AI user never logs in interactively.
+		b := make([]byte, 16)
+		if _, err := rand.Read(b); err != nil {
+			log.Fatalf("failed to generate random AI user password: %v", err)
+		}
+		aiPasswd = hex.EncodeToString(b)
+		log.Println("[WARN] AI_USER_PASSWORD not set, using random password")
 	}
 
 	user, err := userRepo.FindByUsernameOrEmail(aiUsername)
@@ -214,7 +221,7 @@ func ensureAIUser(userRepo *repository.UserRepo) string {
 		return user.ID
 	}
 
-	hash, err := password.Hash(aiPassword)
+	hash, err := password.Hash(aiPasswd)
 	if err != nil {
 		log.Printf("Failed to hash AI user password: %v", err)
 		return ""
