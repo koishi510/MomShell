@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"time"
 
 	"github.com/momshell/backend/internal/dto"
@@ -256,6 +257,10 @@ func (s *CommunityService) GetQuestion(questionID, currentUserID string) (*dto.Q
 }
 
 func (s *CommunityService) CreateQuestion(req dto.QuestionCreate, author *model.User) (*model.Question, error) {
+	// Sanitize user content
+	req.Title = sanitizeHTML(req.Title)
+	req.Content = sanitizeHTML(req.Content)
+
 	// Content moderation
 	titleDecision := s.moderation.ModerateText(req.Title)
 	if titleDecision.Result == model.ModerationRejected {
@@ -316,6 +321,8 @@ func (s *CommunityService) moderateAndUpdateTextField(q *model.Question, newText
 	if newText == nil {
 		return nil
 	}
+	sanitized := sanitizeHTML(*newText)
+	newText = &sanitized
 	decision := s.moderation.ModerateText(*newText)
 	if decision.Result == model.ModerationRejected {
 		return fmt.Errorf("%s审核未通过: %s", fieldName, derefStr(decision.Reason))
@@ -449,6 +456,9 @@ func (s *CommunityService) GetAnswers(questionID string, params dto.AnswerListPa
 }
 
 func (s *CommunityService) CreateAnswer(questionID string, req dto.AnswerCreate, author *model.User) (*model.Answer, error) {
+	// Sanitize user content
+	req.Content = sanitizeHTML(req.Content)
+
 	// Check question exists
 	_, err := s.questionRepo.FindByID(questionID)
 	if err != nil {
@@ -514,6 +524,8 @@ func (s *CommunityService) updateAnswerContent(a *model.Answer, content *string)
 	if content == nil {
 		return nil
 	}
+	sanitized := sanitizeHTML(*content)
+	content = &sanitized
 	decision := s.moderation.ModerateText(*content)
 	if decision.Result == model.ModerationRejected {
 		return fmt.Errorf(errContentModerationFailed, derefStr(decision.Reason))
@@ -668,6 +680,9 @@ func (s *CommunityService) GetComments(answerID, currentUserID string) ([]dto.Co
 }
 
 func (s *CommunityService) CreateComment(answerID string, req dto.CommentCreate, user *model.User) (*dto.CommentListItem, error) {
+	// Sanitize user content
+	req.Content = sanitizeHTML(req.Content)
+
 	// Check answer exists
 	_, err := s.answerRepo.FindByID(answerID)
 	if err != nil {
@@ -735,6 +750,8 @@ func (s *CommunityService) UpdateComment(commentID string, req dto.CommentUpdate
 	if comment.AuthorID != user.ID && !user.IsAdmin {
 		return nil, errors.New("无权修改此评论")
 	}
+
+	req.Content = sanitizeHTML(req.Content)
 
 	decision := s.moderation.ModerateText(req.Content)
 	if decision.Result == model.ModerationRejected {
@@ -807,6 +824,48 @@ func (s *CommunityService) ToggleLike(userID, targetType, targetID string) (bool
 	s.updateTargetLikeCount(targetType, targetID, 1)
 	count := s.getTargetLikeCount(targetType, targetID)
 	return true, count, nil
+}
+
+// AddLike creates a like only if one doesn't already exist. Returns the
+// current state and count without toggling.
+func (s *CommunityService) AddLike(userID, targetType, targetID string) (bool, int, error) {
+	_, err := s.interactionRepo.FindLike(userID, targetType, targetID)
+	if err == nil {
+		// Already liked — return current state (idempotent)
+		count := s.getTargetLikeCount(targetType, targetID)
+		return true, count, nil
+	}
+
+	like := &model.Like{
+		UserID:     userID,
+		TargetType: targetType,
+		TargetID:   targetID,
+	}
+	if err := s.interactionRepo.CreateLike(like); err != nil {
+		return false, 0, err
+	}
+	s.updateTargetLikeCount(targetType, targetID, 1)
+	count := s.getTargetLikeCount(targetType, targetID)
+	return true, count, nil
+}
+
+// RemoveLike removes a like only if one exists. Returns the current state
+// and count without toggling. Calling DELETE on an already-unliked resource
+// is a no-op (idempotent).
+func (s *CommunityService) RemoveLike(userID, targetType, targetID string) (bool, int, error) {
+	_, err := s.interactionRepo.FindLike(userID, targetType, targetID)
+	if err != nil {
+		// Not liked — return current state (idempotent)
+		count := s.getTargetLikeCount(targetType, targetID)
+		return false, count, nil
+	}
+
+	if err := s.interactionRepo.DeleteLike(userID, targetType, targetID); err != nil {
+		return false, 0, err
+	}
+	s.updateTargetLikeCount(targetType, targetID, -1)
+	count := s.getTargetLikeCount(targetType, targetID)
+	return false, count, nil
 }
 
 func (s *CommunityService) updateTargetLikeCount(targetType, targetID string, delta int) {
@@ -990,4 +1049,9 @@ func derefStr(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// sanitizeHTML escapes HTML entities in user-provided content to prevent XSS.
+func sanitizeHTML(s string) string {
+	return html.EscapeString(s)
 }

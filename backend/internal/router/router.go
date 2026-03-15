@@ -1,6 +1,9 @@
 package router
 
 import (
+	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -47,8 +50,8 @@ func Setup(
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// Serve uploaded files
-	r.Static("/uploads", "./uploads")
+	// Serve uploaded files with security restrictions
+	r.GET("/uploads/*filepath", secureStaticHandler("./uploads"))
 
 	// Admin panel (HTML page, no auth required for serving the page)
 	r.GET("/admin", h.Admin.ServeAdminPage)
@@ -220,5 +223,59 @@ func Setup(
 		adminAPI.PATCH("/config", h.Admin.UpdateConfig)
 		adminAPI.GET("/photos", h.Admin.ListPhotos)
 		adminAPI.DELETE("/photos/:id", h.Admin.DeletePhoto)
+	}
+}
+
+// allowedImageExts defines image extensions that are safe to serve inline.
+var allowedImageExts = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".gif":  true,
+	".webp": true,
+}
+
+// blockedExts defines file extensions that must never be served.
+var blockedExts = map[string]bool{
+	".svg":  true,
+	".html": true,
+	".htm":  true,
+	".xml":  true,
+	".js":   true,
+	".css":  true,
+}
+
+// secureStaticHandler returns a handler that serves files from the given root
+// directory with security headers and file type restrictions.
+func secureStaticHandler(root string) gin.HandlerFunc {
+	fs := http.Dir(root)
+	fileServer := http.StripPrefix("/uploads", http.FileServer(fs))
+
+	return func(c *gin.Context) {
+		// Clean the path to prevent traversal attacks
+		reqPath := filepath.Clean(c.Param("filepath"))
+
+		// Ensure the cleaned path does not escape the root
+		if strings.Contains(reqPath, "..") {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		ext := strings.ToLower(filepath.Ext(reqPath))
+
+		// Block dangerous file types
+		if blockedExts[ext] {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		// Set security headers
+		c.Header("X-Content-Type-Options", "nosniff")
+
+		if allowedImageExts[ext] {
+			c.Header("Content-Disposition", "inline")
+		}
+
+		fileServer.ServeHTTP(c.Writer, c.Request)
 	}
 }

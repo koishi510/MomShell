@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -82,15 +83,18 @@ func extractUserID(c *gin.Context, cfg *config.Config) (string, error) {
 
 	// Check token blacklist (revoked tokens)
 	if TokenBlacklist.IsBlacklisted(tokenStr) {
+		log.Printf("[SECURITY] jwt_validation_failed | ip=%s | user=unknown | detail=token is blacklisted", c.ClientIP())
 		return "", pkgjwt.ErrInvalidToken
 	}
 
 	claims, err := pkgjwt.ParseToken(tokenStr, cfg.JWTSecretKey)
 	if err != nil {
+		log.Printf("[SECURITY] jwt_validation_failed | ip=%s | user=unknown | detail=%v", c.ClientIP(), err)
 		return "", err
 	}
 
 	if claims.Type != "access" {
+		log.Printf("[SECURITY] jwt_validation_failed | ip=%s | user=%s | detail=invalid token type: %s", c.ClientIP(), claims.Subject, claims.Type)
 		return "", pkgjwt.ErrInvalidToken
 	}
 

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -141,6 +142,9 @@ func (h *AdminHandler) UpdateConfig(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": errParamPrefix + err.Error()})
 		return
 	}
+
+	adminID := middleware.GetUserID(c)
+	log.Printf("[SECURITY] admin_config_change | ip=%s | user=%s | detail=config update requested", c.ClientIP(), adminID)
 
 	if err := h.adminService.UpdateConfig(req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
