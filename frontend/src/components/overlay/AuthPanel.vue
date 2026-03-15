@@ -247,7 +247,7 @@ async function onRegister() {
   background: rgba(220, 60, 60, 0.15);
   border: 1px solid rgba(220, 60, 60, 0.25);
   border-radius: 10px;
-  color: #ff9999;
+  color: #ffbbbb;
   font-size: 13px;
 }
 

@@ -12,5 +12,9 @@ app.use(createPinia());
 app.mount("#app");
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").catch(() => {});
+  try {
+    await navigator.serviceWorker.register("/sw.js");
+  } catch {
+    // Service worker registration failed silently
+  }
 }

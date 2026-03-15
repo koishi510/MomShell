@@ -52,12 +52,12 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
     const err = await response.json().catch(() => ({}));
     // Gin backend returns { "error": "..." }
     if (typeof err.error === "string") {
-      throw new Error(err.error);
+      throw new TypeError(err.error);
     }
     // FastAPI-style { "detail": "..." }
     const detail = err.detail;
     if (typeof detail === "string") {
-      throw new Error(detail);
+      throw new TypeError(detail);
     }
     if (Array.isArray(detail) && detail.length > 0) {
       throw new Error(
@@ -129,7 +129,7 @@ export function apiLogout(accessToken?: string): Promise<void> {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       if (typeof (err as Record<string, unknown>).error === "string") {
-        throw new Error((err as Record<string, string>).error);
+        throw new TypeError((err as Record<string, string>).error);
       }
       throw new Error("退出登录失败");
     }

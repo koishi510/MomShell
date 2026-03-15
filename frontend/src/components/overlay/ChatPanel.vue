@@ -71,13 +71,11 @@
 </template>
 
 <script lang="ts">
-import type { VisualMetadata } from '@/lib/api/chat'
-
 interface ChatMessage {
   id: number
   role: 'user' | 'assistant'
   text: string
-  visualMeta?: VisualMetadata
+  visualMeta?: import('@/lib/api/chat').VisualMetadata
   showEffect: boolean
 }
 

@@ -90,15 +90,15 @@ export function useTutorial() {
       callback();
       return;
     }
-    const spriteId = (step.element as string).replace("#sprite-", "");
+    const spriteId = step.element.replace("#sprite-", "");
     const offset = computeOffsetForSprite(spriteId);
     const uiStore = useUiStore();
-    if (offset !== null) {
+    if (offset === null) {
+      callback();
+    } else {
       uiStore.parallaxScrollTo(offset);
       // Wait for parallax animation to settle before driver.js highlights
       setTimeout(callback, 450);
-    } else {
-      callback();
     }
   }
 

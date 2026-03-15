@@ -8,8 +8,8 @@
       </button>
 
       <div class="bar-background">
-        <img class="bg-top" :src="bgTop" draggable="false" />
-        <img class="bg-bottom" :src="bgBottom" draggable="false" />
+        <img class="bg-top" :src="bgTop" draggable="false" alt="" />
+        <img class="bg-bottom" :src="bgBottom" draggable="false" alt="" />
 
         <!-- 内容层：独立于背景 -->
         <div class="bar-content">
@@ -17,27 +17,27 @@
           <div class="board-container">
             <div class="board-scroll-area" ref="scrollAreaRef" @wheel="onScrollWheel">
               <div :style="bounceStyle" class="board-scroll-inner">
-              <img class="board-frame-top" :src="boardUp" draggable="false" />
-              <div class="notes-scatter" :style="{ minHeight: scatterHeight }">
-                <div v-if="loading" class="board-loading">加载中...</div>
-                <div v-else-if="posts.length === 0" class="board-empty">暂无帖子</div>
-                <div
-                  v-for="post in posts"
-                  :key="post.id"
-                  :class="['note-card', { 'note-card-pro': post.channel === 'professional' }]"
-                  :style="getCardStyle(post)"
-                  @click="openDetail(post)"
-                >
-                  <img class="note-bg" :src="getNoteImage(post)" draggable="false" />
-                  <div :class="['note-content', { 'note-content-n2': getNoteImage(post) === note2, 'note-content-n3': getNoteImage(post) === note3 }]">
-                    <h4>{{ post.title }}</h4>
-                    <p>{{ post.content_preview }}</p>
-                    <span class="note-meta"><img :src="getAvatar(post.author)" class="note-meta-avatar" @error="onAvatarError" />{{ post.author.nickname }} · {{ post.answer_count }} 评论</span>
+                <img class="board-frame-top" :src="boardUp" draggable="false" alt="" />
+                <div class="notes-scatter" :style="{ minHeight: scatterHeight }">
+                  <div v-if="loading" class="board-loading">加载中...</div>
+                  <div v-else-if="posts.length === 0" class="board-empty">暂无帖子</div>
+                  <div
+                    v-for="post in posts"
+                    :key="post.id"
+                    :class="['note-card', { 'note-card-pro': post.channel === 'professional' }]"
+                    :style="getCardStyle(post)"
+                    @click="openDetail(post)"
+                  >
+                    <img class="note-bg" :src="getNoteImage(post)" draggable="false" alt="" />
+                    <div :class="['note-content', { 'note-content-n2': getNoteImage(post) === note2, 'note-content-n3': getNoteImage(post) === note3 }]">
+                      <h4>{{ post.title }}</h4>
+                      <p>{{ post.content_preview }}</p>
+                      <span class="note-meta"><img :src="getAvatar(post.author)" class="note-meta-avatar" @error="onAvatarError" alt="avatar" />{{ post.author.nickname }} · {{ post.answer_count }} 评论</span>
+                    </div>
                   </div>
+                  <div ref="sentinelRef" class="load-sentinel" />
                 </div>
-                <div ref="sentinelRef" class="load-sentinel" />
-              </div>
-              <img class="board-frame-bottom" :src="boardDown" draggable="false" />
+                <img class="board-frame-bottom" :src="boardDown" draggable="false" alt="" />
               </div>
             </div>
           </div>
@@ -45,10 +45,10 @@
           <!-- Right: Action buttons -->
           <div class="side-actions">
             <button class="side-btn" @click="openCompose" aria-label="发帖">
-              <img :src="noteImg" draggable="false" />
+              <img :src="noteImg" draggable="false" alt="compose" />
             </button>
             <button class="side-btn" @click="openCollections" aria-label="收藏">
-              <img :src="bagImg" draggable="false" />
+              <img :src="bagImg" draggable="false" alt="collections" />
             </button>
           </div>
         </div>
@@ -58,7 +58,7 @@
       <Transition name="paper-fade">
         <div v-if="paperMode" class="paper-overlay" @click.self="closePaper">
           <div class="paper-modal">
-            <img class="paper-bg" :src="paperImg" draggable="false" />
+            <img class="paper-bg" :src="paperImg" draggable="false" alt="" />
             <button class="paper-close" @click="closePaper">✕</button>
             <div class="paper-content">
               <!-- Compose mode -->
@@ -98,7 +98,7 @@
                 <template v-if="!editingPost">
                   <h3 class="paper-title">{{ selectedDetail.title }}</h3>
                   <div class="detail-author">
-                    <img :src="getAvatar(selectedDetail.author)" class="detail-avatar" @error="onAvatarError" />
+                    <img :src="getAvatar(selectedDetail.author)" class="detail-avatar" @error="onAvatarError" alt="avatar" />
                     <span class="author-name">{{ selectedDetail.author.nickname }}</span>
                     <span v-if="selectedDetail.author.display_tag" class="author-tag">{{ selectedDetail.author.display_tag }}</span>
                   </div>
@@ -133,7 +133,7 @@
                   <div v-if="loadingAnswers" class="comments-loading">加载中...</div>
                   <div v-for="a in answers" :key="a.id" class="comment-card">
                     <div class="comment-header">
-                      <img :src="getAvatar(a.author)" class="comment-avatar" @error="onAvatarError" />
+                      <img :src="getAvatar(a.author)" class="comment-avatar" @error="onAvatarError" alt="avatar" />
                       <span class="comment-author">{{ a.author.nickname }}</span>
                       <span v-if="a.author.display_tag" class="author-tag">{{ a.author.display_tag }}</span>
                     </div>
@@ -151,7 +151,7 @@
                         <span :class="['icon-like', { active: a.is_liked }]">&#9829;</span> {{ a.like_count }}
                       </button>
                       <button class="comment-like-btn" @click="toggleAnswerComments(a)">
-                        <svg class="icon-comment" width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H8l-4 4v-4H4a2 2 0 01-2-2V4z"/></svg> {{ a.comment_count }}
+                        <svg class="icon-comment" width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H8l-4 4v-4H4a2 2 0 01-2-2V4z" /></svg> {{ a.comment_count }}
                       </button>
                       <button class="comment-like-btn" @click="setReplyTarget(a.id)">
                         回复
@@ -163,7 +163,7 @@
                     <div v-if="loadingComments[a.id]" class="sub-comments-loading">加载中...</div>
                     <div v-if="answerComments[a.id]" class="sub-comments">
                       <div v-for="c in answerComments[a.id]" :key="c.id" class="sub-comment">
-                        <img :src="getAvatar(c.author)" class="sub-comment-avatar" @error="onAvatarError" />
+                        <img :src="getAvatar(c.author)" class="sub-comment-avatar" @error="onAvatarError" alt="avatar" />
                         <span class="sub-comment-author">{{ c.author.nickname }}</span>
                         <span v-if="c.reply_to_user" class="sub-comment-reply-hint">回复 @{{ c.reply_to_user.nickname }}</span>
                         <template v-if="editingCommentId === c.id">
@@ -186,7 +186,7 @@
                         </div>
                         <!-- Nested replies -->
                         <div v-for="r in c.replies" :key="r.id" class="sub-comment nested">
-                          <img :src="getAvatar(r.author)" class="sub-comment-avatar" @error="onAvatarError" />
+                          <img :src="getAvatar(r.author)" class="sub-comment-avatar" @error="onAvatarError" alt="avatar" />
                           <span class="sub-comment-author">{{ r.author.nickname }}</span>
                           <span v-if="r.reply_to_user" class="sub-comment-reply-hint">回复 @{{ r.reply_to_user.nickname }}</span>
                           <template v-if="editingCommentId === r.id">
@@ -248,7 +248,7 @@
                     >
                       <h4>{{ item.title }}</h4>
                       <p>{{ item.content_preview }}</p>
-                      <span class="note-meta"><img :src="getAvatar(item.author)" class="note-meta-avatar" @error="onAvatarError" />{{ item.author.nickname }} · {{ item.answer_count }} 评论</span>
+                      <span class="note-meta"><img :src="getAvatar(item.author)" class="note-meta-avatar" @error="onAvatarError" alt="avatar" />{{ item.author.nickname }} · {{ item.answer_count }} 评论</span>
                     </div>
                   </template>
                   <!-- 我的提问 -->
@@ -412,7 +412,7 @@ const NOTE_VARIANTS = [note1, note2, note3]
 function simpleHash(str: string): number {
   let h = 0
   for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h + str.charCodeAt(i)) | 0
+    h = Math.trunc((h << 5) - h + (str.codePointAt(i) ?? 0))
   }
   return Math.abs(h)
 }
@@ -1120,7 +1120,7 @@ onUnmounted(() => {
 
 .note-meta {
   font-size: 11px;
-  color: #8a7a6a;
+  color: #6a5a4a;
   margin-top: auto;
 }
 
@@ -1344,7 +1344,7 @@ onUnmounted(() => {
   border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
-  color: #8a6a4a;
+  color: #6a5030;
 }
 
 .detail-body {
@@ -1395,7 +1395,7 @@ onUnmounted(() => {
 }
 
 .icon-like {
-  color: #8a7a6a;
+  color: #6a5a4a;
   transition: color 0.15s;
 }
 
@@ -1405,12 +1405,12 @@ onUnmounted(() => {
 
 .icon-comment {
   vertical-align: middle;
-  color: #8a7a6a;
+  color: #6a5a4a;
 }
 
 .icon-collect {
   font-size: 14px;
-  color: #8a7a6a;
+  color: #6a5a4a;
 }
 
 .icon-collect.active {
@@ -1435,7 +1435,7 @@ onUnmounted(() => {
 .comments-loading {
   text-align: center;
   padding: 20px 0;
-  color: #8a7a6a;
+  color: #6a5a4a;
   font-size: 13px;
 }
 
@@ -1472,7 +1472,7 @@ onUnmounted(() => {
 .comment-like-btn {
   background: none;
   border: none;
-  color: #8a7a6a;
+  color: #6a5a4a;
   font-size: 12px;
   cursor: pointer;
   padding: 0;
@@ -1492,7 +1492,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #8a6a4a;
+  color: #6a5030;
   margin-bottom: 4px;
   width: 100%;
 }
@@ -1500,7 +1500,7 @@ onUnmounted(() => {
 .reply-target-clear {
   background: none;
   border: none;
-  color: #8a7a6a;
+  color: #6a5a4a;
   cursor: pointer;
   font-size: 12px;
   padding: 0;
@@ -1515,7 +1515,7 @@ onUnmounted(() => {
 
 .sub-comments-loading {
   padding: 6px 0 6px 16px;
-  color: #8a7a6a;
+  color: #6a5a4a;
   font-size: 11px;
 }
 
@@ -1537,7 +1537,7 @@ onUnmounted(() => {
 }
 
 .sub-comment-reply-hint {
-  color: #8a7a6a;
+  color: #6a5a4a;
   margin-right: 4px;
   font-size: 11px;
 }
@@ -1601,7 +1601,7 @@ onUnmounted(() => {
   border-bottom: 2px solid transparent;
   font-size: 13px;
   font-weight: 600;
-  color: #8a7a6a;
+  color: #6a5a4a;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
@@ -1677,7 +1677,7 @@ onUnmounted(() => {
 
 .channel-hint {
   font-size: 11px;
-  color: #8a7a6a;
+  color: #6a5a4a;
 }
 
 .detail-manage {
