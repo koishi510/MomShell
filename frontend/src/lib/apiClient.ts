@@ -56,7 +56,6 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (currentAccessToken && config.headers) {
       config.headers.Authorization = `Bearer ${currentAccessToken}`;
-      config.headers["X-Access-Token"] = currentAccessToken;
     }
     // Let browser set Content-Type with boundary for FormData
     if (config.data instanceof FormData) {
@@ -72,9 +71,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as RetryableRequestConfig;
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
