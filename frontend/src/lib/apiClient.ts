@@ -56,6 +56,7 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (currentAccessToken && config.headers) {
       config.headers.Authorization = `Bearer ${currentAccessToken}`;
+      config.headers["X-Access-Token"] = currentAccessToken;
     }
     // Let browser set Content-Type with boundary for FormData
     if (config.data instanceof FormData) {
@@ -85,6 +86,7 @@ apiClient.interceptors.response.use(
           .then((token) => {
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
+              originalRequest.headers["X-Access-Token"] = token as string;
             }
             return apiClient(originalRequest);
           })
@@ -108,6 +110,7 @@ apiClient.interceptors.response.use(
 
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${resp.access_token}`;
+          originalRequest.headers["X-Access-Token"] = resp.access_token;
         }
 
         processQueue(null, resp.access_token);
