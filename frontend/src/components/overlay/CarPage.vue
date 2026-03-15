@@ -76,7 +76,7 @@
               :style="{ animationDelay: `${idx * 0.15}s` }"
               @click.stop="activatePearlShell()"
             >
-              <img :src="chairImg" class="pearl-dot" :style="{ transform: `rotate(${node.rotate}deg)` }" alt="" />
+              <img :src="starImg" class="pearl-dot" :style="{ transform: `rotate(${node.rotate}deg)` }" alt="" />
               <div class="timeline-label">
                 <span class="timeline-date">{{ node.date }}</span>
                 <span class="timeline-title">{{ node.label }}</span>
@@ -486,7 +486,7 @@ import { useBackgroundMusicControls } from '@/composables/useBackgroundMusicLoop
 import avatarFrame from '@/assets/images/frame.png'
 import avatarDefault from '@/assets/images/avatar.png'
 import boxImg from '@/assets/images/box.png'
-import chairImg from '@/assets/images/chairs.png'
+import starImg from '@/assets/images/star.png'
 import PearlShellWrapper from '@/components/react/PearlShellWrapper.vue'
 
 const uiStore = useUiStore()
