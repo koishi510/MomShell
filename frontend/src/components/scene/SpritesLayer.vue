@@ -49,7 +49,12 @@ const rand = createSeededRandom(400)
 const { isMobile, isLandscape } = useIsMobile()
 
 function spriteStyle(s: typeof SPRITES[number]) {
-  const m = isLandscape.value ? s.landscape : isMobile.value ? s.mobile : undefined
+  let m: typeof s.landscape | typeof s.mobile | undefined
+  if (isLandscape.value) {
+    m = s.landscape
+  } else if (isMobile.value) {
+    m = s.mobile
+  }
   return {
     left: m?.left ?? s.left,
     top: m?.top ?? s.top,

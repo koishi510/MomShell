@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useBackgroundMusicLoop } from '@/composables/useBackgroundMusicLoop'
 import BeachScene from '@/components/scene/BeachScene.vue'
 import NavBar from '@/components/scene/NavBar.vue'
@@ -33,7 +33,6 @@ import TaskPanel from '@/components/overlay/TaskPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { useTutorial } from '@/composables/useTutorial'
-import { watch } from 'vue'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()

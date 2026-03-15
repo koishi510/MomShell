@@ -464,10 +464,10 @@ function difficultyStars(d: number) {
   font-weight: 600;
 }
 
-.cat-housework { background: rgba(100, 180, 255, 0.15); color: #8ac4ff; }
-.cat-parenting { background: rgba(255, 180, 100, 0.15); color: #ffc070; }
-.cat-health { background: rgba(100, 220, 150, 0.15); color: #80e0a0; }
-.cat-emotional { background: rgba(220, 140, 255, 0.15); color: #d8a0ff; }
+.cat-housework { background: rgba(100, 180, 255, 0.15); color: #b0d8ff; }
+.cat-parenting { background: rgba(255, 180, 100, 0.15); color: #ffd49a; }
+.cat-health { background: rgba(100, 220, 150, 0.15); color: #a8f0c0; }
+.cat-emotional { background: rgba(220, 140, 255, 0.15); color: #e4c0ff; }
 
 .difficulty {
   color: var(--accent-warm);
@@ -500,8 +500,8 @@ function difficultyStars(d: number) {
 }
 
 .status-text.pending { color: var(--text-secondary); }
-.status-text.completed { color: #ffc060; }
-.status-text.verified { color: #80e0a0; }
+.status-text.completed { color: #ffd080; }
+.status-text.verified { color: #a8f0c0; }
 
 .action-btn {
   padding: 8px 18px;
@@ -585,7 +585,7 @@ function difficultyStars(d: number) {
 
 .reject-btn {
   background: rgba(255, 160, 80, 0.3);
-  color: #ffb060;
+  color: #ffc480;
 }
 
 .reject-btn:hover { background: rgba(255, 160, 80, 0.5); }
@@ -606,7 +606,7 @@ function difficultyStars(d: number) {
   background: rgba(220, 60, 60, 0.15);
   border: 1px solid rgba(220, 60, 60, 0.25);
   border-radius: 10px;
-  color: #ff9999;
+  color: #ffbbbb;
   font-size: 13px;
 }
 
@@ -655,7 +655,7 @@ function difficultyStars(d: number) {
   margin-left: 8px;
   padding: 2px 10px;
   background: rgba(255, 200, 80, 0.15);
-  color: #ffc060;
+  color: #ffd080;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
@@ -714,7 +714,7 @@ function difficultyStars(d: number) {
 .age-option.active {
   background: rgba(255, 200, 80, 0.2);
   border-color: rgba(255, 200, 80, 0.5);
-  color: #ffc060;
+  color: #ffd080;
   font-weight: 600;
 }
 

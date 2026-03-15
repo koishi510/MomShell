@@ -104,7 +104,7 @@ function highlightSprite(spriteId: string) {
   if (!el) return
   el.classList.remove('sprite-highlight')
   // Force reflow so re-adding the class restarts the animation
-  void el.offsetWidth
+  el.offsetWidth // eslint-disable-line @typescript-eslint/no-unused-expressions
   el.classList.add('sprite-highlight')
   const onEnd = () => {
     el.classList.remove('sprite-highlight')

@@ -19,9 +19,9 @@ const CAMERA_FOLLOW_THROTTLE_MS = 100;
 // Used instead of rand() to satisfy static analysis (S2245).
 // This is purely cosmetic (particle positions, rotations); no security context.
 function createSeededRandom(seed: number) {
-  let s = seed | 0;
+  let s = Math.trunc(seed);
   return () => {
-    s = (s + 0x6d2b79f5) | 0;
+    s = Math.trunc(s + 0x6d2b79f5);
     let t = Math.imul(s ^ (s >>> 15), 1 | s);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -200,6 +200,46 @@ const computeShellTarget = (landmark9: Landmark) => {
   };
 };
 
+// --- Animation helpers (extracted to reduce cognitive complexity) ---
+const updateCometTail = (
+  shellGroup: THREE.Group | null,
+  state: { scatterProgress: number },
+  shellMat: THREE.ShaderMaterial,
+  prevShellPos: THREE.Vector3,
+) => {
+  if (!shellGroup || state.scatterProgress <= 0.01) return;
+  const sp = shellGroup.position;
+  const dx = sp.x - prevShellPos.x;
+  const dy = sp.y - prevShellPos.y;
+  const spd = Math.hypot(dx, dy);
+
+  if (spd > 0.05) {
+    const tailVal = shellMat.uniforms.cometTailDir.value;
+    tailVal.x += (-dx / spd - tailVal.x) * 0.08;
+    tailVal.y += (-dy / spd - tailVal.y) * 0.08;
+    tailVal.normalize();
+  }
+
+  prevShellPos.set(sp.x, sp.y, sp.z);
+};
+
+const renderPhotosWithoutBloom = (
+  photoGroup: THREE.Group | null,
+  camera: THREE.PerspectiveCamera,
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+) => {
+  if (!photoGroup || photoGroup.children.length === 0) return;
+  camera.layers.set(1);
+  renderer.autoClear = false;
+  renderer.clearDepth();
+  const bg = scene.background;
+  scene.background = null;
+  renderer.render(scene, camera);
+  scene.background = bg;
+  renderer.autoClear = true;
+};
+
 // --- Main Component ---
 export default function PearlShell({
   photoUrls,
@@ -207,7 +247,7 @@ export default function PearlShell({
   onRequestFullscreen,
   onExitFullscreen,
   showDebug = false,
-}: PearlShellProps) {
+}: Readonly<PearlShellProps>) {
   const mountRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -289,7 +329,7 @@ export default function PearlShell({
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio, 2));
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -375,9 +415,9 @@ export default function PearlShell({
           u = (Math.floor(ribU + 0.5) + (rand() - 0.5) * 0.15) / (numRibs - 1);
           u = Math.max(0, Math.min(1, u));
         } else if (type < 0.7) {
-          v = 1.0 - Math.pow(rand(), 4.0);
+          v = 1 - Math.pow(rand(), 4);
         } else if (type < 0.8) {
-          v = Math.pow(rand(), 4.0);
+          v = Math.pow(rand(), 4);
         }
 
         const theta = -thetaMax + u * (2 * thetaMax);
@@ -488,30 +528,20 @@ export default function PearlShell({
       shellMat.uniforms.scatterProgress.value =
         stateRef.current.scatterProgress;
 
-      if (shellGroupRef.current) {
-        shellGroupRef.current.rotation.x +=
-          (targetShellRotationRef.current.x -
-            shellGroupRef.current.rotation.x) *
-          0.1;
-        shellGroupRef.current.rotation.y +=
-          (targetShellRotationRef.current.y -
-            shellGroupRef.current.rotation.y) *
-          0.1;
-      }
+      // Interpolate shell group rotation and position
+      const shellGroup = shellGroupRef.current;
+      if (shellGroup) {
+        shellGroup.rotation.x +=
+          (targetShellRotationRef.current.x - shellGroup.rotation.x) * 0.1;
+        shellGroup.rotation.y +=
+          (targetShellRotationRef.current.y - shellGroup.rotation.y) * 0.1;
 
-      if (shellGroupRef.current) {
-        shellGroupRef.current.position.x +=
-          (targetShellPositionRef.current.x -
-            shellGroupRef.current.position.x) *
-          0.2;
-        shellGroupRef.current.position.y +=
-          (targetShellPositionRef.current.y -
-            shellGroupRef.current.position.y) *
-          0.2;
-        shellGroupRef.current.position.z +=
-          (targetShellPositionRef.current.z -
-            shellGroupRef.current.position.z) *
-          0.2;
+        shellGroup.position.x +=
+          (targetShellPositionRef.current.x - shellGroup.position.x) * 0.2;
+        shellGroup.position.y +=
+          (targetShellPositionRef.current.y - shellGroup.position.y) * 0.2;
+        shellGroup.position.z +=
+          (targetShellPositionRef.current.z - shellGroup.position.z) * 0.2;
       }
 
       if (upperShellRef.current) {
@@ -522,21 +552,7 @@ export default function PearlShell({
       }
 
       // Comet tail direction
-      if (shellGroupRef.current && stateRef.current.scatterProgress > 0.01) {
-        const sp = shellGroupRef.current.position;
-        const dx = sp.x - prevShellPos.x;
-        const dy = sp.y - prevShellPos.y;
-        const spd = Math.sqrt(dx * dx + dy * dy);
-
-        if (spd > 0.05) {
-          const tailVal = shellMat.uniforms.cometTailDir.value;
-          tailVal.x += (-dx / spd - tailVal.x) * 0.08;
-          tailVal.y += (-dy / spd - tailVal.y) * 0.08;
-          tailVal.normalize();
-        }
-
-        prevShellPos.set(sp.x, sp.y, sp.z);
-      }
+      updateCometTail(shellGroup, stateRef.current, shellMat, prevShellPos);
 
       // Animate Photos
       if (photoGroupRef.current) {
@@ -552,16 +568,7 @@ export default function PearlShell({
       composer.render();
 
       // Photos without bloom
-      if (photoGroupRef.current && photoGroupRef.current.children.length > 0) {
-        camera.layers.set(1);
-        renderer.autoClear = false;
-        renderer.clearDepth();
-        const bg = scene.background;
-        scene.background = null;
-        renderer.render(scene, camera);
-        scene.background = bg;
-        renderer.autoClear = true;
-      }
+      renderPhotosWithoutBloom(photoGroupRef.current, camera, renderer, scene);
 
       camera.layers.enableAll();
     };
@@ -586,7 +593,7 @@ export default function PearlShell({
       cancelAnimationFrame(animFrameId);
       controls.dispose();
       resizeObserver.disconnect();
-      mountRef.current?.removeChild(renderer.domElement);
+      renderer.domElement.remove();
       renderer.dispose();
     };
   }, []);
@@ -614,7 +621,7 @@ export default function PearlShell({
             map: texture,
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: 0.0,
+            opacity: 0,
             depthWrite: false,
             fog: false,
           });
@@ -933,14 +940,13 @@ export default function PearlShell({
         buffer.push(detectedGesture);
         if (buffer.length > GESTURE_STABILITY_FRAMES) buffer.shift();
 
-        if (
+        const isStable =
           buffer.length === GESTURE_STABILITY_FRAMES &&
-          buffer.every((g) => g === detectedGesture)
-        ) {
-          if (stableGestureRef.current !== detectedGesture) {
-            stableGestureRef.current = detectedGesture;
-            setGesture(detectedGesture);
-          }
+          buffer.every((g) => g === detectedGesture);
+
+        if (isStable && stableGestureRef.current !== detectedGesture) {
+          stableGestureRef.current = detectedGesture;
+          setGesture(detectedGesture);
         }
 
         // Update shell position/rotation based on hand
@@ -1289,7 +1295,7 @@ export default function PearlShell({
             {cameraError}
           </p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => globalThis.location.reload()}
             style={{
               background: "#fff",
               color: "#c33",
