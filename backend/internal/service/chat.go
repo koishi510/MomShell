@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -217,6 +220,7 @@ type ChatService struct {
 	chatRepo  *repository.ChatRepo
 	userRepo  *repository.UserRepo
 	firecrawl *firecrawl.Client
+	jwtSecret string
 	// In-memory storage for guest sessions
 	mu              sync.RWMutex
 	guestMemory     map[string][]map[string]interface{}
@@ -224,12 +228,13 @@ type ChatService struct {
 	guestLastAccess map[string]time.Time
 }
 
-func NewChatService(client *openai.Client, chatRepo *repository.ChatRepo, userRepo *repository.UserRepo, fc *firecrawl.Client) *ChatService {
+func NewChatService(client *openai.Client, chatRepo *repository.ChatRepo, userRepo *repository.UserRepo, fc *firecrawl.Client, jwtSecret string) *ChatService {
 	return &ChatService{
 		client:          client,
 		chatRepo:        chatRepo,
 		userRepo:        userRepo,
 		firecrawl:       fc,
+		jwtSecret:       jwtSecret,
 		guestMemory:     make(map[string][]map[string]interface{}),
 		guestProfiles:   make(map[string]map[string]interface{}),
 		guestLastAccess: make(map[string]time.Time),
@@ -407,8 +412,16 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 	if msg.SessionID != nil {
 		sessionID = *msg.SessionID
 	}
+
+	// Validate HMAC signature if session_id is provided
+	if sessionID != "" {
+		if !s.verifySessionID(sessionID) {
+			// Invalid signature; generate a new signed session
+			sessionID = ""
+		}
+	}
 	if sessionID == "" {
-		sessionID = uuid.New().String()
+		sessionID = s.signSessionID(uuid.New().String())
 	}
 
 	s.mu.Lock()
@@ -460,6 +473,31 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 	s.mu.Unlock()
 
 	return buildVisualResponse(parsed, memoryUpdated), nil
+}
+
+// --- Guest session HMAC signing ---
+
+// signSessionID creates a signed session ID in the format "uuid:hmac_hex".
+func (s *ChatService) signSessionID(id string) string {
+	mac := hmac.New(sha256.New, []byte(s.jwtSecret))
+	mac.Write([]byte(id))
+	sig := hex.EncodeToString(mac.Sum(nil))
+	return id + ":" + sig
+}
+
+// verifySessionID validates that a session ID has a valid HMAC signature.
+func (s *ChatService) verifySessionID(sessionID string) bool {
+	idx := strings.LastIndex(sessionID, ":")
+	if idx < 0 || idx == len(sessionID)-1 {
+		return false
+	}
+	id := sessionID[:idx]
+	sig := sessionID[idx+1:]
+
+	mac := hmac.New(sha256.New, []byte(s.jwtSecret))
+	mac.Write([]byte(id))
+	expected := hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(sig), []byte(expected))
 }
 
 // --- Phase 2: Conversation Summary ---
@@ -842,6 +880,10 @@ func (s *ChatService) searchWebForChat(ctx context.Context, userMessage string) 
 	}
 	var sb strings.Builder
 	for _, r := range results {
+		// Validate URL scheme before including in output
+		if !strings.HasPrefix(r.URL, "https://") && !strings.HasPrefix(r.URL, "http://") {
+			continue
+		}
 		content := r.Markdown
 		if content == "" {
 			content = r.Description
