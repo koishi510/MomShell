@@ -184,8 +184,9 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// TODO: In production, send email with reset link instead of logging
-	_ = token // token would be sent via email
+	// In a production deployment, the token would be sent via email with a reset link.
+	// For now, it is intentionally unused to avoid leaking it in the response.
+	_ = token
 	c.JSON(http.StatusOK, gin.H{
 		"message": "如果该邮箱已注册，将收到重置密码邮件",
 	})

@@ -13,6 +13,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	errPasswordHashFailed  = "密码加密失败: %w"
+	errInvalidRefreshToken = "无效的刷新令牌"
+)
+
 type AuthService struct {
 	cfg      *config.Config
 	userRepo *repository.UserRepo
@@ -35,7 +40,7 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.UserResponse, erro
 	// Hash password
 	hash, err := password.Hash(req.Password)
 	if err != nil {
-		return nil, fmt.Errorf("密码加密失败: %w", err)
+		return nil, fmt.Errorf(errPasswordHashFailed, err)
 	}
 
 	user := &model.User{
@@ -83,15 +88,15 @@ func (s *AuthService) Login(req dto.LoginRequest) (*dto.TokenResponse, error) {
 func (s *AuthService) RefreshToken(refreshToken string) (*dto.TokenResponse, error) {
 	claims, err := pkgjwt.ParseToken(refreshToken, s.cfg.JWTSecretKey)
 	if err != nil {
-		return nil, errors.New("无效的刷新令牌")
+		return nil, errors.New(errInvalidRefreshToken)
 	}
 	if claims.Type != "refresh" {
-		return nil, errors.New("无效的刷新令牌")
+		return nil, errors.New(errInvalidRefreshToken)
 	}
 
 	user, err := s.userRepo.FindByID(claims.Subject)
 	if err != nil || !user.IsActive || user.IsBanned {
-		return nil, errors.New("无效的刷新令牌")
+		return nil, errors.New(errInvalidRefreshToken)
 	}
 
 	return s.generateTokens(user.ID)
@@ -117,7 +122,7 @@ func (s *AuthService) ChangePassword(userID, oldPassword, newPassword string) er
 
 	hash, err := password.Hash(newPassword)
 	if err != nil {
-		return fmt.Errorf("密码加密失败: %w", err)
+		return fmt.Errorf(errPasswordHashFailed, err)
 	}
 
 	return s.userRepo.UpdatePassword(userID, hash)
@@ -147,7 +152,7 @@ func (s *AuthService) ResetPassword(token, newPassword string) error {
 
 	hash, err := password.Hash(newPassword)
 	if err != nil {
-		return fmt.Errorf("密码加密失败: %w", err)
+		return fmt.Errorf(errPasswordHashFailed, err)
 	}
 
 	return s.userRepo.UpdatePassword(userID, hash)

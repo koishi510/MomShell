@@ -17,8 +17,9 @@ func NewInteractionHandler(communityService *service.CommunityService) *Interact
 	return &InteractionHandler{communityService: communityService}
 }
 
-// POST /api/v1/community/likes
-func (h *InteractionHandler) CreateLike(c *gin.Context) {
+// toggleLike is the shared handler for both CreateLike and DeleteLike.
+// Since the service layer uses ToggleLike, both endpoints use the same logic.
+func (h *InteractionHandler) toggleLike(c *gin.Context) {
 	var req dto.LikeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -35,22 +36,14 @@ func (h *InteractionHandler) CreateLike(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.LikeResponse{IsLiked: isLiked, NewCount: newCount})
 }
 
+// POST /api/v1/community/likes
+func (h *InteractionHandler) CreateLike(c *gin.Context) {
+	h.toggleLike(c)
+}
+
 // DELETE /api/v1/community/likes
 func (h *InteractionHandler) DeleteLike(c *gin.Context) {
-	var req dto.LikeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	userID := middleware.GetUserID(c)
-	isLiked, newCount, err := h.communityService.ToggleLike(userID, req.TargetType, req.TargetID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.LikeResponse{IsLiked: isLiked, NewCount: newCount})
+	h.toggleLike(c)
 }
 
 // POST /api/v1/community/collections

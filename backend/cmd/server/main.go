@@ -136,10 +136,21 @@ func main() {
 	router.Setup(
 		r, cfg,
 		adminHandler.IsAdmin,
-		authHandler, questionHandler, answerHandler,
-		commentHandler, interactionHandler, tagHandler,
-		chatHandler, echoHandler, userHandler, adminHandler,
-		photoHandler, whisperHandler, taskHandler,
+		&router.Handlers{
+			Auth:        authHandler,
+			Question:    questionHandler,
+			Answer:      answerHandler,
+			Comment:     commentHandler,
+			Interaction: interactionHandler,
+			Tag:         tagHandler,
+			Chat:        chatHandler,
+			Echo:        echoHandler,
+			User:        userHandler,
+			Admin:       adminHandler,
+			Photo:       photoHandler,
+			Whisper:     whisperHandler,
+			Task:        taskHandler,
+		},
 	)
 
 	// Start server

@@ -265,49 +265,62 @@ func (s *ChatService) Chat(ctx context.Context, msg dto.UserMessage, userID stri
 }
 
 // appendWebSearchResults appends web search results to the system prompt if available.
-func appendWebSearchResults(systemPrompt string, webResults string) string {
+func appendWebSearchResults(systemPrompt, webResults string) string {
 	if webResults == "" {
 		return systemPrompt
 	}
 	return systemPrompt + "\n\n## 联网搜索参考\n" + webResults + "\n日常聊天不需要引用来源。仅在提供专业性建议时才引用，引用时直接写出具体来源名称（如「根据XX的一篇文章...」），不要使用[来源1]这样的标注。不确定的信息请标明。"
 }
 
-func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage, userID string) (*dto.VisualResponse, error) {
-	// Look up user role and partner info
-	role := model.RoleMom
-	isAdmin := false
-	var partnerID string
-	var partnerRole model.UserRole
-	if user, err := s.userRepo.FindByID(userID); err == nil {
-		role = user.Role
-		isAdmin = user.IsAdmin
-		if user.PartnerID != nil && *user.PartnerID != "" {
-			partnerID = *user.PartnerID
-			if partner, err := s.userRepo.FindByID(partnerID); err == nil {
-				partnerRole = partner.Role
-			}
+// chatUserContext holds resolved user context for authenticated chat.
+type chatUserContext struct {
+	role        model.UserRole
+	isAdmin     bool
+	partnerID   string
+	partnerRole model.UserRole
+}
+
+// resolveChatUserContext looks up the user and partner information for chat.
+func (s *ChatService) resolveChatUserContext(userID string) chatUserContext {
+	ctx := chatUserContext{role: model.RoleMom}
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return ctx
+	}
+	ctx.role = user.Role
+	ctx.isAdmin = user.IsAdmin
+	if user.PartnerID != nil && *user.PartnerID != "" {
+		ctx.partnerID = *user.PartnerID
+		if partner, pErr := s.userRepo.FindByID(ctx.partnerID); pErr == nil {
+			ctx.partnerRole = partner.Role
 		}
 	}
-	pronoun := pronounFor(role)
+	return ctx
+}
+
+func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage, userID string) (*dto.VisualResponse, error) {
+	// Look up user role and partner info
+	uc := s.resolveChatUserContext(userID)
+	pronoun := pronounFor(uc.role)
 
 	familyIDs := []string{userID}
-	if partnerID != "" {
-		familyIDs = append(familyIDs, partnerID)
+	if uc.partnerID != "" {
+		familyIDs = append(familyIDs, uc.partnerID)
 	}
 
 	// Load memory from DB (per-user, not shared)
 	profile, turns, summary := s.loadUserMemory(userID)
 
 	// Load structured facts for prompt (family-scoped)
-	factsText, deletedFactsText := s.loadFactsForPrompt(userID, familyIDs, role, partnerRole)
+	factsText, deletedFactsText := s.loadFactsForPrompt(userID, familyIDs, uc.role, uc.partnerRole)
 
-	systemPrompt := fmt.Sprintf(getCompanionPrompt(role, isAdmin),
+	systemPrompt := fmt.Sprintf(getCompanionPrompt(uc.role, uc.isAdmin),
 		formatProfile(profile, pronoun, factsText),
 		formatTurns(turns, summary, pronoun),
 	)
 
 	// Update memory section header for family mode
-	if partnerID != "" {
+	if uc.partnerID != "" {
 		for _, old := range []string{"你记得关于她的重要信息", "你记得关于他的重要信息", "你记得关于对方的重要信息"} {
 			systemPrompt = strings.Replace(systemPrompt, old, "你记得关于这个家庭的重要信息", 1)
 		}
@@ -425,7 +438,7 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 		{Role: "user", Content: msg.Content},
 	}
 
-	rawContent, err := s.client.Chat(context.Background(), messages)
+	rawContent, err := s.client.Chat(ctx, messages)
 	if err != nil {
 		return nil, fmt.Errorf("AI 服务调用失败: %w", err)
 	}
@@ -499,6 +512,45 @@ func (s *ChatService) generateAndSaveSummary(userID string, existingSummary stri
 
 // --- Phase 3: Structured Memory Facts ---
 
+// parseFactItem extracts content and category from a single fact item.
+func parseFactItem(v interface{}) (content, aiCategory string) {
+	switch item := v.(type) {
+	case map[string]interface{}:
+		c, _ := item["content"].(string)
+		content = strings.TrimSpace(c)
+		cat, _ := item["category"].(string)
+		aiCategory = strings.TrimSpace(cat)
+	case string:
+		content = strings.TrimSpace(item)
+	}
+	return content, aiCategory
+}
+
+// saveSingleFact creates a fact if it does not already exist. Returns true if saved.
+func (s *ChatService) saveSingleFact(userID, content, aiCategory string) bool {
+	exists, err := s.chatRepo.FactExistsByContent(userID, content)
+	if err != nil {
+		log.Printf("[ChatService] failed to check fact existence: %v", err)
+		return false
+	}
+	if exists {
+		return false
+	}
+
+	category := resolveFactCategory(aiCategory, content)
+	fact := &model.ChatMemoryFact{
+		UserID:      userID,
+		OwnerUserID: userID,
+		Content:     content,
+		Category:    category,
+	}
+	if err := s.chatRepo.CreateFact(fact); err != nil {
+		log.Printf("[ChatService] failed to save fact for user %s: %v", userID, err)
+		return false
+	}
+	return true
+}
+
 func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) bool {
 	if extract == nil {
 		return false
@@ -514,47 +566,11 @@ func (s *ChatService) saveFactsFromExtract(userID string, extract interface{}) b
 
 	saved := false
 	for _, v := range facts {
-		var content string
-		var aiCategory string
-
-		switch item := v.(type) {
-		case map[string]interface{}:
-			// New structured format: {"content": "...", "category": "..."}
-			c, _ := item["content"].(string)
-			content = strings.TrimSpace(c)
-			cat, _ := item["category"].(string)
-			aiCategory = strings.TrimSpace(cat)
-		case string:
-			// Legacy string format
-			content = strings.TrimSpace(item)
-		default:
-			continue
-		}
-
+		content, aiCategory := parseFactItem(v)
 		if content == "" {
 			continue
 		}
-
-		// Skip if identical fact already exists for this user (including soft-deleted)
-		exists, err := s.chatRepo.FactExistsByContent(userID, content)
-		if err != nil {
-			log.Printf("[ChatService] failed to check fact existence: %v", err)
-			continue
-		}
-		if exists {
-			continue
-		}
-
-		category := resolveFactCategory(aiCategory, content)
-		fact := &model.ChatMemoryFact{
-			UserID:      userID,
-			OwnerUserID: userID,
-			Content:     content,
-			Category:    category,
-		}
-		if err := s.chatRepo.CreateFact(fact); err != nil {
-			log.Printf("[ChatService] failed to save fact for user %s: %v", userID, err)
-		} else {
+		if s.saveSingleFact(userID, content, aiCategory) {
 			saved = true
 		}
 	}
@@ -626,7 +642,7 @@ func (s *ChatService) processMemoryCorrections(familyIDs []string, extract inter
 }
 
 // resolveFactCategory uses the AI-provided category if valid, otherwise falls back to keyword detection.
-func resolveFactCategory(aiCategory string, content string) model.FactCategory {
+func resolveFactCategory(aiCategory, content string) model.FactCategory {
 	switch model.FactCategory(aiCategory) {
 	case model.FactCategoryPersonalInfo, model.FactCategoryFamily,
 		model.FactCategoryInterest, model.FactCategoryConcern,
@@ -677,7 +693,18 @@ func categorizeFactContent(content string) model.FactCategory {
 	return model.FactCategoryOther
 }
 
-func (s *ChatService) loadFactsForPrompt(userID string, familyIDs []string, userRole model.UserRole, partnerRole model.UserRole) (string, string) {
+// factLabel returns the display label for a fact in family mode.
+func factLabel(f model.ChatMemoryFact, userID string, userRole, partnerRole model.UserRole) string {
+	if f.Category == model.FactCategoryFamily {
+		return "家庭"
+	}
+	if f.OwnerUserID == userID {
+		return pronounFor(userRole)
+	}
+	return pronounFor(partnerRole)
+}
+
+func (s *ChatService) loadFactsForPrompt(userID string, familyIDs []string, userRole, partnerRole model.UserRole) (string, string) {
 	hasPartner := len(familyIDs) > 1
 
 	facts, err := s.chatRepo.FindFactsByFamilyIDs(familyIDs)
@@ -690,14 +717,7 @@ func (s *ChatService) loadFactsForPrompt(userID string, familyIDs []string, user
 	var sb strings.Builder
 	for _, f := range facts {
 		if hasPartner {
-			var label string
-			if f.Category == model.FactCategoryFamily {
-				label = "家庭"
-			} else if f.OwnerUserID == userID {
-				label = pronounFor(userRole)
-			} else {
-				label = pronounFor(partnerRole)
-			}
+			label := factLabel(f, userID, userRole, partnerRole)
 			fmt.Fprintf(&sb, "  · [%s] %s\n", label, f.Content)
 		} else {
 			fmt.Fprintf(&sb, "  · %s\n", f.Content)
