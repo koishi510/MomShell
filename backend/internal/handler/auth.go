@@ -66,7 +66,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.authService.Login(req)
+	resp, err := h.authService.Login(req, c.ClientIP())
 	if err != nil {
 		status := http.StatusUnauthorized
 		if err.Error() == "账号已禁用" || err.Error() == "账号已被封禁" {

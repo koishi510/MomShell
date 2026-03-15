@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/momshell/backend/internal/config"
 	"github.com/momshell/backend/internal/dto"
@@ -61,25 +62,33 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.UserResponse, erro
 	return s.buildUserResponse(user), nil
 }
 
-func (s *AuthService) Login(req dto.LoginRequest) (*dto.TokenResponse, error) {
+func (s *AuthService) Login(req dto.LoginRequest, clientIP string) (*dto.TokenResponse, error) {
 	user, err := s.userRepo.FindByUsernameOrEmail(req.Login)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[SECURITY] login_failed | ip=%s | user=%s | detail=user not found", clientIP, req.Login)
 			return nil, errors.New("用户名或密码错误")
 		}
 		return nil, fmt.Errorf("查询用户失败: %w", err)
 	}
 
 	if !password.Verify(req.Password, user.PasswordHash) {
+		log.Printf("[SECURITY] login_failed | ip=%s | user=%s | detail=wrong password", clientIP, req.Login)
 		return nil, errors.New("用户名或密码错误")
 	}
 
 	if !user.IsActive {
+		log.Printf("[SECURITY] login_failed | ip=%s | user=%s | detail=account disabled", clientIP, req.Login)
 		return nil, errors.New("账号已禁用")
 	}
 
 	if user.IsBanned {
+		log.Printf("[SECURITY] login_failed | ip=%s | user=%s | detail=account banned", clientIP, req.Login)
 		return nil, errors.New("账号已被封禁")
+	}
+
+	if user.IsAdmin {
+		log.Printf("[SECURITY] admin_login | ip=%s | user=%s | detail=admin login successful", clientIP, req.Login)
 	}
 
 	return s.generateTokens(user.ID)

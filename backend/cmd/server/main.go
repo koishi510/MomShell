@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/momshell/backend/internal/config"
@@ -74,7 +75,7 @@ func main() {
 		firecrawlClient = firecrawl.NewClient(cfg.FirecrawlAPIKey)
 	}
 
-	chatService := service.NewChatService(chatClient, chatRepo, userRepo, firecrawlClient)
+	chatService := service.NewChatService(chatClient, chatRepo, userRepo, firecrawlClient, cfg.JWTSecretKey)
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
 	photoService := service.NewPhotoService(photoRepo, userRepo, chatClient, cfg.ImageModel)
 	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient)
@@ -197,19 +198,30 @@ func createInitialAdmin(cfg *config.Config, userRepo *repository.UserRepo) {
 }
 
 func ensureAIUser(userRepo *repository.UserRepo) string {
-	user, err := userRepo.FindByUsernameOrEmail("xiaoshiguang")
+	aiUsername := os.Getenv("AI_USER_USERNAME")
+	if aiUsername == "" {
+		aiUsername = "xiaoshiguang"
+		log.Println("[WARN] AI_USER_USERNAME not set, using default: xiaoshiguang")
+	}
+	aiPassword := os.Getenv("AI_USER_PASSWORD")
+	if aiPassword == "" {
+		aiPassword = "ai-user-no-login"
+		log.Println("[WARN] AI_USER_PASSWORD not set, using default password")
+	}
+
+	user, err := userRepo.FindByUsernameOrEmail(aiUsername)
 	if err == nil {
 		return user.ID
 	}
 
-	hash, err := password.Hash("ai-user-no-login")
+	hash, err := password.Hash(aiPassword)
 	if err != nil {
 		log.Printf("Failed to hash AI user password: %v", err)
 		return ""
 	}
 
 	aiUser := &model.User{
-		Username:     "xiaoshiguang",
+		Username:     aiUsername,
 		Email:        "ai@momshell.com",
 		PasswordHash: hash,
 		Nickname:     "小石光",

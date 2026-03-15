@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -22,7 +23,7 @@ func (b *tokenBlacklistStore) Add(token string, expiry time.Time) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if len(b.tokens) >= maxBlacklistSize {
-		// Emergency cleanup: remove expired tokens immediately
+		// Emergency cleanup: remove expired tokens
 		now := time.Now()
 		for t, exp := range b.tokens {
 			if now.After(exp) {
@@ -30,9 +31,22 @@ func (b *tokenBlacklistStore) Add(token string, expiry time.Time) {
 			}
 		}
 	}
-	// If still at capacity after cleanup, skip adding (token will simply not be blacklisted)
+	// If still at capacity after cleanup, evict the oldest entry (FIFO)
 	if len(b.tokens) >= maxBlacklistSize {
-		return
+		log.Printf("[SECURITY] token_blacklist_full | size=%d | evicting oldest entry to make room", len(b.tokens))
+		var oldestToken string
+		var oldestExpiry time.Time
+		first := true
+		for t, exp := range b.tokens {
+			if first || exp.Before(oldestExpiry) {
+				oldestToken = t
+				oldestExpiry = exp
+				first = false
+			}
+		}
+		if oldestToken != "" {
+			delete(b.tokens, oldestToken)
+		}
 	}
 	b.tokens[token] = expiry
 }
