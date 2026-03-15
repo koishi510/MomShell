@@ -11,8 +11,8 @@
       </button>
       <button class="mobile-suitcase-btn" @click="openSuitcase" aria-label="照片集">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
-          <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="1.8"/>
+          <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8" />
+          <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="1.8" />
         </svg>
         <span v-if="allPhotos.length > 0" class="mobile-suitcase-badge">{{ allPhotos.length }}</span>
       </button>
@@ -32,7 +32,7 @@
               :style="getStickerStyle(idx)"
               @click.stop="openDetail(photo)"
             >
-              <img :src="photo.image_url" :alt="photo.title || 'photo'" />
+              <img :src="photo.image_url" :alt="photo.title || 'memory'" />
             </div>
             <div v-for="n in emptySlots" :key="'empty-' + n" class="photo-frame empty" />
           </div>
@@ -76,7 +76,7 @@
               :style="{ animationDelay: `${idx * 0.15}s` }"
               @click.stop="activatePearlShell()"
             >
-              <img :src="chairImg" class="pearl-dot" :style="{ transform: `rotate(${node.rotate}deg)` }" />
+              <img :src="chairImg" class="pearl-dot" :style="{ transform: `rotate(${node.rotate}deg)` }" alt="" />
               <div class="timeline-label">
                 <span class="timeline-date">{{ node.date }}</span>
                 <span class="timeline-title">{{ node.label }}</span>
@@ -134,7 +134,7 @@
                 class="suitcase-card"
                 :class="{ 'on-wall': p.is_on_wall }"
               >
-                <img :src="p.image_url" :alt="p.title || 'photo'" class="suitcase-img" @click="openDetail(p)" />
+                <img :src="p.image_url" :alt="p.title || 'memory'" class="suitcase-img" @click="openDetail(p)" />
                 <div class="suitcase-card-actions">
                   <button
                     class="card-action-btn"
@@ -165,7 +165,7 @@
         <div v-if="showDetail && detailPhoto" class="modal-overlay" @click.self="closeDetail">
           <div class="detail-modal">
             <button class="modal-close" @click="closeDetail">✕</button>
-            <img :src="detailPhoto.image_url" :alt="detailPhoto.title || 'photo'" class="detail-image" />
+            <img :src="detailPhoto.image_url" :alt="detailPhoto.title || 'memory'" class="detail-image" />
             <div class="detail-info">
               <div v-if="!editingDetail" class="detail-view">
                 <h3 class="detail-title">{{ detailPhoto.title || '未命名' }}</h3>
@@ -257,196 +257,199 @@
             </div>
 
             <div class="settings-content">
-                <!-- Profile Info -->
-                <div class="settings-section">
-                  <h3 class="settings-heading">个人资料</h3>
-                  <div class="profile-form">
-                    <label class="form-label">头像</label>
-                    <div class="avatar-upload-row">
-                      <div class="avatar-preview-small">
-                        <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" @error="onAvatarImgError" />
-                        <span v-else class="avatar-placeholder-small">{{ displayInitial }}</span>
-                      </div>
-                      <button class="upload-btn" :disabled="avatarUploading" @click="triggerAvatarUpload">
-                        {{ avatarUploading ? '上传中...' : '更换头像' }}
-                      </button>
-                      <span class="upload-hint">JPG/PNG/GIF/WebP, 最大 2MB</span>
+              <!-- Profile Info -->
+              <div class="settings-section">
+                <h3 class="settings-heading">个人资料</h3>
+                <div class="profile-form">
+                  <label class="form-label" for="profile-avatar">头像</label>
+                  <div class="avatar-upload-row">
+                    <div class="avatar-preview-small">
+                      <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="avatar" @error="onAvatarImgError" />
+                      <span v-else class="avatar-placeholder-small">{{ displayInitial }}</span>
                     </div>
-                    <div v-if="avatarError" class="form-error">{{ avatarError }}</div>
-                    <label class="form-label">用户名</label>
-                    <input
-                      v-model="profileForm.username"
-                      type="text"
-                      class="form-input"
-                      placeholder="用户名"
-                      maxlength="50"
-                      minlength="3"
-                    />
-                    <label class="form-label">昵称</label>
-                    <input
-                      v-model="profileForm.nickname"
-                      type="text"
-                      class="form-input"
-                      placeholder="昵称"
-                      maxlength="50"
-                    />
-                    <label class="form-label">邮箱</label>
-                    <input
-                      v-model="profileForm.email"
-                      type="email"
-                      class="form-input"
-                      placeholder="email@example.com"
-                    />
-                    <div v-if="profileFormError" class="form-error">{{ profileFormError }}</div>
-                    <div v-if="profileFormSuccess" class="form-success">{{ profileFormSuccess }}</div>
-                    <button
-                      class="submit-btn"
-                      :disabled="profileFormLoading"
-                      @click="onSaveProfile"
-                    >
-                      {{ profileFormLoading ? '保存中...' : '保存资料' }}
+                    <button id="profile-avatar" class="upload-btn" :disabled="avatarUploading" @click="triggerAvatarUpload">
+                      {{ avatarUploading ? '上传中...' : '更换头像' }}
                     </button>
+                    <span class="upload-hint">JPG/PNG/GIF/WebP, 最大 2MB</span>
                   </div>
-                </div>
-
-                <!-- Identity Role -->
-                <div class="settings-section">
-                  <h3 class="settings-heading">身份标签</h3>
-                  <div v-if="isBound" class="bound-hint">已绑定伴侣，身份不可更改</div>
-                  <div class="role-selector">
-                    <button
-                      v-for="opt in roleOptions"
-                      :key="opt.key"
-                      :class="['role-option', { active: selectedRole === opt.key }]"
-                      :disabled="isBound"
-                      @click="selectedRole = opt.key"
-                    >
-                      {{ opt.label }}
-                    </button>
-                  </div>
-                  <div v-if="roleError" class="form-error">{{ roleError }}</div>
-                  <div v-if="roleSuccess" class="form-success">{{ roleSuccess }}</div>
+                  <div v-if="avatarError" class="form-error">{{ avatarError }}</div>
+                  <label class="form-label" for="profile-username">用户名</label>
+                  <input
+                    v-model="profileForm.username"
+                    id="profile-username"
+                    type="text"
+                    class="form-input"
+                    placeholder="用户名"
+                    maxlength="50"
+                    minlength="3"
+                  />
+                  <label class="form-label" for="profile-nickname">昵称</label>
+                  <input
+                    v-model="profileForm.nickname"
+                    id="profile-nickname"
+                    type="text"
+                    class="form-input"
+                    placeholder="昵称"
+                    maxlength="50"
+                  />
+                  <label class="form-label" for="profile-email">邮箱</label>
+                  <input
+                    v-model="profileForm.email"
+                    id="profile-email"
+                    type="email"
+                    class="form-input"
+                    placeholder="email@example.com"
+                  />
+                  <div v-if="profileFormError" class="form-error">{{ profileFormError }}</div>
+                  <div v-if="profileFormSuccess" class="form-success">{{ profileFormSuccess }}</div>
                   <button
-                    v-if="!isBound"
                     class="submit-btn"
-                    :disabled="roleLoading || selectedRole === (profile?.role || auth.user?.role)"
-                    @click="onSaveRole"
+                    :disabled="profileFormLoading"
+                    @click="onSaveProfile"
                   >
-                    {{ roleLoading ? '保存中...' : '保存身份' }}
+                    {{ profileFormLoading ? '保存中...' : '保存资料' }}
                   </button>
                 </div>
+              </div>
 
-                <!-- Shell Code / Partner Binding -->
-                <div class="settings-section">
-                  <h3 class="settings-heading">贝壳码</h3>
-
-                  <!-- Already bound: show partner info + unbind -->
-                  <template v-if="isBound">
-                    <div class="partner-card">
-                      <span class="partner-label">已绑定：</span>
-                      <span class="partner-name">{{ profile?.partner?.nickname }}</span>
-                      <span class="partner-role">（{{ profile?.partner?.role === 'mom' ? '溯源者' : '守护者' }}）</span>
-                    </div>
-                    <button class="submit-btn danger-btn" :disabled="unbindLoading" @click="onUnbindPartner">
-                      {{ unbindLoading ? '解绑中...' : '解除绑定' }}
-                    </button>
-                  </template>
-
-                  <!-- Mom (溯源者): generate shell code -->
-                  <template v-else-if="isMom">
-                    <p class="shell-hint">生成贝壳码分享给守护者，完成伴侣绑定。</p>
-                    <div v-if="profile?.shell_code" class="shell-code-display">
-                      {{ profile.shell_code }}
-                    </div>
-                    <button class="submit-btn" :disabled="shellCodeLoading || !!profile?.shell_code" @click="onGenerateShellCode">
-                      {{ shellCodeLoading ? '生成中...' : profile?.shell_code ? '已生成' : '生成贝壳码' }}
-                    </button>
-                    <div v-if="shellCodeError" class="form-error">{{ shellCodeError }}</div>
-                  </template>
-
-                  <!-- Dad (守护者): enter shell code to bind -->
-                  <template v-else>
-                    <p class="shell-hint">输入溯源者分享的贝壳码，完成伴侣绑定。</p>
-                    <input
-                      v-model="bindCode"
-                      class="form-input"
-                      placeholder="请输入贝壳码"
-                      maxlength="8"
-                    />
-                    <div v-if="bindError" class="form-error">{{ bindError }}</div>
-                    <div v-if="bindSuccess" class="form-success">{{ bindSuccess }}</div>
-                    <button class="submit-btn" :disabled="bindLoading || !bindCode.trim()" @click="onBindPartner">
-                      {{ bindLoading ? '绑定中...' : '绑定' }}
-                    </button>
-                  </template>
+              <!-- Identity Role -->
+              <div class="settings-section">
+                <h3 class="settings-heading">身份标签</h3>
+                <div v-if="isBound" class="bound-hint">已绑定伴侣，身份不可更改</div>
+                <div class="role-selector">
+                  <button
+                    v-for="opt in roleOptions"
+                    :key="opt.key"
+                    :class="['role-option', { active: selectedRole === opt.key }]"
+                    :disabled="isBound"
+                    @click="selectedRole = opt.key"
+                  >
+                    {{ opt.label }}
+                  </button>
                 </div>
+                <div v-if="roleError" class="form-error">{{ roleError }}</div>
+                <div v-if="roleSuccess" class="form-success">{{ roleSuccess }}</div>
+                <button
+                  v-if="!isBound"
+                  class="submit-btn"
+                  :disabled="roleLoading || selectedRole === (profile?.role || auth.user?.role)"
+                  @click="onSaveRole"
+                >
+                  {{ roleLoading ? '保存中...' : '保存身份' }}
+                </button>
+              </div>
 
-                <!-- Change Password -->
-                <div class="settings-section">
-                  <h3 class="settings-heading">修改密码</h3>
-                  <form class="password-form" @submit.prevent="onChangePassword">
-                    <input
-                      v-model="pwForm.old_password"
-                      type="password"
-                      class="form-input"
-                      placeholder="当前密码"
-                      required
-                      autocomplete="current-password"
-                    />
-                    <input
-                      v-model="pwForm.new_password"
-                      type="password"
-                      class="form-input"
-                      placeholder="新密码"
-                      required
-                      minlength="6"
-                      autocomplete="new-password"
-                    />
-                    <input
-                      v-model="pwForm.confirm_password"
-                      type="password"
-                      class="form-input"
-                      placeholder="确认新密码"
-                      required
-                      minlength="6"
-                      autocomplete="new-password"
-                    />
-                    <div v-if="pwError" class="form-error">{{ pwError }}</div>
-                    <div v-if="pwSuccess" class="form-success">{{ pwSuccess }}</div>
-                    <button type="submit" class="submit-btn" :disabled="pwLoading">
-                      {{ pwLoading ? '提交中...' : '修改密码' }}
-                    </button>
-                  </form>
-                </div>
+              <!-- Shell Code / Partner Binding -->
+              <div class="settings-section">
+                <h3 class="settings-heading">贝壳码</h3>
 
-                <div class="settings-section">
-                  <h3 class="settings-heading">背景音乐</h3>
-                  <div class="volume-control">
-                    <input
-                      class="volume-slider"
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="1"
-                      :value="backgroundMusicVolumePercent"
-                      @input="onBackgroundMusicVolumeInput"
-                    />
-                    <span class="volume-value">{{ backgroundMusicVolumePercent }}%</span>
+                <!-- Already bound: show partner info + unbind -->
+                <template v-if="isBound">
+                  <div class="partner-card">
+                    <span class="partner-label">已绑定：</span>
+                    <span class="partner-name">{{ profile?.partner?.nickname }}</span>
+                    <span class="partner-role">（{{ profile?.partner?.role === 'mom' ? '溯源者' : '守护者' }}）</span>
                   </div>
-                  <p class="settings-hint">{{ backgroundMusicStatusText }}</p>
-                </div>
+                  <button class="submit-btn danger-btn" :disabled="unbindLoading" @click="onUnbindPartner">
+                    {{ unbindLoading ? '解绑中...' : '解除绑定' }}
+                  </button>
+                </template>
 
-                <div v-if="isAdmin" class="settings-section">
-                  <h3 class="settings-heading">管理面板</h3>
-                  <p class="settings-hint">进入后台管理系统，管理用户、照片和系统配置。</p>
-                  <a href="/admin" class="submit-btn" style="display: inline-block; text-align: center; text-decoration: none;">
-                    打开管理面板
-                  </a>
-                </div>
+                <!-- Mom (溯源者): generate shell code -->
+                <template v-else-if="isMom">
+                  <p class="shell-hint">生成贝壳码分享给守护者，完成伴侣绑定。</p>
+                  <div v-if="profile?.shell_code" class="shell-code-display">
+                    {{ profile.shell_code }}
+                  </div>
+                  <button class="submit-btn" :disabled="shellCodeLoading || !!profile?.shell_code" @click="onGenerateShellCode">
+                    {{ shellCodeLoading ? '生成中...' : profile?.shell_code ? '已生成' : '生成贝壳码' }}
+                  </button>
+                  <div v-if="shellCodeError" class="form-error">{{ shellCodeError }}</div>
+                </template>
 
-                <div class="settings-section">
-                  <button class="logout-btn" @click="onLogout">退出登录</button>
+                <!-- Dad (守护者): enter shell code to bind -->
+                <template v-else>
+                  <p class="shell-hint">输入溯源者分享的贝壳码，完成伴侣绑定。</p>
+                  <input
+                    v-model="bindCode"
+                    class="form-input"
+                    placeholder="请输入贝壳码"
+                    maxlength="8"
+                  />
+                  <div v-if="bindError" class="form-error">{{ bindError }}</div>
+                  <div v-if="bindSuccess" class="form-success">{{ bindSuccess }}</div>
+                  <button class="submit-btn" :disabled="bindLoading || !bindCode.trim()" @click="onBindPartner">
+                    {{ bindLoading ? '绑定中...' : '绑定' }}
+                  </button>
+                </template>
+              </div>
+
+              <!-- Change Password -->
+              <div class="settings-section">
+                <h3 class="settings-heading">修改密码</h3>
+                <form class="password-form" @submit.prevent="onChangePassword">
+                  <input
+                    v-model="pwForm.old_password"
+                    type="password"
+                    class="form-input"
+                    placeholder="当前密码"
+                    required
+                    autocomplete="current-password"
+                  />
+                  <input
+                    v-model="pwForm.new_password"
+                    type="password"
+                    class="form-input"
+                    placeholder="新密码"
+                    required
+                    minlength="6"
+                    autocomplete="new-password"
+                  />
+                  <input
+                    v-model="pwForm.confirm_password"
+                    type="password"
+                    class="form-input"
+                    placeholder="确认新密码"
+                    required
+                    minlength="6"
+                    autocomplete="new-password"
+                  />
+                  <div v-if="pwError" class="form-error">{{ pwError }}</div>
+                  <div v-if="pwSuccess" class="form-success">{{ pwSuccess }}</div>
+                  <button type="submit" class="submit-btn" :disabled="pwLoading">
+                    {{ pwLoading ? '提交中...' : '修改密码' }}
+                  </button>
+                </form>
+              </div>
+
+              <div class="settings-section">
+                <h3 class="settings-heading">背景音乐</h3>
+                <div class="volume-control">
+                  <input
+                    class="volume-slider"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    :value="backgroundMusicVolumePercent"
+                    @input="onBackgroundMusicVolumeInput"
+                  />
+                  <span class="volume-value">{{ backgroundMusicVolumePercent }}%</span>
                 </div>
+                <p class="settings-hint">{{ backgroundMusicStatusText }}</p>
+              </div>
+
+              <div v-if="isAdmin" class="settings-section">
+                <h3 class="settings-heading">管理面板</h3>
+                <p class="settings-hint">进入后台管理系统，管理用户、照片和系统配置。</p>
+                <a href="/admin" class="submit-btn" style="display: inline-block; text-align: center; text-decoration: none;">
+                  打开管理面板
+                </a>
+              </div>
+
+              <div class="settings-section">
+                <button class="logout-btn" @click="onLogout">退出登录</button>
+              </div>
             </div>
           </div>
         </div>
@@ -529,16 +532,27 @@ const timelineNodes = computed(() => {
   } else {
     picked = [sorted[0]]
     const mid = Math.round((sorted.length - 1) / 2)
-    picked.push(sorted[mid])
-    picked.push(sorted[sorted.length - 1])
+    picked.push(sorted[mid], sorted[sorted.length - 1])
   }
 
-  return picked.map((p, i) => ({
-    id: p.id,
-    date: formatDate(p.created_at),
-    label: p.title || (i === 0 ? '第一张照片' : i === picked.length - 1 ? '最近的回忆' : '记忆碎片'),
-    rotate: STAR_ROTATIONS[i % STAR_ROTATIONS.length],
-  }))
+  return picked.map((p, i) => {
+    let label = p.title
+    if (!label) {
+      if (i === 0) {
+        label = '第一张照片'
+      } else if (i === picked.length - 1) {
+        label = '最近的回忆'
+      } else {
+        label = '记忆碎片'
+      }
+    }
+    return {
+      id: p.id,
+      date: formatDate(p.created_at),
+      label,
+      rotate: STAR_ROTATIONS[i % STAR_ROTATIONS.length],
+    }
+  })
 })
 
 // ── Photo management state ──
@@ -1516,7 +1530,7 @@ watch(visible, async (isVisible) => {
 
 .modal-empty {
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 16px;
   padding: 48px 0;
 }
@@ -1626,7 +1640,7 @@ watch(visible, async (isVisible) => {
   background: rgba(255, 100, 100, 0.12);
   border-radius: 10px;
   font-size: 13px;
-  color: #ff8888;
+  color: #ffaaaa;
 }
 
 /* ── Suitcase Grid ── */
@@ -1699,7 +1713,7 @@ watch(visible, async (isVisible) => {
 }
 
 .card-action-btn.active {
-  color: #ffb664;
+  color: #ffc88a;
 }
 
 .card-action-btn.delete-btn:hover {
@@ -1762,7 +1776,7 @@ watch(visible, async (isVisible) => {
 
 .detail-desc {
   font-size: 14px;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
   line-height: 1.6;
 }
 
@@ -1777,14 +1791,14 @@ watch(visible, async (isVisible) => {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   font-size: 12px;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
 }
 
 .detail-meta {
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.4));
+  color: var(--text-secondary, rgba(255, 255, 255, 0.65));
 }
 
 .detail-edit {
@@ -2054,27 +2068,27 @@ watch(visible, async (isVisible) => {
 
 .role-mom {
   background: rgba(255, 182, 193, 0.2);
-  color: #ffb6c1;
+  color: #ffd0d6;
 }
 
 .role-dad {
   background: rgba(135, 206, 235, 0.2);
-  color: #87ceeb;
+  color: #b0e0f0;
 }
 
 .role-family {
   background: rgba(255, 218, 185, 0.2);
-  color: #ffdab9;
+  color: #ffe8d4;
 }
 
 .role-professional {
   background: rgba(144, 238, 144, 0.2);
-  color: #90ee90;
+  color: #b8f0b8;
 }
 
 .role-admin {
   background: rgba(255, 215, 0, 0.2);
-  color: #ffd700;
+  color: #ffe566;
 }
 
 .inline-error {
@@ -2083,7 +2097,7 @@ watch(visible, async (isVisible) => {
   background: rgba(255, 100, 100, 0.12);
   border-radius: 10px;
   font-size: 13px;
-  color: #ff8888;
+  color: #ffaaaa;
 }
 
 .stats-grid {
@@ -2196,7 +2210,7 @@ watch(visible, async (isVisible) => {
   background: rgba(255, 100, 100, 0.12);
   border-radius: 10px;
   font-size: 13px;
-  color: #ff8888;
+  color: #ffaaaa;
 }
 
 .form-success {
@@ -2234,7 +2248,7 @@ watch(visible, async (isVisible) => {
   background: rgba(255, 100, 100, 0.1);
   border: 1px solid rgba(255, 100, 100, 0.2);
   border-radius: 14px;
-  color: #ff8888;
+  color: #ffaaaa;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
@@ -2282,7 +2296,7 @@ watch(visible, async (isVisible) => {
 
 .bound-hint {
   font-size: 12px;
-  color: rgba(180, 130, 80, 0.6);
+  color: rgba(180, 130, 80, 0.85);
   margin-bottom: 8px;
 }
 

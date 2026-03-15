@@ -226,7 +226,7 @@ function formatTime(iso: string) {
   background: rgba(220, 60, 60, 0.15);
   border: 1px solid rgba(220, 60, 60, 0.25);
   border-radius: 10px;
-  color: #ff9999;
+  color: #ffbbbb;
   font-size: 13px;
   margin-bottom: 16px;
 }
@@ -236,7 +236,7 @@ function formatTime(iso: string) {
   background: rgba(60, 180, 100, 0.15);
   border: 1px solid rgba(60, 180, 100, 0.25);
   border-radius: 10px;
-  color: #8fe6a8;
+  color: #a8f0c0;
   font-size: 13px;
   margin-bottom: 16px;
 }

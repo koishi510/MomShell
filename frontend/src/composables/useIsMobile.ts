@@ -6,13 +6,16 @@ const MQ_LANDSCAPE = "(max-height: 500px) and (orientation: landscape)";
 
 export function useIsMobile() {
   const isMobile = ref(
-    typeof window !== "undefined" && window.matchMedia(MQ_MOBILE).matches,
+    typeof globalThis.window !== "undefined" &&
+      globalThis.matchMedia(MQ_MOBILE).matches,
   );
   const isSmall = ref(
-    typeof window !== "undefined" && window.matchMedia(MQ_SMALL).matches,
+    typeof globalThis.window !== "undefined" &&
+      globalThis.matchMedia(MQ_SMALL).matches,
   );
   const isLandscape = ref(
-    typeof window !== "undefined" && window.matchMedia(MQ_LANDSCAPE).matches,
+    typeof globalThis.window !== "undefined" &&
+      globalThis.matchMedia(MQ_LANDSCAPE).matches,
   );
 
   function update() {
@@ -28,9 +31,9 @@ export function useIsMobile() {
   let mqlLandscape: MediaQueryList | undefined;
 
   onMounted(() => {
-    mql768 = window.matchMedia(MQ_MOBILE);
-    mql480 = window.matchMedia(MQ_SMALL);
-    mqlLandscape = window.matchMedia(MQ_LANDSCAPE);
+    mql768 = globalThis.matchMedia(MQ_MOBILE);
+    mql480 = globalThis.matchMedia(MQ_SMALL);
+    mqlLandscape = globalThis.matchMedia(MQ_LANDSCAPE);
     update();
     mql768.addEventListener("change", update);
     mql480.addEventListener("change", update);

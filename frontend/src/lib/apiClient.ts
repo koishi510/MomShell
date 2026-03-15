@@ -40,6 +40,10 @@ let failedQueue: Array<{
   reject: (reason?: unknown) => void;
 }> = [];
 
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
 function processQueue(error: Error | null, token: string | null = null) {
   failedQueue.forEach((prom) => {
     if (error) prom.reject(error);
@@ -60,15 +64,15 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    throw error;
+  },
 );
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+    const originalRequest = error.config as RetryableRequestConfig;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -81,7 +85,9 @@ apiClient.interceptors.response.use(
             }
             return apiClient(originalRequest);
           })
-          .catch((err) => Promise.reject(err));
+          .catch((err) => {
+            throw err;
+          });
       }
 
       originalRequest._retry = true;
@@ -109,13 +115,13 @@ apiClient.interceptors.response.use(
         if (onTokenRefreshed) {
           onTokenRefreshed(null);
         }
-        return Promise.reject(refreshError);
+        throw refreshError;
       } finally {
         isRefreshing = false;
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   },
 );
 

@@ -178,12 +178,14 @@ export function useParallax() {
     }
     // Use deltaX (trackpad horizontal swipe / mouse horizontal scroll)
     // Also accept shift+deltaY as horizontal (common mouse fallback)
-    const dx =
-      Math.abs(e.deltaX) > Math.abs(e.deltaY)
-        ? e.deltaX
-        : e.shiftKey
-          ? e.deltaY
-          : 0;
+    let dx: number;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      dx = e.deltaX;
+    } else if (e.shiftKey) {
+      dx = e.deltaY;
+    } else {
+      dx = 0;
+    }
     if (dx === 0) return;
     e.preventDefault();
     targetOffset.value += dx * 1.5;
@@ -201,11 +203,11 @@ export function useParallax() {
 
   function onOrientationChange() {
     clearTimeout(orientationTimer);
-    orientationTimer = window.setTimeout(() => {
+    orientationTimer = globalThis.setTimeout(() => {
       recalcParallax();
       applyParallax();
       startLoop();
-    }, 150);
+    }, 150) as unknown as number;
   }
 
   onMounted(() => {
@@ -218,12 +220,12 @@ export function useParallax() {
     document.addEventListener("mousedown", onMouseDown);
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
-    window.addEventListener("blur", onBlur);
+    globalThis.addEventListener("blur", onBlur);
     document.addEventListener("touchstart", onTouchStart, { passive: true });
     document.addEventListener("touchmove", onTouchMove, { passive: true });
     document.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onOrientationChange);
+    globalThis.addEventListener("resize", onResize);
+    globalThis.addEventListener("orientationchange", onOrientationChange);
 
     setTimeout(() => {
       hintHidden.value = true;
@@ -236,12 +238,12 @@ export function useParallax() {
     document.removeEventListener("mousedown", onMouseDown);
     document.removeEventListener("mousemove", onMouseMove);
     document.removeEventListener("mouseup", onMouseUp);
-    window.removeEventListener("blur", onBlur);
+    globalThis.removeEventListener("blur", onBlur);
     document.removeEventListener("touchstart", onTouchStart);
     document.removeEventListener("touchmove", onTouchMove);
     document.removeEventListener("wheel", onWheel);
-    window.removeEventListener("resize", onResize);
-    window.removeEventListener("orientationchange", onOrientationChange);
+    globalThis.removeEventListener("resize", onResize);
+    globalThis.removeEventListener("orientationchange", onOrientationChange);
     clearTimeout(orientationTimer);
   });
 

@@ -355,27 +355,27 @@ async function onClearHistory() {
 
 .fact-category[data-category="family"] {
   background: rgba(255, 182, 193, 0.18);
-  color: #ffb6c1;
+  color: #ffd0d6;
 }
 
 .fact-category[data-category="interest"] {
   background: rgba(255, 215, 0, 0.15);
-  color: #ffd700;
+  color: #ffe566;
 }
 
 .fact-category[data-category="concern"] {
   background: rgba(135, 206, 235, 0.18);
-  color: #87ceeb;
+  color: #b0e0f0;
 }
 
 .fact-category[data-category="personal_info"] {
   background: rgba(200, 162, 255, 0.18);
-  color: #c8a2ff;
+  color: #dcc8ff;
 }
 
 .fact-category[data-category="preference"] {
   background: rgba(143, 188, 143, 0.18);
-  color: #8fbc8f;
+  color: #b8dab8;
 }
 
 .fact-owner {
@@ -414,7 +414,7 @@ async function onClearHistory() {
 .fact-delete:hover:not(:disabled) {
   background: rgba(220, 60, 60, 0.15);
   border-color: rgba(220, 60, 60, 0.25);
-  color: #ff9999;
+  color: #ffbbbb;
 }
 
 .fact-delete:disabled {
@@ -509,12 +509,12 @@ async function onClearHistory() {
 
 .turn-user .turn-role {
   background: rgba(200, 162, 255, 0.15);
-  color: #c8a2ff;
+  color: #dcc8ff;
 }
 
 .turn-ai .turn-role {
   background: rgba(135, 206, 235, 0.15);
-  color: #87ceeb;
+  color: #b0e0f0;
 }
 
 .turn-text {
@@ -533,7 +533,7 @@ async function onClearHistory() {
   background: rgba(220, 60, 60, 0.1);
   border: 1px solid rgba(220, 60, 60, 0.2);
   border-radius: 12px;
-  color: #ff9999;
+  color: #ffbbbb;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
@@ -554,7 +554,7 @@ async function onClearHistory() {
   background: rgba(220, 60, 60, 0.15);
   border: 1px solid rgba(220, 60, 60, 0.25);
   border-radius: 10px;
-  color: #ff9999;
+  color: #ffbbbb;
   font-size: 13px;
   margin-bottom: 16px;
 }

@@ -44,7 +44,7 @@
               <span v-for="tag in q.tags" :key="tag.id" class="q-tag">{{ tag.name }}</span>
             </div>
             <div class="q-meta">
-              <img :src="getAvatar(q.author)" class="meta-avatar" @error="onAvatarError" />
+              <img :src="getAvatar(q.author)" class="meta-avatar" @error="onAvatarError" alt="avatar" />
               <span>{{ q.author.nickname }}</span>
               <span class="author-tag">{{ q.author.display_tag }}</span>
               <span>· {{ q.answer_count }} 回答</span>
@@ -116,7 +116,7 @@
             <template v-else>
               <h2 class="detail-title">{{ selectedDetail.title }}</h2>
               <div class="detail-author">
-                <img :src="getAvatar(selectedDetail.author)" class="author-avatar" @error="onAvatarError" />
+                <img :src="getAvatar(selectedDetail.author)" class="author-avatar" @error="onAvatarError" alt="avatar" />
                 <span>{{ selectedDetail.author.nickname }}</span>
                 <span class="author-tag">{{ selectedDetail.author.display_tag }}</span>
                 <span v-if="canModify(selectedDetail.author.id)" class="modify-actions">
@@ -146,7 +146,7 @@
               <div v-if="loadingAnswers" class="loading-state">加载中...</div>
               <div v-for="a in answers" :key="a.id" class="answer-card">
                 <div class="answer-author">
-                  <img :src="getAvatar(a.author)" class="author-avatar" @error="onAvatarError" />
+                  <img :src="getAvatar(a.author)" class="author-avatar" @error="onAvatarError" alt="avatar" />
                   <span>{{ a.author.nickname }}</span>
                   <span class="author-tag">{{ a.author.display_tag }}</span>
                   <span v-if="canModify(a.author.id)" class="modify-actions">
@@ -183,7 +183,7 @@
                   <template v-else>
                     <div v-for="c in commentsMap[a.id] || []" :key="c.id" class="comment-item">
                       <div class="comment-header">
-                        <img :src="getAvatar(c.author)" class="comment-avatar" @error="onAvatarError" />
+                        <img :src="getAvatar(c.author)" class="comment-avatar" @error="onAvatarError" alt="avatar" />
                         <span class="comment-author">{{ c.author.nickname }}</span>
                         <span v-if="c.reply_to_user" class="reply-to">@{{ c.reply_to_user.nickname }}</span>
                       </div>
@@ -1150,7 +1150,7 @@ function clearCommentTarget() {
   border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(180, 130, 80, 0.8);
+  color: rgba(180, 130, 80, 0.95);
   margin-left: 6px;
 }
 
@@ -1361,7 +1361,7 @@ function clearCommentTarget() {
 
 .sources-label {
   font-weight: 600;
-  color: rgba(46, 180, 100, 0.8);
+  color: rgba(46, 180, 100, 0.95);
 }
 
 .sources-text {
@@ -1427,7 +1427,7 @@ function clearCommentTarget() {
 }
 
 .modify-btn.delete {
-  color: rgba(231, 76, 94, 0.7);
+  color: rgba(231, 76, 94, 0.9);
 }
 
 .modify-btn.delete:hover {
@@ -1436,7 +1436,7 @@ function clearCommentTarget() {
 }
 
 .comment-action-btn.delete {
-  color: rgba(231, 76, 94, 0.7);
+  color: rgba(231, 76, 94, 0.9);
 }
 
 .comment-action-btn.delete:hover {
