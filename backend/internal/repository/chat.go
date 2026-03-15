@@ -38,7 +38,7 @@ func (r *ChatRepo) Create(m *model.ChatMemory) error {
 }
 
 // UpdateSummaryAndTurns updates only the summary and turns fields.
-func (r *ChatRepo) UpdateSummaryAndTurns(userID string, summary string, turns string) error {
+func (r *ChatRepo) UpdateSummaryAndTurns(userID, summary, turns string) error {
 	return r.db.Model(&model.ChatMemory{}).
 		Where(whereUserID, userID).
 		Updates(map[string]any{
@@ -139,7 +139,7 @@ func (r *ChatRepo) FactExistsByContentFamily(familyIDs []string, content string)
 	return count > 0, err
 }
 
-func (r *ChatRepo) DeleteFactsByContentLikeFamily(familyIDs []string, phrases []string) error {
+func (r *ChatRepo) DeleteFactsByContentLikeFamily(familyIDs, phrases []string) error {
 	for _, phrase := range phrases {
 		phrase = strings.TrimSpace(phrase)
 		if phrase == "" {

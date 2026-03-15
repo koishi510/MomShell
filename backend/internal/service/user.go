@@ -11,7 +11,10 @@ import (
 	"gorm.io/gorm"
 )
 
-const errUserServiceUserNotFound = "用户不存在"
+const (
+	errUserServiceUserNotFound = "用户不存在"
+	whereIDEquals              = "id = ?"
+)
 
 type UserService struct {
 	db              *gorm.DB
@@ -86,6 +89,21 @@ func (s *UserService) GetProfile(userID string) (*dto.UserProfile, error) {
 	return profile, nil
 }
 
+// validateRoleChange checks if a role update is allowed for the user.
+func validateRoleChange(user *model.User, newRoleStr string) error {
+	newRole := model.UserRole(newRoleStr)
+	if !model.FamilyRoles[newRole] {
+		return errors.New("角色只能是: mom, dad")
+	}
+	if model.ProfessionalRoles[user.Role] {
+		return errors.New("认证专业人员不能修改角色")
+	}
+	if user.PartnerID != nil {
+		return errors.New("已绑定伴侣，无法更改身份")
+	}
+	return nil
+}
+
 // applyProfileFieldUpdates applies the individual field updates from the request to the user model.
 // Returns an error if any validation fails (e.g. duplicate username/email, invalid role).
 func (s *UserService) applyProfileFieldUpdates(user *model.User, req dto.UserProfileUpdate) error {
@@ -114,17 +132,10 @@ func (s *UserService) applyProfileFieldUpdates(user *model.User, req dto.UserPro
 	}
 
 	if req.Role != nil {
-		newRole := model.UserRole(*req.Role)
-		if !model.FamilyRoles[newRole] {
-			return errors.New("角色只能是: mom, dad")
+		if err := validateRoleChange(user, *req.Role); err != nil {
+			return err
 		}
-		if model.ProfessionalRoles[user.Role] {
-			return errors.New("认证专业人员不能修改角色")
-		}
-		if user.PartnerID != nil {
-			return errors.New("已绑定伴侣，无法更改身份")
-		}
-		user.Role = newRole
+		user.Role = model.UserRole(*req.Role)
 	}
 
 	return nil
@@ -178,7 +189,7 @@ func (s *UserService) GenerateShellCode(userID string) (*dto.UserProfile, error)
 }
 
 // BindPartner binds a 守护者 (dad) to a 溯源者 (mom) via shell code.
-func (s *UserService) BindPartner(userID string, shellCode string) (*dto.UserProfile, error) {
+func (s *UserService) BindPartner(userID, shellCode string) (*dto.UserProfile, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
 		return nil, errors.New(errUserServiceUserNotFound)
@@ -211,10 +222,10 @@ func (s *UserService) BindPartner(userID string, shellCode string) (*dto.UserPro
 
 	// Bind both sides in a transaction
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&model.User{}).Where("id = ?", user.ID).Update("partner_id", partner.ID).Error; err != nil {
+		if err := tx.Model(&model.User{}).Where(whereIDEquals, user.ID).Update("partner_id", partner.ID).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&model.User{}).Where("id = ?", partner.ID).Update("partner_id", user.ID).Error; err != nil {
+		if err := tx.Model(&model.User{}).Where(whereIDEquals, partner.ID).Update("partner_id", user.ID).Error; err != nil {
 			return err
 		}
 		return nil
@@ -241,13 +252,13 @@ func (s *UserService) UnbindPartner(userID string) (*dto.UserProfile, error) {
 
 	// Unbind both sides, clear shell code
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&model.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		if err := tx.Model(&model.User{}).Where(whereIDEquals, userID).Updates(map[string]interface{}{
 			"partner_id": nil,
 			"shell_code": nil,
 		}).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&model.User{}).Where("id = ?", partnerID).Updates(map[string]interface{}{
+		if err := tx.Model(&model.User{}).Where(whereIDEquals, partnerID).Updates(map[string]interface{}{
 			"partner_id": nil,
 			"shell_code": nil,
 		}).Error; err != nil {

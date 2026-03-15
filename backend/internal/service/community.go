@@ -12,6 +12,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	errExpertPostSourceRequired = "专家帖必须标注来源依据"
+	errContentModerationFailed  = "内容审核未通过: %s"
+)
+
 type CommunityService struct {
 	questionRepo    *repository.QuestionRepo
 	answerRepo      *repository.AnswerRepo
@@ -259,7 +264,7 @@ func (s *CommunityService) CreateQuestion(req dto.QuestionCreate, author *model.
 
 	contentDecision := s.moderation.ModerateText(req.Content)
 	if contentDecision.Result == model.ModerationRejected {
-		return nil, fmt.Errorf("内容审核未通过: %s", derefStr(contentDecision.Reason))
+		return nil, fmt.Errorf(errContentModerationFailed, derefStr(contentDecision.Reason))
 	}
 
 	// Determine status
@@ -456,14 +461,14 @@ func (s *CommunityService) CreateAnswer(questionID string, req dto.AnswerCreate,
 			return nil, errors.New("仅认证专业人士可发布专家帖")
 		}
 		if req.Sources == "" {
-			return nil, errors.New("专家帖必须标注来源依据")
+			return nil, errors.New(errExpertPostSourceRequired)
 		}
 	}
 
 	// Content moderation
 	decision := s.moderation.ModerateText(req.Content)
 	if decision.Result == model.ModerationRejected {
-		return nil, fmt.Errorf("内容审核未通过: %s", derefStr(decision.Reason))
+		return nil, fmt.Errorf(errContentModerationFailed, derefStr(decision.Reason))
 	}
 
 	status := model.StatusPublished
@@ -504,6 +509,59 @@ func (s *CommunityService) CreateAnswer(questionID string, req dto.AnswerCreate,
 	return answer, nil
 }
 
+// updateAnswerContent moderates and applies content update to an answer.
+func (s *CommunityService) updateAnswerContent(a *model.Answer, content *string) error {
+	if content == nil {
+		return nil
+	}
+	decision := s.moderation.ModerateText(*content)
+	if decision.Result == model.ModerationRejected {
+		return fmt.Errorf(errContentModerationFailed, derefStr(decision.Reason))
+	}
+	a.Content = *content
+	if decision.Result == model.ModerationNeedManualReview {
+		a.Status = model.StatusPendingReview
+	}
+	return nil
+}
+
+// resolveExpertPostSources determines the sources value for an expert post update.
+func resolveExpertPostSources(reqSources *string, existingSources *string) string {
+	if reqSources != nil {
+		return *reqSources
+	}
+	if existingSources != nil {
+		return *existingSources
+	}
+	return ""
+}
+
+// updateExpertPostFields handles the expert post flag and sources fields on answer update.
+func (s *CommunityService) updateExpertPostFields(a *model.Answer, req dto.AnswerUpdate, user *model.User) error {
+	if req.IsExpertPost != nil {
+		if *req.IsExpertPost {
+			if !s.IsCertifiedProfessional(user) && !user.IsAdmin {
+				return errors.New("仅认证专业人士可发布专家帖")
+			}
+			sources := resolveExpertPostSources(req.Sources, a.Sources)
+			if sources == "" {
+				return errors.New(errExpertPostSourceRequired)
+			}
+			a.IsExpertPost = true
+			a.Sources = &sources
+		} else {
+			a.IsExpertPost = false
+		}
+	}
+	if req.Sources != nil && (req.IsExpertPost == nil || !*req.IsExpertPost) {
+		if a.IsExpertPost && *req.Sources == "" {
+			return errors.New(errExpertPostSourceRequired)
+		}
+		a.Sources = req.Sources
+	}
+	return nil
+}
+
 func (s *CommunityService) UpdateAnswer(answerID string, req dto.AnswerUpdate, user *model.User) (*model.Answer, error) {
 	a, err := s.answerRepo.FindByID(answerID)
 	if err != nil {
@@ -517,43 +575,12 @@ func (s *CommunityService) UpdateAnswer(answerID string, req dto.AnswerUpdate, u
 		return nil, errors.New("无权修改此回答")
 	}
 
-	if req.Content != nil {
-		decision := s.moderation.ModerateText(*req.Content)
-		if decision.Result == model.ModerationRejected {
-			return nil, fmt.Errorf("内容审核未通过: %s", derefStr(decision.Reason))
-		}
-		a.Content = *req.Content
-		if decision.Result == model.ModerationNeedManualReview {
-			a.Status = model.StatusPendingReview
-		}
+	if err := s.updateAnswerContent(a, req.Content); err != nil {
+		return nil, err
 	}
 
-	// Update expert post fields
-	if req.IsExpertPost != nil {
-		if *req.IsExpertPost {
-			if !s.IsCertifiedProfessional(user) && !user.IsAdmin {
-				return nil, errors.New("仅认证专业人士可发布专家帖")
-			}
-			sources := ""
-			if req.Sources != nil {
-				sources = *req.Sources
-			} else if a.Sources != nil {
-				sources = *a.Sources
-			}
-			if sources == "" {
-				return nil, errors.New("专家帖必须标注来源依据")
-			}
-			a.IsExpertPost = true
-			a.Sources = &sources
-		} else {
-			a.IsExpertPost = false
-		}
-	}
-	if req.Sources != nil && (req.IsExpertPost == nil || !*req.IsExpertPost) {
-		if a.IsExpertPost && *req.Sources == "" {
-			return nil, errors.New("专家帖必须标注来源依据")
-		}
-		a.Sources = req.Sources
+	if err := s.updateExpertPostFields(a, req, user); err != nil {
+		return nil, err
 	}
 
 	a.UpdatedAt = time.Now()
