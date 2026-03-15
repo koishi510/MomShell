@@ -52,12 +52,12 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
     const err = await response.json().catch(() => ({}));
     // Gin backend returns { "error": "..." }
     if (typeof err.error === "string") {
-      throw new TypeError(err.error);
+      throw new Error(err.error);
     }
     // FastAPI-style { "detail": "..." }
     const detail = err.detail;
     if (typeof detail === "string") {
-      throw new TypeError(detail);
+      throw new Error(detail);
     }
     if (Array.isArray(detail) && detail.length > 0) {
       throw new Error(
@@ -95,7 +95,6 @@ export function apiGetMe(accessToken: string): Promise<User> {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      "X-Access-Token": accessToken,
     },
   });
 }
@@ -109,7 +108,6 @@ export function apiSetRole(
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      "X-Access-Token": accessToken,
     },
     body: JSON.stringify({ role }),
   });
@@ -119,7 +117,6 @@ export function apiLogout(accessToken?: string): Promise<void> {
   const headers: Record<string, string> = {};
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
-    headers["X-Access-Token"] = accessToken;
   }
   return fetch(`${AUTH_API}/logout`, {
     method: "POST",
@@ -129,7 +126,7 @@ export function apiLogout(accessToken?: string): Promise<void> {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       if (typeof (err as Record<string, unknown>).error === "string") {
-        throw new TypeError((err as Record<string, string>).error);
+        throw new Error((err as Record<string, string>).error);
       }
       throw new Error("退出登录失败");
     }
@@ -142,7 +139,6 @@ export function apiCompleteTutorial(accessToken: string): Promise<void> {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      "X-Access-Token": accessToken,
     },
   });
 }

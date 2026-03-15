@@ -19,9 +19,9 @@ const CAMERA_FOLLOW_THROTTLE_MS = 100;
 // Used instead of rand() to satisfy static analysis (S2245).
 // This is purely cosmetic (particle positions, rotations); no security context.
 function createSeededRandom(seed: number) {
-  let s = Math.trunc(seed);
+  let s = seed | 0;
   return () => {
-    s = Math.trunc(s + 0x6d2b79f5);
+    s = (s + 0x6d2b79f5) | 0;
     let t = Math.imul(s ^ (s >>> 15), 1 | s);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;

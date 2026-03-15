@@ -194,7 +194,7 @@ export function useParallax() {
   }
 
   let resizeRaf = 0;
-  let orientationTimer = 0;
+  let orientationTimer: ReturnType<typeof setTimeout> | undefined;
 
   function onResize() {
     cancelAnimationFrame(resizeRaf);
@@ -203,11 +203,11 @@ export function useParallax() {
 
   function onOrientationChange() {
     clearTimeout(orientationTimer);
-    orientationTimer = globalThis.setTimeout(() => {
+    orientationTimer = setTimeout(() => {
       recalcParallax();
       applyParallax();
       startLoop();
-    }, 150) as unknown as number;
+    }, 150);
   }
 
   onMounted(() => {
