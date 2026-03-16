@@ -4,8 +4,15 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { Hands, Results } from "@mediapipe/hands";
+import "@mediapipe/hands";
+import type { Hands as HandsInstance, HandsConfig, Results } from "@mediapipe/hands";
 import gsap from "gsap";
+
+// @mediapipe/* packages ship as an IIFE that attaches to globalThis (no ESM exports).
+// Vite 8/Rolldown doesn't synthesize named exports, so we use a side-effect import + global.
+const HandsCtor = (globalThis as any).Hands as unknown as new (
+  config?: HandsConfig,
+) => HandsInstance;
 
 // --- Performance Tuning Constants ---
 const MEDIAPIPE_MODEL_COMPLEXITY = 0; // 0=lite (fast), 1=standard
@@ -896,11 +903,11 @@ export default function PearlShell({
     if (!videoRef.current) return;
 
     let cancelled = false;
-    let handsInstance: Hands | null = null;
+    let handsInstance: HandsInstance | null = null;
     let inferenceFrameId: number | null = null;
 
     const initMediaPipe = async () => {
-      const hands = new Hands({
+      const hands = new HandsCtor({
         locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         },
