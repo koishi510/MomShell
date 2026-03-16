@@ -54,3 +54,22 @@
   --text-dark: rgba(30, 30, 30, 0.9);
   --text-dark-secondary: rgba(30, 30, 30, 0.55);
 }
+
+/* ── Dad Mode: cold industrial theme ── */
+.dad-mode {
+  --glass-bg: rgba(12, 22, 36, 0.88);
+  --glass-bg-heavy: rgba(16, 28, 44, 0.94);
+  --glass-border: rgba(74, 158, 255, 0.12);
+  --glass-border-strong: rgba(74, 158, 255, 0.25);
+  --glass-blur: 40px;
+  --glass-saturate: 1.4;
+  --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --glass-inner-glow: inset 0 1px 0 rgba(74, 158, 255, 0.08);
+  --overlay-backdrop: rgba(0, 0, 0, 0.5);
+
+  --accent-warm: #4a9eff;
+  --accent-warm-hover: #5aabff;
+
+  --text-primary: rgba(224, 230, 237, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+}

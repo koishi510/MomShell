@@ -1,5 +1,5 @@
 <template>
-  <OverlayPanel :visible="uiStore.activePanel === 'community'" position="right" @close="uiStore.closePanel()">
+  <OverlayPanel :visible="embedded || uiStore.activePanel === 'community'" :embedded="embedded" position="right" @close="uiStore.closePanel()">
     <div class="community-panel">
       <h2 class="panel-title">社区</h2>
 
@@ -274,6 +274,9 @@ import { useAuthStore } from '@/stores/auth'
 const uiStore = useUiStore()
 const authStore = useAuthStore()
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+const isActive = computed(() => props.embedded || uiStore.activePanel === 'community')
+
 const channel = ref<'experience' | 'professional' | 'collections'>('experience')
 const questions = ref<QuestionListItem[]>([])
 const loading = ref(false)
@@ -383,12 +386,9 @@ function loadMore() {
   fetchQuestions(currentPage.value + 1)
 }
 
-watch(
-  () => uiStore.activePanel,
-  (panel) => {
-    if (panel === 'community') fetchQuestions(1)
-  },
-)
+watch(isActive, (active) => {
+  if (active) fetchQuestions(1)
+}, { immediate: true })
 
 async function openDetail(q: QuestionListItem) {
   selectedDetail.value = null

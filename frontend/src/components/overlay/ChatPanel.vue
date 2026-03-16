@@ -1,6 +1,9 @@
 <template>
-  <OverlayPanel :visible="uiStore.activePanel === 'chat'" position="right" @close="uiStore.closePanel()">
-    <div class="chat-panel" :style="ambientStyle">
+  <OverlayPanel :visible="embedded || uiStore.activePanel === 'chat'" :embedded="embedded" position="right" @close="uiStore.closePanel()">
+    <!-- Inline AI memory (embedded mode only) -->
+    <AiMemoryPanel v-if="showInlineMemory" :embedded="true" @back="showInlineMemory = false" />
+
+    <div v-else class="chat-panel" :style="ambientStyle">
       <!-- Ambient background layer -->
       <div class="ambient-bg" :style="ambientGradientStyle" />
 
@@ -10,7 +13,7 @@
       </Transition>
 
       <div class="chat-header">
-        <button v-if="authStore.isAuthenticated" class="memory-btn" @click="uiStore.openPanel('ai-memory')">
+        <button v-if="authStore.isAuthenticated" class="memory-btn" @click="onMemoryClick">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M12 3C6.5 3 2 6.58 2 11c0 2.42 1.34 4.58 3.43 6.04L4 21l4.53-2.21C9.62 19.26 10.78 19.5 12 19.5c5.5 0 10-3.58 10-8S17.5 3 12 3z" fill="currentColor" />
           </svg>
@@ -89,6 +92,7 @@ let _preferredName: string | null = null
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
+import AiMemoryPanel from './AiMemoryPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -126,7 +130,18 @@ function startTypewriter(text: string) {
   }, 30)
 }
 
-const isOpen = computed(() => uiStore.activePanel === 'chat')
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+
+const isOpen = computed(() => props.embedded || uiStore.activePanel === 'chat')
+const showInlineMemory = ref(false)
+
+function onMemoryClick() {
+  if (props.embedded) {
+    showInlineMemory.value = true
+  } else {
+    uiStore.openPanel('ai-memory')
+  }
+}
 
 const colorToneMap: Record<string, string> = {
   soft_pink: 'rgba(255,182,193,0.15)',

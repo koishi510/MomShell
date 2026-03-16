@@ -1,5 +1,5 @@
 <template>
-  <OverlayPanel :visible="uiStore.activePanel === 'ai-memory'" position="center" @close="uiStore.closePanel()">
+  <OverlayPanel :visible="embedded || uiStore.activePanel === 'ai-memory'" :embedded="embedded" position="center" @close="uiStore.closePanel()">
     <div class="ai-memory-panel">
       <h2 class="panel-title">小石光的记忆</h2>
 
@@ -96,7 +96,7 @@
 
       <p v-if="error" class="error-msg">{{ error }}</p>
 
-      <button class="back-btn" @click="uiStore.openPanel('chat')">
+      <button class="back-btn" @click="embedded ? emit('back') : uiStore.openPanel('chat')">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import {
@@ -121,6 +121,10 @@ import {
 import { getErrorMessage } from '@/lib/apiClient'
 
 const uiStore = useUiStore()
+
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+const emit = defineEmits<{ back: [] }>()
+const isActive = computed(() => props.embedded || uiStore.activePanel === 'ai-memory')
 
 const activeTab = ref<'facts' | 'history'>('facts')
 const facts = ref<MemoryFact[]>([])
@@ -152,15 +156,12 @@ function ownerLabel(fact: MemoryFact): string {
   return fact.owner_nickname || ''
 }
 
-watch(
-  () => uiStore.activePanel,
-  async (panel) => {
-    if (panel === 'ai-memory') {
-      activeTab.value = 'facts'
-      await loadFacts()
-    }
-  },
-)
+watch(isActive, async (active) => {
+  if (active) {
+    activeTab.value = 'facts'
+    await loadFacts()
+  }
+}, { immediate: true })
 
 watch(activeTab, async (tab) => {
   error.value = ''

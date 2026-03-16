@@ -1,23 +1,34 @@
 <template>
-  <BeachScene />
-  <NavBar />
-  <LandingOverlay />
-  <AuthPanel />
-  <RoleSelectPanel />
-  <CarPage />
-  <CommunityPanel />
-  <BarPage />
-  <ChatPanel />
-  <MemoryPanel />
-  <AiMemoryPanel />
-  <WhisperPanel />
-  <TaskPanel />
-  <ShellGiftPanel />
+  <div :class="{ 'dad-mode': isDad }">
+    <!-- Dad: full-screen console replaces beach scene -->
+    <DadConsole v-if="isDad" />
+
+    <!-- Mom / Guest / Unauthenticated: beach scene -->
+    <template v-else>
+      <BeachScene />
+      <NavBar />
+    </template>
+
+    <!-- Shared overlays (auth, panels) — available for all roles -->
+    <LandingOverlay />
+    <AuthPanel />
+    <RoleSelectPanel />
+    <CarPage v-if="!isDad" />
+    <CommunityPanel v-if="!isDad" />
+    <BarPage v-if="!isDad" />
+    <ChatPanel v-if="!isDad" />
+    <MemoryPanel v-if="!isDad" />
+    <AiMemoryPanel v-if="!isDad" />
+    <WhisperPanel v-if="!isDad" />
+    <TaskPanel v-if="!isDad" />
+    <ShellGiftPanel v-if="!isDad" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useBackgroundMusicLoop } from '@/composables/useBackgroundMusicLoop'
+import DadConsole from '@/components/dad/DadConsole.vue'
 import BeachScene from '@/components/scene/BeachScene.vue'
 import NavBar from '@/components/scene/NavBar.vue'
 import LandingOverlay from '@/components/overlay/LandingOverlay.vue'
@@ -40,6 +51,8 @@ const authStore = useAuthStore()
 const uiStore = useUiStore()
 const { startTutorial, stopTutorial, cancelPending } = useTutorial()
 
+const isDad = computed(() => authStore.isAuthenticated && authStore.user?.role === 'dad')
+
 useBackgroundMusicLoop()
 
 onMounted(async () => {
@@ -57,7 +70,7 @@ watch(
     panel: uiStore.activePanel,
   }),
   (state) => {
-    if (!state.landing && state.auth && !state.panel) {
+    if (!state.landing && state.auth && !state.panel && !isDad.value) {
       setTimeout(() => {
         startTutorial()
       }, 1000)
