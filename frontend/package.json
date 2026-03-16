@@ -29,7 +29,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.183.1",
-    "@vitejs/plugin-react": "^5.1.4",
+    "@vitejs/plugin-react": "^6.0.1",
     "@vitejs/plugin-vue": "^6.0.5",
     "eslint": "^10.0.3",
     "eslint-plugin-vue": "^10.8.0",
