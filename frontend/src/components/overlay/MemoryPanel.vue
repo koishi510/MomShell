@@ -1,5 +1,5 @@
 <template>
-  <OverlayPanel :visible="uiStore.activePanel === 'memory'" position="center" @close="uiStore.closePanel()">
+  <OverlayPanel :visible="embedded || uiStore.activePanel === 'memory'" :embedded="embedded" position="center" @close="uiStore.closePanel()">
     <div class="memory-panel">
       <h2 class="memory-title">哪段记忆在闪光？</h2>
       <p class="memory-subtitle">请输入或选择记忆砂砾</p>
@@ -80,6 +80,9 @@ import { getErrorMessage } from '@/lib/apiClient'
 
 const uiStore = useUiStore()
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+const isActive = computed(() => props.embedded || uiStore.activePanel === 'memory')
+
 const tags = ref<IdentityTagList | null>(null)
 const loadingTags = ref(false)
 const selectedTag = ref<string | null>(null)
@@ -104,21 +107,18 @@ const allTags = computed<IdentityTag[]>(() => {
   ]
 })
 
-watch(
-  () => uiStore.activePanel,
-  async (panel) => {
-    if (panel === 'memory') {
-      loadingTags.value = true
-      try {
-        tags.value = await getIdentityTags()
-      } catch {
-        // silent
-      } finally {
-        loadingTags.value = false
-      }
+watch(isActive, async (active) => {
+  if (active) {
+    loadingTags.value = true
+    try {
+      tags.value = await getIdentityTags()
+    } catch {
+      // silent
+    } finally {
+      loadingTags.value = false
     }
-  },
-)
+  }
+}, { immediate: true })
 
 function onSelectTag(tag: IdentityTag) {
   if (selectedTag.value === tag.id) {

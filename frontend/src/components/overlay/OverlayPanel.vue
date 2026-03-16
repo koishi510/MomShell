@@ -1,5 +1,11 @@
 <template>
-  <Transition name="overlay">
+  <!-- Embedded mode: inline rendering, no overlay/backdrop -->
+  <div v-if="embedded && visible" class="embedded-panel">
+    <slot />
+  </div>
+
+  <!-- Normal mode: fixed overlay -->
+  <Transition v-else name="overlay">
     <div v-if="visible" class="overlay-backdrop" @click.self="onBackdropClick">
       <div :class="['overlay-panel', `overlay-${position}`]">
         <button v-if="showClose" class="overlay-close" @click="$emit('close')" aria-label="关闭">
@@ -22,11 +28,13 @@ withDefaults(
     position?: 'center' | 'right' | 'fullscreen'
     showClose?: boolean
     dismissible?: boolean
+    embedded?: boolean
   }>(),
   {
     position: 'center',
     showClose: true,
     dismissible: true,
+    embedded: false,
   },
 )
 
@@ -40,6 +48,13 @@ function onBackdropClick() {
 </script>
 
 <style scoped>
+/* ── Embedded (inline) mode ── */
+.embedded-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+/* ── Normal overlay mode ── */
 .overlay-backdrop {
   position: fixed;
   inset: 0;

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth'
 
-export type PanelName = 'auth' | 'role' | 'memory' | 'community' | 'chat' | 'car' | 'bar' | 'whisper' | 'task' | 'shell-gift' | 'ai-memory' | null
+export type PanelName = 'auth' | 'role' | 'memory' | 'community' | 'chat' | 'car' | 'bar' | 'whisper' | 'task' | 'shell-gift' | 'ai-memory' | 'profile' | null
 export type AuthMode = 'login' | 'register' | 'guest'
 
 export const useUiStore = defineStore('ui', () => {

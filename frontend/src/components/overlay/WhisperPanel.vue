@@ -1,5 +1,5 @@
 <template>
-  <OverlayPanel :visible="uiStore.activePanel === 'whisper'" position="center" @close="uiStore.closePanel()">
+  <OverlayPanel :visible="embedded || uiStore.activePanel === 'whisper'" :embedded="embedded" position="center" @close="uiStore.closePanel()">
     <div class="whisper-panel">
       <!-- Mom view: write whispers -->
       <template v-if="isMom">
@@ -79,6 +79,9 @@ import { getErrorMessage } from '@/lib/apiClient'
 const uiStore = useUiStore()
 const authStore = useAuthStore()
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+const isActive = computed(() => props.embedded || uiStore.activePanel === 'whisper')
+
 const isMom = computed(() => authStore.user?.role === 'mom')
 
 const whispers = ref<WhisperItem[]>([])
@@ -90,24 +93,21 @@ const success = ref('')
 const tips = ref('')
 const loadingTips = ref(false)
 
-watch(
-  () => uiStore.activePanel,
-  async (panel) => {
-    if (panel === 'whisper') {
-      error.value = ''
-      success.value = ''
-      tips.value = ''
-      loading.value = true
-      try {
-        whispers.value = await getWhispers()
-      } catch {
-        // silent
-      } finally {
-        loading.value = false
-      }
+watch(isActive, async (active) => {
+  if (active) {
+    error.value = ''
+    success.value = ''
+    tips.value = ''
+    loading.value = true
+    try {
+      whispers.value = await getWhispers()
+    } catch {
+      // silent
+    } finally {
+      loading.value = false
     }
-  },
-)
+  }
+}, { immediate: true })
 
 async function onSubmit() {
   const content = newContent.value.trim()
