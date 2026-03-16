@@ -23,7 +23,10 @@ type TaskService struct {
 	taskRepo           *repository.TaskRepo
 	userRepo           *repository.UserRepo
 	chatRepo           *repository.ChatRepo
+	whisperRepo        *repository.WhisperRepo
+	photoRepo          *repository.PhotoRepo
 	openaiClient       *openai.Client
+	imageModel         string
 	shellGiftService   *ShellGiftService
 	achievementService *AchievementService
 }
@@ -32,7 +35,10 @@ func NewTaskService(
 	taskRepo *repository.TaskRepo,
 	userRepo *repository.UserRepo,
 	chatRepo *repository.ChatRepo,
+	whisperRepo *repository.WhisperRepo,
+	photoRepo *repository.PhotoRepo,
 	openaiClient *openai.Client,
+	imageModel string,
 	shellGiftService *ShellGiftService,
 	achievementService *AchievementService,
 ) *TaskService {
@@ -40,7 +46,10 @@ func NewTaskService(
 		taskRepo:           taskRepo,
 		userRepo:           userRepo,
 		chatRepo:           chatRepo,
+		whisperRepo:        whisperRepo,
+		photoRepo:          photoRepo,
 		openaiClient:       openaiClient,
+		imageModel:         imageModel,
 		shellGiftService:   shellGiftService,
 		achievementService: achievementService,
 	}
@@ -157,7 +166,15 @@ func (s *TaskService) GetPartnerTasks(callerID string) ([]dto.UserTaskItem, erro
 		}
 	}
 
-	return toTaskItems(tasks), nil
+	// Filter out pending tasks — mom only sees completed/verified
+	var visible []model.UserTask
+	for _, t := range tasks {
+		if t.Status != model.TaskPending {
+			visible = append(visible, t)
+		}
+	}
+
+	return toTaskItems(visible), nil
 }
 
 // ScoreTask allows Mom to verify and score a completed task.
@@ -200,6 +217,23 @@ func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dt
 	if s.achievementService != nil {
 		if err := s.achievementService.CheckAndUnlock(ut.UserID); err != nil {
 			log.Printf("[TaskService] achievement check failed: %v", err)
+		}
+	}
+
+	// Save memory card image to mom's photo library
+	if ut.ProofPhotoURL != nil && *ut.ProofPhotoURL != "" && s.photoRepo != nil {
+		taskTitle := ut.AITitle
+		if ut.Source != model.TaskSourceAI && ut.Task != nil {
+			taskTitle = ut.Task.Title
+		}
+		photo := &model.Photo{
+			UserID:   callerID,
+			Title:    taskTitle,
+			ImageURL: *ut.ProofPhotoURL,
+			Source:   "task_card",
+		}
+		if err := s.photoRepo.Create(photo); err != nil {
+			log.Printf("[TaskService] failed to save task card to photo library: %v", err)
 		}
 	}
 
@@ -331,7 +365,25 @@ func (s *TaskService) createTasksForUser(user *model.User, userID string, date t
 		if stage != "" {
 			ck := coupleKey(userID, *user.PartnerID)
 			dateStr := date.Format("2006-01-02")
-			aiTasks, err := getOrGenerateAITasks(s.openaiClient, s.taskRepo, ck, dateStr, stage)
+
+			// Build personalized context
+			tctx := TaskContext{AgeStage: stage}
+
+			// Load partner's (mom's) memory facts
+			partnerID := *user.PartnerID
+			familyIDs := []string{userID, partnerID}
+			if facts, err := s.chatRepo.FindFactsByFamilyIDs(familyIDs); err == nil {
+				tctx.MemoryFacts = facts
+			}
+
+			// Load recent whispers from mom
+			if s.whisperRepo != nil {
+				if whispers, err := s.whisperRepo.FindByAuthorID(partnerID, 10); err == nil {
+					tctx.Whispers = whispers
+				}
+			}
+
+			aiTasks, err := getOrGenerateAITasks(s.openaiClient, s.taskRepo, ck, dateStr, tctx)
 			if err == nil && len(aiTasks) > 0 {
 				for _, at := range aiTasks {
 					ut := &model.UserTask{
@@ -418,4 +470,37 @@ func (s *TaskService) GetBabyAge(userID string) (*dto.BabyAgeResponse, error) {
 		AgeStage: stage,
 		Source:   source,
 	}, nil
+}
+
+// RegenerateTasks deletes today's pending tasks and AI cache, then regenerates.
+func (s *TaskService) RegenerateTasks(userID string) ([]dto.UserTaskItem, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New(errUserNotFound)
+	}
+	if user.Role != model.RoleDad {
+		return nil, fmt.Errorf("只有爸爸角色可以重新生成任务")
+	}
+	if user.PartnerID == nil {
+		return nil, errors.New(errPartnerRequired)
+	}
+
+	date := today()
+	dateStr := date.Format("2006-01-02")
+	ck := coupleKey(userID, *user.PartnerID)
+
+	// Delete today's pending tasks and AI cache
+	_ = s.taskRepo.DeletePendingUserTasksByDate(userID, date)
+	_ = s.taskRepo.DeleteAICacheByCouple(ck, dateStr)
+
+	// Regenerate
+	if err := s.createTasksForUser(user, userID, date); err != nil {
+		return nil, fmt.Errorf("重新生成任务失败: %w", err)
+	}
+
+	tasks, err := s.taskRepo.FindUserTasksByDate(userID, date)
+	if err != nil {
+		return nil, err
+	}
+	return toTaskItems(tasks), nil
 }

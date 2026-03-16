@@ -104,11 +104,11 @@
         <template v-else>
           <div v-if="loading" class="loading-state">{{ currentAge ? '正在生成任务...' : '加载中...' }}</div>
 
-          <div v-else-if="tasks.length === 0" class="empty-state">今天还没有任务</div>
+          <div v-else-if="momVisibleTasks.length === 0" class="empty-state">暂无已完成的任务</div>
 
           <div v-else class="task-list">
             <div
-              v-for="t in sortedTasks"
+              v-for="t in momVisibleTasks"
               :key="t.id"
               :class="[
                 'task-card',
@@ -426,6 +426,10 @@ const sortedTasks = computed(() => {
     return (priorityRank[b.priority || 'T2'] ?? 0) - (priorityRank[a.priority || 'T2'] ?? 0)
   })
 })
+
+const momVisibleTasks = computed(() =>
+  sortedTasks.value.filter((t) => t.status !== 'pending'),
+)
 
 function priorityLabel(priority?: string): string {
   const p = (priority || 'T2').toUpperCase()
