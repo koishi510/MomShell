@@ -99,3 +99,15 @@ export function setBabyAge(ageStage: string): Promise<void> {
     .put("/api/v1/tasks/baby-age", { age_stage: ageStage })
     .then(() => undefined);
 }
+
+export function regenerateTasks(): Promise<UserTaskItem[]> {
+  return apiClient.post("/api/v1/tasks/regenerate").then((r) => r.data);
+}
+
+export function generateTaskCard(
+  id: string,
+): Promise<{ image_url: string }> {
+  return apiClient
+    .post(`/api/v1/tasks/${id}/generate-card`, {}, { timeout: 5 * 60 * 1000 })
+    .then((r) => r.data);
+}

@@ -30,6 +30,9 @@
           <span class="dc-state-icon">--</span>
           <span>今天没有任务</span>
           <button v-if="!currentAge" class="dc-btn dc-btn-accent" @click="showAgeMenu = true">设置宝宝年龄以生成任务</button>
+          <button v-else class="dc-btn dc-btn-outline" :disabled="regenerating" @click="onRegenerate">
+            {{ regenerating ? '生成中...' : '重新生成' }}
+          </button>
         </div>
 
         <div v-else class="dc-task-list">
@@ -90,6 +93,15 @@
         </div>
 
         <p v-if="error" class="dc-error">{{ error }}</p>
+
+        <button
+          v-if="tasks.length > 0 && currentAge"
+          class="dc-regen-btn"
+          :disabled="regenerating"
+          @click="onRegenerate"
+        >
+          {{ regenerating ? '生成中...' : '重新生成任务' }}
+        </button>
       </div>
 
       <!-- ─ Dashboard Tab ─ -->
@@ -216,33 +228,56 @@
       </button>
     </nav>
 
-    <!-- ── Complete Task Dialog ── -->
+    <!-- ── Memory Card Dialog ── -->
     <Transition name="dc-fade">
       <div v-if="showCompleteDialog" class="dc-dialog-backdrop" @click.self="closeCompleteDialog">
         <div class="dc-dialog">
-          <h3 class="dc-dialog-title">完成任务</h3>
+          <h3 class="dc-dialog-title">创建记忆卡片</h3>
           <p v-if="completeTarget" class="dc-dialog-sub">{{ completeTarget.title }}</p>
 
-          <label class="dc-proof-picker">
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              class="dc-proof-input"
-              :disabled="proofUploading"
-              @change="onProofFileChange"
-            />
-            <span class="dc-btn dc-btn-outline">拍照或上传证明</span>
-          </label>
+          <!-- Card image preview -->
+          <div v-if="cardPreviewUrl" class="dc-card-preview">
+            <img :src="cardPreviewUrl" alt="" class="dc-card-img" />
+          </div>
 
-          <img v-if="proofPreviewUrl" class="dc-proof-preview" :src="proofPreviewUrl" alt="" />
+          <!-- Creation options -->
+          <div v-if="!cardPreviewUrl" class="dc-card-options">
+            <button
+              class="dc-btn dc-btn-accent"
+              :disabled="generatingCard || proofUploading"
+              @click="onGenerateCard"
+            >
+              {{ generatingCard ? 'AI 生成中...' : 'AI 生成' }}
+            </button>
+            <label class="dc-proof-picker">
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="dc-proof-input"
+                :disabled="generatingCard || proofUploading"
+                @change="onProofFileChange"
+              />
+              <span class="dc-btn dc-btn-outline">上传图片</span>
+            </label>
+          </div>
+
+          <!-- Replace card after preview -->
+          <div v-else class="dc-card-replace">
+            <button class="dc-btn dc-btn-ghost dc-btn-sm" :disabled="generatingCard || proofUploading" @click="resetCard">重新选择</button>
+          </div>
+
           <p v-if="completeDialogError" class="dc-error">{{ completeDialogError }}</p>
 
           <div class="dc-dialog-actions">
-            <button class="dc-btn dc-btn-ghost" :disabled="proofUploading" @click="closeCompleteDialog">取消</button>
-            <button class="dc-btn dc-btn-outline" :disabled="proofUploading || !completeTarget" @click="submitWithoutPhoto">跳过照片</button>
-            <button class="dc-btn dc-btn-accent" :disabled="proofUploading || !completeTarget || !proofFile" @click="submitWithPhoto">
-              {{ proofUploading ? '上传中...' : '上传并完成' }}
+            <button class="dc-btn dc-btn-ghost" :disabled="proofUploading || generatingCard" @click="closeCompleteDialog">取消</button>
+            <button class="dc-btn dc-btn-outline" :disabled="proofUploading || generatingCard || !completeTarget" @click="submitWithoutCard">跳过</button>
+            <button
+              class="dc-btn dc-btn-accent"
+              :disabled="proofUploading || generatingCard || !completeTarget || !cardPreviewUrl"
+              @click="submitWithCard"
+            >
+              {{ proofUploading ? '提交中...' : '完成' }}
             </button>
           </div>
         </div>
@@ -281,11 +316,13 @@ import ProfilePanel from '@/components/overlay/ProfilePanel.vue'
 import { uploadPhoto } from '@/lib/api/photo'
 import {
   completeTask,
+  generateTaskCard,
   getAchievements,
   getBabyAge,
   getDailyTasks,
   getSkillRadar,
   getTaskStats,
+  regenerateTasks,
   type AchievementItem,
   type SkillRadar,
   type TaskStats,
@@ -314,6 +351,7 @@ const stats = ref<TaskStats | null>(null)
 const loading = ref(false)
 const error = ref('')
 const completing = ref('')
+const regenerating = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const priorityRank: Record<string, number> = { T0: 3, T1: 2, T2: 1 }
@@ -427,24 +465,27 @@ async function onUsePerk(id: string) {
   }
 }
 
-// ── Complete dialog ──
+// ── Complete dialog (memory card) ──
 const showCompleteDialog = ref(false)
 const completeTarget = ref<UserTaskItem | null>(null)
 const proofFile = ref<File | null>(null)
-const proofPreviewUrl = ref('')
 const proofUploading = ref(false)
 const completeDialogError = ref('')
+const generatingCard = ref(false)
+const cardPreviewUrl = ref('')
 
-function resetProof() {
-  if (proofPreviewUrl.value) URL.revokeObjectURL(proofPreviewUrl.value)
+function resetCard() {
+  if (cardPreviewUrl.value && cardPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(cardPreviewUrl.value)
+  }
   proofFile.value = null
-  proofPreviewUrl.value = ''
+  cardPreviewUrl.value = ''
 }
 
 function openCompleteDialog(task: UserTaskItem) {
   completeTarget.value = task
   completeDialogError.value = ''
-  resetProof()
+  resetCard()
   showCompleteDialog.value = true
 }
 
@@ -452,21 +493,35 @@ function closeCompleteDialog() {
   showCompleteDialog.value = false
   completeTarget.value = null
   completeDialogError.value = ''
-  resetProof()
+  resetCard()
 }
 
 function onProofFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0] ?? null
-  resetProof()
+  resetCard()
   if (file) {
     proofFile.value = file
-    proofPreviewUrl.value = URL.createObjectURL(file)
+    cardPreviewUrl.value = URL.createObjectURL(file)
   }
   input.value = ''
 }
 
-async function submitWithoutPhoto() {
+async function onGenerateCard() {
+  if (!completeTarget.value) return
+  generatingCard.value = true
+  completeDialogError.value = ''
+  try {
+    const resp = await generateTaskCard(completeTarget.value.id)
+    cardPreviewUrl.value = resp.image_url
+  } catch (e) {
+    completeDialogError.value = getErrorMessage(e)
+  } finally {
+    generatingCard.value = false
+  }
+}
+
+async function submitWithoutCard() {
   if (!completeTarget.value) return
   const id = completeTarget.value.id
   completing.value = id
@@ -484,15 +539,20 @@ async function submitWithoutPhoto() {
   }
 }
 
-async function submitWithPhoto() {
-  if (!completeTarget.value || !proofFile.value) return
+async function submitWithCard() {
+  if (!completeTarget.value || !cardPreviewUrl.value) return
   const id = completeTarget.value.id
   completing.value = id
   proofUploading.value = true
   completeDialogError.value = ''
   try {
-    const uploaded = await uploadPhoto(proofFile.value, `任务证明：${completeTarget.value.title}`)
-    const updated = await completeTask(id, { proof_photo_url: uploaded.image_url })
+    let imageUrl = cardPreviewUrl.value
+    // If it's a local file (blob URL), upload it first
+    if (proofFile.value) {
+      const uploaded = await uploadPhoto(proofFile.value, `记忆卡片：${completeTarget.value.title}`)
+      imageUrl = uploaded.image_url
+    }
+    const updated = await completeTask(id, { proof_photo_url: imageUrl })
     tasks.value = tasks.value.map((t) => (t.id === id ? updated : t))
     closeCompleteDialog()
   } catch (e) {
@@ -527,6 +587,20 @@ async function fetchBabyAge() {
     const resp = await getBabyAge()
     currentAge.value = resp.age_stage || ''
   } catch { /* ignore */ }
+}
+
+async function onRegenerate() {
+  regenerating.value = true
+  error.value = ''
+  try {
+    const newTasks = await regenerateTasks()
+    tasks.value = newTasks
+    stats.value = await getTaskStats()
+  } catch (e) {
+    error.value = getErrorMessage(e)
+  } finally {
+    regenerating.value = false
+  }
 }
 
 async function onSelectAge(value: string) {
@@ -893,6 +967,30 @@ watch(activeTab, async (tab) => {
 .dc-complete-btn:active { transform: scale(0.98); }
 .dc-complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Regenerate button */
+.dc-regen-btn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px dashed var(--dc-border);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--dc-text-dim);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.dc-regen-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--dc-accent);
+  color: var(--dc-accent);
+}
+
+.dc-regen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ── Dashboard ── */
 .dc-dashboard {
   display: flex;
@@ -1198,13 +1296,33 @@ watch(activeTab, async (tab) => {
   clip: rect(0, 0, 0, 0);
 }
 
-.dc-proof-preview {
-  width: 100%;
-  max-height: 200px;
-  object-fit: cover;
+/* Memory card dialog */
+.dc-card-preview {
+  margin: 16px 0;
   border-radius: 14px;
+  overflow: hidden;
   border: 1px solid var(--dc-border);
-  margin-top: 14px;
+}
+
+.dc-card-img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+.dc-card-options {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.dc-card-options .dc-btn { flex: 1; text-align: center; }
+
+.dc-card-replace {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
 }
 
 /* Age picker */

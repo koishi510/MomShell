@@ -205,6 +205,7 @@ func Setup(
 		tasks.GET("/daily", h.Task.DailyTasks)
 		tasks.POST("/:id/complete", h.Task.Complete)
 		tasks.GET("/partner", h.Task.PartnerTasks)
+		tasks.POST("/:id/generate-card", h.Task.GenerateCard)
 		tasks.POST("/:id/score", h.Task.Score)
 		tasks.POST("/:id/reject", h.Task.Reject)
 		tasks.GET("/stats", h.Task.Stats)
@@ -212,6 +213,7 @@ func Setup(
 		tasks.GET("/achievements", h.Task.Achievements)
 		tasks.GET("/baby-age", h.Task.GetBabyAge)
 		tasks.PUT("/baby-age", h.Task.SetBabyAge)
+		tasks.POST("/regenerate", h.Task.Regenerate)
 	}
 
 	// ==================== Shell Gifts ====================

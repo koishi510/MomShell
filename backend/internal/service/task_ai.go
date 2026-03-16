@@ -129,17 +129,25 @@ func inferAgeStageFromMemory(content string) string {
 	return ""
 }
 
-// generateAITasks calls the OpenAI API to generate tasks for a given age stage.
+// TaskContext holds personalized context for AI task generation.
+type TaskContext struct {
+	AgeStage    string
+	MemoryFacts []model.ChatMemoryFact
+	Whispers    []model.Whisper
+}
+
+// generateAITasks calls the OpenAI API to generate personalized tasks.
 func generateAITasks(
 	client *openai.Client,
-	ageStage string,
+	ctx TaskContext,
 ) ([]AITaskData, error) {
-	label := ageStageLabels[ageStage]
+	label := ageStageLabels[ctx.AgeStage]
 	if label == "" {
-		label = ageStage
+		label = ctx.AgeStage
 	}
 
-	systemPrompt := `你是一个专业的育儿任务顾问。请为一位爸爸生成每日育儿任务。
+	systemPrompt := `你是「小石光」，一位温暖、有洞察力的家庭陪伴AI。你深深理解每个家庭的独特故事。
+现在请你为一位爸爸生成今日任务，任务要贴合这个家庭的真实情况。
 
 要求：
 - 生成4到5个任务
@@ -149,17 +157,38 @@ func generateAITasks(
 - 每个任务需要标注优先级 priority：T0（突发/情绪干预）、T1（关键里程碑）、T2（日常守护）
 - 任务要具体可执行，不要太笼统
 - 包含直接照顾宝宝的任务，也要包含关心妈妈的任务
-- 用中文描述
+- 如果有妈妈的心事或情绪线索，请设计能回应她感受的任务
+- 用温暖但简洁的中文描述，像一位懂你的朋友在提醒你
 
 请以JSON数组格式返回，每个元素包含：title, description, category, difficulty, priority
 不要返回任何其他内容，只返回JSON数组。`
 
-	userPrompt := fmt.Sprintf("孩子当前年龄阶段：%s\n请生成今日任务。", label)
+	// Build user prompt with personalized context
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "孩子当前年龄阶段：%s\n", label)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	if len(ctx.MemoryFacts) > 0 {
+		sb.WriteString("\n以下是妈妈与小石光聊天中记录的家庭信息：\n")
+		limit := min(len(ctx.MemoryFacts), 20)
+		for _, f := range ctx.MemoryFacts[:limit] {
+			fmt.Fprintf(&sb, "- [%s] %s\n", f.Category, f.Content)
+		}
+	}
+
+	if len(ctx.Whispers) > 0 {
+		sb.WriteString("\n以下是妈妈最近写给爸爸的心语（悄悄话），反映了她的心情和期望：\n")
+		for _, w := range ctx.Whispers {
+			fmt.Fprintf(&sb, "- %s\n", w.Content)
+		}
+	}
+
+	sb.WriteString("\n请根据以上信息，生成贴合这个家庭实际情况的今日任务。")
+	userPrompt := sb.String()
+
+	reqCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	resp, err := client.Chat(ctx, []openai.Message{
+	resp, err := client.Chat(reqCtx, []openai.Message{
 		{Role: "system", Content: systemPrompt},
 		{Role: "user", Content: userPrompt},
 	})
@@ -222,7 +251,7 @@ func getOrGenerateAITasks(
 	taskRepo *repository.TaskRepo,
 	ck string,
 	date string,
-	ageStage string,
+	tctx TaskContext,
 ) ([]AITaskData, error) {
 	// Check cache
 	cache, err := taskRepo.FindAICache(ck, date)
@@ -237,7 +266,7 @@ func getOrGenerateAITasks(
 	}
 
 	// Generate
-	tasks, err := generateAITasks(client, ageStage)
+	tasks, err := generateAITasks(client, tctx)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +276,7 @@ func getOrGenerateAITasks(
 	cacheEntry := &model.AIGeneratedTask{
 		CoupleKey: ck,
 		Date:      date,
-		AgeStage:  ageStage,
+		AgeStage:  tctx.AgeStage,
 		TasksJSON: string(tasksJSON),
 	}
 	if err := taskRepo.SaveAICache(cacheEntry); err != nil {

@@ -104,7 +104,7 @@ func main() {
 	if cfg.OpenAIAPIKey != "" {
 		taskAIClient = chatClient
 	}
-	taskService := service.NewTaskService(taskRepo, userRepo, chatRepo, taskAIClient, shellGiftService, achievementService)
+	taskService := service.NewTaskService(taskRepo, userRepo, chatRepo, whisperRepo, photoRepo, taskAIClient, cfg.ImageModel, shellGiftService, achievementService)
 
 	// Ensure AI user exists for community AI replies
 	aiUserID := ensureAIUser(userRepo)
