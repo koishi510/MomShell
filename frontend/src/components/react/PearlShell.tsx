@@ -10,9 +10,16 @@ import gsap from "gsap";
 
 // @mediapipe/* packages ship as an IIFE that attaches to globalThis (no ESM exports).
 // Vite 8/Rolldown doesn't synthesize named exports, so we use a side-effect import + global.
-const HandsCtor = (globalThis as any).Hands as unknown as new (
-  config?: HandsConfig,
-) => HandsInstance;
+type HandsConstructor = new (config?: HandsConfig) => HandsInstance;
+const getHandsCtor = (): HandsConstructor => {
+  const ctor = (globalThis as unknown as { Hands?: HandsConstructor }).Hands;
+  if (!ctor) {
+    throw new Error(
+      "@mediapipe/hands did not attach Hands to globalThis. Ensure the side-effect import runs in a browser context.",
+    );
+  }
+  return ctor;
+};
 
 // --- Performance Tuning Constants ---
 const MEDIAPIPE_MODEL_COMPLEXITY = 0; // 0=lite (fast), 1=standard
@@ -907,7 +914,7 @@ export default function PearlShell({
     let inferenceFrameId: number | null = null;
 
     const initMediaPipe = async () => {
-      const hands = new HandsCtor({
+      const hands = new (getHandsCtor())({
         locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         },
