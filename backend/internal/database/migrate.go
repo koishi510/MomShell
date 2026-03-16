@@ -32,6 +32,7 @@ func Migrate(db *gorm.DB) error {
 		&model.UserTask{},
 		&model.AIGeneratedTask{},
 		&model.KnowledgeEmbedding{},
+		&model.ShellGift{},
 	); err != nil {
 		return err
 	}
