@@ -2,8 +2,29 @@
   <header class="dc-header">
     <div class="dc-brand">
       <div class="dc-prompt">
-        <span class="prompt-user">dad@momshell</span><span class="prompt-colon">:</span><span class="prompt-path">~</span><span class="prompt-char">$</span>
-        <input v-model="cmdInput" class="dc-head-input" placeholder="_" @keydown.enter="submitCmd" />
+        <span class="prompt-user">{{ promptUsername }}@momshell</span><span class="prompt-colon">:</span><span class="prompt-path">~</span><span class="prompt-char">$</span>
+        <div class="dc-head-input-wrap">
+          <span ref="cmdInputMirrorRef" class="dc-head-input-mirror" aria-hidden="true">{{ cmdBeforeCursor }}</span>
+          <input
+            ref="cmdInputRef"
+            v-model="cmdInput"
+            class="dc-head-input"
+            @focus="handleFocus"
+            @blur="isFocused = false"
+            @input="syncCaretPosition"
+            @click="syncCaretPosition"
+            @keyup="syncCaretPosition"
+            @mouseup="syncCaretPosition"
+            @select="syncCaretPosition"
+            @keydown.enter="submitCmd"
+          />
+          <span
+            v-if="isFocused"
+            class="dc-head-cursor"
+            :style="{ transform: `translateX(${cursorOffset}px)` }"
+            aria-hidden="true"
+          ></span>
+        </div>
       </div>
       <div class="dc-subtitle">daemon: <span class="dc-status-text">running</span></div>
     </div>
@@ -23,8 +44,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { TaskStats } from '@/lib/api/task'
+import { useAuthStore } from '@/stores/auth'
 
 defineProps<{
   stats: TaskStats | null
@@ -36,7 +58,33 @@ const emit = defineEmits<{
   'command': [cmd: string]
 }>()
 
+const authStore = useAuthStore()
 const cmdInput = ref('')
+const isFocused = ref(false)
+const caretIndex = ref(0)
+const cursorOffset = ref(0)
+const cmdInputRef = ref<HTMLInputElement | null>(null)
+const cmdInputMirrorRef = ref<HTMLSpanElement | null>(null)
+const promptUsername = computed(() => authStore.user?.username || 'dad')
+const cmdBeforeCursor = computed(() => cmdInput.value.slice(0, caretIndex.value))
+
+async function syncCursorOffset() {
+  await nextTick()
+  cursorOffset.value = cmdInputMirrorRef.value?.offsetWidth ?? 0
+}
+
+async function syncCaretPosition() {
+  await nextTick()
+  const input = cmdInputRef.value
+  if (!input) return
+  caretIndex.value = input.selectionStart ?? cmdInput.value.length
+  await syncCursorOffset()
+}
+
+function handleFocus() {
+  isFocused.value = true
+  void syncCaretPosition()
+}
 
 function submitCmd(e: KeyboardEvent) {
   const target = e.target as HTMLInputElement
@@ -44,6 +92,7 @@ function submitCmd(e: KeyboardEvent) {
   if (!raw) return
   emit('command', raw)
   cmdInput.value = ''
+  caretIndex.value = 0
   target.blur()
 }
 
@@ -59,6 +108,14 @@ const AGE_LABELS: Record<string, string> = {
 }
 
 function ageLabel(v: string) { return AGE_LABELS[v] || v }
+
+watch(cmdBeforeCursor, () => {
+  void syncCursorOffset()
+})
+
+onMounted(() => {
+  void syncCaretPosition()
+})
 </script>
 
 <style scoped>
@@ -91,26 +148,60 @@ function ageLabel(v: string) { return AGE_LABELS[v] || v }
 .prompt-user { color: var(--dc-success, #9ECE6A); }
 .prompt-colon { color: var(--dc-text, #C0CAF5); }
 .prompt-path { color: var(--dc-accent, #7DCFFF); }
-.prompt-char { color: var(--dc-text, #C0CAF5); margin-left: 8px; margin-right: 8px;}
+.prompt-char { color: var(--dc-text, #C0CAF5); }
+
+.dc-head-input-wrap {
+  position: relative;
+  display: inline-block;
+  width: 150px;
+  margin-left: 1ch;
+}
+
+.dc-head-input-mirror {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  white-space: pre;
+  font-family: var(--dc-font-mono);
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1.2;
+  pointer-events: none;
+}
 
 .dc-head-input {
+  display: block;
   background: transparent;
   border: none;
   color: var(--dc-text, #C0CAF5);
   font-family: var(--dc-font-mono);
   font-size: 16px;
+  font-weight: bold;
+  line-height: 1.2;
+  caret-color: transparent;
   outline: none;
-  width: 150px;
+  width: 100%;
   padding: 0;
   margin: 0;
 }
-.dc-head-input::placeholder {
-  color: var(--dc-accent, #7DCFFF);
+
+.dc-head-cursor {
+  position: absolute;
+  left: 0;
+  bottom: 0.06em;
+  width: 0.72ch;
+  height: 2px;
+  background: var(--dc-accent, #7DCFFF);
+  border-radius: 999px;
   opacity: 1;
-  animation: cursor-blink 1s step-end infinite;
+  animation: terminal-cursor-blink 1s steps(1, end) infinite;
+  pointer-events: none;
 }
 
-@keyframes cursor-blink { 50% { opacity: 0; } }
+@keyframes terminal-cursor-blink {
+  50% { opacity: 0; }
+}
 
 .dc-subtitle {
   font-family: var(--dc-font-mono);

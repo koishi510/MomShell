@@ -23,7 +23,7 @@
 
       <!-- Value polygon -->
       <polygon :points="valuePolygon" class="value-fill" />
-      <polyline :points="valuePolygon" class="value-stroke" />
+      <polygon :points="valuePolygon" class="value-stroke" />
 
       <!-- Labels -->
       <g class="labels">

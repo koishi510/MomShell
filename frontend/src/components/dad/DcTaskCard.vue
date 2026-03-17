@@ -84,9 +84,9 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
 <style scoped>
 .dc-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--dc-radius, 2px);
   padding: 20px;
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   animation: card-enter 0.4s ease-out both;
@@ -102,23 +102,23 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   position: absolute;
   top: 0; left: 0; bottom: 0;
   width: 3px;
-  background: rgba(255, 255, 255, 0.06);
-  border-top-left-radius: 6px;
-  border-bottom-left-radius: 6px;
+  background: var(--dc-border, rgba(255, 255, 255, 0.06));
+  border-top-left-radius: var(--dc-radius, 2px);
+  border-bottom-left-radius: var(--dc-radius, 2px);
 }
 
 .dc-card:hover {
-  border-color: rgba(125, 211, 252, 0.15);
+  border-color: rgba(125, 207, 255, 0.15);
 }
 
 /* Priority left borders */
 .dc-card.dc-pri-T0::before {
-  background: linear-gradient(180deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9);
+  background: linear-gradient(180deg, var(--dc-accent, #7DCFFF), #a78bfa, #f0abfc, #67e8f9);
   background-size: 100% 200%;
   animation: iri-shift-v 6s ease-in-out infinite;
 }
-.dc-card.dc-pri-T1::before { background: #7dd3fc; }
-.dc-card.dc-pri-T2::before { background: rgba(125, 211, 252, 0.3); }
+.dc-card.dc-pri-T1::before { background: var(--dc-accent, #7DCFFF); }
+.dc-card.dc-pri-T2::before { background: rgba(125, 207, 255, 0.3); }
 
 /* Status borders */
 .dc-card.dc-st-completed { border-color: rgba(251, 191, 36, 0.25); }
@@ -135,7 +135,7 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+  border-bottom: 1px dashed var(--dc-border, rgba(255, 255, 255, 0.06));
 }
 
 .dc-badges { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -144,16 +144,16 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   font-family: var(--dc-font-mono);
   font-size: 10px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--dc-radius, 2px);
   letter-spacing: 0.5px;
 }
 
-.dc-id { color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.05); }
-.dc-urgent { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
-.dc-pri-badge-T0 { background: rgba(248, 113, 113, 0.15); color: #f87171; }
-.dc-pri-badge-T1 { background: rgba(125, 211, 252, 0.12); color: #7dd3fc; }
-.dc-pri-badge-T2 { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.3); }
-.dc-cat { background: transparent; color: rgba(255, 255, 255, 0.3); border: 1px solid rgba(255, 255, 255, 0.06); }
+.dc-id { color: var(--dc-comment, rgba(255, 255, 255, 0.3)); background: var(--dc-surface, rgba(255, 255, 255, 0.05)); }
+.dc-urgent { background: rgba(247, 118, 142, 0.15); color: var(--dc-danger, #F7768E); border: 1px solid rgba(247, 118, 142, 0.3); }
+.dc-pri-badge-T0 { background: rgba(247, 118, 142, 0.15); color: var(--dc-danger, #F7768E); }
+.dc-pri-badge-T1 { background: rgba(125, 207, 255, 0.12); color: var(--dc-accent, #7DCFFF); }
+.dc-pri-badge-T2 { background: var(--dc-surface, rgba(255, 255, 255, 0.05)); color: var(--dc-comment, rgba(255, 255, 255, 0.3)); }
+.dc-cat { background: transparent; color: var(--dc-comment, rgba(255, 255, 255, 0.3)); border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.06)); }
 .dc-diff { color: #fbbf24; font-size: 12px; letter-spacing: 2px; }
 
 /* Shell prompt style body */
@@ -170,25 +170,25 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   line-height: 1.6;
 }
 
-.dc-prompt { color: #7dd3fc; margin-right: 6px; font-weight: 700; }
-.dc-cmd { color: #a5d6ff; }
-.dc-string { color: #a5d6a7; }
+.dc-prompt { color: var(--dc-accent, #7DCFFF); margin-right: 6px; font-weight: 700; }
+.dc-cmd { color: var(--dc-cmd, #A9B1D6); }
+.dc-string { color: var(--dc-string, #9ECE6A); }
 
 .dc-comment-line {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment, rgba(255, 255, 255, 0.3));
   line-height: 1.6;
 }
 
-.dc-comment-marker { color: rgba(255, 255, 255, 0.2); margin-right: 6px; }
+.dc-comment-marker { color: var(--dc-comment, rgba(255, 255, 255, 0.2)); margin-right: 6px; }
 
 /* Proof photo */
 .dc-proof-wrapper {
   position: relative;
   width: 100%;
-  border-radius: 6px;
+  border-radius: var(--dc-radius, 2px);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.06));
   margin-bottom: 16px;
 }
 
@@ -211,9 +211,9 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   font-size: 11px;
 }
 
-.dc-status-pending { color: rgba(255, 255, 255, 0.3); }
-.dc-status-done { color: #fbbf24; }
-.dc-status-ok { color: #2dd4bf; }
+.dc-status-pending { color: var(--dc-comment, rgba(255, 255, 255, 0.3)); }
+.dc-status-done { color: var(--dc-warn, #FF9E64); }
+.dc-status-ok { color: var(--dc-success, #9ECE6A); }
 
 /* Execute button */
 .dc-execute-btn {
@@ -224,9 +224,9 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   margin-top: 16px;
   padding: 14px 20px;
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  border-radius: 6px;
-  color: #7dd3fc;
+  border: 1px solid rgba(125, 207, 255, 0.3);
+  border-radius: var(--dc-radius, 2px);
+  color: var(--dc-accent, #7DCFFF);
   font-family: var(--dc-font-mono);
   font-size: 14px;
   font-weight: 700;
@@ -236,9 +236,9 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
 }
 
 .dc-execute-btn:hover:not(:disabled) {
-  border-color: #7dd3fc;
-  background: rgba(125, 211, 252, 0.08);
-  box-shadow: 0 0 20px rgba(125, 211, 252, 0.15);
+  border-color: var(--dc-accent, #7DCFFF);
+  background: rgba(125, 207, 255, 0.08);
+  box-shadow: 0 0 20px rgba(125, 207, 255, 0.15);
 }
 
 .dc-execute-btn:active:not(:disabled) { transform: scale(0.98); }
@@ -248,22 +248,22 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
 .dc-feedback-box {
   margin-top: 16px;
   padding: 12px;
-  background: rgba(45, 212, 191, 0.05);
-  border-left: 2px solid #2dd4bf;
-  border-radius: 4px;
+  background: rgba(158, 206, 106, 0.05);
+  border-left: 2px solid var(--dc-success, #9ECE6A);
+  border-radius: var(--dc-radius, 2px);
 }
 
 .dc-feedback-label {
   font-family: var(--dc-font-mono);
   font-size: 10px;
-  color: #2dd4bf;
+  color: var(--dc-success, #9ECE6A);
   margin-bottom: 6px;
 }
 
 .dc-feedback {
   font-family: var(--dc-font-mono);
   font-size: 13px;
-  color: #a5d6a7;
+  color: var(--dc-string, #9ECE6A);
   line-height: 1.5;
   margin: 0;
 }
