@@ -8,10 +8,11 @@
           <input
             ref="cmdInputRef"
             v-model="cmdInput"
+            :maxlength="MAX_CMD_LENGTH"
             class="dc-head-input"
             @focus="handleFocus"
             @blur="isFocused = false"
-            @input="syncCaretPosition"
+            @input="handleInput"
             @click="syncCaretPosition"
             @keyup="syncCaretPosition"
             @mouseup="syncCaretPosition"
@@ -59,6 +60,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const MAX_CMD_LENGTH = 24
 const cmdInput = ref('')
 const isFocused = ref(false)
 const caretIndex = ref(0)
@@ -83,6 +85,16 @@ async function syncCaretPosition() {
 
 function handleFocus() {
   isFocused.value = true
+  void syncCaretPosition()
+}
+
+function handleInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (target.value.length > MAX_CMD_LENGTH) {
+    const limited = target.value.slice(0, MAX_CMD_LENGTH)
+    target.value = limited
+    cmdInput.value = limited
+  }
   void syncCaretPosition()
 }
 
@@ -153,7 +165,9 @@ onMounted(() => {
 .dc-head-input-wrap {
   position: relative;
   display: inline-block;
-  width: 150px;
+  width: 24ch;
+  min-width: 24ch;
+  max-width: 24ch;
   margin-left: 1ch;
 }
 
