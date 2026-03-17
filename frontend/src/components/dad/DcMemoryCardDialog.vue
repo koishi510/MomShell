@@ -22,7 +22,7 @@
               :disabled="generating || uploading"
               @click="$emit('generate')"
             >
-              {{ generating ? '> SYNTHESIZING...' : '> AI_SYNTHESIS' }}
+              {{ generating ? '> synthesizing...' : '> ai_synthesis' }}
             </button>
             <label class="dc-proof-picker">
               <input
@@ -33,27 +33,27 @@
                 :disabled="generating || uploading"
                 @change="$emit('upload', $event)"
               />
-              <span class="dc-action-btn dc-action-btn-outline">> UPLOAD_DATA</span>
+              <span class="dc-action-btn dc-action-btn-outline">> upload_data</span>
             </label>
           </div>
 
           <!-- Replace after preview -->
           <div v-else class="dc-card-replace">
-            <button class="dc-action-btn dc-btn-sm dc-action-btn-ghost" :disabled="generating || uploading" @click="$emit('reset')">> RESET</button>
+            <button class="dc-action-btn dc-btn-sm dc-action-btn-ghost" :disabled="generating || uploading" @click="$emit('reset')">> reset</button>
           </div>
 
           <p v-if="error" class="dc-error">> ERROR: {{ error }}</p>
         </div>
 
         <div class="dc-term-modal-footer">
-          <button class="dc-action-btn dc-action-btn-ghost" :disabled="uploading || generating" @click="$emit('close')">CANCEL</button>
-          <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || generating || !targetTitle" @click="$emit('submit-without-card')">BYPASS</button>
+          <button class="dc-action-btn dc-action-btn-ghost" :disabled="uploading || generating" @click="$emit('close')">cancel</button>
+          <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || generating || !targetTitle" @click="$emit('submit-without-card')">bypass</button>
           <button
             class="dc-action-btn"
             :disabled="uploading || generating || !targetTitle || !previewUrl"
             @click="$emit('submit-with-card')"
           >
-            {{ uploading ? 'TRANSMITTING...' : 'COMMIT' }}
+            {{ uploading ? 'transmitting...' : 'commit' }}
           </button>
         </div>
       </div>
@@ -89,37 +89,21 @@ defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(26, 27, 38, 0.9);
   padding: 20px;
 }
 
 .dc-term-modal {
   width: 100%;
   max-width: 500px;
-  background: #0f1419;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  background: var(--dc-bg2, #24283B);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--dc-radius, 2px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-.dc-term-modal::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9);
-  background-size: 200% 200%;
-  animation: iri-shift 6s ease-in-out infinite;
-  z-index: -1;
-  opacity: 0.5;
-}
-
-@keyframes iri-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .dc-term-modal-header {
@@ -127,23 +111,23 @@ defineEmits<{
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #0a0e14;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--dc-bg, #1A1B26);
+  border-bottom: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
   font-family: var(--dc-font-mono);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment, #565F89);
 }
 
 .dc-term-modal-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment, #565F89);
   font-family: var(--dc-font-mono);
   font-size: 14px;
   cursor: pointer;
   line-height: 1;
 }
-.dc-term-modal-close:hover { color: #fff; }
+.dc-term-modal-close:hover { color: var(--dc-text, #C0CAF5); }
 
 .dc-term-modal-body {
   padding: 24px;
@@ -155,12 +139,12 @@ defineEmits<{
   margin: 0 0 8px;
   font-family: var(--dc-font-mono);
   font-size: 16px;
-  color: #fff;
+  color: var(--dc-text, #C0CAF5);
 }
 
-.dc-dialog-sub { margin: 0 0 24px; font-family: var(--dc-font-mono); font-size: 12px; color: rgba(255,255,255,0.3); }
+.dc-dialog-sub { margin: 0 0 24px; font-family: var(--dc-font-mono); font-size: 12px; color: var(--dc-comment, #565F89); }
 
-.dc-card-preview { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px; }
+.dc-card-preview { position: relative; border-radius: var(--dc-radius, 2px); overflow: hidden; border: 1px solid var(--dc-border, rgba(255,255,255,0.15)); margin-bottom: 20px; }
 .dc-card-img { width: 100%; display: block; max-height: 300px; object-fit: cover; }
 .dc-card-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
 .dc-proof-picker { width: 100%; cursor: pointer; display: block; }
@@ -172,8 +156,8 @@ defineEmits<{
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  background: #0a0e14;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--dc-bg, #1A1B26);
+  border-top: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
 }
 
 .dc-action-btn {
@@ -182,10 +166,10 @@ defineEmits<{
   justify-content: center;
   width: 100%;
   padding: 14px;
-  background: #0f1419;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--dc-bg2, #24283B);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--dc-radius, 2px);
+  color: var(--dc-text, #C0CAF5);
   font-family: var(--dc-font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -195,17 +179,17 @@ defineEmits<{
 }
 
 .dc-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.dc-action-btn-outline { border-color: rgba(125,211,252,0.3); color: #7dd3fc; }
-.dc-action-btn-outline:hover:not(:disabled) { background: rgba(125,211,252,0.08); }
-.dc-action-btn-ghost { background: transparent; border-color: transparent; color: rgba(255,255,255,0.3); }
-.dc-action-btn-ghost:hover:not(:disabled) { color: rgba(255,255,255,0.7); }
+.dc-action-btn-outline { border-color: var(--dc-accent, #7DCFFF); color: var(--dc-accent, #7DCFFF); background: transparent; }
+.dc-action-btn-outline:hover:not(:disabled) { background: rgba(125, 207, 255, 0.1); }
+.dc-action-btn-ghost { background: transparent; border-color: transparent; color: var(--dc-comment, #565F89); }
+.dc-action-btn-ghost:hover:not(:disabled) { color: var(--dc-text, #C0CAF5); }
 
 .dc-action-btn-iri {
-  border-color: rgba(125,211,252,0.3);
-  color: #7dd3fc;
-  box-shadow: 0 0 15px rgba(125, 211, 252, 0.1);
+  border-color: var(--dc-accent, #7DCFFF);
+  color: var(--dc-accent, #7DCFFF);
+  background: transparent;
 }
-.dc-action-btn-iri:hover:not(:disabled) { background: rgba(125,211,252,0.08); box-shadow: 0 0 20px rgba(125, 211, 252, 0.2); }
+.dc-action-btn-iri:hover:not(:disabled) { background: rgba(125, 207, 255, 0.1); }
 
 .dc-term-modal-footer .dc-action-btn { width: auto; min-width: 100px; padding: 10px 16px; }
 .dc-btn-sm { padding: 8px 16px; width: auto; font-size: 11px; }
@@ -213,9 +197,9 @@ defineEmits<{
 .dc-error {
   margin-top: 16px;
   padding: 12px 16px;
-  background: rgba(248,113,113,0.08);
-  border-left: 3px solid #f87171;
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.08);
+  border-left: 3px solid var(--dc-danger, #F7768E);
+  color: var(--dc-danger, #F7768E);
   font-family: var(--dc-font-mono);
   font-size: 12px;
 }

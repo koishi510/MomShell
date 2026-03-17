@@ -1,15 +1,14 @@
 <template>
   <div class="dad-console">
     <!-- ── Ambient Background ── -->
-    <div class="dc-ambient-bg">
-      <div class="dc-grid-overlay"></div>
-    </div>
+    <div class="dc-ambient-bg"></div>
 
     <!-- ── Header ── -->
     <DcHeader
       :stats="stats"
       :current-age="currentAge"
       @open-age-picker="showAgeMenu = true"
+      @command="handleCommand"
     />
 
     <!-- ── Tab Bar (top, below header) ── -->
@@ -17,9 +16,12 @@
 
     <!-- ── Scrollable Body ── -->
     <main class="dc-body">
+      <!-- Home -->
+      <DcHome v-if="activeTab === 'home'" @navigate="activeTab = $event as Tab" />
+
       <!-- Tasks -->
       <DcTaskList
-        v-if="activeTab === 'tasks'"
+        v-else-if="activeTab === 'tasks'"
         :sorted-tasks="sortedTasks"
         :loading="loading"
         :has-age="!!currentAge"
@@ -46,8 +48,8 @@
       <!-- Chat -->
       <div v-else-if="activeTab === 'chat'" class="dc-tab-content-full">
         <div class="dc-section-header dc-sh-overlay">
-          <div class="dc-sh-line"></div>
-          <span class="dc-sh-text">SYS.COMMS</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"></path></svg>
+          <span class="dc-sh-text">./chat.sh</span>
         </div>
         <ChatPanel :embedded="true" />
       </div>
@@ -55,8 +57,8 @@
       <!-- Community -->
       <div v-else-if="activeTab === 'community'" class="dc-tab-content-full">
         <div class="dc-section-header dc-sh-overlay">
-          <div class="dc-sh-line"></div>
-          <span class="dc-sh-text">SYS.NETWORK</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"></path></svg>
+          <span class="dc-sh-text">./network.sh</span>
         </div>
         <CommunityPanel :embedded="true" />
       </div>
@@ -64,8 +66,8 @@
       <!-- Whisper -->
       <div v-else-if="activeTab === 'whisper'" class="dc-tab-content-full">
         <div class="dc-section-header dc-sh-overlay">
-          <div class="dc-sh-line"></div>
-          <span class="dc-sh-text">SYS.DECRYPT</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg>
+          <span class="dc-sh-text">./journal.sh</span>
         </div>
         <WhisperPanel :embedded="true" />
       </div>
@@ -73,11 +75,11 @@
       <!-- Profile -->
       <div v-else-if="activeTab === 'profile'" class="dc-profile-wrap">
         <div class="dc-section-header">
-          <div class="dc-sh-line"></div>
-          <span class="dc-sh-text">SYS.CONFIG</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+          <span class="dc-sh-text">./config.sh</span>
         </div>
         <ProfilePanel :embedded="true" />
-        <button class="dc-logout-btn" @click="onLogout">> TERMINATE_SESSION</button>
+        <button class="dc-logout-btn" @click="onLogout">> logout</button>
       </div>
     </main>
 
@@ -115,6 +117,7 @@ import WhisperPanel from '@/components/overlay/WhisperPanel.vue'
 import ProfilePanel from '@/components/overlay/ProfilePanel.vue'
 import DcHeader from './DcHeader.vue'
 import DcTabBar from './DcTabBar.vue'
+import DcHome from './DcHome.vue'
 import DcTaskList from './DcTaskList.vue'
 import DcDashboard from './DcDashboard.vue'
 import DcMemoryCardDialog from './DcMemoryCardDialog.vue'
@@ -143,8 +146,29 @@ const authStore = useAuthStore()
 const uiStore = useUiStore()
 
 // ── Tabs ──
-type Tab = 'tasks' | 'dashboard' | 'chat' | 'community' | 'whisper' | 'profile'
-const activeTab = ref<Tab>('tasks')
+type Tab = 'home' | 'tasks' | 'dashboard' | 'chat' | 'community' | 'whisper' | 'profile'
+const activeTab = ref<Tab>('home')
+
+function handleCommand(cmd: string) {
+  const lower = cmd.toLowerCase()
+  const map: Record<string, Tab> = {
+    'home': 'home',
+    'tasks': 'tasks', 'task': 'tasks', './tasks.sh': 'tasks',
+    'dashboard': 'dashboard', 'status': 'dashboard', 'metrics': 'dashboard', './status.sh': 'dashboard',
+    'chat': 'chat', 'comms': 'chat', './chat.sh': 'chat',
+    'community': 'community', 'network': 'community', './network.sh': 'community',
+    'whisper': 'whisper', 'journal': 'whisper', 'decrypt': 'whisper', './journal.sh': 'whisper',
+    'profile': 'profile', 'config': 'profile', './config.sh': 'profile',
+  }
+
+  if (lower === 'logout' || lower === 'exit') {
+    onLogout()
+  } else if (map[lower]) {
+    activeTab.value = map[lower]
+  } else {
+    // just ignore or maybe show a toast. For now, do nothing if invalid.
+  }
+}
 
 function onLogout() {
   authStore.logout()
@@ -422,36 +446,27 @@ watch(activeTab, async (tab) => {
 <style scoped>
 /* ── Theme variables ── */
 .dad-console {
-  --dc-bg: #0a0e14;
-  --dc-bg2: #0f1419;
-  --dc-surface: rgba(255, 255, 255, 0.03);
-  --dc-border: rgba(255, 255, 255, 0.06);
+  --dc-bg: #1A1B26;
+  --dc-bg2: #24283B;
+  --dc-surface: rgba(255, 255, 255, 0.05);
+  --dc-border: rgba(255, 255, 255, 0.15);
 
-  /* Iridescent spectrum */
-  --dc-iri-blue: #7dd3fc;
-  --dc-iri-violet: #a78bfa;
-  --dc-iri-pink: #f0abfc;
-  --dc-iri-cyan: #67e8f9;
-  --dc-iri-gold: #fbbf24;
+  --dc-accent: #7DCFFF;
+  --dc-accent-dim: rgba(125, 207, 255, 0.15);
+  --dc-success: #9ECE6A;
+  --dc-danger: #F7768E;
+  --dc-warn: #FF9E64;
 
-  --dc-accent: #7dd3fc;
-  --dc-accent-dim: rgba(125, 211, 252, 0.12);
-  --dc-gradient-iri: linear-gradient(135deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9);
-
-  /* Terminal syntax */
-  --dc-prompt: #7dd3fc;
-  --dc-cmd: #a5d6ff;
-  --dc-string: #a5d6a7;
-  --dc-comment: rgba(255, 255, 255, 0.3);
-
-  /* Semantic */
-  --dc-success: #2dd4bf;
-  --dc-danger: #f87171;
-  --dc-warn: #fbbf24;
+  --dc-prompt: #7DCFFF;
+  --dc-cmd: #A9B1D6;
+  --dc-string: #9ECE6A;
+  --dc-comment: #565F89;
+  --dc-text: #C0CAF5;
 
   /* Typography */
   --dc-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
   --dc-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --dc-radius: 2px;
 }
 
 /* ── Layout ── */
@@ -462,7 +477,7 @@ watch(activeTab, async (tab) => {
   display: flex;
   flex-direction: column;
   background-color: var(--dc-bg);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--dc-text);
   font-family: var(--dc-font-sans);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
@@ -475,17 +490,7 @@ watch(activeTab, async (tab) => {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-}
-
-.dc-grid-overlay {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 30px 30px;
-  mask-image: radial-gradient(circle at center, black 20%, transparent 80%);
-  -webkit-mask-image: radial-gradient(circle at center, black 20%, transparent 80%);
+  background-color: var(--dc-bg);
 }
 
 /* ── Body ── */
@@ -498,7 +503,7 @@ watch(activeTab, async (tab) => {
   overscroll-behavior: contain;
   padding: 16px 20px 24px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+  scrollbar-color: var(--dc-border) transparent;
 }
 
 .dc-tab-content-full {
@@ -507,13 +512,14 @@ watch(activeTab, async (tab) => {
   margin: -16px -20px -24px;
 }
 
-/* Section headers for embedded panels */
+/* Section headers */
 .dc-section-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 20px;
   padding-top: 8px;
+  color: var(--dc-accent);
 }
 
 .dc-sh-overlay {
@@ -525,17 +531,14 @@ watch(activeTab, async (tab) => {
   pointer-events: none;
 }
 
-.dc-sh-line {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+.dc-sh-icon {
+  color: var(--dc-accent);
 }
 
 .dc-sh-text {
   font-family: var(--dc-font-mono);
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 2px;
+  font-size: 13px;
+  font-weight: bold;
 }
 
 /* ── Profile ── */
@@ -557,17 +560,17 @@ watch(activeTab, async (tab) => {
   margin-bottom: 8px;
   width: 100%;
   padding: 14px;
-  background: rgba(248, 113, 113, 0.05);
-  border: 1px solid rgba(248, 113, 113, 0.2);
-  border-radius: 6px;
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.05);
+  border: 1px solid rgba(247, 118, 142, 0.2);
+  border-radius: var(--dc-radius);
+  color: var(--dc-danger);
   font-family: var(--dc-font-mono);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.dc-logout-btn:hover { background: rgba(248, 113, 113, 0.12); }
+.dc-logout-btn:hover { background: rgba(247, 118, 142, 0.12); }
 
 /* ── Desktop ── */
 @media (min-width: 769px) {
@@ -580,24 +583,23 @@ watch(activeTab, async (tab) => {
 
 /* ═══════════════════════════════════════════════════════
    Embedded Panel Shell Overrides (:deep)
-   All panels inside .dad-console get terminal styling
-   without modifying their source files.
    ═══════════════════════════════════════════════════════ */
 
 /* ── OverlayPanel wrapper ── */
 .dad-console :deep(.overlay-panel) {
-  background: #0a0e14;
+  background: var(--dc-bg);
   backdrop-filter: none;
+  border-radius: var(--dc-radius);
 }
 
 /* ── ChatPanel (SYS.COMMS) ── */
 .dad-console :deep(.chat-panel) {
-  background: #0a0e14 !important;
+  background: var(--dc-bg) !important;
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.chat-panel .ambient-bg) {
-  background: radial-gradient(ellipse at 50% 80%, rgba(125, 211, 252, 0.04), transparent 70%) !important;
+  background: transparent !important;
 }
 
 .dad-console :deep(.chat-header) {
@@ -605,15 +607,15 @@ watch(activeTab, async (tab) => {
 }
 
 .dad-console :deep(.memory-btn) {
-  color: rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 4px;
+  color: var(--dc-comment);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
   background: transparent;
 }
 
 .dad-console :deep(.memory-btn:hover) {
-  color: #7dd3fc;
-  border-color: rgba(125, 211, 252, 0.3);
+  color: var(--dc-accent);
+  border-color: var(--dc-accent);
 }
 
 .dad-console :deep(.chat-empty) {
@@ -621,103 +623,102 @@ watch(activeTab, async (tab) => {
 }
 
 .dad-console :deep(.empty-greeting) {
-  color: #7dd3fc;
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
   font-size: 18px;
 }
 
 .dad-console :deep(.empty-subtitle) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.msg-text.user-text) {
-  background: rgba(125, 211, 252, 0.08);
-  border: 1px solid rgba(125, 211, 252, 0.15);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--dc-accent-dim);
+  border: 1px solid rgba(125, 207, 255, 0.3);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.msg-text.assistant-text) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.typing-dots span) {
-  background: #7dd3fc;
+  background: var(--dc-accent);
 }
 
 .dad-console :deep(.chat-input-area) {
-  background: rgba(10, 14, 20, 0.95);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--dc-bg2);
+  border-top: 1px solid var(--dc-border);
 }
 
 .dad-console :deep(.chat-input) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--dc-bg);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.chat-input:focus) {
-  border-color: rgba(125, 211, 252, 0.3);
-  box-shadow: 0 0 12px rgba(125, 211, 252, 0.08);
+  border-color: var(--dc-accent);
 }
 
 .dad-console :deep(.chat-input::placeholder) {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.send-btn) {
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  color: #7dd3fc;
-  border-radius: 6px;
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-accent);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.send-btn:hover) {
-  background: rgba(125, 211, 252, 0.08);
+  background: var(--dc-accent-dim);
 }
 
 .dad-console :deep(.memory-toast) {
-  background: rgba(15, 20, 25, 0.95);
-  border: 1px solid rgba(125, 211, 252, 0.2);
-  color: #7dd3fc;
+  background: var(--dc-bg2);
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
+  border-radius: var(--dc-radius);
 }
 
-/* ── CommunityPanel (SYS.NETWORK) ── */
+/* ── CommunityPanel ── */
 .dad-console :deep(.community-panel) {
-  background: #0a0e14;
+  background: var(--dc-bg);
   font-family: var(--dc-font-sans);
 }
 
 .dad-console :deep(.community-panel .panel-title) {
   font-family: var(--dc-font-mono);
-  color: #fff;
-  letter-spacing: 1px;
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.channel-tabs) {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
   overflow: hidden;
 }
 
 .dad-console :deep(.channel-tab) {
   background: transparent;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
   font-size: 12px;
   border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid var(--dc-border);
   transition: all 0.2s;
 }
 
@@ -726,630 +727,601 @@ watch(activeTab, async (tab) => {
 }
 
 .dad-console :deep(.channel-tab.active) {
-  background: rgba(125, 211, 252, 0.08);
-  color: #7dd3fc;
+  background: var(--dc-accent-dim);
+  color: var(--dc-accent);
 }
 
 .dad-console :deep(.channel-tab:hover) {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.create-btn) {
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  color: #7dd3fc;
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.create-btn:hover) {
-  background: rgba(125, 211, 252, 0.08);
+  background: var(--dc-accent-dim);
 }
 
 .dad-console :deep(.question-card) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
   transition: border-color 0.2s;
 }
 
 .dad-console :deep(.question-card:hover) {
-  border-color: rgba(125, 211, 252, 0.15);
+  border-color: rgba(125, 207, 255, 0.3);
 }
 
 .dad-console :deep(.q-title) {
-  color: #fff;
+  color: var(--dc-text);
   font-weight: 600;
 }
 
 .dad-console :deep(.q-preview) {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(192, 202, 245, 0.7);
 }
 
 .dad-console :deep(.q-tag) {
-  background: rgba(125, 211, 252, 0.08);
-  border: 1px solid rgba(125, 211, 252, 0.15);
-  color: #7dd3fc;
+  background: var(--dc-accent-dim);
+  border: 1px solid rgba(125, 207, 255, 0.3);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
   font-size: 10px;
-  border-radius: 4px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.q-meta) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
   font-size: 11px;
 }
 
 .dad-console :deep(.author-tag) {
-  color: rgba(167, 139, 250, 0.7);
+  color: #BB9AF7; /* Tokyo Night purple */
 }
 
 .dad-console :deep(.q-like-action .icon-like.active) {
-  color: #f0abfc;
+  color: #BB9AF7;
 }
 
 .dad-console :deep(.q-collect-action .icon-collect.active) {
-  color: #fbbf24;
+  color: var(--dc-warn);
 }
 
 .dad-console :deep(.load-more-btn) {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.load-more-btn:hover:not(:disabled)) {
-  border-color: rgba(125, 211, 252, 0.2);
-  color: #7dd3fc;
+  border-color: var(--dc-accent);
+  color: var(--dc-accent);
 }
 
 .dad-console :deep(.community-panel .loading-state),
 .dad-console :deep(.community-panel .empty-state) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
-/* Community compose/detail overlays */
+/* Community overlays */
 .dad-console :deep(.compose-overlay),
 .dad-console :deep(.detail-overlay) {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(26, 27, 38, 0.9);
 }
 
 .dad-console :deep(.compose-form),
-.dad-console :deep(.detail-panel) {
-  background: #0f1419;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
+.dad-console :deep(.detail-panel),
+.dad-console :deep(.detail-card) {
+  background: var(--dc-bg2);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
-.dad-console :deep(.compose-title) {
+.dad-console :deep(.compose-title),
+.dad-console :deep(.detail-title) {
   font-family: var(--dc-font-mono);
-  color: #fff;
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.compose-input),
 .dad-console :deep(.compose-textarea) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--dc-bg);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.compose-input:focus),
 .dad-console :deep(.compose-textarea:focus) {
-  border-color: rgba(125, 211, 252, 0.3);
+  border-color: var(--dc-accent);
 }
 
-/* ── WhisperPanel (SYS.DECRYPT) ── */
+/* ── WhisperPanel ── */
 .dad-console :deep(.whisper-panel) {
-  background: #0a0e14;
+  background: var(--dc-bg);
 }
 
 .dad-console :deep(.whisper-panel .panel-title) {
   font-family: var(--dc-font-mono);
-  color: #fff;
-  letter-spacing: 1px;
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.whisper-panel .panel-subtitle) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.whisper-textarea) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.whisper-textarea:focus) {
-  border-color: rgba(125, 211, 252, 0.3);
-  box-shadow: 0 0 12px rgba(125, 211, 252, 0.08);
+  border-color: var(--dc-accent);
 }
 
 .dad-console :deep(.whisper-textarea::placeholder) {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.whisper-panel .submit-btn) {
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  color: #7dd3fc;
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.whisper-panel .submit-btn:hover) {
-  background: rgba(125, 211, 252, 0.08);
+  background: var(--dc-accent-dim);
 }
 
 .dad-console :deep(.whisper-panel .section-title) {
   font-family: var(--dc-font-mono);
-  color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 1px;
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.whisper-card) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.whisper-content) {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.whisper-time) {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.tips-card) {
-  background: rgba(167, 139, 250, 0.05);
-  border: 1px solid rgba(167, 139, 250, 0.15);
-  border-radius: 6px;
+  background: rgba(187, 154, 247, 0.05);
+  border: 1px solid rgba(187, 154, 247, 0.2);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.tips-label) {
   font-family: var(--dc-font-mono);
-  color: #a78bfa;
+  color: #BB9AF7;
 }
 
 .dad-console :deep(.tips-content) {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.tips-btn) {
   background: transparent;
-  border: 1px solid rgba(167, 139, 250, 0.3);
-  color: #a78bfa;
+  border: 1px solid rgba(187, 154, 247, 0.3);
+  color: #BB9AF7;
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.tips-btn:hover) {
-  background: rgba(167, 139, 250, 0.08);
+  background: rgba(187, 154, 247, 0.08);
 }
 
 .dad-console :deep(.whisper-panel .loading-state),
 .dad-console :deep(.whisper-panel .empty-state) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.whisper-panel .error-msg) {
-  background: rgba(248, 113, 113, 0.08);
-  border-left: 3px solid #f87171;
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.08);
+  border-left: 3px solid var(--dc-danger);
+  color: var(--dc-danger);
   font-family: var(--dc-font-mono);
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--dc-radius) var(--dc-radius) 0;
 }
 
 .dad-console :deep(.whisper-panel .success-msg) {
-  background: rgba(45, 212, 191, 0.08);
-  border-left: 3px solid #2dd4bf;
-  color: #2dd4bf;
+  background: rgba(158, 206, 106, 0.08);
+  border-left: 3px solid var(--dc-success);
+  color: var(--dc-success);
   font-family: var(--dc-font-mono);
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--dc-radius) var(--dc-radius) 0;
 }
 
-/* ── ProfilePanel (SYS.CONFIG) ── */
+/* ── ProfilePanel ── */
 .dad-console :deep(.profile-panel) {
   background: transparent;
 }
 
 .dad-console :deep(.profile-header) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--dc-border);
 }
 
 .dad-console :deep(.profile-avatar) {
-  border: 2px solid rgba(125, 211, 252, 0.2);
+  border: 2px solid var(--dc-border);
+  border-radius: 0;
 }
 
 .dad-console :deep(.profile-avatar img) {
-  border-radius: 50%;
+  border-radius: 0;
 }
 
 .dad-console :deep(.avatar-placeholder) {
-  background: rgba(125, 211, 252, 0.1);
-  color: #7dd3fc;
+  background: var(--dc-surface);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.avatar-edit-hint) {
-  background: rgba(10, 14, 20, 0.9);
-  color: #7dd3fc;
+  background: rgba(26, 27, 38, 0.9);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.profile-name) {
-  color: #fff;
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.edit-icon) {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.profile-username) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.role-badge) {
-  background: rgba(125, 211, 252, 0.1);
-  border: 1px solid rgba(125, 211, 252, 0.2);
-  color: #7dd3fc;
+  background: var(--dc-accent-dim);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
   font-size: 11px;
-  border-radius: 4px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.nickname-input) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  color: #fff;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.stats-grid) {
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  background: var(--dc-surface);
 }
 
 .dad-console :deep(.stat-value) {
-  color: #7dd3fc;
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
   font-variant-numeric: tabular-nums;
 }
 
 .dad-console :deep(.stat-label) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
   font-size: 11px;
 }
 
 .dad-console :deep(.settings-heading) {
   font-family: var(--dc-font-mono);
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dc-comment);
   letter-spacing: 1px;
   font-size: 12px;
 }
 
 .dad-console :deep(.form-label) {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
   font-size: 11px;
 }
 
 .dad-console :deep(.form-input) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.form-input:focus) {
-  border-color: rgba(125, 211, 252, 0.3);
-  box-shadow: 0 0 12px rgba(125, 211, 252, 0.08);
+  border-color: var(--dc-accent);
 }
 
 .dad-console :deep(.form-input::placeholder) {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.profile-panel .submit-btn) {
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  color: #7dd3fc;
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.profile-panel .submit-btn:hover:not(:disabled)) {
-  background: rgba(125, 211, 252, 0.08);
+  background: var(--dc-accent-dim);
 }
 
 .dad-console :deep(.upload-btn) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.5);
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.upload-btn:hover:not(:disabled)) {
-  border-color: rgba(125, 211, 252, 0.2);
-  color: #7dd3fc;
+  border-color: rgba(125, 207, 255, 0.3);
+  color: var(--dc-accent);
 }
 
 .dad-console :deep(.upload-hint) {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.danger-btn) {
-  background: rgba(248, 113, 113, 0.05);
-  border: 1px solid rgba(248, 113, 113, 0.2);
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.05);
+  border: 1px solid rgba(247, 118, 142, 0.2);
+  color: var(--dc-danger);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.danger-btn:hover:not(:disabled)) {
-  background: rgba(248, 113, 113, 0.12);
+  background: rgba(247, 118, 142, 0.12);
 }
 
 .dad-console :deep(.inline-error),
 .dad-console :deep(.form-error) {
-  color: #f87171;
+  color: var(--dc-danger);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.form-success) {
-  color: #2dd4bf;
+  color: var(--dc-success);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.partner-card) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.partner-label) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.partner-name) {
-  color: #fff;
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.partner-role) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.shell-code-display) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
   font-family: var(--dc-font-mono);
-  color: #7dd3fc;
-  border-radius: 6px;
+  color: var(--dc-accent);
+  border-radius: var(--dc-radius);
 }
 
-/* ── AiMemoryPanel (inline in Chat) ── */
+/* ── AiMemoryPanel ── */
 .dad-console :deep(.ai-memory-panel) {
   background: transparent;
 }
 
 .dad-console :deep(.ai-memory-panel .panel-title) {
   font-family: var(--dc-font-mono);
-  color: #fff;
-  letter-spacing: 1px;
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.ai-memory-panel .tab-bar) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
   padding: 3px;
 }
 
 .dad-console :deep(.ai-memory-panel .tab-btn) {
   font-family: var(--dc-font-mono);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  color: var(--dc-comment);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.ai-memory-panel .tab-btn.active) {
-  background: rgba(125, 211, 252, 0.1);
-  color: #7dd3fc;
+  background: var(--dc-accent-dim);
+  color: var(--dc-accent);
 }
 
 .dad-console :deep(.ai-memory-panel .panel-subtitle) {
   font-family: var(--dc-font-mono);
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--dc-comment);
   font-size: 12px;
 }
 
 .dad-console :deep(.ai-memory-panel .loading-state),
 .dad-console :deep(.ai-memory-panel .empty-state) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.ai-memory-panel .empty-hint) {
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.fact-card) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.fact-card:hover) {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .dad-console :deep(.fact-category) {
   font-family: var(--dc-font-mono);
   font-size: 10px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.dad-console :deep(.fact-category[data-category="family"]) {
-  background: rgba(240, 171, 252, 0.12);
-  color: #f0abfc;
-}
-
-.dad-console :deep(.fact-category[data-category="interest"]) {
-  background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
-}
-
-.dad-console :deep(.fact-category[data-category="concern"]) {
-  background: rgba(125, 211, 252, 0.12);
-  color: #7dd3fc;
-}
-
-.dad-console :deep(.fact-category[data-category="personal_info"]) {
-  background: rgba(167, 139, 250, 0.12);
-  color: #a78bfa;
-}
-
-.dad-console :deep(.fact-category[data-category="preference"]) {
-  background: rgba(45, 212, 191, 0.12);
-  color: #2dd4bf;
+  border-radius: var(--dc-radius);
+  background: var(--dc-surface);
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.fact-owner) {
   font-family: var(--dc-font-mono);
   font-size: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  background: var(--dc-surface);
+  color: var(--dc-comment);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.fact-text) {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
   font-size: 13px;
 }
 
 .dad-console :deep(.fact-delete) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.3);
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.fact-delete:hover:not(:disabled)) {
-  background: rgba(248, 113, 113, 0.1);
-  border-color: rgba(248, 113, 113, 0.2);
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.1);
+  border-color: rgba(247, 118, 142, 0.2);
+  color: var(--dc-danger);
 }
 
 /* History tab */
 .dad-console :deep(.history-summary) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.summary-label) {
   font-family: var(--dc-font-mono);
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 1px;
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.summary-text) {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.turns-label) {
   font-family: var(--dc-font-mono);
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 1px;
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.turn-card) {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.turn-role) {
   font-family: var(--dc-font-mono);
-  border-radius: 4px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.turn-user .turn-role) {
-  background: rgba(167, 139, 250, 0.12);
-  color: #a78bfa;
+  background: rgba(187, 154, 247, 0.12);
+  color: #BB9AF7;
 }
 
 .dad-console :deep(.turn-ai .turn-role) {
-  background: rgba(125, 211, 252, 0.12);
-  color: #7dd3fc;
+  background: var(--dc-accent-dim);
+  color: var(--dc-accent);
 }
 
 .dad-console :deep(.turn-text) {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
   font-size: 12px;
 }
 
 .dad-console :deep(.clear-history-btn) {
-  background: rgba(248, 113, 113, 0.05);
-  border: 1px solid rgba(248, 113, 113, 0.15);
-  border-radius: 6px;
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.05);
+  border: 1px solid rgba(247, 118, 142, 0.15);
+  border-radius: var(--dc-radius);
+  color: var(--dc-danger);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.clear-history-btn:hover:not(:disabled)) {
-  background: rgba(248, 113, 113, 0.1);
-  border-color: rgba(248, 113, 113, 0.25);
+  background: rgba(247, 118, 142, 0.1);
+  border-color: rgba(247, 118, 142, 0.25);
 }
 
 .dad-console :deep(.ai-memory-panel .error-msg) {
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.15);
-  border-radius: 6px;
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.08);
+  border: 1px solid rgba(247, 118, 142, 0.15);
+  border-radius: var(--dc-radius);
+  color: var(--dc-danger);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.back-btn) {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.back-btn:hover) {
-  border-color: rgba(125, 211, 252, 0.2);
-  color: #7dd3fc;
+  border-color: var(--dc-accent);
+  color: var(--dc-accent);
 }
 
 /* ── OverlayPanel wrapper (embedded mode) ── */
@@ -1358,253 +1330,193 @@ watch(activeTab, async (tab) => {
 }
 
 .dad-console :deep(.overlay-backdrop) {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(26, 27, 38, 0.9);
 }
 
 .dad-console :deep(.overlay-panel) {
-  background: #0a0e14;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--dc-bg2);
+  border: 1px solid var(--dc-border);
 }
 
 .dad-console :deep(.overlay-close) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 .dad-console :deep(.overlay-close:hover) {
-  color: #fff;
+  color: var(--dc-text);
 }
 
 /* ── ConfirmDialog ── */
 .dad-console :deep(.confirm-backdrop) {
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: none;
+  background: rgba(26, 27, 38, 0.9);
 }
 
 .dad-console :deep(.confirm-dialog) {
-  background: #0f1419;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  backdrop-filter: none;
-  position: relative;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-}
-
-.dad-console :deep(.confirm-dialog)::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9);
-  background-size: 200% 200%;
-  animation: iri-shift 6s ease-in-out infinite;
-  z-index: -1;
-  opacity: 0.4;
+  background: var(--dc-bg2);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .dad-console :deep(.confirm-message) {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--dc-text);
   font-family: var(--dc-font-mono);
   font-size: 14px;
 }
 
 .dad-console :deep(.confirm-btn) {
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.confirm-btn.cancel) {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.confirm-btn.cancel:hover) {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.confirm-btn.ok) {
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  color: #7dd3fc;
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-accent);
 }
 
 .dad-console :deep(.confirm-btn.ok:hover) {
-  background: rgba(125, 211, 252, 0.08);
+  background: var(--dc-accent-dim);
 }
 
-/* ── CommunityPanel detail overlay ── */
-.dad-console :deep(.detail-overlay) {
-  background: rgba(0, 0, 0, 0.8);
-}
-
-.dad-console :deep(.detail-card) {
-  background: #0f1419;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-}
-
+/* Community detail overlay */
 .dad-console :deep(.detail-close) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
-  background: rgba(10, 14, 20, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--dc-bg);
+  border: 1px solid var(--dc-border);
 }
 
 .dad-console :deep(.detail-close:hover) {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.dad-console :deep(.detail-title) {
-  color: #fff;
-  font-weight: 600;
+  color: var(--dc-text);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .dad-console :deep(.detail-author) {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
   font-size: 12px;
 }
 
 .dad-console :deep(.detail-content) {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--dc-text);
   line-height: 1.7;
 }
 
 .dad-console :deep(.detail-tags .q-tag) {
-  background: rgba(125, 211, 252, 0.08);
-  border: 1px solid rgba(125, 211, 252, 0.15);
-  color: #7dd3fc;
+  background: var(--dc-accent-dim);
+  border: 1px solid rgba(125, 207, 255, 0.3);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
   font-size: 10px;
 }
 
 .dad-console :deep(.detail-actions-bar) {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--dc-border);
 }
 
 .dad-console :deep(.detail-action-btn) {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.detail-action-btn:hover) {
-  border-color: rgba(125, 211, 252, 0.2);
-  color: #7dd3fc;
+  border-color: var(--dc-accent);
+  color: var(--dc-accent);
 }
 
 /* Community answers */
 .dad-console :deep(.answers-title) {
   font-family: var(--dc-font-mono);
-  color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 1px;
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.answer-card) {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.answer-author) {
   font-family: var(--dc-font-mono);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dc-comment);
 }
 
 .dad-console :deep(.answer-content) {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--dc-text);
 }
 
 .dad-console :deep(.answer-meta) {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
 }
 
 /* Community compose */
-.dad-console :deep(.compose-overlay) {
-  background: rgba(0, 0, 0, 0.8);
-}
-
-.dad-console :deep(.compose-form) {
-  background: #0f1419;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-}
-
-.dad-console :deep(.compose-title) {
-  font-family: var(--dc-font-mono);
-  color: #fff;
-}
-
-.dad-console :deep(.compose-input),
-.dad-console :deep(.compose-textarea) {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
-  font-family: var(--dc-font-mono);
-  border-radius: 6px;
-}
-
-.dad-console :deep(.compose-input:focus),
-.dad-console :deep(.compose-textarea:focus) {
-  border-color: rgba(125, 211, 252, 0.3);
-}
-
 .dad-console :deep(.compose-cancel) {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--dc-border);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.compose-submit) {
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  color: #7dd3fc;
+  border: 1px solid var(--dc-accent);
+  color: var(--dc-accent);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.compose-submit:hover:not(:disabled)) {
-  background: rgba(125, 211, 252, 0.08);
+  background: var(--dc-accent-dim);
 }
 
 /* Community tag picker */
 .dad-console :deep(.tag-picker) {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  background: var(--dc-surface);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
 }
 
 .dad-console :deep(.tag-picker-label) {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
   font-family: var(--dc-font-mono);
   font-size: 11px;
 }
 
 /* Community panel toast */
 .dad-console :deep(.panel-toast-error) {
-  background: rgba(248, 113, 113, 0.1);
-  border: 1px solid rgba(248, 113, 113, 0.2);
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.1);
+  border: 1px solid rgba(247, 118, 142, 0.2);
+  color: var(--dc-danger);
   font-family: var(--dc-font-mono);
-  border-radius: 6px;
+  border-radius: var(--dc-radius);
 }
 
 /* ── RoleSelectPanel (if triggered from dad) ── */
 .dad-console :deep(.role-select) {
-  background: #0a0e14;
+  background: var(--dc-bg);
 }
 
 .dad-console :deep(.role-half) {
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--dc-border);
 }
 
 .dad-console :deep(.role-title) {
@@ -1613,6 +1525,6 @@ watch(activeTab, async (tab) => {
 
 .dad-console :deep(.role-subtitle) {
   font-family: var(--dc-font-mono);
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment);
 }
 </style>

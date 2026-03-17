@@ -1,15 +1,11 @@
 <template>
   <header class="dc-header">
     <div class="dc-brand">
-      <div class="dc-traffic-dots">
-        <span class="dot dot-red"></span>
-        <span class="dot dot-yellow"></span>
-        <span class="dot dot-green"></span>
+      <div class="dc-prompt">
+        <span class="prompt-user">dad@momshell</span><span class="prompt-colon">:</span><span class="prompt-path">~</span><span class="prompt-char">$</span>
+        <input v-model="cmdInput" class="dc-head-input" placeholder="_" @keydown.enter="submitCmd" />
       </div>
-      <div class="dc-brand-text">
-        <h1 class="dc-title"><span class="dc-title-shimmer">MomShell</span><span class="dc-cursor">_</span></h1>
-        <div class="dc-subtitle">KERNEL_SYNC: <span class="dc-status-text">SECURE</span></div>
-      </div>
+      <div class="dc-subtitle">daemon: <span class="dc-status-text">running</span></div>
     </div>
     <div class="dc-header-right">
       <button v-if="currentAge" class="dc-term-btn" @click="$emit('open-age-picker')">
@@ -19,14 +15,15 @@
         [REQ_AGE]
       </button>
       <div v-if="stats" class="dc-stats">
-        <span class="dc-level">[LVL.{{ stats.level }}]</span>
-        <span class="dc-xp">{{ stats.xp }} XP</span>
+        <span class="dc-level">LVL={{ stats.level }}</span>
+        <span class="dc-xp">XP={{ stats.xp }}</span>
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { TaskStats } from '@/lib/api/task'
 
 defineProps<{
@@ -34,9 +31,21 @@ defineProps<{
   currentAge: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'open-age-picker': []
+  'command': [cmd: string]
 }>()
+
+const cmdInput = ref('')
+
+function submitCmd(e: KeyboardEvent) {
+  const target = e.target as HTMLInputElement
+  const raw = cmdInput.value.trim()
+  if (!raw) return
+  emit('command', raw)
+  cmdInput.value = ''
+  target.blur()
+}
 
 const AGE_LABELS: Record<string, string> = {
   pregnancy: '孕期',
@@ -58,95 +67,59 @@ function ageLabel(v: string) { return AGE_LABELS[v] || v }
   z-index: 10;
   flex-shrink: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(10, 14, 20, 0.9);
-  border-bottom: 1px solid transparent;
-  background-clip: padding-box;
-}
-
-.dc-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--dc-gradient-iri, linear-gradient(135deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9));
-  opacity: 0.5;
+  background: var(--dc-bg, #1A1B26);
+  border-bottom: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
 }
 
 .dc-brand {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.dc-traffic-dots {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.dot-red { background: #ff5f57; }
-.dot-yellow { background: #febc2e; }
-.dot-green { background: #28c840; }
-
-.dc-brand-text {
-  display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 
-.dc-title {
-  margin: 0;
+.dc-prompt {
   font-family: var(--dc-font-mono);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
 }
 
-.dc-title-shimmer {
-  background: linear-gradient(135deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9, #7dd3fc);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: iri-shift 6s ease-in-out infinite;
-}
+.prompt-user { color: var(--dc-success, #9ECE6A); }
+.prompt-colon { color: var(--dc-text, #C0CAF5); }
+.prompt-path { color: var(--dc-accent, #7DCFFF); }
+.prompt-char { color: var(--dc-text, #C0CAF5); margin-left: 8px; margin-right: 8px;}
 
-.dc-cursor {
-  display: inline-block;
-  width: 8px;
-  color: #7dd3fc;
+.dc-head-input {
+  background: transparent;
+  border: none;
+  color: var(--dc-text, #C0CAF5);
+  font-family: var(--dc-font-mono);
+  font-size: 16px;
+  outline: none;
+  width: 150px;
+  padding: 0;
+  margin: 0;
+}
+.dc-head-input::placeholder {
+  color: var(--dc-accent, #7DCFFF);
+  opacity: 1;
   animation: cursor-blink 1s step-end infinite;
 }
 
 @keyframes cursor-blink { 50% { opacity: 0; } }
 
-@keyframes iri-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
 .dc-subtitle {
   font-family: var(--dc-font-mono);
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 0.5px;
-  margin-top: 2px;
+  font-size: 11px;
+  color: var(--dc-comment, #565F89);
 }
 
 .dc-status-text {
-  color: #2dd4bf;
-  font-weight: bold;
+  color: var(--dc-success, #9ECE6A);
 }
 
 .dc-header-right {
@@ -159,31 +132,33 @@ function ageLabel(v: string) { return AGE_LABELS[v] || v }
 .dc-term-btn {
   background: transparent;
   border: none;
-  color: #7dd3fc;
+  color: var(--dc-accent, #7DCFFF);
   font-family: var(--dc-font-mono);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
 }
 
-.dc-term-btn-alert { color: #fbbf24; }
+.dc-term-btn:hover {
+  text-decoration: underline;
+}
+
+.dc-term-btn-alert { color: var(--dc-warn, #FF9E64); }
 
 .dc-stats {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   font-family: var(--dc-font-mono);
-  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--dc-text, #C0CAF5);
 }
 
 .dc-level {
-  color: #7dd3fc;
-  font-size: 11px;
-  font-weight: 700;
+  color: var(--dc-accent, #7DCFFF);
 }
 
 .dc-xp {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 11px;
+  color: var(--dc-comment, #565F89);
 }
 </style>
