@@ -6,8 +6,8 @@
       :class="['dc-tab', { active: modelValue === tab.key }]"
       @click="$emit('update:modelValue', tab.key)"
     >
+      <!-- <span class="dc-tab-idx">{{ idx + 1 }}:</span> -->
       <span class="dc-tab-label">{{ tab.label }}</span>
-      <span class="dc-tab-sub">{{ tab.sub }}</span>
     </button>
   </nav>
 </template>
@@ -22,12 +22,13 @@ defineEmits<{
 }>()
 
 const tabs = [
-  { key: 'tasks', label: 'SYS.TASKS', sub: '任务队列' },
-  { key: 'dashboard', label: 'SYS.TELEMETRY', sub: '系统遥测' },
-  { key: 'chat', label: 'SYS.COMMS', sub: '通信频道' },
-  { key: 'community', label: 'SYS.NETWORK', sub: '外部网络' },
-  { key: 'whisper', label: 'SYS.DECRYPT', sub: '解密日志' },
-  { key: 'profile', label: 'SYS.CONFIG', sub: '系统配置' },
+  { key: 'home', label: '主页' },
+  { key: 'tasks', label: '任务队列' },
+  { key: 'dashboard', label: '系统遥测' },
+  { key: 'chat', label: 'AI通信' },
+  { key: 'community', label: '互助网络' },
+  { key: 'whisper', label: '心声情报' },
+  { key: 'profile', label: '个人资料' },
 ]
 </script>
 
@@ -39,10 +40,10 @@ const tabs = [
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
-  background: rgba(10, 14, 20, 0.95);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 0 12px;
-  gap: 0;
+  background: var(--dc-bg2, #24283B);
+  border-bottom: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  padding: 0 4px;
+  gap: 4px;
 }
 
 .dc-tabbar::-webkit-scrollbar { display: none; }
@@ -50,57 +51,40 @@ const tabs = [
 .dc-tab {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 12px 14px 10px;
+  gap: 6px;
+  padding: 8px 12px;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment, #565F89);
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, background-color 0.2s;
   position: relative;
+  border-radius: 2px 2px 0 0;
+  margin-top: 4px;
+}
+
+.dc-tab-idx {
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 .dc-tab-label {
   font-family: var(--dc-font-mono);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-
-.dc-tab-sub {
-  font-family: var(--dc-font-mono);
-  font-size: 9px;
-  opacity: 0.6;
   white-space: nowrap;
 }
 
 .dc-tab:hover {
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--dc-text, #C0CAF5);
 }
 
 .dc-tab.active {
-  color: #fff;
-}
-
-.dc-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 8px;
-  right: 8px;
-  height: 2px;
-  background: linear-gradient(90deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9);
-  background-size: 200% 200%;
-  animation: iri-shift 6s ease-in-out infinite;
-  border-radius: 1px;
-}
-
-@keyframes iri-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  background: var(--dc-bg, #1A1B26);
+  color: var(--dc-accent, #7DCFFF);
+  box-shadow: inset 0 2px 0 var(--dc-accent, #7DCFFF);
 }
 </style>

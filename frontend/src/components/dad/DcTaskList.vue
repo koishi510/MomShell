@@ -1,21 +1,21 @@
 <template>
   <div class="dc-tab-content">
     <div class="dc-section-header">
-      <div class="dc-sh-line"></div>
-      <span class="dc-sh-text">SYS.TASKS_QUEUE</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
+      <span class="dc-sh-text">./tasks.sh</span>
     </div>
 
     <div v-if="loading" class="dc-state">
       <div class="dc-spinner"></div>
-      <span>{{ hasAge ? 'GENERATING_DIRECTIVES...' : 'LOADING_SYSTEM...' }}</span>
+      <span>{{ hasAge ? 'fetching_directives...' : 'loading_system...' }}</span>
     </div>
 
     <div v-else-if="sortedTasks.length === 0" class="dc-state">
-      <span class="dc-state-icon">[ EMPTY ]</span>
-      <span>NO_ACTIVE_TASKS</span>
-      <button v-if="!hasAge" class="dc-action-btn" @click="$emit('open-age-picker')">> INITIALIZE_AGE</button>
+      <span class="dc-state-icon">[ empty ]</span>
+      <span>no_active_tasks</span>
+      <button v-if="!hasAge" class="dc-action-btn" @click="$emit('open-age-picker')">> init_age</button>
       <button v-else class="dc-action-btn dc-action-btn-ghost" :disabled="regenerating" @click="$emit('regenerate')">
-        {{ regenerating ? '> REGENERATING...' : '> REGENERATE_TASKS' }}
+        {{ regenerating ? '> regenerating...' : '> ./regenerate_tasks.sh' }}
       </button>
     </div>
 
@@ -38,7 +38,7 @@
       :disabled="regenerating"
       @click="$emit('regenerate')"
     >
-      {{ regenerating ? '> PROCESSING...' : '> OVERRIDE_TASKS' }}
+      {{ regenerating ? '> processing...' : '> ./override_tasks.sh' }}
     </button>
   </div>
 </template>
@@ -76,22 +76,20 @@ defineEmits<{
 .dc-section-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 20px;
   padding-top: 8px;
+  color: var(--dc-accent, #7DCFFF);
 }
 
-.dc-sh-line {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+.dc-sh-icon {
+  color: var(--dc-accent, #7DCFFF);
 }
 
 .dc-sh-text {
   font-family: var(--dc-font-mono);
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
-  letter-spacing: 2px;
+  font-size: 13px;
+  font-weight: bold;
 }
 
 .dc-state {
@@ -101,7 +99,7 @@ defineEmits<{
   justify-content: center;
   gap: 16px;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--dc-comment, #565F89);
   font-family: var(--dc-font-mono);
   font-size: 13px;
   text-align: center;
@@ -110,14 +108,14 @@ defineEmits<{
 .dc-state-icon {
   font-size: 18px;
   letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.1);
+  color: var(--dc-comment, #565F89);
 }
 
 .dc-spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.06);
-  border-top-color: #7dd3fc;
+  border: 2px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-top-color: var(--dc-accent, #7DCFFF);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -133,9 +131,9 @@ defineEmits<{
 .dc-error {
   margin-top: 16px;
   padding: 12px 16px;
-  background: rgba(248, 113, 113, 0.08);
-  border-left: 3px solid #f87171;
-  color: #f87171;
+  background: rgba(247, 118, 142, 0.08);
+  border-left: 3px solid var(--dc-danger, #F7768E);
+  color: var(--dc-danger, #F7768E);
   font-family: var(--dc-font-mono);
   font-size: 12px;
 }
@@ -149,10 +147,10 @@ defineEmits<{
   justify-content: center;
   width: 100%;
   padding: 14px;
-  background: rgba(15, 20, 25, 1);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--dc-bg2, #24283B);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--dc-radius, 2px);
+  color: var(--dc-text, #C0CAF5);
   font-family: var(--dc-font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -162,14 +160,14 @@ defineEmits<{
 }
 
 .dc-action-btn:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .dc-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.dc-action-btn-outline { border-color: rgba(125, 211, 252, 0.3); color: #7dd3fc; }
-.dc-action-btn-outline:hover:not(:disabled) { background: rgba(125, 211, 252, 0.08); }
-.dc-action-btn-ghost { background: transparent; border-color: transparent; color: rgba(255, 255, 255, 0.3); }
-.dc-action-btn-ghost:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.7); }
+.dc-action-btn-outline { border-color: var(--dc-accent, #7DCFFF); color: var(--dc-accent, #7DCFFF); background: transparent; }
+.dc-action-btn-outline:hover:not(:disabled) { background: rgba(125, 207, 255, 0.1); }
+.dc-action-btn-ghost { background: transparent; border-color: transparent; color: var(--dc-comment, #565F89); }
+.dc-action-btn-ghost:hover:not(:disabled) { border-color: var(--dc-border, rgba(255, 255, 255, 0.15)); color: var(--dc-text, #C0CAF5); }
 
 /* TransitionGroup */
 .card-list-enter-active { transition: all 0.4s ease-out; }

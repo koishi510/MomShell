@@ -1,25 +1,25 @@
 <template>
   <div class="dc-tab-content">
     <div class="dc-section-header">
-      <div class="dc-sh-line"></div>
-      <span class="dc-sh-text">SYS.TELEMETRY</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M18 20V10m-6 10V4M6 20v-4"></path></svg>
+      <span class="dc-sh-text">./status.sh</span>
     </div>
 
-    <div v-if="loading" class="dc-state"><span>FETCHING_METRICS...</span></div>
+    <div v-if="loading" class="dc-state"><span>fetching_metrics...</span></div>
     <div v-else-if="error" class="dc-error">> ERROR: {{ error }}</div>
     <div v-else class="dc-dashboard">
       <!-- Radar -->
       <div class="dc-panel dc-radar-section">
-        <div class="dc-panel-label">[ CAPABILITY_MATRIX ]</div>
+        <div class="dc-panel-label">[ capability_matrix ]</div>
         <SkillRadarChart v-if="radar" :values="radar" />
       </div>
 
       <!-- Achievements -->
       <div class="dc-panel">
         <div class="dc-panel-head">
-          <h3 class="dc-panel-title">BADGES [{{ unlockedCount }}/{{ achievements.length }}]</h3>
+          <h3 class="dc-panel-title">badges [{{ unlockedCount }}/{{ achievements.length }}]</h3>
         </div>
-        <div v-if="achievements.length === 0" class="dc-state dc-state-sm">NO_DATA</div>
+        <div v-if="achievements.length === 0" class="dc-state dc-state-sm">no_data</div>
         <div v-else class="dc-ach-list">
           <div
             v-for="a in sortedAchievements"
@@ -33,7 +33,7 @@
               <div class="dc-ach-name">{{ a.title }}</div>
               <div class="dc-ach-desc">{{ a.description }}</div>
             </div>
-            <span :class="['dc-ach-status', a.unlocked ? 'ok' : 'locked']">{{ a.unlocked ? '[GRANTED]' : '[LOCKED]' }}</span>
+            <span :class="['dc-ach-status', a.unlocked ? 'ok' : 'locked']">{{ a.unlocked ? 'granted' : 'locked' }}</span>
           </div>
         </div>
       </div>
@@ -41,9 +41,9 @@
       <!-- Perk Cards -->
       <div class="dc-panel">
         <div class="dc-panel-head">
-          <h3 class="dc-panel-title">ASSETS.PERKS</h3>
+          <h3 class="dc-panel-title">assets.perks</h3>
         </div>
-        <div v-if="perkCards.length === 0" class="dc-state dc-state-sm">INVENTORY_EMPTY</div>
+        <div v-if="perkCards.length === 0" class="dc-state dc-state-sm">inventory_empty</div>
         <div v-else class="dc-perk-grid">
           <div v-for="c in perkCards" :key="c.id" :class="['dc-perk-card', `dc-pst-${c.status}`]">
             <div class="dc-perk-card-inner">
@@ -54,9 +54,9 @@
               <p v-if="c.description" class="dc-perk-desc">{{ c.description }}</p>
               <div class="dc-perk-foot">
                 <span class="dc-perk-time">
-                  <template v-if="c.status === 'used'">DEPLETED</template>
-                  <template v-else-if="c.status === 'expired'">EXPIRED</template>
-                  <template v-else>READY</template>
+                  <template v-if="c.status === 'used'">depleted</template>
+                  <template v-else-if="c.status === 'expired'">expired</template>
+                  <template v-else>ready</template>
                 </span>
                 <button
                   v-if="c.status === 'active'"
@@ -64,7 +64,7 @@
                   :disabled="usingPerk === c.id"
                   @click="$emit('use-perk', c.id)"
                 >
-                  {{ usingPerk === c.id ? '...' : '[ USE ]' }}
+                  {{ usingPerk === c.id ? '...' : '> use' }}
                 </button>
               </div>
             </div>
@@ -117,30 +117,29 @@ function perkStatusLabel(s: string): string {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.dc-section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-top: 8px; }
-.dc-sh-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent); }
-.dc-sh-text { font-family: var(--dc-font-mono); font-size: 12px; color: rgba(255,255,255,0.3); letter-spacing: 2px; }
+.dc-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; padding-top: 8px; color: var(--dc-accent, #7DCFFF); }
+.dc-sh-icon { color: var(--dc-accent, #7DCFFF); }
+.dc-sh-text { font-family: var(--dc-font-mono); font-size: 13px; font-weight: bold; }
 
-.dc-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 20px; color: rgba(255,255,255,0.3); font-family: var(--dc-font-mono); font-size: 13px; }
+.dc-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 20px; color: var(--dc-comment, #565F89); font-family: var(--dc-font-mono); font-size: 13px; }
 .dc-state-sm { padding: 30px 16px; }
-.dc-error { margin-top: 16px; padding: 12px 16px; background: rgba(248,113,113,0.08); border-left: 3px solid #f87171; color: #f87171; font-family: var(--dc-font-mono); font-size: 12px; }
+.dc-error { margin-top: 16px; padding: 12px 16px; background: rgba(247, 118, 142, 0.08); border-left: 3px solid var(--dc-danger, #F7768E); color: var(--dc-danger, #F7768E); font-family: var(--dc-font-mono); font-size: 12px; }
 
 .dc-dashboard { display: flex; flex-direction: column; gap: 20px; }
 
 .dc-panel {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 6px;
+  background: var(--dc-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--dc-radius, 2px);
   padding: 20px;
 }
 
 .dc-panel-label {
   font-family: var(--dc-font-mono);
   font-size: 12px;
-  color: #7dd3fc;
+  color: var(--dc-accent, #7DCFFF);
   margin-bottom: 16px;
   text-align: center;
-  letter-spacing: 2px;
 }
 
 .dc-panel-head {
@@ -148,7 +147,7 @@ function perkStatusLabel(s: string): string {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
   padding-bottom: 12px;
 }
 
@@ -156,16 +155,16 @@ function perkStatusLabel(s: string): string {
   margin: 0;
   font-family: var(--dc-font-mono);
   font-size: 14px;
-  color: #fff;
+  color: var(--dc-text, #C0CAF5);
 }
 
 /* Radar overrides */
 .dc-radar-section :deep(.radar-wrap) { border-color: transparent; background: transparent; }
-.dc-radar-section :deep(.value-fill) { fill: rgba(125, 211, 252, 0.15); }
-.dc-radar-section :deep(.value-stroke) { stroke: #7dd3fc; }
-.dc-radar-section :deep(.ring) { stroke: rgba(255,255,255,0.04); }
-.dc-radar-section :deep(.axis) { stroke: rgba(255,255,255,0.04); }
-.dc-radar-section :deep(.label) { fill: rgba(255,255,255,0.3); font-family: var(--dc-font-mono); font-size: 10px; }
+.dc-radar-section :deep(.value-fill) { fill: rgba(125, 207, 255, 0.15); }
+.dc-radar-section :deep(.value-stroke) { stroke: var(--dc-accent, #7DCFFF); }
+.dc-radar-section :deep(.ring) { stroke: var(--dc-border, rgba(255, 255, 255, 0.15)); }
+.dc-radar-section :deep(.axis) { stroke: var(--dc-border, rgba(255, 255, 255, 0.15)); }
+.dc-radar-section :deep(.label) { fill: var(--dc-comment, #565F89); font-family: var(--dc-font-mono); font-size: 10px; }
 
 /* Achievements */
 .dc-ach-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
@@ -175,112 +174,102 @@ function perkStatusLabel(s: string): string {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 6px;
+  background: var(--dc-bg2, #24283B);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--dc-radius, 2px);
   transition: all 0.2s;
 }
 
 .dc-ach-item.unlocked {
-  background: rgba(45, 212, 191, 0.04);
-  border-color: rgba(45, 212, 191, 0.2);
-  box-shadow: -3px 0 12px -4px rgba(125, 211, 252, 0.15);
+  background: rgba(158, 206, 106, 0.05);
+  border-color: var(--dc-success, #9ECE6A);
 }
 
 .dc-ach-icon-wrap {
   width: 48px; height: 48px;
-  border-radius: 4px;
-  background: rgba(15, 20, 25, 1);
-  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--dc-radius, 2px);
+  background: var(--dc-bg, #1A1B26);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
 
-.dc-ach-item.unlocked .dc-ach-icon-wrap { border-color: #2dd4bf; }
+.dc-ach-item.unlocked .dc-ach-icon-wrap { border-color: var(--dc-success, #9ECE6A); }
 
 .dc-ach-icon { width: 100%; height: 100%; background-size: cover; background-position: center; }
 .dc-ach-info { flex: 1; min-width: 0; }
-.dc-ach-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dc-ach-desc { font-size: 12px; color: rgba(255,255,255,0.3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-ach-name { font-size: 14px; font-weight: 600; color: var(--dc-text, #C0CAF5); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-ach-desc { font-size: 12px; color: var(--dc-comment, #565F89); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .dc-ach-status {
   font-family: var(--dc-font-mono);
   font-size: 10px;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--dc-radius, 2px);
   white-space: nowrap;
 }
 
-.dc-ach-status.ok { color: #2dd4bf; background: rgba(45,212,191,0.1); }
-.dc-ach-status.locked { color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
+.dc-ach-status.ok { color: var(--dc-success, #9ECE6A); border: 1px solid rgba(158, 206, 106, 0.3); }
+.dc-ach-status.locked { color: var(--dc-comment, #565F89); border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15)); }
 
 /* Perks */
 .dc-perk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 
 .dc-perk-card {
   position: relative;
-  padding: 1px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 6px;
+  background: var(--dc-bg2, #24283B);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--dc-radius, 2px);
   overflow: hidden;
 }
 
 .dc-perk-card.dc-pst-active {
-  background: linear-gradient(135deg, #7dd3fc, #a78bfa, #f0abfc, #67e8f9);
-  background-size: 200% 200%;
-  animation: iri-shift 6s ease-in-out infinite;
-}
-
-@keyframes iri-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  border-color: var(--dc-accent, #7DCFFF);
 }
 
 .dc-perk-card-inner {
-  background: rgba(15, 20, 25, 1);
   padding: 16px;
-  border-radius: 5px;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .dc-perk-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.dc-perk-title { font-size: 15px; font-weight: 600; color: #fff; }
+.dc-perk-title { font-size: 14px; font-weight: 600; color: var(--dc-text, #C0CAF5); font-family: var(--dc-font-mono); }
 
 .dc-perk-badge {
   font-family: var(--dc-font-mono);
   font-size: 10px;
-  color: #7dd3fc;
-  border: 1px solid rgba(125,211,252,0.2);
+  color: var(--dc-accent, #7DCFFF);
+  border: 1px solid rgba(125, 207, 255, 0.3);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--dc-radius, 2px);
 }
 
-.dc-perk-desc { font-size: 13px; color: rgba(255,255,255,0.3); line-height: 1.5; margin: 0 0 16px; flex: 1; }
+.dc-perk-desc { font-size: 12px; color: var(--dc-comment, #565F89); line-height: 1.5; margin: 0 0 16px; flex: 1; }
 
 .dc-perk-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px dashed rgba(255,255,255,0.06);
+  border-top: 1px dashed var(--dc-border, rgba(255, 255, 255, 0.15));
   padding-top: 12px;
 }
 
-.dc-perk-time { font-family: var(--dc-font-mono); font-size: 11px; color: rgba(255,255,255,0.3); }
+.dc-perk-time { font-family: var(--dc-font-mono); font-size: 11px; color: var(--dc-comment, #565F89); }
 
 .dc-perk-use-btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: transparent;
-  border: 1px solid rgba(125,211,252,0.3);
-  border-radius: 4px;
-  color: #7dd3fc;
+  border: 1px solid var(--dc-accent, #7DCFFF);
+  border-radius: var(--dc-radius, 2px);
+  color: var(--dc-accent, #7DCFFF);
   font-family: var(--dc-font-mono);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.dc-perk-use-btn:hover:not(:disabled) { background: rgba(125,211,252,0.08); }
+.dc-perk-use-btn:hover:not(:disabled) { background: rgba(125, 207, 255, 0.1); }
 .dc-perk-use-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
