@@ -6,6 +6,11 @@ import (
 )
 
 func Migrate(db *gorm.DB) error {
+	// Enable pgvector extension
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS vector").Error; err != nil {
+		return err
+	}
+
 	if err := db.AutoMigrate(
 		&model.User{},
 		&model.UserCertification{},
@@ -26,6 +31,7 @@ func Migrate(db *gorm.DB) error {
 		&model.DailyTask{},
 		&model.UserTask{},
 		&model.AIGeneratedTask{},
+		&model.KnowledgeEmbedding{},
 	); err != nil {
 		return err
 	}

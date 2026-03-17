@@ -22,16 +22,18 @@ const (
 )
 
 type EchoService struct {
-	client   *openai.Client
-	echoRepo *repository.EchoRepo
-	userRepo *repository.UserRepo
+	client     *openai.Client
+	echoRepo   *repository.EchoRepo
+	userRepo   *repository.UserRepo
+	ragService *RAGService
 }
 
-func NewEchoService(client *openai.Client, echoRepo *repository.EchoRepo, userRepo *repository.UserRepo) *EchoService {
+func NewEchoService(client *openai.Client, echoRepo *repository.EchoRepo, userRepo *repository.UserRepo, ragService *RAGService) *EchoService {
 	return &EchoService{
-		client:   client,
-		echoRepo: echoRepo,
-		userRepo: userRepo,
+		client:     client,
+		echoRepo:   echoRepo,
+		userRepo:   userRepo,
+		ragService: ragService,
 	}
 }
 
@@ -159,6 +161,14 @@ func (s *EchoService) GenerateMemoir(ctx context.Context, userID string, req dto
 
 	if err := s.echoRepo.CreateMemoir(memoir); err != nil {
 		return nil, err
+	}
+
+	// Index for RAG in background
+	if s.ragService != nil {
+		go func() {
+			ctx := context.Background()
+			_ = s.ragService.IndexText(ctx, model.SourceMemoir, memoir.ID, &userID, memoir.Title+"\n"+memoir.Content)
+		}()
 	}
 
 	return memoir, nil

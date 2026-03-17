@@ -216,11 +216,12 @@ func pronounFor(role model.UserRole) string {
 }
 
 type ChatService struct {
-	client    *openai.Client
-	chatRepo  *repository.ChatRepo
-	userRepo  *repository.UserRepo
-	firecrawl *firecrawl.Client
-	jwtSecret string
+	client     *openai.Client
+	chatRepo   *repository.ChatRepo
+	userRepo   *repository.UserRepo
+	ragService *RAGService
+	firecrawl  *firecrawl.Client
+	jwtSecret  string
 	// In-memory storage for guest sessions
 	mu              sync.RWMutex
 	guestMemory     map[string][]map[string]interface{}
@@ -228,11 +229,12 @@ type ChatService struct {
 	guestLastAccess map[string]time.Time
 }
 
-func NewChatService(client *openai.Client, chatRepo *repository.ChatRepo, userRepo *repository.UserRepo, fc *firecrawl.Client, jwtSecret string) *ChatService {
+func NewChatService(client *openai.Client, chatRepo *repository.ChatRepo, userRepo *repository.UserRepo, ragService *RAGService, fc *firecrawl.Client, jwtSecret string) *ChatService {
 	return &ChatService{
 		client:          client,
 		chatRepo:        chatRepo,
 		userRepo:        userRepo,
+		ragService:      ragService,
 		firecrawl:       fc,
 		jwtSecret:       jwtSecret,
 		guestMemory:     make(map[string][]map[string]interface{}),
@@ -275,6 +277,14 @@ func appendWebSearchResults(systemPrompt, webResults string) string {
 		return systemPrompt
 	}
 	return systemPrompt + "\n\n## 联网搜索参考\n" + webResults + "\n日常聊天不需要引用来源。仅在提供专业性建议时才引用，引用时直接写出具体来源名称（如「根据XX的一篇文章...」），不要使用[来源1]这样的标注。不确定的信息请标明。"
+}
+
+// appendRAGResults appends vector search results to the system prompt if available.
+func appendRAGResults(systemPrompt, ragContext string) string {
+	if ragContext == "" {
+		return systemPrompt
+	}
+	return systemPrompt + "\n\n## 社区内容与个人历史参考\n" + ragContext + "\n你可以参考这些信息来提供更具个性化和深度的回答。如果是个人历史信息，可以自然地融入对话。"
 }
 
 // chatUserContext holds resolved user context for authenticated chat.
@@ -337,6 +347,13 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
 	systemPrompt = appendWebSearchResults(systemPrompt, webResults)
+
+	// Perform Vector Search (RAG)
+	if s.ragService != nil {
+		ragResults, _ := s.ragService.SearchSimilar(ctx, msg.Content, 5, &userID)
+		ragContext := s.ragService.FormatContext(ragResults)
+		systemPrompt = appendRAGResults(systemPrompt, ragContext)
+	}
 
 	messages := []openai.Message{
 		{Role: "system", Content: systemPrompt},
@@ -445,6 +462,13 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 
 	webResults := s.searchWebForChat(ctx, msg.Content)
 	systemPrompt = appendWebSearchResults(systemPrompt, webResults)
+
+	// Perform Vector Search (RAG)
+	if s.ragService != nil {
+		ragResults, _ := s.ragService.SearchSimilar(ctx, msg.Content, 5, nil)
+		ragContext := s.ragService.FormatContext(ragResults)
+		systemPrompt = appendRAGResults(systemPrompt, ragContext)
+	}
 
 	messages := []openai.Message{
 		{Role: "system", Content: systemPrompt},
