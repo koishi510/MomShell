@@ -60,7 +60,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
-const MAX_CMD_LENGTH = 24
+const MAX_CMD_LENGTH = 32
 const cmdInput = ref('')
 const isFocused = ref(false)
 const caretIndex = ref(0)
@@ -165,9 +165,9 @@ onMounted(() => {
 .dc-head-input-wrap {
   position: relative;
   display: inline-block;
-  width: 24ch;
-  min-width: 24ch;
-  max-width: 24ch;
+  width: 32ch;
+  min-width: 32ch;
+  max-width: 32ch;
   margin-left: 1ch;
 }
 
