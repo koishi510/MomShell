@@ -205,5 +205,6 @@ defineEmits<{
 }
 
 .dc-fade-enter-active, .dc-fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
-.dc-fade-enter-from, .dc-fade-leave-to { opacity: 0; transform: scale(0.98); }
+.dc-fade-enter-from, .dc-fade-leave-to { opacity: 0; }
+.dc-fade-enter-from .dc-term-modal, .dc-fade-leave-to .dc-term-modal { transform: translateY(20px); }
 </style>

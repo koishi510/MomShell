@@ -9,13 +9,13 @@
     <div v-else-if="error" class="dc-error">> ERROR: {{ error }}</div>
     <div v-else class="dc-dashboard">
       <!-- Radar -->
-      <div class="dc-panel dc-radar-section">
+      <div class="dc-panel dc-radar-section dc-float" style="--float-i:0">
         <div class="dc-panel-label">[ capability_matrix ]</div>
         <SkillRadarChart v-if="radar" :values="radar" />
       </div>
 
       <!-- Achievements -->
-      <div class="dc-panel">
+      <div class="dc-panel dc-float" style="--float-i:1">
         <div class="dc-panel-head">
           <h3 class="dc-panel-title">badges [{{ unlockedCount }}/{{ achievements.length }}]</h3>
         </div>
@@ -39,7 +39,7 @@
       </div>
 
       <!-- Perk Cards -->
-      <div class="dc-panel">
+      <div class="dc-panel dc-float" style="--float-i:2">
         <div class="dc-panel-head">
           <h3 class="dc-panel-title">assets.perks</h3>
         </div>
@@ -114,6 +114,15 @@ function perkStatusLabel(s: string): string {
 .dc-tab-content { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dc-float {
+  animation: floatUp 0.4s ease-out both;
+  animation-delay: calc(var(--float-i, 0) * 0.06s);
+}
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
