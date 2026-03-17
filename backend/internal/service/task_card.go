@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -103,7 +104,7 @@ func buildTaskCardPrompt(title, description string) string {
 func (s *TaskService) GenerateTaskCard(userID, taskID string) (string, error) {
 	ut, err := s.taskRepo.FindUserTaskByID(taskID)
 	if err != nil {
-		return "", fmt.Errorf(errTaskNotFound)
+		return "", errors.New(errTaskNotFound)
 	}
 	if ut.UserID != userID {
 		return "", fmt.Errorf("无权操作此任务")
