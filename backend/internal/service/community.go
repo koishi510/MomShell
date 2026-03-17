@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,6 +27,7 @@ type CommunityService struct {
 	tagRepo         *repository.TagRepo
 	userRepo        *repository.UserRepo
 	moderation      *ModerationService
+	ragService      *RAGService
 }
 
 func NewCommunityService(
@@ -36,6 +38,7 @@ func NewCommunityService(
 	tagRepo *repository.TagRepo,
 	userRepo *repository.UserRepo,
 	moderation *ModerationService,
+	ragService *RAGService,
 ) *CommunityService {
 	return &CommunityService{
 		questionRepo:    questionRepo,
@@ -45,6 +48,7 @@ func NewCommunityService(
 		tagRepo:         tagRepo,
 		userRepo:        userRepo,
 		moderation:      moderation,
+		ragService:      ragService,
 	}
 }
 
@@ -303,6 +307,14 @@ func (s *CommunityService) CreateQuestion(req dto.QuestionCreate, author *model.
 		return nil, err
 	}
 
+	// Index for RAG in background
+	if s.ragService != nil {
+		go func() {
+			ctx := context.Background()
+			_ = s.ragService.IndexText(ctx, model.SourceQuestion, q.ID, nil, q.Title+"\n"+q.Content)
+		}()
+	}
+
 	// Associate tags
 	for _, tagID := range req.TagIDs {
 		_ = s.tagRepo.CreateQuestionTag(&model.QuestionTag{
@@ -512,6 +524,14 @@ func (s *CommunityService) CreateAnswer(questionID string, req dto.AnswerCreate,
 
 	if err := s.answerRepo.Create(answer); err != nil {
 		return nil, err
+	}
+
+	// Index for RAG in background if published
+	if s.ragService != nil && answer.Status == model.StatusPublished {
+		go func() {
+			ctx := context.Background()
+			_ = s.ragService.IndexText(ctx, model.SourceAnswer, answer.ID, nil, answer.Content)
+		}()
 	}
 
 	_ = s.questionRepo.IncrementAnswerCount(questionID)

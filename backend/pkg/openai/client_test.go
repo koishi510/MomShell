@@ -153,7 +153,7 @@ func TestHandlePollStatus_Running(t *testing.T) {
 }
 
 func TestNewClient_DefaultBaseURL(t *testing.T) {
-	c := NewClient("key", "", "model")
+	c := NewClient("key", "", "model", "dummy-embedding")
 	if c.baseURL != "https://api.openai.com/v1" {
 		t.Errorf("expected default base URL, got %s", c.baseURL)
 	}
@@ -166,14 +166,14 @@ func TestNewClient_DefaultBaseURL(t *testing.T) {
 }
 
 func TestNewClient_CustomBaseURL(t *testing.T) {
-	c := NewClient("k", "https://custom.api/v1", "m")
+	c := NewClient("k", "https://custom.api/v1", "m", "dummy-embedding")
 	if c.baseURL != "https://custom.api/v1" {
 		t.Errorf("expected custom base URL, got %s", c.baseURL)
 	}
 }
 
 func TestHandleAsyncTask_InvalidJSON(t *testing.T) {
-	c := NewClient("key", "http://localhost", "model")
+	c := NewClient("key", "http://localhost", "model", "dummy-embedding")
 	resp, err := c.handleAsyncTask(context.Background(), []byte("not json"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -184,7 +184,7 @@ func TestHandleAsyncTask_InvalidJSON(t *testing.T) {
 }
 
 func TestHandleAsyncTask_AlreadySucceed(t *testing.T) {
-	c := NewClient("key", "http://localhost", "model")
+	c := NewClient("key", "http://localhost", "model", "dummy-embedding")
 	body, _ := json.Marshal(taskStatusResponse{
 		TaskStatus:   "SUCCEED",
 		OutputImages: []string{"https://example.com/img.png"},
@@ -202,7 +202,7 @@ func TestHandleAsyncTask_AlreadySucceed(t *testing.T) {
 }
 
 func TestHandleAsyncTask_NoTaskIDOrRequestID(t *testing.T) {
-	c := NewClient("key", "http://localhost", "model")
+	c := NewClient("key", "http://localhost", "model", "dummy-embedding")
 	body, _ := json.Marshal(taskStatusResponse{
 		TaskStatus: "PENDING",
 	})
@@ -225,7 +225,7 @@ func TestHandleAsyncTask_PollWithTaskID(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient("key", srv.URL, "model")
+	c := NewClient("key", srv.URL, "model", "dummy-embedding")
 	body, _ := json.Marshal(taskStatusResponse{
 		TaskID:     "task-123",
 		TaskStatus: "RUNNING",
@@ -251,7 +251,7 @@ func TestHandleAsyncTask_PollWithRequestID(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient("key", srv.URL, "model")
+	c := NewClient("key", srv.URL, "model", "dummy-embedding")
 	body, _ := json.Marshal(taskStatusResponse{
 		RequestID:  "req-456",
 		TaskStatus: "PENDING",
@@ -278,7 +278,7 @@ func TestHandleAsyncTask_PollError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient("key", srv.URL, "model")
+	c := NewClient("key", srv.URL, "model", "dummy-embedding")
 	body, _ := json.Marshal(taskStatusResponse{
 		TaskID:     "task-err",
 		TaskStatus: "RUNNING",
@@ -290,7 +290,7 @@ func TestHandleAsyncTask_PollError(t *testing.T) {
 }
 
 func TestChat_InvalidURL(t *testing.T) {
-	c := NewClient("key", "http://invalid.localhost:0", "model")
+	c := NewClient("key", "http://invalid.localhost:0", "model", "dummy-embedding")
 	_, err := c.Chat(context.Background(), []Message{
 		{Role: "user", Content: "hello"},
 	})
@@ -306,7 +306,7 @@ func TestChat_ServerError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient("key", srv.URL, "model")
+	c := NewClient("key", srv.URL, "model", "dummy-embedding")
 	_, err := c.Chat(context.Background(), []Message{
 		{Role: "user", Content: "hello"},
 	})
@@ -330,7 +330,7 @@ func TestChat_Success(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient("key", srv.URL, "model")
+	c := NewClient("key", srv.URL, "model", "dummy-embedding")
 	result, err := c.Chat(context.Background(), []Message{
 		{Role: "user", Content: "hello"},
 	})
@@ -349,7 +349,7 @@ func TestGenerateImage_ServerError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient("key", srv.URL, "model")
+	c := NewClient("key", srv.URL, "model", "dummy-embedding")
 	_, err := c.GenerateImage(context.Background(), "model", "a cat")
 	if err == nil {
 		t.Fatal("expected error for 400 response")
@@ -370,7 +370,7 @@ func TestGenerateImage_SyncResponse(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewClient("key", srv.URL, "model")
+	c := NewClient("key", srv.URL, "model", "dummy-embedding")
 	resp, err := c.GenerateImage(context.Background(), "model", "a cat")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

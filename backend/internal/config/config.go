@@ -19,10 +19,11 @@ type Config struct {
 	JWTRefreshTokenExpireDays int
 
 	// OpenAI compatible API
-	OpenAIAPIKey  string
-	OpenAIBaseURL string
-	OpenAIModel   string
-	ImageModel    string
+	OpenAIAPIKey   string
+	OpenAIBaseURL  string
+	OpenAIModel    string
+	ImageModel     string
+	EmbeddingModel string
 
 	// Firecrawl (web search)
 	FirecrawlAPIKey string
@@ -58,6 +59,7 @@ func Load() *Config {
 		OpenAIModel:               getEnv("OPENAI_MODEL", "Qwen/Qwen3-235B-A22B"),
 		FirecrawlAPIKey:           getEnv("FIRECRAWL_API_KEY", ""),
 		ImageModel:                getEnv("IMAGE_MODEL", "Tongyi-MAI/Z-Image-Turbo"),
+		EmbeddingModel:            getEnv("EMBEDDING_MODEL", "iic/nlp_gte_sentence-embedding_chinese-base"),
 		Port:                      getEnv("PORT", "8000"),
 		CORSOrigins:               getEnv("CORS_ORIGINS", "*"),
 		DBLogLevel:                getEnv("DB_LOG_LEVEL", "warn"),

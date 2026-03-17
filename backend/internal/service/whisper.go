@@ -23,17 +23,20 @@ type WhisperService struct {
 	whisperRepo *repository.WhisperRepo
 	userRepo    *repository.UserRepo
 	aiClient    *openai.Client
+	ragService  *RAGService
 }
 
 func NewWhisperService(
 	whisperRepo *repository.WhisperRepo,
 	userRepo *repository.UserRepo,
 	aiClient *openai.Client,
+	ragService *RAGService,
 ) *WhisperService {
 	return &WhisperService{
 		whisperRepo: whisperRepo,
 		userRepo:    userRepo,
 		aiClient:    aiClient,
+		ragService:  ragService,
 	}
 }
 
@@ -56,6 +59,14 @@ func (s *WhisperService) CreateWhisper(authorID, content string) (*dto.WhisperIt
 	}
 	if err := s.whisperRepo.Create(w); err != nil {
 		return nil, err
+	}
+
+	// Index for RAG in background with UserID for privacy
+	if s.ragService != nil {
+		go func() {
+			ctx := context.Background()
+			_ = s.ragService.IndexText(ctx, model.SourceWhisper, w.ID, &authorID, content)
+		}()
 	}
 
 	return &dto.WhisperItem{

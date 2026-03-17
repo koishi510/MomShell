@@ -54,6 +54,18 @@ func main() {
 	photoRepo := repository.NewPhotoRepo(db)
 	whisperRepo := repository.NewWhisperRepo(db)
 	taskRepo := repository.NewTaskRepo(db)
+	ragRepo := repository.NewRAGRepo(db)
+
+	var chatClient *openai.Client
+	if cfg.OpenAIAPIKey != "" {
+		chatClient = openai.NewClient(cfg.OpenAIAPIKey, cfg.OpenAIBaseURL, cfg.OpenAIModel, cfg.EmbeddingModel)
+	} else {
+		log.Println("[WARN] OPENAI_API_KEY not set, chat and AI task generation will not work")
+		chatClient = openai.NewClient("dummy", cfg.OpenAIBaseURL, cfg.OpenAIModel, cfg.EmbeddingModel)
+	}
+
+	// Initialize RAG service
+	ragService := service.NewRAGService(chatClient, ragRepo)
 
 	// Initialize services
 	moderationService := service.NewModerationService()
@@ -61,26 +73,18 @@ func main() {
 	communityService := service.NewCommunityService(
 		questionRepo, answerRepo, commentRepo,
 		interactionRepo, tagRepo, userRepo,
-		moderationService,
+		moderationService, ragService,
 	)
-
-	var chatClient *openai.Client
-	if cfg.OpenAIAPIKey != "" {
-		chatClient = openai.NewClient(cfg.OpenAIAPIKey, cfg.OpenAIBaseURL, cfg.OpenAIModel)
-	} else {
-		log.Println("[WARN] OPENAI_API_KEY not set, chat and AI task generation will not work")
-		chatClient = openai.NewClient("dummy", cfg.OpenAIBaseURL, cfg.OpenAIModel)
-	}
 
 	var firecrawlClient *firecrawl.Client
 	if cfg.FirecrawlAPIKey != "" {
 		firecrawlClient = firecrawl.NewClient(cfg.FirecrawlAPIKey)
 	}
 
-	chatService := service.NewChatService(chatClient, chatRepo, userRepo, firecrawlClient, cfg.JWTSecretKey)
-	echoService := service.NewEchoService(chatClient, echoRepo, userRepo)
+	chatService := service.NewChatService(chatClient, chatRepo, userRepo, ragService, firecrawlClient, cfg.JWTSecretKey)
+	echoService := service.NewEchoService(chatClient, echoRepo, userRepo, ragService)
 	photoService := service.NewPhotoService(photoRepo, userRepo, chatClient, cfg.ImageModel)
-	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient)
+	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient, ragService)
 
 	// Pass nil to task service when no real API key — avoids dummy client network calls
 	var taskAIClient *openai.Client
@@ -108,6 +112,9 @@ func main() {
 	// Initialize admin layer
 	adminRepo := repository.NewAdminRepo(db)
 	adminService := service.NewAdminService(cfg, adminRepo, userRepo, photoRepo)
+
+	// Start background reindexing for RAG
+	ragService.BackgroundReindexAll(questionRepo, answerRepo, whisperRepo, echoRepo)
 
 	// Start background schedulers
 	scheduler.StartPhotoCleanup(photoRepo)
