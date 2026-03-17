@@ -125,7 +125,6 @@ function scrollToSprite(spriteId: string) {
 
 const showNav = computed(() => {
   return (
-    !uiStore.showLanding &&
     !uiStore.activePanel &&
     (authStore.isAuthenticated || authStore.isGuest)
   )

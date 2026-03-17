@@ -8,7 +8,6 @@ export type AuthMode = 'login' | 'register' | 'guest'
 export const useUiStore = defineStore('ui', () => {
   const activePanel = ref<PanelName>(null)
   const authMode = ref<AuthMode>('login')
-  const showLanding = ref(true)
 
   // Parallax scrollTo bridge: set by BeachScene, called by tutorial
   let _parallaxScrollTo: ((offset: number) => void) | null = null
@@ -27,10 +26,6 @@ export const useUiStore = defineStore('ui', () => {
 
   function closePanel() {
     activePanel.value = null
-  }
-
-  function closeLanding() {
-    showLanding.value = false
   }
 
   function openAuth(mode: AuthMode = 'login') {
@@ -55,10 +50,8 @@ export const useUiStore = defineStore('ui', () => {
   return {
     activePanel,
     authMode,
-    showLanding,
     openPanel,
     closePanel,
-    closeLanding,
     openAuth,
     openFeature,
     setParallaxScrollTo,
