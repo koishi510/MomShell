@@ -2,7 +2,7 @@
   <div class="dc-tab-content">
     <div class="dc-section-header">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-      <span class="dc-sh-text">./profile.sh</span>
+      <span class="dc-sh-text">./profile</span>
     </div>
 
     <!-- Profile header -->
@@ -11,13 +11,13 @@
         <div class="dc-avatar" @click="triggerAvatarUpload">
           <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="" @error="onAvatarImgError" />
           <span v-else class="dc-avatar-placeholder">{{ displayInitial }}</span>
-          <span class="dc-avatar-hint">{{ avatarUploading ? '...' : '[e]' }}</span>
+          <span class="dc-avatar-hint">{{ avatarUploading ? '...' : '换图' }}</span>
           <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" @change="onAvatarChange" />
         </div>
         <div class="dc-profile-info">
           <div v-if="!editingNickname" class="dc-nick-row" @click="startEditNickname">
             <span class="dc-nick">{{ displayNickname }}</span>
-            <span class="dc-edit-hint">[edit]</span>
+            <span class="dc-edit-hint">编辑</span>
           </div>
           <div v-else class="dc-nick-edit">
             <input ref="nicknameInput" v-model="nicknameValue" class="dc-nick-input" maxlength="20" @keydown.enter="saveNickname" @blur="saveNickname" />
@@ -26,82 +26,82 @@
           <span class="dc-role-badge">{{ roleName }}</span>
         </div>
       </div>
-      <div v-if="nicknameError" class="dc-inline-error">> {{ nicknameError }}</div>
-      <div v-if="avatarError" class="dc-inline-error">> {{ avatarError }}</div>
+      <div v-if="nicknameError" class="dc-inline-error">{{ nicknameError }}</div>
+      <div v-if="avatarError" class="dc-inline-error">{{ avatarError }}</div>
     </div>
 
     <!-- Stats -->
     <div class="dc-panel dc-float" style="--float-i:1">
-      <div class="dc-panel-label">[ metrics ]</div>
+      <div class="dc-panel-label">我的数据</div>
       <div class="dc-stats-grid">
-        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.question_count ?? 0 }}</span><span class="dc-stat-key">posts</span></div>
-        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.answer_count ?? 0 }}</span><span class="dc-stat-key">answers</span></div>
-        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.like_received_count ?? 0 }}</span><span class="dc-stat-key">likes</span></div>
-        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.collection_count ?? 0 }}</span><span class="dc-stat-key">saved</span></div>
+        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.question_count ?? 0 }}</span><span class="dc-stat-key">提问</span></div>
+        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.answer_count ?? 0 }}</span><span class="dc-stat-key">回答</span></div>
+        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.like_received_count ?? 0 }}</span><span class="dc-stat-key">获赞</span></div>
+        <div class="dc-stat"><span class="dc-stat-val">{{ profile?.stats.collection_count ?? 0 }}</span><span class="dc-stat-key">收藏</span></div>
       </div>
     </div>
 
     <!-- Profile form -->
     <div class="dc-panel dc-float" style="--float-i:2">
-      <div class="dc-panel-label">[ user_config ]</div>
+      <div class="dc-panel-label">基本资料</div>
       <div class="dc-form">
-        <label class="dc-form-label">username</label>
+        <label class="dc-form-label">用户名</label>
         <input v-model="profileForm.username" type="text" class="dc-form-input" placeholder="用户名" maxlength="50" minlength="3" />
-        <label class="dc-form-label">nickname</label>
+        <label class="dc-form-label">昵称</label>
         <input v-model="profileForm.nickname" type="text" class="dc-form-input" placeholder="昵称" maxlength="50" />
-        <label class="dc-form-label">email</label>
-        <input v-model="profileForm.email" type="email" class="dc-form-input" placeholder="email@example.com" />
-        <div v-if="profileFormError" class="dc-inline-error">> {{ profileFormError }}</div>
-        <div v-if="profileFormSuccess" class="dc-inline-success">> {{ profileFormSuccess }}</div>
+        <label class="dc-form-label">邮箱</label>
+        <input v-model="profileForm.email" type="email" class="dc-form-input" placeholder="请输入邮箱地址" />
+        <div v-if="profileFormError" class="dc-inline-error">{{ profileFormError }}</div>
+        <div v-if="profileFormSuccess" class="dc-inline-success">{{ profileFormSuccess }}</div>
         <button class="dc-execute-btn" :disabled="profileFormLoading" @click="onSaveProfile">
-          {{ profileFormLoading ? '> saving...' : '> save' }}
+          {{ profileFormLoading ? '保存中...' : '保存资料' }}
         </button>
       </div>
     </div>
 
     <!-- Shell code / Partner binding -->
     <div class="dc-panel dc-float" style="--float-i:3">
-      <div class="dc-panel-label">[ shell_code ]</div>
+      <div class="dc-panel-label">贝壳码</div>
       <template v-if="isBound">
         <div class="dc-partner-info">
-          <span class="dc-partner-label">bound:</span>
+          <span class="dc-partner-label">已绑定：</span>
           <span class="dc-partner-name">{{ profile?.partner?.nickname }}</span>
           <span class="dc-partner-role">({{ profile?.partner?.role === 'mom' ? '溯源者' : '守护者' }})</span>
         </div>
         <button class="dc-danger-btn" :disabled="unbindLoading" @click="onUnbindPartner">
-          {{ unbindLoading ? '> unbinding...' : '> unbind' }}
+          {{ unbindLoading ? '解除绑定中...' : '解除绑定' }}
         </button>
       </template>
       <template v-else-if="isMom">
-        <p class="dc-hint"># 生成贝壳码分享给守护者，完成伴侣绑定</p>
+        <p class="dc-hint">生成贝壳码分享给守护者，完成伴侣绑定</p>
         <div v-if="profile?.shell_code" class="dc-shell-code">{{ profile.shell_code }}</div>
         <button class="dc-execute-btn" :disabled="shellCodeLoading || !!profile?.shell_code" @click="onGenerateShellCode">
-          {{ shellCodeLoading ? '> generating...' : profile?.shell_code ? '> generated' : '> generate' }}
+          {{ shellCodeLoading ? '生成中...' : profile?.shell_code ? '已生成' : '生成贝壳码' }}
         </button>
-        <div v-if="shellCodeError" class="dc-inline-error">> {{ shellCodeError }}</div>
+        <div v-if="shellCodeError" class="dc-inline-error">{{ shellCodeError }}</div>
       </template>
       <template v-else>
-        <p class="dc-hint"># 输入溯源者分享的贝壳码，完成伴侣绑定</p>
+        <p class="dc-hint">输入溯源者分享的贝壳码，完成伴侣绑定</p>
         <input v-model="bindCode" class="dc-form-input" placeholder="请输入贝壳码" maxlength="8" />
-        <div v-if="bindError" class="dc-inline-error">> {{ bindError }}</div>
-        <div v-if="bindSuccess" class="dc-inline-success">> {{ bindSuccess }}</div>
+        <div v-if="bindError" class="dc-inline-error">{{ bindError }}</div>
+        <div v-if="bindSuccess" class="dc-inline-success">{{ bindSuccess }}</div>
         <button class="dc-execute-btn" :disabled="bindLoading || !bindCode.trim()" @click="onBindPartner">
-          {{ bindLoading ? '> binding...' : '> bind' }}
+          {{ bindLoading ? '绑定中...' : '完成绑定' }}
         </button>
       </template>
     </div>
 
     <!-- Password -->
     <div class="dc-panel dc-float" style="--float-i:4">
-      <div class="dc-panel-label">[ auth_config ]</div>
+      <div class="dc-panel-label">账号安全</div>
       <form class="dc-form" @submit.prevent="onChangePassword">
         <input v-model="pwForm.old_password" type="password" class="dc-form-input" placeholder="当前密码" required autocomplete="current-password" />
         <input v-model="pwForm.new_password" type="password" class="dc-form-input" placeholder="新密码" required minlength="6" autocomplete="new-password" />
         <input v-model="pwForm.confirm_password" type="password" class="dc-form-input" placeholder="确认新密码" required minlength="6" autocomplete="new-password" />
-        <div v-if="pwError" class="dc-inline-error">> {{ pwError }}</div>
-        <div v-if="pwSuccess" class="dc-inline-success">> {{ pwSuccess }}</div>
+        <div v-if="pwError" class="dc-inline-error">{{ pwError }}</div>
+        <div v-if="pwSuccess" class="dc-inline-success">{{ pwSuccess }}</div>
         <button type="submit" class="dc-execute-btn" :disabled="pwLoading">
-          {{ pwLoading ? '> updating...' : '> update_password' }}
+          {{ pwLoading ? '更新中...' : '更新密码' }}
         </button>
       </form>
     </div>
@@ -109,7 +109,7 @@
     <!-- Logout -->
     <div class="dc-float" style="--float-i:5">
       <button class="dc-logout-btn" @click="$emit('logout')">
-        > sys.logout
+        退出登录
       </button>
     </div>
   </div>

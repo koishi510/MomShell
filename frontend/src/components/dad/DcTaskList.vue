@@ -2,20 +2,20 @@
   <div class="dc-tab-content">
     <div class="dc-section-header">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
-      <span class="dc-sh-text">./tasks.sh</span>
+      <span class="dc-sh-text">./tasks</span>
     </div>
 
     <div v-if="loading" class="dc-state">
       <div class="dc-spinner"></div>
-      <span>{{ hasAge ? 'fetching_directives...' : 'loading_system...' }}</span>
+      <span>{{ hasAge ? '正在加载任务...' : '正在准备任务...' }}</span>
     </div>
 
     <div v-else-if="sortedTasks.length === 0" class="dc-state">
-      <span class="dc-state-icon">[ empty ]</span>
-      <span>no_active_tasks</span>
-      <button v-if="!hasAge" class="dc-action-btn" @click="$emit('open-age-picker')">> init_age</button>
+      <span class="dc-state-icon">暂无任务</span>
+      <span>现在没有待处理的任务</span>
+      <button v-if="!hasAge" class="dc-action-btn" @click="$emit('open-age-picker')">先选择成长阶段</button>
       <button v-else class="dc-action-btn dc-action-btn-ghost" :disabled="regenerating" @click="$emit('regenerate')">
-        {{ regenerating ? '> regenerating...' : '> ./regenerate_tasks.sh' }}
+        {{ regenerating ? '正在重新生成...' : '重新生成任务' }}
       </button>
     </div>
 
@@ -30,7 +30,7 @@
       />
     </TransitionGroup>
 
-    <p v-if="error" class="dc-error">> ERROR: {{ error }}</p>
+    <p v-if="error" class="dc-error">{{ error }}</p>
 
     <button
       v-if="sortedTasks.length > 0 && hasAge"
@@ -38,7 +38,7 @@
       :disabled="regenerating"
       @click="$emit('regenerate')"
     >
-      {{ regenerating ? '> processing...' : '> ./override_tasks.sh' }}
+      {{ regenerating ? '正在重新生成...' : '重新生成任务' }}
     </button>
   </div>
 </template>
@@ -107,7 +107,6 @@ defineEmits<{
 
 .dc-state-icon {
   font-size: 18px;
-  letter-spacing: 2px;
   color: var(--dc-comment, #565F89);
 }
 
@@ -156,7 +155,6 @@ defineEmits<{
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  letter-spacing: 1px;
 }
 
 .dc-action-btn:hover:not(:disabled) {

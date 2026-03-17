@@ -127,16 +127,16 @@ const activeTab = ref<Tab>('home')
 function handleCommand(cmd: string) {
   const lower = cmd.toLowerCase()
   const map: Record<string, Tab> = {
-    'home': 'home',
-    'tasks': 'tasks', 'task': 'tasks', './tasks.sh': 'tasks',
-    'dashboard': 'dashboard', 'status': 'dashboard', 'metrics': 'dashboard', './status.sh': 'dashboard',
-    'chat': 'chat', 'comms': 'chat', './chat.sh': 'chat',
-    'community': 'community', 'network': 'community', './network.sh': 'community',
-    'whisper': 'whisper', 'journal': 'whisper', 'decrypt': 'whisper', './journal.sh': 'whisper',
-    'profile': 'profile', 'config': 'profile', './config.sh': 'profile',
+    'home': 'home', './home': 'home',
+    'tasks': 'tasks', './tasks': 'tasks',
+    'status': 'dashboard', './status': 'dashboard',
+    'chat': 'chat', './chat': 'chat',
+    'community': 'community', './community': 'community',
+    'whisper': 'whisper', './whisper': 'whisper', './whisper.sh': 'whisper',
+    'profile': 'profile', './profile': 'profile',
   }
 
-  if (lower === 'logout' || lower === 'exit') {
+  if (lower === 'logout' || lower === 'exit' || lower === 'quit') {
     onLogout()
   } else if (map[lower]) {
     activeTab.value = map[lower]

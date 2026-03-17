@@ -2,36 +2,35 @@
   <div class="dc-tab-content">
     <div class="dc-section-header">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      <span class="dc-sh-text">./whisper.sh</span>
+      <span class="dc-sh-text">./whisper</span>
     </div>
 
     <!-- Mom view: write whispers -->
     <template v-if="isMom">
       <div class="dc-panel dc-float" style="--float-i:0">
-        <div class="dc-panel-label">[ write_whisper ]</div>
+        <div class="dc-panel-label">写下心声</div>
         <div class="dc-whisper-form">
           <textarea
             v-model="newContent"
             class="dc-textarea"
-            placeholder="// 此刻你在想什么..."
+            placeholder="此刻你在想什么？"
             rows="4"
             maxlength="2000"
           />
           <button class="dc-execute-btn" :disabled="submitting || !newContent.trim()" @click="onSubmit">
-            <span>{{ submitting ? '> transmitting...' : '> transmit' }}</span>
+            <span>{{ submitting ? '保存中...' : '保存心声' }}</span>
           </button>
         </div>
-        <div v-if="error" class="dc-error">> ERROR: {{ error }}</div>
-        <div v-if="success" class="dc-success">> OK: {{ success }}</div>
+        <div v-if="error" class="dc-error">{{ error }}</div>
+        <div v-if="success" class="dc-success">{{ success }}</div>
       </div>
 
       <div v-if="whispers.length > 0" class="dc-panel dc-float" style="--float-i:1">
         <div class="dc-panel-head">
-          <h3 class="dc-panel-title">log.whispers [{{ whispers.length }}]</h3>
+          <h3 class="dc-panel-title">我的心声（{{ whispers.length }}）</h3>
         </div>
         <div class="dc-whisper-list">
           <div v-for="(w, i) in whispers" :key="w.id" class="dc-whisper-entry dc-float" :style="{ '--float-i': i + 2 }">
-            <span class="dc-entry-marker">></span>
             <div class="dc-entry-body">
               <p class="dc-entry-text">{{ w.content }}</p>
               <span class="dc-entry-time">{{ formatTime(w.created_at) }}</span>
@@ -43,18 +42,18 @@
 
     <!-- Dad view: read whispers + AI tips -->
     <template v-else>
-      <div v-if="loading" class="dc-state"><span>fetching_data...</span></div>
+      <div v-if="loading" class="dc-state"><span>正在加载心声...</span></div>
 
       <template v-else>
         <!-- AI Tips -->
         <div class="dc-panel dc-float" style="--float-i:0">
-          <div class="dc-panel-label">[ ai_advisory ]</div>
+          <div class="dc-panel-label">陪伴建议</div>
           <div v-if="tips" class="dc-tips-content">
             <p class="dc-tips-text">{{ tips }}</p>
           </div>
           <div v-else class="dc-tips-action">
             <button class="dc-execute-btn" :disabled="loadingTips" @click="onLoadTips">
-              <span>{{ loadingTips ? '> synthesizing...' : '> request_advisory' }}</span>
+              <span>{{ loadingTips ? '生成中...' : '获取建议' }}</span>
             </button>
           </div>
         </div>
@@ -62,11 +61,10 @@
         <!-- Whisper list -->
         <div v-if="whispers.length > 0" class="dc-panel dc-float" style="--float-i:1">
           <div class="dc-panel-head">
-            <h3 class="dc-panel-title">log.whispers [{{ whispers.length }}]</h3>
+            <h3 class="dc-panel-title">心声记录（{{ whispers.length }}）</h3>
           </div>
           <div class="dc-whisper-list">
             <div v-for="(w, i) in whispers" :key="w.id" class="dc-whisper-entry dc-float" :style="{ '--float-i': i + 2 }">
-              <span class="dc-entry-marker">></span>
               <div class="dc-entry-body">
                 <p class="dc-entry-text">{{ w.content }}</p>
                 <span class="dc-entry-time">{{ formatTime(w.created_at) }}</span>
@@ -74,7 +72,7 @@
             </div>
           </div>
         </div>
-        <div v-else-if="!loading" class="dc-state dc-state-sm dc-float" style="--float-i:1">no_data</div>
+        <div v-else-if="!loading" class="dc-state dc-state-sm dc-float" style="--float-i:1">暂时还没有心声记录</div>
       </template>
     </template>
   </div>
@@ -312,14 +310,6 @@ function formatTime(iso: string) {
   transition: border-color 0.2s;
 }
 .dc-whisper-entry:hover { border-color: rgba(125, 207, 255, 0.15); }
-
-.dc-entry-marker {
-  color: var(--dc-accent, #7DCFFF);
-  font-family: var(--dc-font-mono);
-  font-weight: 700;
-  flex-shrink: 0;
-  line-height: 1.6;
-}
 
 .dc-entry-body { flex: 1; min-width: 0; }
 

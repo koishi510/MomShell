@@ -3,12 +3,12 @@
     <div v-if="visible" class="dc-dialog-backdrop" @click.self="$emit('close')">
       <div class="dc-term-modal">
         <div class="dc-term-modal-header">
-          <span>SYS.UPLOAD_MEMORY</span>
-          <button class="dc-term-modal-close" @click="$emit('close')">[×]</button>
+          <span>完成任务</span>
+          <button class="dc-term-modal-close" @click="$emit('close')">关闭</button>
         </div>
         <div class="dc-term-modal-body">
-          <h3 class="dc-dialog-title">CREATE_MEMORY_FRAGMENT</h3>
-          <p v-if="targetTitle" class="dc-dialog-sub">TARGET: {{ targetTitle }}</p>
+          <h3 class="dc-dialog-title">生成记忆卡片</h3>
+          <p v-if="targetTitle" class="dc-dialog-sub">当前任务：{{ targetTitle }}</p>
 
           <!-- Card image preview -->
           <div v-if="previewUrl" class="dc-card-preview">
@@ -22,7 +22,7 @@
               :disabled="generating || uploading"
               @click="$emit('generate')"
             >
-              {{ generating ? '> synthesizing...' : '> ai_synthesis' }}
+              {{ generating ? '生成中...' : 'AI生成' }}
             </button>
             <label class="dc-proof-picker">
               <input
@@ -33,27 +33,26 @@
                 :disabled="generating || uploading"
                 @change="$emit('upload', $event)"
               />
-              <span class="dc-action-btn dc-action-btn-outline">> upload_data</span>
+              <span class="dc-action-btn dc-action-btn-outline">上传图片</span>
             </label>
           </div>
 
           <!-- Replace after preview -->
           <div v-else class="dc-card-replace">
-            <button class="dc-action-btn dc-btn-sm dc-action-btn-ghost" :disabled="generating || uploading" @click="$emit('reset')">> reset</button>
+            <button class="dc-action-btn dc-btn-sm dc-action-btn-ghost" :disabled="generating || uploading" @click="$emit('reset')">重新选择</button>
           </div>
 
-          <p v-if="error" class="dc-error">> ERROR: {{ error }}</p>
+          <p v-if="error" class="dc-error">{{ error }}</p>
         </div>
 
         <div class="dc-term-modal-footer">
-          <button class="dc-action-btn dc-action-btn-ghost" :disabled="uploading || generating" @click="$emit('close')">cancel</button>
-          <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || generating || !targetTitle" @click="$emit('submit-without-card')">bypass</button>
+          <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || generating || !targetTitle" @click="$emit('submit-without-card')">跳过卡片</button>
           <button
             class="dc-action-btn"
             :disabled="uploading || generating || !targetTitle || !previewUrl"
             @click="$emit('submit-with-card')"
           >
-            {{ uploading ? 'transmitting...' : 'commit' }}
+            {{ uploading ? '提交中...' : '提交任务' }}
           </button>
         </div>
       </div>

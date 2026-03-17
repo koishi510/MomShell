@@ -2,24 +2,24 @@
   <div class="dc-tab-content">
     <div class="dc-section-header">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M18 20V10m-6 10V4M6 20v-4"></path></svg>
-      <span class="dc-sh-text">./status.sh</span>
+      <span class="dc-sh-text">./status</span>
     </div>
 
-    <div v-if="loading" class="dc-state"><span>fetching_metrics...</span></div>
-    <div v-else-if="error" class="dc-error">> ERROR: {{ error }}</div>
+    <div v-if="loading" class="dc-state"><span>正在加载成长数据...</span></div>
+    <div v-else-if="error" class="dc-error">{{ error }}</div>
     <div v-else class="dc-dashboard">
       <!-- Radar -->
       <div class="dc-panel dc-radar-section dc-float" style="--float-i:0">
-        <div class="dc-panel-label">[ capability_matrix ]</div>
+        <div class="dc-panel-label">能力雷达</div>
         <SkillRadarChart v-if="radar" :values="radar" />
       </div>
 
       <!-- Achievements -->
       <div class="dc-panel dc-float" style="--float-i:1">
         <div class="dc-panel-head">
-          <h3 class="dc-panel-title">badges [{{ unlockedCount }}/{{ achievements.length }}]</h3>
+          <h3 class="dc-panel-title">成就徽章（{{ unlockedCount }}/{{ achievements.length }}）</h3>
         </div>
-        <div v-if="achievements.length === 0" class="dc-state dc-state-sm">no_data</div>
+        <div v-if="achievements.length === 0" class="dc-state dc-state-sm">暂时还没有成就</div>
         <div v-else class="dc-ach-list">
           <div
             v-for="a in sortedAchievements"
@@ -33,7 +33,7 @@
               <div class="dc-ach-name">{{ a.title }}</div>
               <div class="dc-ach-desc">{{ a.description }}</div>
             </div>
-            <span :class="['dc-ach-status', a.unlocked ? 'ok' : 'locked']">{{ a.unlocked ? 'granted' : 'locked' }}</span>
+            <span :class="['dc-ach-status', a.unlocked ? 'ok' : 'locked']">{{ a.unlocked ? '已解锁' : '未解锁' }}</span>
           </div>
         </div>
       </div>
@@ -41,9 +41,9 @@
       <!-- Perk Cards -->
       <div class="dc-panel dc-float" style="--float-i:2">
         <div class="dc-panel-head">
-          <h3 class="dc-panel-title">assets.perks</h3>
+          <h3 class="dc-panel-title">特权卡片</h3>
         </div>
-        <div v-if="perkCards.length === 0" class="dc-state dc-state-sm">inventory_empty</div>
+        <div v-if="perkCards.length === 0" class="dc-state dc-state-sm">暂时还没有特权卡</div>
         <div v-else class="dc-perk-grid">
           <div v-for="c in perkCards" :key="c.id" :class="['dc-perk-card', `dc-pst-${c.status}`]">
             <div class="dc-perk-card-inner">
@@ -53,18 +53,14 @@
               </div>
               <p v-if="c.description" class="dc-perk-desc">{{ c.description }}</p>
               <div class="dc-perk-foot">
-                <span class="dc-perk-time">
-                  <template v-if="c.status === 'used'">depleted</template>
-                  <template v-else-if="c.status === 'expired'">expired</template>
-                  <template v-else>ready</template>
-                </span>
+                <span class="dc-perk-time">{{ perkTimeLabel(c.status) }}</span>
                 <button
                   v-if="c.status === 'active'"
                   class="dc-perk-use-btn"
                   :disabled="usingPerk === c.id"
                   @click="$emit('use-perk', c.id)"
                 >
-                  {{ usingPerk === c.id ? '...' : '> use' }}
+                  {{ usingPerk === c.id ? '使用中...' : '立即使用' }}
                 </button>
               </div>
             </div>
@@ -107,6 +103,12 @@ function perkStatusLabel(s: string): string {
   if (s === 'used') return '已使用'
   if (s === 'expired') return '已过期'
   return s
+}
+
+function perkTimeLabel(s: string): string {
+  if (s === 'used') return '已用完'
+  if (s === 'expired') return '已失效'
+  return '可立即使用'
 }
 </script>
 

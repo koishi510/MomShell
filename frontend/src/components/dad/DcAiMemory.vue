@@ -2,25 +2,25 @@
   <div class="dc-tab-content">
     <div class="dc-section-header">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1-5h-2V7h2z"></path></svg>
-      <span class="dc-sh-text">./memory.sh</span>
+      <span class="dc-sh-text">./memory</span>
     </div>
 
     <!-- Tab bar -->
     <div class="dc-mem-tabs dc-float" style="--float-i:0">
-      <button :class="['dc-mem-tab', { active: activeTab === 'facts' }]" @click="activeTab = 'facts'">facts</button>
-      <button :class="['dc-mem-tab', { active: activeTab === 'history' }]" @click="activeTab = 'history'">history</button>
+      <button :class="['dc-mem-tab', { active: activeTab === 'facts' }]" @click="activeTab = 'facts'">记住的内容</button>
+      <button :class="['dc-mem-tab', { active: activeTab === 'history' }]" @click="activeTab = 'history'">对话记录</button>
     </div>
 
     <!-- Facts Tab -->
     <template v-if="activeTab === 'facts'">
       <div class="dc-panel dc-float" style="--float-i:1">
-        <div class="dc-panel-label">[ memory_store ]</div>
+        <div class="dc-panel-label">记忆内容</div>
 
-        <div v-if="loading" class="dc-state dc-state-sm">fetching_facts...</div>
+        <div v-if="loading" class="dc-state dc-state-sm">正在加载记忆...</div>
 
         <div v-else-if="facts.length === 0" class="dc-state dc-state-sm">
-          <span>no_entries</span>
-          <span class="dc-hint"># 和小石光聊天时分享的信息会自动记录在这里</span>
+          <span>还没有记录内容</span>
+          <span class="dc-hint">和小石光聊天时分享的信息会自动记录在这里</span>
         </div>
 
         <div v-else class="dc-facts-list">
@@ -30,7 +30,7 @@
               <span v-if="fact.owner_nickname" class="dc-fact-owner">{{ ownerLabel(fact) }}</span>
               <span class="dc-fact-text">{{ fact.content }}</span>
             </div>
-            <button class="dc-fact-del" :disabled="deletingId === fact.id" @click="onDelete(fact.id)">[×]</button>
+            <button class="dc-fact-del" :disabled="deletingId === fact.id" @click="onDelete(fact.id)">删除</button>
           </div>
         </div>
       </div>
@@ -39,46 +39,46 @@
     <!-- History Tab -->
     <template v-if="activeTab === 'history'">
       <div class="dc-panel dc-float" style="--float-i:1">
-        <div class="dc-panel-label">[ conversation_log ]</div>
+        <div class="dc-panel-label">对话记录</div>
 
-        <div v-if="historyLoading" class="dc-state dc-state-sm">fetching_history...</div>
+        <div v-if="historyLoading" class="dc-state dc-state-sm">正在加载对话记录...</div>
 
         <div v-else-if="history.turns.length === 0 && !history.summary" class="dc-state dc-state-sm">
-          <span>no_records</span>
-          <span class="dc-hint"># 开始和小石光聊天后，对话会出现在这里</span>
+          <span>还没有聊天记录</span>
+          <span class="dc-hint">开始和小石光聊天后，对话会出现在这里</span>
         </div>
 
         <div v-else class="dc-history-content">
           <div v-if="history.summary" class="dc-summary-box">
-            <div class="dc-summary-label"># summary</div>
+            <div class="dc-summary-label">摘要</div>
             <p class="dc-summary-text">{{ history.summary }}</p>
           </div>
 
           <div v-if="history.turns.length > 0" class="dc-turns-section">
-            <div class="dc-turns-label">recent_turns [{{ history.turns.length }}]</div>
+            <div class="dc-turns-label">最近对话（{{ history.turns.length }}）</div>
             <div v-for="(turn, idx) in history.turns" :key="idx" class="dc-turn-entry">
               <div class="dc-turn-line">
-                <span class="dc-turn-role dc-role-user">user</span>
+                <span class="dc-turn-role dc-role-user">你</span>
                 <span class="dc-turn-text">{{ turn.user_input }}</span>
               </div>
               <div class="dc-turn-line">
-                <span class="dc-turn-role dc-role-ai">ai</span>
+                <span class="dc-turn-role dc-role-ai">小石光</span>
                 <span class="dc-turn-text">{{ turn.assistant_response }}</span>
               </div>
             </div>
           </div>
 
           <button class="dc-danger-btn" :disabled="clearing" @click="onClearHistory">
-            {{ clearing ? '> clearing...' : confirmingClear ? '> confirm? click_again' : '> clear_history' }}
+            {{ clearing ? '清空中...' : confirmingClear ? '再次点击确认清空' : '清空聊天记录' }}
           </button>
         </div>
       </div>
     </template>
 
-    <div v-if="error" class="dc-error dc-float" style="--float-i:2">> ERROR: {{ error }}</div>
+    <div v-if="error" class="dc-error dc-float" style="--float-i:2">{{ error }}</div>
 
     <button class="dc-back-btn dc-float" style="--float-i:3" @click="emit('back')">
-      > cd ../chat
+      返回聊天
     </button>
   </div>
 </template>

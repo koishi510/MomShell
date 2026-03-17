@@ -6,8 +6,8 @@
     <template v-else>
       <div class="dc-section-header">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        <span class="dc-sh-text">./chat.sh</span>
-        <button v-if="authStore.isAuthenticated" class="dc-mem-btn" @click="showInlineMemory = true">[mem]</button>
+        <span class="dc-sh-text">./chat</span>
+        <button v-if="authStore.isAuthenticated" class="dc-mem-btn" @click="showInlineMemory = true">记忆库</button>
       </div>
 
       <div class="dc-chat-wrap" :style="ambientStyle">
@@ -21,23 +21,23 @@
 
         <!-- Memory toast -->
         <Transition name="dc-toast">
-          <div v-if="showMemoryToast" class="dc-memory-toast">mem_updated</div>
+          <div v-if="showMemoryToast" class="dc-memory-toast">记忆已更新</div>
         </Transition>
 
         <!-- Messages -->
         <div class="dc-messages" ref="messagesEl">
           <Transition name="dc-msg-replace" mode="out-in">
             <div v-if="messages.length === 0 && !sending" key="empty" class="dc-chat-empty">
-              <p class="dc-empty-greeting" v-if="preferredName">$ hello {{ preferredName }}</p>
-              <p class="dc-empty-greeting" v-else>$ hello</p>
-              <p class="dc-empty-sub"># awaiting_input...</p>
+              <p class="dc-empty-greeting" v-if="preferredName">你好，{{ preferredName }}</p>
+              <p class="dc-empty-greeting" v-else>你好</p>
+              <p class="dc-empty-sub">想聊什么都可以和我说。</p>
             </div>
             <div v-else-if="sending" key="loading" class="dc-msg-center">
-              <p v-if="latestUserMsg" class="dc-msg-user">$ {{ latestUserMsg.text }}</p>
+              <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
               <div class="dc-typing"><span /><span /><span /></div>
             </div>
             <div v-else-if="latestAssistantMsg" :key="latestAssistantMsg.id" class="dc-msg-center">
-              <p v-if="latestUserMsg" class="dc-msg-user">$ {{ latestUserMsg.text }}</p>
+              <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
               <p
                 :class="[
                   'dc-msg-ai',
@@ -58,7 +58,7 @@
             v-model="input"
             type="text"
             class="dc-chat-input"
-            placeholder="> 说说你的心情..."
+            placeholder="说说你的心情..."
             :disabled="sending"
           />
           <button type="submit" class="dc-send-btn" :disabled="!input.trim() || sending">
@@ -329,7 +329,7 @@ async function onSend() {
   } catch {
     messages.value = [
       ...messages.value,
-      { id: Date.now(), role: 'assistant', text: '> ERROR: 暂时无法回复，请稍后再试。', showEffect: false },
+      { id: Date.now(), role: 'assistant', text: '暂时无法回复，请稍后再试。', showEffect: false },
     ]
   } finally {
     sending.value = false

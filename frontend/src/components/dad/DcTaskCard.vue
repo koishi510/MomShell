@@ -7,21 +7,18 @@
     <div class="dc-card-top">
       <div class="dc-badges">
         <span class="dc-badge dc-id">#{{ task.id.slice(0, 4).toUpperCase() }}</span>
-        <span v-if="task.priority === 'T0'" class="dc-badge dc-urgent">[URGENT]</span>
+        <span v-if="task.priority === 'T0'" class="dc-badge dc-urgent">紧急</span>
         <span :class="['dc-badge', `dc-pri-badge-${task.priority || 'T2'}`]">{{ priorityLabel(task.priority) }}</span>
         <span class="dc-badge dc-cat">{{ categoryLabel(task.category) }}</span>
       </div>
       <span class="dc-diff">{{ difficultyStars(task.difficulty) }}</span>
     </div>
 
-    <!-- Shell prompt body -->
+    <!-- Task body -->
     <div class="dc-card-body">
-      <div class="dc-prompt-line">
-        <span class="dc-prompt">$</span>
-        <span class="dc-cmd">task.exec</span>(<span class="dc-string">"{{ task.title }}"</span>)
-      </div>
+      <div class="dc-prompt-line">{{ task.title }}</div>
       <div v-if="task.description" class="dc-comment-line">
-        <span class="dc-comment-marker">#</span> {{ task.description }}
+        {{ task.description }}
       </div>
     </div>
 
@@ -32,9 +29,9 @@
 
     <!-- Footer -->
     <div class="dc-card-foot">
-      <span v-if="task.status === 'pending'" class="dc-status dc-status-pending">STATUS: PENDING</span>
-      <span v-else-if="task.status === 'completed'" class="dc-status dc-status-done">STATUS: AWAITING_REVIEW</span>
-      <span v-else class="dc-status dc-status-ok">exit: 0&nbsp;&nbsp;score: {{ task.score }}/5</span>
+      <span v-if="task.status === 'pending'" class="dc-status dc-status-pending">待完成</span>
+      <span v-else-if="task.status === 'completed'" class="dc-status dc-status-done">等待审核</span>
+      <span v-else class="dc-status dc-status-ok">已完成，评分 {{ task.score }}/5</span>
     </div>
 
     <!-- Execute button -->
@@ -44,12 +41,12 @@
       :disabled="completing"
       @click="$emit('complete', task)"
     >
-      <span class="btn-text">{{ completing ? 'EXECUTING...' : '> EXECUTE' }}</span>
+      <span class="btn-text">{{ completing ? '提交中...' : '去完成' }}</span>
     </button>
 
     <!-- Verified feedback -->
     <div v-if="task.comment && task.status === 'verified'" class="dc-feedback-box">
-      <div class="dc-feedback-label">KERNEL_FEEDBACK:</div>
+      <div class="dc-feedback-label">审核反馈</div>
       <p class="dc-feedback">"{{ task.comment }}"</p>
     </div>
   </div>
@@ -168,19 +165,15 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
 .dc-prompt-line {
   font-size: 15px;
   line-height: 1.6;
+  color: var(--dc-text, #C0CAF5);
+  font-weight: 600;
 }
-
-.dc-prompt { color: var(--dc-accent, #7DCFFF); margin-right: 6px; font-weight: 700; }
-.dc-cmd { color: var(--dc-cmd, #A9B1D6); }
-.dc-string { color: var(--dc-string, #9ECE6A); }
 
 .dc-comment-line {
   font-size: 13px;
   color: var(--dc-comment, rgba(255, 255, 255, 0.3));
   line-height: 1.6;
 }
-
-.dc-comment-marker { color: var(--dc-comment, rgba(255, 255, 255, 0.2)); margin-right: 6px; }
 
 /* Proof photo */
 .dc-proof-wrapper {
@@ -232,7 +225,6 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  letter-spacing: 1px;
 }
 
 .dc-execute-btn:hover:not(:disabled) {

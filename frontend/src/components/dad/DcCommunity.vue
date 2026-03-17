@@ -2,29 +2,29 @@
   <div class="dc-tab-content">
     <div class="dc-section-header">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-      <span class="dc-sh-text">./community.sh</span>
+      <span class="dc-sh-text">./community</span>
     </div>
 
     <!-- Channel tabs -->
     <div class="dc-chan-tabs dc-float" style="--float-i:0">
-      <button :class="['dc-chan-tab', { active: channel === 'experience' }]" @click="switchChannel('experience')">experience</button>
-      <button :class="['dc-chan-tab', { active: channel === 'professional' }]" @click="switchChannel('professional')">professional</button>
-      <button :class="['dc-chan-tab', { active: channel === 'collections' }]" @click="switchChannel('collections')">saved</button>
+      <button :class="['dc-chan-tab', { active: channel === 'experience' }]" @click="switchChannel('experience')">经验交流</button>
+      <button :class="['dc-chan-tab', { active: channel === 'professional' }]" @click="switchChannel('professional')">专业支持</button>
+      <button :class="['dc-chan-tab', { active: channel === 'collections' }]" @click="switchChannel('collections')">我的收藏</button>
     </div>
 
     <!-- Create button -->
-    <button class="dc-create-btn dc-float" style="--float-i:1" @click="openCompose">> new_thread</button>
+    <button class="dc-create-btn dc-float" style="--float-i:1" @click="openCompose">发布问题</button>
 
     <!-- Loading / Empty -->
-    <div v-if="loading" class="dc-state dc-float" style="--float-i:2">fetching...</div>
-    <div v-else-if="questions.length === 0" class="dc-state dc-float" style="--float-i:2">no_data</div>
+    <div v-if="loading" class="dc-state dc-float" style="--float-i:2">正在加载问题...</div>
+    <div v-else-if="questions.length === 0" class="dc-state dc-float" style="--float-i:2">暂时还没有内容</div>
 
     <!-- Question list -->
     <template v-else>
       <div class="dc-q-list">
         <button v-for="(q, i) in questions" :key="q.id" class="dc-q-card dc-float" :style="{ '--float-i': i + 2 }" @click="openDetail(q)">
-          <div class="dc-q-prompt"><span class="dc-prompt">$</span> thread.open(<span class="dc-string">"{{ q.title }}"</span>)</div>
-          <div v-if="q.content_preview" class="dc-q-comment"><span class="dc-comment-marker">#</span> {{ q.content_preview }}</div>
+          <div class="dc-q-prompt">{{ q.title }}</div>
+          <div v-if="q.content_preview" class="dc-q-comment">{{ q.content_preview }}</div>
           <div v-if="q.tags && q.tags.length" class="dc-q-tags">
             <span v-for="tag in q.tags" :key="tag.id" class="dc-badge dc-badge-tag">{{ tag.name }}</span>
           </div>
@@ -33,7 +33,7 @@
             <span>{{ q.author.nickname }}</span>
             <span v-if="q.author.display_tag" class="dc-author-tag">{{ q.author.display_tag }}</span>
             <span class="dc-meta-sep">·</span>
-            <span>{{ q.answer_count }} replies</span>
+            <span>{{ q.answer_count }} 条回答</span>
             <span class="dc-q-action" @click.stop="onLikeQuestion(q)">
               <svg :class="['icon-like', { active: q.is_liked }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ q.like_count }}
             </span>
@@ -44,7 +44,7 @@
         </button>
       </div>
       <button v-if="currentPage < totalPages" class="dc-load-more dc-float" :style="{ '--float-i': questions.length + 2 }" :disabled="loadingMore" @click="loadMore">
-        {{ loadingMore ? '> fetching...' : '> fetch --next' }}
+        {{ loadingMore ? '正在加载...' : '查看更多' }}
       </button>
     </template>
 
@@ -53,21 +53,21 @@
       <div v-if="showCompose" class="dc-overlay" @click.self="showCompose = false">
         <div class="dc-term-modal">
           <div class="dc-term-modal-header">
-            <span>SYS.CREATE_THREAD</span>
-            <button class="dc-term-modal-close" @click="showCompose = false">[×]</button>
+            <span>发布问题</span>
+            <button class="dc-term-modal-close" @click="showCompose = false">关闭</button>
           </div>
           <form class="dc-term-modal-body" @submit.prevent="onCreatePost">
             <input v-model="newPost.title" class="dc-form-input" placeholder="标题" required />
             <textarea v-model="newPost.content" class="dc-form-input dc-form-textarea" placeholder="描述你的问题..." required rows="4" />
             <div v-if="hotTags.length" class="dc-tag-picker">
-              <span class="dc-tag-label">tags:</span>
+              <span class="dc-tag-label">相关标签：</span>
               <div class="dc-tag-chips">
                 <button v-for="tag in hotTags" :key="tag.id" type="button" :class="['dc-tag-chip', { selected: selectedTagIds.includes(tag.id) }]" @click="toggleTag(tag.id)">{{ tag.name }}</button>
               </div>
             </div>
             <div class="dc-term-modal-footer">
-              <button type="button" class="dc-btn-ghost" @click="showCompose = false">cancel</button>
-              <button type="submit" class="dc-btn-accent" :disabled="posting">{{ posting ? 'posting...' : 'commit' }}</button>
+              <button type="button" class="dc-btn-ghost" @click="showCompose = false">取消</button>
+              <button type="submit" class="dc-btn-accent" :disabled="posting">{{ posting ? '发布中...' : '发布' }}</button>
             </div>
           </form>
         </div>
@@ -79,8 +79,8 @@
       <div v-if="selectedDetail" class="dc-overlay" @click.self="closeDetail">
         <div class="dc-term-modal dc-term-modal-lg">
           <div class="dc-term-modal-header">
-            <span>SYS.THREAD_DETAIL</span>
-            <button class="dc-term-modal-close" @click="closeDetail">[×]</button>
+            <span>问题详情</span>
+            <button class="dc-term-modal-close" @click="closeDetail">关闭</button>
           </div>
           <div class="dc-detail-scroll">
             <!-- Edit mode -->
@@ -88,8 +88,8 @@
               <input v-model="editQuestionData.title" class="dc-form-input" placeholder="标题" />
               <textarea v-model="editQuestionData.content" class="dc-form-input dc-form-textarea" rows="6" />
               <div class="dc-edit-actions">
-                <button class="dc-btn-ghost" @click="editingQuestion = false">cancel</button>
-                <button class="dc-btn-accent" @click="onSaveQuestion">save</button>
+                <button class="dc-btn-ghost" @click="editingQuestion = false">取消</button>
+                <button class="dc-btn-accent" @click="onSaveQuestion">保存</button>
               </div>
             </template>
             <!-- View mode -->
@@ -100,8 +100,8 @@
                 <span>{{ selectedDetail.author.nickname }}</span>
                 <span v-if="selectedDetail.author.display_tag" class="dc-author-tag">{{ selectedDetail.author.display_tag }}</span>
                 <span v-if="canModify(selectedDetail.author.id)" class="dc-modify-actions">
-                  <button class="dc-modify-btn" @click="startEditQuestion">[edit]</button>
-                  <button class="dc-modify-btn dc-modify-del" @click="onDeleteQuestion">[del]</button>
+                  <button class="dc-modify-btn" @click="startEditQuestion">编辑</button>
+                  <button class="dc-modify-btn dc-modify-del" @click="onDeleteQuestion">删除</button>
                 </span>
               </div>
               <div v-if="selectedDetail.tags && selectedDetail.tags.length" class="dc-detail-tags">
@@ -122,30 +122,30 @@
 
             <!-- Answers -->
             <div class="dc-answers-section">
-              <h3 class="dc-answers-title">responses [{{ selectedDetail.answer_count }}]</h3>
-              <div v-if="loadingAnswers" class="dc-state dc-state-sm">fetching...</div>
+              <h3 class="dc-answers-title">回答（{{ selectedDetail.answer_count }}）</h3>
+              <div v-if="loadingAnswers" class="dc-state dc-state-sm">正在加载回答...</div>
               <div v-for="a in answers" :key="a.id" class="dc-answer-card">
                 <div class="dc-answer-author">
                   <img :src="getAvatar(a.author)" class="dc-author-avatar" @error="onAvatarError" alt="" />
                   <span>{{ a.author.nickname }}</span>
                   <span v-if="a.author.display_tag" class="dc-author-tag">{{ a.author.display_tag }}</span>
                   <span v-if="canModify(a.author.id)" class="dc-modify-actions">
-                    <button v-if="editingAnswerId !== a.id" class="dc-modify-btn" @click="startEditAnswer(a)">[edit]</button>
-                    <button class="dc-modify-btn dc-modify-del" @click="onDeleteAnswer(a)">[del]</button>
+                    <button v-if="editingAnswerId !== a.id" class="dc-modify-btn" @click="startEditAnswer(a)">编辑</button>
+                    <button class="dc-modify-btn dc-modify-del" @click="onDeleteAnswer(a)">删除</button>
                   </span>
                 </div>
                 <template v-if="editingAnswerId === a.id">
                   <textarea v-model="editAnswerContent" class="dc-form-input dc-form-textarea" rows="4" />
                   <div class="dc-edit-actions">
-                    <button class="dc-btn-ghost" @click="editingAnswerId = null">cancel</button>
-                    <button class="dc-btn-accent" @click="onSaveAnswer">save</button>
+                    <button class="dc-btn-ghost" @click="editingAnswerId = null">取消</button>
+                    <button class="dc-btn-accent" @click="onSaveAnswer">保存</button>
                   </div>
                 </template>
                 <template v-else>
                   <p class="dc-answer-text">{{ a.content }}</p>
-                  <div v-if="a.is_expert_post" class="dc-expert-badge">expert_post</div>
+                  <div v-if="a.is_expert_post" class="dc-expert-badge">专业回答</div>
                   <div v-if="a.is_expert_post && a.sources" class="dc-expert-sources">
-                    <span class="dc-sources-label">sources:</span> {{ a.sources }}
+                    <span class="dc-sources-label">依据：</span> {{ a.sources }}
                   </div>
                 </template>
                 <div class="dc-answer-meta">
@@ -153,13 +153,13 @@
                     <svg :class="['icon-like', { active: a.is_liked }]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ a.like_count }}
                   </button>
                   <button class="dc-comment-toggle" @click="onToggleComments(a)">
-                    comments ({{ a.comment_count }})
+                    评论（{{ a.comment_count }}）
                   </button>
                 </div>
 
                 <!-- Comments -->
                 <div v-if="expandedComments[a.id]" class="dc-comments-section">
-                  <div v-if="loadingComments[a.id]" class="dc-state dc-state-sm">fetching...</div>
+                  <div v-if="loadingComments[a.id]" class="dc-state dc-state-sm">正在加载评论...</div>
                   <template v-else>
                     <div v-for="c in commentsMap[a.id] || []" :key="c.id" class="dc-comment-item">
                       <div class="dc-comment-head">
@@ -172,8 +172,8 @@
                         <button class="dc-comment-action" @click="onLikeComment(c)">
                           <svg :class="['icon-like', { active: c.is_liked }]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ c.like_count }}
                         </button>
-                        <button class="dc-comment-action" @click="setCommentTarget(a.id, c)">reply</button>
-                        <button v-if="canModify(c.author.id)" class="dc-comment-action dc-comment-del" @click="onDeleteComment(c, a.id)">del</button>
+                        <button class="dc-comment-action" @click="setCommentTarget(a.id, c)">回复</button>
+                        <button v-if="canModify(c.author.id)" class="dc-comment-action dc-comment-del" @click="onDeleteComment(c, a.id)">删除</button>
                       </div>
                     </div>
                   </template>
@@ -185,13 +185,13 @@
           <!-- Reply area -->
           <div class="dc-reply-area">
             <div v-if="commentTarget" class="dc-reply-hint">
-              {{ commentTarget.nickname ? `@${commentTarget.nickname}` : 'comment' }}
-              <button class="dc-cancel-reply" @click="clearCommentTarget">[×]</button>
+              {{ commentTarget.nickname ? `回复 @${commentTarget.nickname}` : '正在评论' }}
+              <button class="dc-cancel-reply" @click="clearCommentTarget">取消</button>
             </div>
             <div v-if="!commentTarget && isCertifiedUser" class="dc-expert-controls">
               <label class="dc-expert-label">
                 <input v-model="isExpertPost" type="checkbox" class="dc-expert-check" />
-                <span>expert_post</span>
+                <span>作为专业回答发布</span>
               </label>
               <input v-if="isExpertPost" v-model="expertSources" class="dc-form-input dc-form-sm" placeholder="来源依据（必填）" />
             </div>
@@ -200,10 +200,10 @@
                 ref="replyInputRef"
                 v-model="replyText"
                 class="dc-form-input"
-                :placeholder="commentTarget ? (commentTarget.nickname ? `@${commentTarget.nickname}...` : '写评论...') : '写下你的回答...'"
+                :placeholder="commentTarget ? (commentTarget.nickname ? `回复 @${commentTarget.nickname}...` : '写评论...') : '写下你的回答...'"
                 @keydown.enter="onSubmitReply"
               />
-              <button class="dc-btn-accent dc-btn-sm" :disabled="!replyText.trim() || (isExpertPost && !commentTarget && !expertSources.trim())" @click="onSubmitReply">send</button>
+              <button class="dc-btn-accent dc-btn-sm" :disabled="!replyText.trim() || (isExpertPost && !commentTarget && !expertSources.trim())" @click="onSubmitReply">发送</button>
             </div>
           </div>
         </div>
@@ -212,7 +212,7 @@
 
     <!-- Error toast -->
     <Transition name="dc-toast">
-      <div v-if="panelError" class="dc-toast-error">> FATAL: {{ panelError }}</div>
+      <div v-if="panelError" class="dc-toast-error">操作失败：{{ panelError }}</div>
     </Transition>
   </div>
 </template>
@@ -551,7 +551,7 @@ function clearCommentTarget() { commentTarget.value = null }
 }
 .dc-q-card:hover { border-color: rgba(125,207,255,0.15); }
 
-.dc-q-prompt { font-family: var(--dc-font-mono); font-size: 14px; line-height: 1.6; margin-bottom: 4px; }
+.dc-q-prompt { font-family: var(--dc-font-mono); font-size: 14px; line-height: 1.6; margin-bottom: 4px; color: var(--dc-text, #C0CAF5); font-weight: 600; }
 .dc-prompt { color: var(--dc-accent, #7DCFFF); font-weight: 700; margin-right: 4px; }
 .dc-string { color: var(--dc-string, #9ECE6A); }
 .dc-q-comment { font-family: var(--dc-font-mono); font-size: 12px; color: var(--dc-comment, #565F89); line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
