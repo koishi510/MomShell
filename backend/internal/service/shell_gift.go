@@ -45,7 +45,7 @@ func (s *ShellGiftService) CreateFromTask(ut model.UserTask) error {
 	// Ensure we don't create duplicates
 	if _, err := s.shellGiftRepo.FindByTaskID(ut.ID); err == nil {
 		return nil
-	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
 
