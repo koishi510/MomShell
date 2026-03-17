@@ -2,7 +2,7 @@
   <header class="dc-header">
     <div class="dc-brand">
       <div class="dc-prompt">
-        <span class="prompt-user">{{ promptUsername }}@momshell</span><span class="prompt-colon">:</span><span class="prompt-path">~</span><span class="prompt-char">$</span>
+        <span class="prompt-user">[{{ promptUsername }}@momshell ~]$</span>
         <div class="dc-head-input-wrap">
           <span ref="cmdInputMirrorRef" class="dc-head-input-mirror" aria-hidden="true">{{ cmdBeforeCursor }}</span>
           <input

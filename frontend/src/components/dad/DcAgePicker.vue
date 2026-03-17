@@ -3,11 +3,11 @@
     <div v-if="visible" class="dc-dialog-backdrop" @click.self="$emit('close')">
       <div class="dc-term-modal dc-dialog-sm">
         <div class="dc-term-modal-header">
-          <span>SYS.SET_AGE</span>
-          <button class="dc-term-modal-close" @click="$emit('close')">[×]</button>
+          <span>成长阶段</span>
+          <button class="dc-term-modal-close" @click="$emit('close')">关闭</button>
         </div>
         <div class="dc-term-modal-body">
-          <h3 class="dc-dialog-title">SELECT_PARAMETER</h3>
+          <h3 class="dc-dialog-title">请选择宝宝当前所处的阶段</h3>
           <div class="dc-age-grid">
             <button
               v-for="opt in AGE_OPTIONS"

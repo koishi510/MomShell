@@ -2,13 +2,13 @@
   <div class="dc-tab-content">
     <div class="dc-section-header">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-      <span class="dc-sh-text">./home.sh</span>
+      <span class="dc-sh-text">./home</span>
     </div>
 
     <!-- Welcome Header -->
     <div class="dc-home-header dc-float" style="--float-i:0">
       <h2 class="dc-greeting">欢迎来到 <span class="dc-hl">MomShell</span></h2>
-      <p class="dc-subtitle">v1.3.0-release</p>
+      <p class="dc-subtitle">版本 1.3.0</p>
     </div>
 
     <!-- Main Dashboard Grid -->
@@ -57,7 +57,7 @@
         </div>
         <div class="dc-action-text">
           <span class="dc-action-title">任务队列</span>
-          <span class="dc-action-desc">./tasks.sh</span>
+          <span class="dc-action-desc">./tasks</span>
         </div>
       </button>
 
@@ -67,7 +67,7 @@
         </div>
         <div class="dc-action-text">
           <span class="dc-action-title">系统遥测</span>
-          <span class="dc-action-desc">./status.sh</span>
+          <span class="dc-action-desc">./status</span>
         </div>
       </button>
 
@@ -77,7 +77,7 @@
         </div>
         <div class="dc-action-text">
           <span class="dc-action-title">AI 通信</span>
-          <span class="dc-action-desc">./chat.sh</span>
+          <span class="dc-action-desc">./chat</span>
         </div>
       </button>
 
@@ -87,7 +87,7 @@
         </div>
         <div class="dc-action-text">
           <span class="dc-action-title">互助网络</span>
-          <span class="dc-action-desc">./community.sh</span>
+          <span class="dc-action-desc">./community</span>
         </div>
       </button>
 
@@ -97,7 +97,7 @@
         </div>
         <div class="dc-action-text">
           <span class="dc-action-title">心声情报</span>
-          <span class="dc-action-desc">./whisper.sh</span>
+          <span class="dc-action-desc">./whisper</span>
         </div>
       </button>
 
@@ -107,7 +107,7 @@
         </div>
         <div class="dc-action-text">
           <span class="dc-action-title">个人资料</span>
-          <span class="dc-action-desc">./profile.sh</span>
+          <span class="dc-action-desc">./profile</span>
         </div>
       </button>
     </div>
