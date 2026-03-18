@@ -159,7 +159,7 @@ function handleCommand(cmd: string) {
     'status': 'dashboard', './status': 'dashboard',
     'chat': 'chat', './chat': 'chat',
     'community': 'community', './community': 'community',
-    'whisper': 'whisper', './whisper': 'whisper', './whisper.sh': 'whisper', 'future-letter': 'whisper', './future-letter': 'whisper',
+    'whisper': 'whisper', './whisper': 'whisper',
     'profile': 'profile', './profile': 'profile',
     'memory': 'chat', './memory': 'chat',
   }
