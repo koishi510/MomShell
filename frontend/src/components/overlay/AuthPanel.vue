@@ -1,89 +1,88 @@
 <template>
   <OverlayPanel :visible="uiStore.activePanel === 'auth'" position="center" @close="uiStore.closePanel()">
     <div class="auth-panel">
-      <!-- Tabs -->
+      <!-- Header Section -->
+      <div class="auth-header">
+        <h2 class="auth-title">MomShell</h2>
+        <p class="auth-desc">{{ modeTitle }}</p>
+      </div>
+
+      <!-- Tab Switcher -->
       <div class="auth-tabs">
         <button
-          :class="['auth-tab', { active: mode === 'guest' }]"
-          @click="mode = 'guest'"
+          v-for="t in tabs"
+          :key="t.id"
+          :class="['auth-tab', { active: mode === t.id }]"
+          @click="mode = t.id"
         >
-          游客模式
+          {{ t.label }}
         </button>
-        <button
-          :class="['auth-tab', { active: mode === 'login' }]"
-          @click="mode = 'login'"
-        >
-          登录
-        </button>
-        <button
-          :class="['auth-tab', { active: mode === 'register' }]"
-          @click="mode = 'register'"
-        >
-          注册
-        </button>
+        <div class="tab-indicator" :style="indicatorStyle"></div>
       </div>
 
-      <!-- Guest -->
-      <div v-if="mode === 'guest'" class="auth-form">
-        <p class="guest-hint">为了能与伴侣共建 Echo Domain，建议完成后进行绑定。</p>
-        <button class="auth-submit" @click="onGuestEnter">以游客身份浏览</button>
+      <div class="form-container">
+        <Transition name="form-fade" mode="out-in">
+          <!-- Guest -->
+          <div v-if="mode === 'guest'" key="guest" class="auth-form">
+            <div class="info-card">
+              <p>以访客身份进入，您可以浏览公开内容并与 AI 进行基础对话。为了保存您的个人记忆，建议随后注册账号。</p>
+            </div>
+            <button class="submit-btn primary" @click="onGuestEnter">进入体验</button>
+          </div>
+
+          <!-- Login -->
+          <form v-else-if="mode === 'login'" key="login" class="auth-form" @submit.prevent="onLogin">
+            <div class="input-group">
+              <div class="input-wrapper">
+                <input v-model="loginForm.login" type="text" placeholder="用户名 / 邮箱" required autocomplete="username" />
+              </div>
+              <div class="input-wrapper">
+                <input v-model="loginForm.password" type="password" placeholder="密码" required autocomplete="current-password" />
+              </div>
+            </div>
+            <p v-if="error" class="error-msg">{{ error }}</p>
+            <button type="submit" class="submit-btn primary" :disabled="loading">
+              {{ loading ? '验证中...' : '登录系统' }}
+            </button>
+          </form>
+
+          <!-- Register -->
+          <form v-else-if="mode === 'register'" key="register" class="auth-form" @submit.prevent="onRegister">
+            <div class="input-grid">
+              <div class="input-wrapper">
+                <input v-model="regForm.username" type="text" placeholder="用户名" required minlength="3" autocomplete="username" />
+              </div>
+              <div class="input-wrapper">
+                <input v-model="regForm.email" type="email" placeholder="电子邮箱" required autocomplete="email" />
+              </div>
+              <div class="input-wrapper">
+                <input v-model="regForm.nickname" type="text" placeholder="称呼 (Nickname)" required autocomplete="nickname" />
+              </div>
+              <div class="input-wrapper">
+                <input v-model="regForm.password" type="password" placeholder="设置密码" required minlength="8" autocomplete="new-password" />
+              </div>
+              <div class="input-wrapper full-width">
+                <input v-model="regForm.confirmPassword" type="password" placeholder="确认密码" required autocomplete="new-password" />
+              </div>
+            </div>
+            <p v-if="error" class="error-msg">{{ error }}</p>
+            <button type="submit" class="submit-btn primary" :disabled="loading">
+              {{ loading ? '创建中...' : '开启旅程' }}
+            </button>
+          </form>
+        </Transition>
       </div>
 
-      <!-- Login -->
-      <form v-if="mode === 'login'" class="auth-form" @submit.prevent="onLogin">
-        <label class="auth-label">
-          <span>用户名 / 邮箱</span>
-          <input v-model="loginForm.login" type="text" class="auth-input" required autocomplete="username" />
-        </label>
-        <label class="auth-label">
-          <span>密码</span>
-          <input v-model="loginForm.password" type="password" class="auth-input" required autocomplete="current-password" />
-        </label>
-        <p v-if="error" class="auth-error">{{ error }}</p>
-        <button type="submit" class="auth-submit" :disabled="loading">
-          {{ loading ? '登录中...' : '登录' }}
-        </button>
-      </form>
-
-      <!-- Register -->
-      <form v-if="mode === 'register'" class="auth-form" @submit.prevent="onRegister">
-        <label class="auth-label">
-          <span>用户名</span>
-          <input v-model="regForm.username" type="text" class="auth-input" required minlength="3" maxlength="50" autocomplete="username" />
-        </label>
-        <label class="auth-label">
-          <span>邮箱</span>
-          <input v-model="regForm.email" type="email" class="auth-input" required autocomplete="email" />
-        </label>
-        <label class="auth-label">
-          <span>昵称</span>
-          <input v-model="regForm.nickname" type="text" class="auth-input" required maxlength="50" autocomplete="nickname" />
-        </label>
-        <label class="auth-label">
-          <span>密码</span>
-          <input v-model="regForm.password" type="password" class="auth-input" required minlength="8" autocomplete="new-password" />
-        </label>
-        <label class="auth-label">
-          <span>确认密码</span>
-          <input v-model="regForm.confirmPassword" type="password" class="auth-input" required autocomplete="new-password" />
-        </label>
-        <p v-if="error" class="auth-error">{{ error }}</p>
-        <button type="submit" class="auth-submit" :disabled="loading">
-          {{ loading ? '注册中...' : '注册' }}
-        </button>
-      </form>
-
-      <!-- Register success -->
-      <div v-if="registered" class="auth-success">
-        <p>注册成功！请登录。</p>
-        <button class="auth-submit" @click="mode = 'login'; registered = false">去登录</button>
+      <div class="auth-footer">
+        <p v-if="mode === 'login'">还没有账号? <a @click="mode = 'register'">立即注册</a></p>
+        <p v-else-if="mode === 'register'">已有账号? <a @click="mode = 'login'">前往登录</a></p>
       </div>
     </div>
   </OverlayPanel>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import OverlayPanel from './OverlayPanel.vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
@@ -92,10 +91,30 @@ import { getErrorMessage } from '@/lib/apiClient'
 const uiStore = useUiStore()
 const authStore = useAuthStore()
 
-const mode = ref<'guest' | 'login' | 'register'>(uiStore.authMode === 'register' ? 'register' : 'login')
+type Mode = 'guest' | 'login' | 'register'
+const mode = ref<Mode>(uiStore.authMode || 'login')
 const loading = ref(false)
 const error = ref('')
-const registered = ref(false)
+
+const tabs = [
+  { id: 'guest', label: '访客' },
+  { id: 'login', label: '登录' },
+  { id: 'register', label: '注册' }
+] as const
+
+const modeTitle = computed(() => {
+  if (mode.value === 'guest') return '无需账号，即刻探索'
+  if (mode.value === 'login') return '欢迎回来'
+  return '创建一个新的家庭空间'
+})
+
+const indicatorStyle = computed(() => {
+  const index = tabs.findIndex(t => t.id === mode.value)
+  return {
+    transform: `translateX(${index * 100}%)`,
+    width: `${100 / tabs.length}%`
+  }
+})
 
 const loginForm = reactive({ login: '', password: '' })
 const regForm = reactive({
@@ -107,9 +126,7 @@ const regForm = reactive({
 })
 
 watch(() => uiStore.authMode, (m) => {
-  if (m === 'register') mode.value = 'register'
-  else if (m === 'guest') mode.value = 'guest'
-  else mode.value = 'login'
+  if (m) mode.value = m as Mode
 })
 
 function onGuestEnter() {
@@ -144,7 +161,6 @@ async function onRegister() {
       nickname: regForm.nickname,
       password: regForm.password,
     })
-    // Registration auto-logs in → go to role selection
     uiStore.openPanel('role')
   } catch (e) {
     error.value = getErrorMessage(e)
@@ -156,141 +172,200 @@ async function onRegister() {
 
 <style scoped>
 .auth-panel {
-  padding: 32px 28px 28px;
+  padding: 48px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 400px;
 }
 
+.auth-header {
+  text-align: center;
+}
+
+.auth-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin: 0 0 8px;
+  background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+/* Tab Switcher */
 .auth-tabs {
+  position: relative;
   display: flex;
-  gap: 4px;
-  margin-bottom: 28px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
   padding: 4px;
+  overflow: hidden;
 }
 
 .auth-tab {
   flex: 1;
   padding: 10px 0;
-  border-radius: 11px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  z-index: 1;
+  transition: color 0.3s;
 }
 
 .auth-tab.active {
-  background: rgba(255, 255, 255, 0.14);
-  color: var(--text-primary);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  color: #fff;
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  height: calc(100% - 8px);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Forms */
+.form-container {
+  min-height: 240px;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 24px;
 }
 
-.auth-label {
+.input-group, .input-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
-.auth-label span {
-  font-size: 13px;
-  color: var(--text-secondary);
-  font-weight: 500;
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
-.auth-input {
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  color: var(--text-primary);
+.full-width {
+  grid-column: span 2;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
   font-size: 15px;
   outline: none;
-  transition: border-color 0.2s, background 0.2s;
+  transition: all 0.2s;
 }
 
-.auth-input:focus {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.12);
+.input-wrapper input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
-.auth-input::placeholder {
-  color: var(--text-secondary);
-}
-
-.auth-submit {
-  margin-top: 4px;
-  padding: 13px 0;
-  background: var(--accent-warm);
-  color: #fff;
-  border: none;
-  border-radius: 14px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
-}
-
-.auth-submit:hover { background: var(--accent-warm-hover); }
-.auth-submit:active { transform: scale(0.98); }
-.auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.auth-error {
-  padding: 10px 14px;
-  background: rgba(220, 60, 60, 0.15);
-  border: 1px solid rgba(220, 60, 60, 0.25);
-  border-radius: 10px;
-  color: #ffbbbb;
-  font-size: 13px;
-}
-
-.auth-success {
-  text-align: center;
-  padding: 20px 0;
-  color: var(--text-primary);
-}
-
-.auth-success p {
-  margin-bottom: 16px;
-  font-size: 16px;
-}
-
-.guest-hint {
-  padding: 16px;
-  background: rgba(255, 210, 140, 0.1);
-  border: 1px solid rgba(255, 210, 140, 0.2);
-  border-radius: 14px;
+.info-card {
+  padding: 20px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.6;
 }
 
-/* ── Mobile ── */
+.submit-btn {
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-btn.primary {
+  background: #6366f1;
+  color: #fff;
+}
+
+.submit-btn.primary:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-msg {
+  font-size: 13px;
+  color: #f87171;
+  margin: 0;
+  text-align: center;
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.auth-footer a {
+  color: #a5b4fc;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Transitions */
+.form-fade-enter-active, .form-fade-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.form-fade-enter-from {
+  opacity: 0;
+  transform: translateX(10px);
+}
+.form-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
 @media (max-width: 768px) {
   .auth-panel {
-    padding: 24px 16px 20px;
+    padding: 32px 20px;
+    min-width: 100%;
   }
-
-  .auth-input {
-    font-size: 16px;
-    padding: 14px 16px;
+  .input-grid {
+    grid-template-columns: 1fr;
   }
-
-  .auth-tab {
-    font-size: 13px;
-    min-height: 44px;
-  }
-
-  .auth-submit {
-    min-height: 48px;
-    font-size: 16px;
+  .full-width {
+    grid-column: span 1;
   }
 }
 </style>

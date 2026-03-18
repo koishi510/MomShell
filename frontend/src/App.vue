@@ -1,13 +1,13 @@
 <template>
   <div :class="{ 'dad-mode': isDad }">
-    <!-- Neutral Landing Page for unauthenticated & non-guest users -->
-    <NeutralLanding v-if="!authStore.isAuthenticated && !authStore.isGuest" />
+    <!-- Anime Landing Page for unauthenticated & non-guest users -->
+    <AnimeLanding v-if="!authStore.isAuthenticated && !authStore.isGuest" />
 
     <!-- Dad: full-screen console replaces beach scene -->
     <DadConsole v-else-if="isDad" />
 
     <!-- Mom / Guest: beach scene -->
-    <template v-else>
+    <template v-else-if="authStore.isAuthenticated || authStore.isGuest">
       <BeachScene />
       <NavBar />
       <CarPage />
@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useBackgroundMusicLoop } from '@/composables/useBackgroundMusicLoop'
-import NeutralLanding from '@/components/overlay/NeutralLanding.vue'
+import AnimeLanding from '@/components/overlay/AnimeLanding.vue'
 import DadConsole from '@/components/dad/DadConsole.vue'
 import BeachScene from '@/components/scene/BeachScene.vue'
 import NavBar from '@/components/scene/NavBar.vue'
