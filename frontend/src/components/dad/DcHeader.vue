@@ -36,7 +36,7 @@
         [{{ ageLabel(currentAge) }}]
       </button>
       <button v-else class="dc-term-btn dc-term-btn-alert" @click="$emit('open-age-picker')">
-        [REQ_AGE]
+        [设置年龄]
       </button>
       <div v-if="stats" class="dc-stats">
         <span class="dc-level">LVL={{ stats.level }}</span>
@@ -114,11 +114,11 @@ function submitCmd(e: KeyboardEvent) {
 // ── Tab completion ──
 const COMMANDS = [
   'home', './home',
-  'tasks', './tasks',
+  'issue', './issue',
   'status', './status',
   'chat', './chat',
   'community', './community',
-  'whisper', './whisper', './whisper.sh',
+  'whisper', './whisper',
   'profile', './profile',
   'memory', './memory',
   'logout', 'exit', 'quit',

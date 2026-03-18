@@ -9,19 +9,57 @@
     <div class="dc-chan-tabs dc-float" style="--float-i:0">
       <button :class="['dc-chan-tab', { active: channel === 'experience' }]" @click="switchChannel('experience')">经验交流</button>
       <button :class="['dc-chan-tab', { active: channel === 'professional' }]" @click="switchChannel('professional')">专业支持</button>
-      <button :class="['dc-chan-tab', { active: channel === 'collections' }]" @click="switchChannel('collections')">我的收藏</button>
+      <button :class="['dc-chan-tab', { active: channel === 'mine' }]" @click="switchChannel('mine')">我的</button>
+    </div>
+
+    <div v-if="channel === 'mine'" class="dc-sub-tabs dc-float" style="--float-i:1">
+      <button :class="['dc-sub-tab', { active: mineSection === 'collections' }]" @click="switchMineSection('collections')">收藏</button>
+      <button :class="['dc-sub-tab', { active: mineSection === 'questions' }]" @click="switchMineSection('questions')">提问</button>
+      <button :class="['dc-sub-tab', { active: mineSection === 'answers' }]" @click="switchMineSection('answers')">回答</button>
     </div>
 
     <!-- Create button -->
-    <button class="dc-create-btn dc-float" style="--float-i:1" @click="openCompose">发布问题</button>
+    <button
+      v-if="channel !== 'mine'"
+      class="dc-create-btn dc-float"
+      :style="{ '--float-i': 1 }"
+      @click="openCompose"
+    >
+      发布问题
+    </button>
 
     <!-- Loading / Empty -->
-    <div v-if="loading" class="dc-state dc-float" style="--float-i:2">正在加载问题...</div>
-    <div v-else-if="questions.length === 0" class="dc-state dc-float" style="--float-i:2">暂时还没有内容</div>
+    <div v-if="loading" class="dc-state dc-float" :style="{ '--float-i': channel === 'mine' ? 3 : 2 }">正在加载内容...</div>
+    <div v-else-if="displayedItemCount === 0" class="dc-state dc-float" :style="{ '--float-i': channel === 'mine' ? 3 : 2 }">{{ emptyStateText }}</div>
 
     <!-- Question list -->
     <template v-else>
-      <div class="dc-q-list">
+      <div v-if="isAnswerView" class="dc-q-list">
+        <button
+          v-for="(a, i) in myAnswers"
+          :key="a.id"
+          class="dc-q-card dc-q-card-answer dc-float"
+          :style="{ '--float-i': i + 3 }"
+          @click="openDetailByQuestionId(a.question_id)"
+        >
+          <div class="dc-q-tags">
+            <span class="dc-badge dc-badge-tag">我的回答</span>
+            <span v-if="a.is_expert_post" class="dc-badge dc-badge-expert">专业回答</span>
+          </div>
+          <div class="dc-q-comment dc-q-answer-preview">{{ a.content_preview || a.content }}</div>
+          <div class="dc-q-meta">
+            <img :src="getAvatar(a.author)" class="dc-meta-avatar" @error="onAvatarError" alt="" />
+            <span>{{ a.author.nickname }}</span>
+            <span v-if="a.author.display_tag" class="dc-author-tag">{{ a.author.display_tag }}</span>
+            <span class="dc-meta-sep">·</span>
+            <span>{{ a.comment_count }} 条评论</span>
+            <span class="dc-q-action" @click.stop="onLikeAnswer(a)">
+              <svg :class="['icon-like', { active: a.is_liked }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg> {{ a.like_count }}
+            </span>
+          </div>
+        </button>
+      </div>
+      <div v-else class="dc-q-list">
         <button v-for="(q, i) in questions" :key="q.id" class="dc-q-card dc-float" :style="{ '--float-i': i + 2 }" @click="openDetail(q)">
           <div class="dc-q-prompt">{{ q.title }}</div>
           <div v-if="q.content_preview" class="dc-q-comment">{{ q.content_preview }}</div>
@@ -43,7 +81,13 @@
           </div>
         </button>
       </div>
-      <button v-if="currentPage < totalPages" class="dc-load-more dc-float" :style="{ '--float-i': questions.length + 2 }" :disabled="loadingMore" @click="loadMore">
+      <button
+        v-if="currentPage < totalPages"
+        class="dc-load-more dc-float"
+        :style="{ '--float-i': displayedItemCount + (channel === 'mine' ? 3 : 2) }"
+        :disabled="loadingMore"
+        @click="loadMore"
+      >
         {{ loadingMore ? '正在加载...' : '查看更多' }}
       </button>
     </template>
@@ -225,6 +269,8 @@ import aiAvatar from '@/assets/images/ai_avatar.png'
 import {
   getQuestions,
   getMyCollections,
+  getMyQuestions,
+  getMyAnswers,
   getQuestion,
   createQuestion,
   updateQuestion,
@@ -251,8 +297,10 @@ const authStore = useAuthStore()
 
 const props = withDefaults(defineProps<{ visible?: boolean }>(), { visible: true })
 
-const channel = ref<'experience' | 'professional' | 'collections'>('experience')
+const channel = ref<'experience' | 'professional' | 'mine'>('experience')
+const mineSection = ref<'collections' | 'questions' | 'answers'>('collections')
 const questions = ref<QuestionListItem[]>([])
+const myAnswers = ref<AnswerListItem[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const currentPage = ref(1)
@@ -288,6 +336,14 @@ const isCertifiedUser = computed(() => {
   const role = authStore.user?.role
   return role === 'certified_doctor' || role === 'certified_therapist' || role === 'certified_nurse'
 })
+const isAnswerView = computed(() => channel.value === 'mine' && mineSection.value === 'answers')
+const displayedItemCount = computed(() => isAnswerView.value ? myAnswers.value.length : questions.value.length)
+const emptyStateText = computed(() => {
+  if (channel.value !== 'mine') return '暂时还没有内容'
+  if (mineSection.value === 'collections') return '暂无收藏'
+  if (mineSection.value === 'questions') return '暂无提问'
+  return '暂无回答'
+})
 
 function showPanelError(msg: string) {
   panelError.value = msg
@@ -311,23 +367,52 @@ function onAvatarError(e: Event) {
 async function fetchQuestions(page = 1) {
   if (page === 1) { loading.value = true } else { loadingMore.value = true }
   try {
-    if (channel.value === 'collections') {
-      const res = await getMyCollections({ page, page_size: PAGE_SIZE })
-      const items = res.items.map((c) => c.question)
-      questions.value = page === 1 ? items : [...questions.value, ...items]
-      currentPage.value = res.page; totalPages.value = res.total_pages
+    if (channel.value === 'mine') {
+      if (mineSection.value === 'collections') {
+        const res = await getMyCollections({ page, page_size: PAGE_SIZE })
+        const items = res.items.map((c) => c.question)
+        questions.value = page === 1 ? items : [...questions.value, ...items]
+        if (page === 1) myAnswers.value = []
+        currentPage.value = res.page
+        totalPages.value = res.total_pages
+      } else if (mineSection.value === 'questions') {
+        const res = await getMyQuestions({ page, page_size: PAGE_SIZE })
+        questions.value = page === 1 ? res.items : [...questions.value, ...res.items]
+        if (page === 1) myAnswers.value = []
+        currentPage.value = res.page
+        totalPages.value = res.total_pages
+      } else {
+        const res = await getMyAnswers({ page, page_size: PAGE_SIZE })
+        myAnswers.value = page === 1 ? res.items : [...myAnswers.value, ...res.items]
+        if (page === 1) questions.value = []
+        currentPage.value = res.page
+        totalPages.value = res.total_pages
+      }
     } else {
       const res = await getQuestions({ channel: channel.value, page, page_size: PAGE_SIZE })
       questions.value = page === 1 ? res.items : [...questions.value, ...res.items]
-      currentPage.value = res.page; totalPages.value = res.total_pages
+      if (page === 1) myAnswers.value = []
+      currentPage.value = res.page
+      totalPages.value = res.total_pages
     }
   } catch { /* silent */ }
   finally { loading.value = false; loadingMore.value = false }
 }
 
-function switchChannel(c: 'experience' | 'professional' | 'collections') {
+function switchChannel(c: 'experience' | 'professional' | 'mine') {
   if (channel.value === c) return
-  channel.value = c; currentPage.value = 1; totalPages.value = 1; fetchQuestions(1)
+  channel.value = c
+  currentPage.value = 1
+  totalPages.value = 1
+  fetchQuestions(1)
+}
+
+function switchMineSection(section: 'collections' | 'questions' | 'answers') {
+  if (mineSection.value === section) return
+  mineSection.value = section
+  currentPage.value = 1
+  totalPages.value = 1
+  fetchQuestions(1)
 }
 
 function loadMore() { fetchQuestions(currentPage.value + 1) }
@@ -335,9 +420,13 @@ function loadMore() { fetchQuestions(currentPage.value + 1) }
 watch(() => props.visible, (active) => { if (active) fetchQuestions(1) }, { immediate: true })
 
 async function openDetail(q: QuestionListItem) {
+  await openDetailByQuestionId(q.id)
+}
+
+async function openDetailByQuestionId(questionId: string) {
   selectedDetail.value = null; answers.value = []; expandedComments.value = {}; commentsMap.value = {}; loadingComments.value = {}; commentTarget.value = null
   try {
-    const [detail, answerRes] = await Promise.all([getQuestion(q.id), getAnswers(q.id, { page: 1, page_size: 50 })])
+    const [detail, answerRes] = await Promise.all([getQuestion(questionId), getAnswers(questionId, { page: 1, page_size: 50 })])
     selectedDetail.value = detail; answers.value = answerRes.items
   } catch { /* silent */ }
 }
@@ -359,7 +448,12 @@ function toggleTag(tagId: string) {
 async function onCreatePost() {
   posting.value = true
   try {
-    await createQuestion({ title: newPost.value.title, content: newPost.value.content, channel: channel.value === 'collections' ? 'experience' : channel.value, tag_ids: selectedTagIds.value.length ? selectedTagIds.value : undefined })
+    await createQuestion({
+      title: newPost.value.title,
+      content: newPost.value.content,
+      channel: channel.value === 'professional' ? 'professional' : 'experience',
+      tag_ids: selectedTagIds.value.length ? selectedTagIds.value : undefined,
+    })
     showCompose.value = false; newPost.value = { title: '', content: '' }; selectedTagIds.value = []; await fetchQuestions(1)
   } catch (e) { showPanelError(getErrorMessage(e)) }
   finally { posting.value = false }
@@ -375,7 +469,10 @@ async function onLikeQuestion(q: QuestionListItem) {
 async function onCollectListQuestion(q: QuestionListItem) {
   try {
     const res = await toggleCollection(q.id, q.is_collected)
-    questions.value = questions.value.map((item) => item.id === q.id ? { ...item, is_collected: res.is_collected, collection_count: res.new_count } : item)
+    const shouldRemove = channel.value === 'mine' && mineSection.value === 'collections' && !res.is_collected
+    questions.value = shouldRemove
+      ? questions.value.filter((item) => item.id !== q.id)
+      : questions.value.map((item) => item.id === q.id ? { ...item, is_collected: res.is_collected, collection_count: res.new_count } : item)
   } catch { /* silent */ }
 }
 
@@ -393,7 +490,10 @@ async function onCollectQuestion() {
   try {
     const res = await toggleCollection(selectedDetail.value.id, selectedDetail.value.is_collected)
     selectedDetail.value = { ...selectedDetail.value, is_collected: res.is_collected, collection_count: res.new_count }
-    questions.value = questions.value.map((item) => item.id === selectedDetail.value!.id ? { ...item, is_collected: res.is_collected, collection_count: res.new_count } : item)
+    const shouldRemove = channel.value === 'mine' && mineSection.value === 'collections' && !res.is_collected
+    questions.value = shouldRemove
+      ? questions.value.filter((item) => item.id !== selectedDetail.value!.id)
+      : questions.value.map((item) => item.id === selectedDetail.value!.id ? { ...item, is_collected: res.is_collected, collection_count: res.new_count } : item)
   } catch { /* silent */ }
 }
 
@@ -401,6 +501,7 @@ async function onLikeAnswer(a: AnswerListItem) {
   try {
     const res = await toggleLike('answer', a.id, a.is_liked)
     answers.value = answers.value.map((ans) => ans.id === a.id ? { ...ans, is_liked: res.is_liked, like_count: res.new_count } : ans)
+    myAnswers.value = myAnswers.value.map((ans) => ans.id === a.id ? { ...ans, is_liked: res.is_liked, like_count: res.new_count } : ans)
   } catch { /* silent */ }
 }
 
@@ -487,6 +588,7 @@ async function onSaveAnswer() {
   try {
     await updateAnswer(editingAnswerId.value, editAnswerContent.value)
     answers.value = answers.value.map((a) => a.id === editingAnswerId.value ? { ...a, content: editAnswerContent.value } : a)
+    myAnswers.value = myAnswers.value.map((a) => a.id === editingAnswerId.value ? { ...a, content: editAnswerContent.value, content_preview: editAnswerContent.value } : a)
     editingAnswerId.value = null; editAnswerContent.value = ''
   } catch (e) { showPanelError(getErrorMessage(e)) }
 }
@@ -495,6 +597,7 @@ async function onDeleteAnswer(a: AnswerListItem) {
   if (!confirm('确定要删除这个回答吗？')) return
   try {
     await deleteAnswer(a.id); answers.value = answers.value.filter((ans) => ans.id !== a.id)
+    myAnswers.value = myAnswers.value.filter((ans) => ans.id !== a.id)
     if (selectedDetail.value) { selectedDetail.value = { ...selectedDetail.value, answer_count: selectedDetail.value.answer_count - 1 } }
   } catch (e) { showPanelError(getErrorMessage(e)) }
 }
@@ -535,6 +638,33 @@ function clearCommentTarget() { commentTarget.value = null }
 .dc-chan-tab.active { background: rgba(125,207,255,0.1); color: var(--dc-accent, #7DCFFF); }
 .dc-chan-tab:hover:not(.active) { color: var(--dc-text, #C0CAF5); }
 
+.dc-sub-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.dc-sub-tab {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--dc-border, rgba(255,255,255,0.06));
+  border-radius: var(--dc-radius, 2px);
+  color: var(--dc-comment, #565F89);
+  font-family: var(--dc-font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dc-sub-tab.active {
+  border-color: rgba(125,207,255,0.3);
+  background: rgba(125,207,255,0.08);
+  color: var(--dc-accent, #7DCFFF);
+}
+
+.dc-sub-tab:hover:not(.active) { color: var(--dc-text, #C0CAF5); }
+
 .dc-create-btn {
   width: 100%; padding: 10px; background: transparent; border: 1px dashed var(--dc-border, rgba(255,255,255,0.15));
   border-radius: var(--dc-radius, 2px); color: var(--dc-comment, #565F89); font-family: var(--dc-font-mono); font-size: 13px;
@@ -560,6 +690,9 @@ function clearCommentTarget() { commentTarget.value = null }
 .dc-q-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .dc-badge { font-family: var(--dc-font-mono); font-size: 10px; padding: 2px 6px; border-radius: var(--dc-radius, 2px); letter-spacing: 0.5px; }
 .dc-badge-tag { background: var(--dc-surface, rgba(255,255,255,0.05)); color: var(--dc-comment, #565F89); border: 1px solid var(--dc-border, rgba(255,255,255,0.06)); }
+.dc-badge-expert { background: rgba(158,206,106,0.1); color: var(--dc-success, #9ECE6A); border: 1px solid rgba(158,206,106,0.25); }
+.dc-q-card-answer { display: flex; flex-direction: column; gap: 8px; }
+.dc-q-answer-preview { -webkit-line-clamp: 3; margin-bottom: 0; }
 
 .dc-q-meta { font-family: var(--dc-font-mono); font-size: 11px; color: var(--dc-comment, #565F89); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .dc-meta-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; margin-right: 2px; }
