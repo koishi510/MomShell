@@ -30,7 +30,7 @@
       <template v-if="activeTab === 'board'">
         <!-- Dad view: daily tasks -->
         <template v-if="isDad">
-          <div v-if="loading" class="loading-state">正在同步心语工单...</div>
+          <div v-if="loading" class="loading-state">正在同步任务计划...</div>
 
           <div v-else-if="tasks.length === 0" class="empty-state">她还没有发来新的心语情报</div>
 
@@ -379,12 +379,12 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const headerTitle = computed(() => {
   if (activeTab.value === 'dashboard') return '战绩与背包'
-  return isDad.value ? '心语工单' : '执行回执'
+  return isDad.value ? '任务计划' : '执行回执'
 })
 
 const headerSubtitle = computed(() => {
   if (activeTab.value === 'dashboard') return isDad.value ? '成长数据与权益核销' : '他的成长数据与权益记录'
-  return isDad.value ? '她的情报会在这里变成待执行工单' : '查看他的完成情况并完成验收'
+  return isDad.value ? '她的情报会在这里变成具体的行动建议' : '查看他的完成情况并完成验收'
 })
 
 const priorityRank: Record<string, number> = { T0: 3, T1: 2, T2: 1 }
@@ -407,15 +407,15 @@ const momVisibleTasks = computed(() =>
 function priorityLabel(priority?: string): string {
   const p = (priority || 'T2').toUpperCase()
   if (p === 'T0') return '紧急'
-  if (p === 'T1') return '里程碑'
+  if (p === 'T1') return '重要'
   return '日常'
 }
 
 function priorityTip(priority?: string): string {
   const p = (priority || 'T2').toUpperCase()
-  if (p === 'T0') return 'T0: 突发/情绪干预'
-  if (p === 'T1') return 'T1: 关键里程碑'
-  return 'T2: 日常守护'
+  if (p === 'T0') return 'T0: 紧急'
+  if (p === 'T1') return 'T1: 重要'
+  return 'T2: 日常'
 }
 
 // ── Dashboard (radar + achievements + perk cards) ──────────────────────────────

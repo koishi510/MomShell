@@ -5,35 +5,27 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
         <span class="dc-sh-text">./issue</span>
       </div>
-      <button class="dc-settings-btn" type="button" @click="showSettings = !showSettings">
-        设置
-      </button>
-    </div>
-
-    <div v-if="showSettings" class="dc-settings-card">
-      <div class="dc-settings-copy">
-        <span class="dc-settings-title">工单设置</span>
-        <span class="dc-settings-note">重新生成最新情报建议，并同步刷新今天的工单。</span>
-      </div>
       <button
-        class="dc-regenerate-btn"
+        class="dc-header-action-btn"
         type="button"
         :disabled="regenerating"
         @click="$emit('regenerate-intel')"
       >
-        {{ regenerating ? '重生成中...' : '重新生成情报建议和工单' }}
+        <svg v-if="regenerating" class="dc-spin" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg v-else viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        <span>{{ regenerating ? '重生成中...' : '重新生成' }}</span>
       </button>
     </div>
 
     <div v-if="loading" class="dc-state">
       <div class="dc-spinner"></div>
-      <span>正在同步心语工单...</span>
+      <span>正在同步任务计划...</span>
     </div>
 
     <div v-else-if="sortedTasks.length === 0" class="dc-state">
       <span class="dc-state-icon">等待新情报</span>
       <span>当前无待办任务</span>
-      <span class="dc-state-copy">暂无新工单，请等待心语情报同步。</span>
+      <span class="dc-state-copy">暂无新任务，请等待心语情报同步。</span>
     </div>
 
     <div v-else class="dc-task-sections">
@@ -65,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { UserTaskItem } from '@/lib/api/task'
 import DcTaskCard from './DcTaskCard.vue'
 
@@ -83,11 +75,9 @@ defineEmits<{
   'regenerate-intel': []
 }>()
 
-const showSettings = ref(false)
-
 const priorityLabels: Record<string, string> = {
   T0: '紧急',
-  T1: '里程碑',
+  T1: '重要',
   T2: '日常',
 }
 
@@ -173,63 +163,55 @@ const groupedTasks = computed(() =>
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.dc-settings-btn,
-.dc-regenerate-btn {
-  background: transparent;
-  border: 1px solid rgba(125, 207, 255, 0.2);
-  color: var(--dc-accent, #7DCFFF);
+.dc-task-section-title,
+.dc-header-action-btn {
   font-family: var(--dc-font-mono);
-  font-size: 12px;
-  border-radius: var(--dc-radius, 2px);
 }
 
-.dc-settings-btn {
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.dc-settings-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(125, 207, 255, 0.12);
-  border-radius: var(--dc-radius, 2px);
-}
-
-.dc-settings-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.dc-settings-title,
 .dc-task-section-title {
   margin: 0;
   color: var(--dc-text, #C0CAF5);
-  font-family: var(--dc-font-mono);
   font-size: 13px;
 }
 
-.dc-settings-note,
 .dc-task-section-count {
   color: var(--dc-comment, #565F89);
   font-family: var(--dc-font-mono);
   font-size: 12px;
 }
 
-.dc-regenerate-btn {
-  padding: 10px 12px;
+.dc-header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(125, 207, 255, 0.3);
+  color: var(--dc-accent, #7DCFFF);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 2px;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
-.dc-regenerate-btn:disabled {
+.dc-header-action-btn:hover:not(:disabled) {
+  background: rgba(125, 207, 255, 0.1);
+  border-color: var(--dc-accent, #7DCFFF);
+}
+
+.dc-header-action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.dc-spin {
+  animation: dc-spin 1s linear infinite;
+}
+
+@keyframes dc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .dc-task-sections {
@@ -276,15 +258,10 @@ const groupedTasks = computed(() =>
 .card-list-move { transition: transform 0.3s ease; }
 
 @media (max-width: 768px) {
-  .dc-settings-card,
   .dc-section-head,
   .dc-task-section-head {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .dc-regenerate-btn {
-    width: 100%;
   }
 }
 </style>
