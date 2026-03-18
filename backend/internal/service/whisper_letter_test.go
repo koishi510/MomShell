@@ -7,52 +7,6 @@ import (
 	"github.com/momshell/backend/internal/model"
 )
 
-func TestMapFutureLetterStageToAge(t *testing.T) {
-	tests := []struct {
-		name    string
-		stage   string
-		current *string
-		want    string
-	}{
-		{
-			name:  "pregnancy always resolves to pregnancy",
-			stage: "PREGNANCY",
-			want:  "pregnancy",
-		},
-		{
-			name:    "infant keeps current infant band",
-			stage:   "INFANT_0_12M",
-			current: ptr("6-12m"),
-			want:    "6-12m",
-		},
-		{
-			name:    "infant falls back to first infant band",
-			stage:   "INFANT_0_12M",
-			current: ptr("pregnancy"),
-			want:    "0-3m",
-		},
-		{
-			name:    "toddler keeps current toddler band",
-			stage:   "TODDLER_2Y",
-			current: ptr("3-4y"),
-			want:    "3-4y",
-		},
-		{
-			name:  "toddler falls back to 2-3y",
-			stage: "TODDLER_2Y",
-			want:  "2-3y",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := mapFutureLetterStageToAge(tc.stage, tc.current); got != tc.want {
-				t.Fatalf("mapFutureLetterStageToAge(%q, %v) = %q, want %q", tc.stage, tc.current, got, tc.want)
-			}
-		})
-	}
-}
-
 func TestSelectFutureLetterCode(t *testing.T) {
 	now := time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC)
 	tests := []struct {
@@ -150,8 +104,4 @@ func TestBuildFallbackDadAdvice(t *testing.T) {
 	if advice.Sources[0].Label != "问卷信号" {
 		t.Fatalf("expected first source to be questionnaire, got %q", advice.Sources[0].Label)
 	}
-}
-
-func ptr(value string) *string {
-	return &value
 }

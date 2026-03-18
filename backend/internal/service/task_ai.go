@@ -1,16 +1,10 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"log"
 	"strings"
-	"time"
 
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
-	"github.com/momshell/backend/pkg/openai"
 )
 
 // AITaskData represents a single AI-generated task before being persisted.
@@ -129,90 +123,6 @@ func inferAgeStageFromMemory(content string) string {
 	return ""
 }
 
-// TaskContext holds personalized context for AI task generation.
-type TaskContext struct {
-	AgeStage    string
-	MemoryFacts []model.ChatMemoryFact
-	Whispers    []model.Whisper
-}
-
-// generateAITasks calls the OpenAI API to generate personalized tasks.
-func generateAITasks(
-	client *openai.Client,
-	ctx TaskContext,
-) ([]AITaskData, error) {
-	label := ageStageLabels[ctx.AgeStage]
-	if label == "" {
-		label = ctx.AgeStage
-	}
-
-	systemPrompt := `你是「小石光」，一位温暖、有洞察力的家庭陪伴AI。你深深理解每个家庭的独特故事。
-现在请你为一位爸爸生成今日自动投放的额外任务，任务要贴合这个家庭的真实情况。
-
-要求：
-- 仅生成 1 到 2 个任务，作为对妈妈反馈的补充。
-- 任务要高度贴合孩子当前年龄阶段（比如新生儿、幼儿的不同需求）。
-- 任务必须有“关键词+具体化的行动操作”。例如：“打疫苗准备：带上湿巾、疫苗本和身份证等。”
-- 严禁生成技术难度高、华而不实、需要复杂准备的建议（如“制作蓝莓果酱”这类建议绝不能出现）。
-- 任务类别包括：housework（家务）、parenting（育儿）、health（健康）、emotional（情感）。
-- 每个任务难度1-5分。
-- 每个任务需要标注优先级 priority：T0（突发/情绪干预）、T1（关键里程碑）、T2（日常守护）。
-- 用温暖且简洁的中文描述，像一位懂你的朋友在提醒你。
-
-请以JSON数组格式返回，每个元素包含：title, description, category, difficulty, priority
-不要返回任何其他内容，只返回JSON数组。`
-
-	// Build user prompt with personalized context
-	var sb strings.Builder
-	fmt.Fprintf(&sb, "孩子当前年龄阶段：%s\n", label)
-
-	if len(ctx.MemoryFacts) > 0 {
-		sb.WriteString("\n以下是妈妈与小石光聊天中记录的家庭信息：\n")
-		limit := min(len(ctx.MemoryFacts), 20)
-		for _, f := range ctx.MemoryFacts[:limit] {
-			fmt.Fprintf(&sb, "- [%s] %s\n", f.Category, f.Content)
-		}
-	}
-
-	if len(ctx.Whispers) > 0 {
-		sb.WriteString("\n以下是妈妈最近写给爸爸的心语（悄悄话），反映了她的心情和期望：\n")
-		for _, w := range ctx.Whispers {
-			fmt.Fprintf(&sb, "- %s\n", w.Content)
-		}
-	}
-
-	sb.WriteString("\n请根据以上信息，生成贴合这个家庭实际情况的今日任务。")
-	userPrompt := sb.String()
-
-	reqCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	resp, err := client.Chat(reqCtx, []openai.Message{
-		{Role: "system", Content: systemPrompt},
-		{Role: "user", Content: userPrompt},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("AI task generation failed: %w", err)
-	}
-
-	// Parse JSON response — strip markdown code fences if present
-	cleaned := strings.TrimSpace(resp)
-	if strings.HasPrefix(cleaned, "```") {
-		if idx := strings.Index(cleaned[3:], "\n"); idx >= 0 {
-			cleaned = cleaned[3+idx+1:]
-		}
-		cleaned = strings.TrimSuffix(cleaned, "```")
-		cleaned = strings.TrimSpace(cleaned)
-	}
-
-	var tasks []AITaskData
-	if err := json.Unmarshal([]byte(cleaned), &tasks); err != nil {
-		return nil, fmt.Errorf("failed to parse AI tasks: %w (response: %s)", err, cleaned[:min(len(cleaned), 200)])
-	}
-
-	return normalizeAITasks(tasks), nil
-}
-
 func normalizeAITasks(tasks []AITaskData) []AITaskData {
 	// Validate categories
 	validCategories := map[string]bool{
@@ -242,46 +152,4 @@ func normalizeAITasks(tasks []AITaskData) []AITaskData {
 	}
 
 	return tasks
-}
-
-// getOrGenerateAITasks checks cache first, then generates if needed.
-func getOrGenerateAITasks(
-	client *openai.Client,
-	taskRepo *repository.TaskRepo,
-	ck string,
-	date string,
-	tctx TaskContext,
-) ([]AITaskData, error) {
-	// Check cache
-	cache, err := taskRepo.FindAICache(ck, date, "task")
-	if err == nil && cache != nil {
-		var tasks []AITaskData
-		if err := json.Unmarshal([]byte(cache.Content), &tasks); err == nil {
-			return normalizeAITasks(tasks), nil
-		}
-		// Bad cache entry — delete it so the unique index won't block re-save
-		log.Printf("[TaskAI] cache parse error for %s/%s, deleting and regenerating", ck, date)
-		_ = taskRepo.DeleteAICacheByCouple(ck, date, "task")
-	}
-
-	// Generate
-	tasks, err := generateAITasks(client, tctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Save to cache
-	tasksJSON, _ := json.Marshal(tasks)
-	cacheEntry := &model.AIGeneratedTask{
-		CoupleKey: ck,
-		Date:      date,
-		Type:      "task",
-		AgeStage:  tctx.AgeStage,
-		Content:   string(tasksJSON),
-	}
-	if err := taskRepo.SaveAICache(cacheEntry); err != nil {
-		log.Printf("[TaskAI] failed to cache AI tasks: %v", err)
-	}
-
-	return tasks, nil
 }
