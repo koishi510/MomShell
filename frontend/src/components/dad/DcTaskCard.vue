@@ -7,7 +7,6 @@
     <div class="dc-card-top">
       <div class="dc-badges">
         <span class="dc-badge dc-id">#{{ task.id.slice(0, 4).toUpperCase() }}</span>
-        <span v-if="task.priority === 'T0'" class="dc-badge dc-urgent">紧急</span>
         <span :class="['dc-badge', `dc-pri-badge-${task.priority || 'T2'}`]">{{ priorityLabel(task.priority) }}</span>
         <span class="dc-badge dc-cat">{{ categoryLabel(task.category) }}</span>
       </div>

@@ -152,7 +152,9 @@
                     ✕
                   </button>
                 </div>
-                <span v-if="p.source === 'ai_generated'" class="source-badge">AI</span>
+                <span v-if="p.source !== 'upload'" class="source-badge">
+                  {{ p.source === 'task_card' ? '任务卡' : 'AI' }}
+                </span>
               </div>
             </div>
             <div v-else class="modal-empty">还没有照片，快来上传吧</div>
@@ -174,7 +176,15 @@
                   <span v-for="tag in detailPhoto.tags" :key="tag" class="detail-tag">{{ tag }}</span>
                 </div>
                 <div class="detail-meta">
-                  <span>{{ detailPhoto.source === 'ai_generated' ? 'AI 生成' : '上传' }}</span>
+                  <span>
+                    {{
+                      detailPhoto.source === 'task_card'
+                        ? '任务纪念卡'
+                        : detailPhoto.source === 'ai_generated'
+                          ? 'AI 生成'
+                          : '上传'
+                    }}
+                  </span>
                   <span>{{ formatDate(detailPhoto.created_at) }}</span>
                 </div>
                 <button class="action-btn" @click="startEditDetail">编辑信息</button>

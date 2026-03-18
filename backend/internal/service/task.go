@@ -27,7 +27,6 @@ type TaskService struct {
 	photoRepo          *repository.PhotoRepo
 	openaiClient       *openai.Client
 	imageModel         string
-	shellGiftService   *ShellGiftService
 	achievementService *AchievementService
 }
 
@@ -39,7 +38,6 @@ func NewTaskService(
 	photoRepo *repository.PhotoRepo,
 	openaiClient *openai.Client,
 	imageModel string,
-	shellGiftService *ShellGiftService,
 	achievementService *AchievementService,
 ) *TaskService {
 	return &TaskService{
@@ -50,7 +48,6 @@ func NewTaskService(
 		photoRepo:          photoRepo,
 		openaiClient:       openaiClient,
 		imageModel:         imageModel,
-		shellGiftService:   shellGiftService,
 		achievementService: achievementService,
 	}
 }
@@ -60,7 +57,7 @@ func today() time.Time {
 	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 }
 
-// GetDailyTasks returns today's tasks for a Dad user, lazily creating them if needed.
+// GetDailyTasks returns today's whisper-intel tasks for a Dad user.
 func (s *TaskService) GetDailyTasks(userID string) ([]dto.UserTaskItem, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
@@ -79,18 +76,7 @@ func (s *TaskService) GetDailyTasks(userID string) ([]dto.UserTaskItem, error) {
 		return nil, err
 	}
 
-	// Lazy initialization: assign tasks for today
-	if len(tasks) == 0 {
-		if err := s.createTasksForUser(user, userID, date); err != nil {
-			return []dto.UserTaskItem{}, nil
-		}
-		tasks, err = s.taskRepo.FindUserTasksByDate(userID, date)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return toTaskItems(tasks), nil
+	return toTaskItems(filterWhisperDrivenTasks(tasks)), nil
 }
 
 // CompleteTask marks a task as completed by the Dad user.
@@ -118,16 +104,6 @@ func (s *TaskService) CompleteTask(userID, taskID string, proofPhotoURL *string)
 		return nil, err
 	}
 
-	if s.shellGiftService != nil {
-		// Fire-and-forget: completion should not be blocked by AI generation.
-		utCopy := *ut
-		go func() {
-			if err := s.shellGiftService.CreateFromTask(utCopy); err != nil {
-				log.Printf("[TaskService] shell gift generation failed: %v", err)
-			}
-		}()
-	}
-
 	item := toTaskItem(*ut)
 	return &item, nil
 }
@@ -151,24 +127,9 @@ func (s *TaskService) GetPartnerTasks(callerID string) ([]dto.UserTaskItem, erro
 		return nil, err
 	}
 
-	// Lazily assign tasks for partner if none exist today
-	if len(tasks) == 0 {
-		partner, pErr := s.userRepo.FindByID(*user.PartnerID)
-		if pErr != nil {
-			return []dto.UserTaskItem{}, nil
-		}
-		if err := s.createTasksForUser(partner, *user.PartnerID, date); err != nil {
-			return []dto.UserTaskItem{}, nil
-		}
-		tasks, err = s.taskRepo.FindUserTasksByDate(*user.PartnerID, date)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Filter out pending tasks — mom only sees completed/verified
 	var visible []model.UserTask
-	for _, t := range tasks {
+	for _, t := range filterWhisperDrivenTasks(tasks) {
 		if t.Status != model.TaskPending {
 			visible = append(visible, t)
 		}
@@ -220,21 +181,13 @@ func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dt
 		}
 	}
 
-	// Save memory card image to mom's photo library
-	if ut.ProofPhotoURL != nil && *ut.ProofPhotoURL != "" && s.photoRepo != nil {
-		taskTitle := ut.AITitle
-		if ut.Source != model.TaskSourceAI && ut.Task != nil {
-			taskTitle = ut.Task.Title
-		}
-		photo := &model.Photo{
-			UserID:   callerID,
-			Title:    taskTitle,
-			ImageURL: *ut.ProofPhotoURL,
-			Source:   "task_card",
-		}
-		if err := s.photoRepo.Create(photo); err != nil {
-			log.Printf("[TaskService] failed to save task card to photo library: %v", err)
-		}
+	if s.openaiClient != nil && s.photoRepo != nil && s.imageModel != "" {
+		verifiedCopy := *ut
+		go func() {
+			if err := s.generateVerifiedTaskCardPhoto(callerID, verifiedCopy); err != nil {
+				log.Printf("[TaskService] failed to generate verified task card: %v", err)
+			}
+		}()
 	}
 
 	item := toTaskItem(*ut)
@@ -321,7 +274,7 @@ func toTaskItem(ut model.UserTask) dto.UserTaskItem {
 		Date:          ut.Date,
 	}
 
-	if ut.Source == model.TaskSourceAI {
+	if ut.Source != model.TaskSourceTemplate {
 		item.Title = ut.AITitle
 		item.Description = ut.AIDescription
 		item.Category = ut.AICategory
@@ -354,6 +307,26 @@ func toTaskItems(tasks []model.UserTask) []dto.UserTaskItem {
 		items[i] = toTaskItem(t)
 	}
 	return items
+}
+
+func filterWhisperDrivenTasks(tasks []model.UserTask) []model.UserTask {
+	filtered := make([]model.UserTask, 0, len(tasks))
+	for _, task := range tasks {
+		if task.Source == model.TaskSourceWhisper {
+			filtered = append(filtered, task)
+		}
+	}
+	return filtered
+}
+
+func resolveTaskContent(ut model.UserTask) (title string, description string, category string, difficulty int) {
+	if ut.Source != model.TaskSourceTemplate {
+		return ut.AITitle, ut.AIDescription, ut.AICategory, ut.AIDifficulty
+	}
+	if ut.Task != nil {
+		return ut.Task.Title, ut.Task.Description, string(ut.Task.Category), ut.Task.Difficulty
+	}
+	return "", "", "", 0
 }
 
 // createTasksForUser creates today's tasks for a user.
@@ -432,7 +405,7 @@ func (s *TaskService) createTasksForUser(user *model.User, userID string, date t
 	return nil
 }
 
-// SetBabyAge sets the baby age stage for the user and immediately regenerates tasks.
+// SetBabyAge sets the baby age stage for the user.
 func (s *TaskService) SetBabyAge(userID, ageStage string) error {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
@@ -442,17 +415,6 @@ func (s *TaskService) SetBabyAge(userID, ageStage string) error {
 	user.BabyAgeStage = &ageStage
 	if err := s.userRepo.Update(user); err != nil {
 		return fmt.Errorf("保存失败，请重试")
-	}
-
-	// Immediate regeneration: delete today's pending tasks and AI cache
-	date := today()
-	_ = s.taskRepo.DeletePendingUserTasksByDate(userID, date)
-
-	if user.PartnerID != nil {
-		ck := coupleKey(userID, *user.PartnerID)
-		_ = s.taskRepo.DeleteAICacheByCouple(ck, date.Format("2006-01-02"))
-		// Also clear partner's pending tasks so they get regenerated too
-		_ = s.taskRepo.DeletePendingUserTasksByDate(*user.PartnerID, date)
 	}
 
 	return nil
@@ -472,7 +434,7 @@ func (s *TaskService) GetBabyAge(userID string) (*dto.BabyAgeResponse, error) {
 	}, nil
 }
 
-// RegenerateTasks deletes today's pending tasks and AI cache, then regenerates.
+// RegenerateTasks returns the current whisper-driven tasks.
 func (s *TaskService) RegenerateTasks(userID string) ([]dto.UserTaskItem, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
@@ -486,21 +448,9 @@ func (s *TaskService) RegenerateTasks(userID string) ([]dto.UserTaskItem, error)
 	}
 
 	date := today()
-	dateStr := date.Format("2006-01-02")
-	ck := coupleKey(userID, *user.PartnerID)
-
-	// Delete today's pending tasks and AI cache
-	_ = s.taskRepo.DeletePendingUserTasksByDate(userID, date)
-	_ = s.taskRepo.DeleteAICacheByCouple(ck, dateStr)
-
-	// Regenerate
-	if err := s.createTasksForUser(user, userID, date); err != nil {
-		return nil, fmt.Errorf("重新生成任务失败: %w", err)
-	}
-
 	tasks, err := s.taskRepo.FindUserTasksByDate(userID, date)
 	if err != nil {
 		return nil, err
 	}
-	return toTaskItems(tasks), nil
+	return toTaskItems(filterWhisperDrivenTasks(tasks)), nil
 }

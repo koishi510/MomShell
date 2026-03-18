@@ -57,7 +57,7 @@
         </div>
         <div class="dc-action-text">
           <span class="dc-action-title">任务队列</span>
-          <span class="dc-action-desc">./tasks</span>
+          <span class="dc-action-desc">./issue</span>
         </div>
       </button>
 
@@ -96,7 +96,7 @@
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg>
         </div>
         <div class="dc-action-text">
-          <span class="dc-action-title">心声情报</span>
+          <span class="dc-action-title">心语情报</span>
           <span class="dc-action-desc">./whisper</span>
         </div>
       </button>

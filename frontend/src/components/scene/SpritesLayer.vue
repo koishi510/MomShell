@@ -73,23 +73,21 @@ function labelStyle(s: typeof SPRITES[number]) {
 const SHARED_HINTS: readonly string[] = [
   '想聊聊心事，就点那块石头呀。',
   '想看看大家在讨论什么，就去木屋吧。',
-  '点点贝壳，唤醒沉睡的记忆碎片。',
   '小车那边，藏着你们关系的小秘密哦。',
   '个人资料页里，可以慢慢整理你的专属设置。',
   '不知道先去哪？先点石头试试看吧。',
-  '想更懂自己，就先去记忆小站逛逛。',
   '跟着好奇心走，你会找到想去的地方。',
   '嘿，我是小螃蟹，随时都在这里给你指路哦。',
 ]
 
 const MOM_HINTS: readonly string[] = [
   '海星那边可以查看任务完成情况，去给他打个分吧。',
-  '对着海螺说出心里话吧，它会替你好好收藏。',
+  '对着海螺写下心愿和选择，小石光会替你整理成心语情报。',
 ]
 
 const DAD_HINTS: readonly string[] = [
-  '海星那边有今日任务，完成了会成长哦。',
-  '去海螺那边看看她的心语，也许能更懂她。',
+  '海星那边会同步她发来的心语工单，做完记得提交回执。',
+  '去海螺那边看看她的新情报，也许能更快知道她现在最需要什么。',
 ]
 
 const layerEl = ref<HTMLElement | null>(null)
@@ -100,8 +98,7 @@ const uiStore = useUiStore()
 const authStore = useAuthStore()
 
 const visibleSprites = computed(() => {
-  if (authStore.user?.role === 'mom') return SPRITES
-  return SPRITES.filter((s) => s.id !== 'gift-shell')
+  return SPRITES.filter((s) => s.id !== 'shell' && s.id !== 'gift-shell')
 })
 
 const crabHints = computed(() => {
@@ -114,7 +111,7 @@ const currentHint = ref<string>(SHARED_HINTS[0])
 const crabBubblePosition = ref<{ left: string, top: string } | null>(null)
 let bubbleTimer: ReturnType<typeof setTimeout> | null = null
 
-const CLICKABLE_SPRITES = new Set(['car', 'shell', 'gift-shell', 'chair', 'mailbox', 'bar', 'stone', 'crab'])
+const CLICKABLE_SPRITES = new Set(['car', 'chair', 'mailbox', 'bar', 'stone', 'crab'])
 
 const crabBubbleStyle = computed(() => crabBubblePosition.value ?? undefined)
 
@@ -183,8 +180,6 @@ function showCrabHint() {
 function onSpriteClick(id: string) {
   if (ctx.wasDrag()) return
   if (id === 'car') uiStore.openFeature('car')
-  else if (id === 'shell') uiStore.openFeature('memory')
-  else if (id === 'gift-shell') uiStore.openFeature('shell-gift')
   else if (id === 'chair') uiStore.openFeature('task')
   else if (id === 'mailbox') uiStore.openFeature('whisper')
   else if (id === 'bar') uiStore.openFeature('bar')

@@ -3,56 +3,44 @@
     <div v-if="visible" class="dc-dialog-backdrop" @click.self="$emit('close')">
       <div class="dc-term-modal">
         <div class="dc-term-modal-header">
-          <span>完成任务</span>
+          <span>提交任务回执</span>
           <button class="dc-term-modal-close" @click="$emit('close')">关闭</button>
         </div>
+
         <div class="dc-term-modal-body">
-          <h3 class="dc-dialog-title">生成记忆卡片</h3>
-          <p v-if="targetTitle" class="dc-dialog-sub">当前任务：{{ targetTitle }}</p>
+          <h3 class="dc-dialog-title">上传执行凭证</h3>
+          <p v-if="targetTitle" class="dc-dialog-sub">当前工单：{{ targetTitle }}</p>
+          <p class="dc-dialog-copy">可以上传一张现场照片作为执行凭证，也可以直接跳过。任务验收通过后，系统会自动为妈妈生成纪念卡片并存入照片库。</p>
 
-          <!-- Card image preview -->
-          <div v-if="previewUrl" class="dc-card-preview">
-            <img :src="previewUrl" alt="" class="dc-card-img" />
-          </div>
-
-          <!-- Creation options -->
-          <div v-if="!previewUrl" class="dc-card-options">
-            <button
-              class="dc-action-btn dc-action-btn-iri"
-              :disabled="generating || uploading"
-              @click="$emit('generate')"
-            >
-              {{ generating ? '生成中...' : 'AI生成' }}
-            </button>
+          <div class="dc-card-options">
             <label class="dc-proof-picker">
               <input
                 type="file"
                 accept="image/*"
                 capture="environment"
                 class="dc-proof-input"
-                :disabled="generating || uploading"
+                :disabled="uploading"
                 @change="$emit('upload', $event)"
               />
-              <span class="dc-action-btn dc-action-btn-outline">上传图片</span>
+              <span class="dc-action-btn dc-action-btn-outline">拍照或上传证明</span>
             </label>
           </div>
 
-          <!-- Replace after preview -->
-          <div v-else class="dc-card-replace">
-            <button class="dc-action-btn dc-btn-sm dc-action-btn-ghost" :disabled="generating || uploading" @click="$emit('reset')">重新选择</button>
+          <div v-if="previewUrl" class="dc-card-preview">
+            <img :src="previewUrl" alt="" class="dc-card-img" />
           </div>
 
           <p v-if="error" class="dc-error">{{ error }}</p>
         </div>
 
         <div class="dc-term-modal-footer">
-          <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || generating || !targetTitle" @click="$emit('submit-without-card')">跳过卡片</button>
+          <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || !targetTitle" @click="$emit('submit-without-photo')">跳过照片</button>
           <button
             class="dc-action-btn"
-            :disabled="uploading || generating || !targetTitle || !previewUrl"
-            @click="$emit('submit-with-card')"
+            :disabled="uploading || !targetTitle || !previewUrl"
+            @click="$emit('submit-with-photo')"
           >
-            {{ uploading ? '提交中...' : '提交任务' }}
+            {{ uploading ? '提交中...' : '上传并提交' }}
           </button>
         </div>
       </div>
@@ -65,18 +53,15 @@ defineProps<{
   visible: boolean
   targetTitle: string
   previewUrl: string
-  generating: boolean
   uploading: boolean
   error: string
 }>()
 
 defineEmits<{
   close: []
-  generate: []
   upload: [event: Event]
-  reset: []
-  'submit-without-card': []
-  'submit-with-card': []
+  'submit-without-photo': []
+  'submit-with-photo': []
 }>()
 </script>
 
@@ -126,7 +111,10 @@ defineEmits<{
   cursor: pointer;
   line-height: 1;
 }
-.dc-term-modal-close:hover { color: var(--dc-text, #C0CAF5); }
+
+.dc-term-modal-close:hover {
+  color: var(--dc-text, #C0CAF5);
+}
 
 .dc-term-modal-body {
   padding: 24px;
@@ -141,14 +129,52 @@ defineEmits<{
   color: var(--dc-text, #C0CAF5);
 }
 
-.dc-dialog-sub { margin: 0 0 24px; font-family: var(--dc-font-mono); font-size: 12px; color: var(--dc-comment, #565F89); }
+.dc-dialog-sub {
+  margin: 0 0 10px;
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+  color: var(--dc-comment, #565F89);
+}
 
-.dc-card-preview { position: relative; border-radius: var(--dc-radius, 2px); overflow: hidden; border: 1px solid var(--dc-border, rgba(255,255,255,0.15)); margin-bottom: 20px; }
-.dc-card-img { width: 100%; display: block; max-height: 300px; object-fit: cover; }
-.dc-card-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-.dc-proof-picker { width: 100%; cursor: pointer; display: block; }
-.dc-proof-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.dc-card-replace { margin-bottom: 16px; display: flex; justify-content: flex-end; }
+.dc-dialog-copy {
+  margin: 0 0 20px;
+  color: var(--dc-comment, #8b92b5);
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+.dc-card-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dc-proof-picker {
+  width: 100%;
+  cursor: pointer;
+  display: block;
+}
+
+.dc-proof-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.dc-card-preview {
+  border-radius: var(--dc-radius, 2px);
+  overflow: hidden;
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+}
+
+.dc-card-img {
+  width: 100%;
+  display: block;
+  max-height: 320px;
+  object-fit: cover;
+}
 
 .dc-term-modal-footer {
   display: flex;
@@ -177,21 +203,26 @@ defineEmits<{
   letter-spacing: 1px;
 }
 
-.dc-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.dc-action-btn-outline { border-color: var(--dc-accent, #7DCFFF); color: var(--dc-accent, #7DCFFF); background: transparent; }
-.dc-action-btn-outline:hover:not(:disabled) { background: rgba(125, 207, 255, 0.1); }
-.dc-action-btn-ghost { background: transparent; border-color: transparent; color: var(--dc-comment, #565F89); }
-.dc-action-btn-ghost:hover:not(:disabled) { color: var(--dc-text, #C0CAF5); }
+.dc-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-.dc-action-btn-iri {
+.dc-action-btn-outline {
   border-color: var(--dc-accent, #7DCFFF);
   color: var(--dc-accent, #7DCFFF);
   background: transparent;
 }
-.dc-action-btn-iri:hover:not(:disabled) { background: rgba(125, 207, 255, 0.1); }
 
-.dc-term-modal-footer .dc-action-btn { width: auto; min-width: 100px; padding: 10px 16px; }
-.dc-btn-sm { padding: 8px 16px; width: auto; font-size: 11px; }
+.dc-action-btn-outline:hover:not(:disabled) {
+  background: rgba(125, 207, 255, 0.1);
+}
+
+.dc-term-modal-footer .dc-action-btn {
+  width: auto;
+  min-width: 120px;
+  padding: 10px 16px;
+}
 
 .dc-error {
   margin-top: 16px;
@@ -203,7 +234,15 @@ defineEmits<{
   font-size: 12px;
 }
 
-.dc-fade-enter-active, .dc-fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
-.dc-fade-enter-from, .dc-fade-leave-to { opacity: 0; }
-.dc-fade-enter-from .dc-term-modal, .dc-fade-leave-to .dc-term-modal { transform: translateY(20px); }
+.dc-fade-enter-active, .dc-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.dc-fade-enter-from, .dc-fade-leave-to {
+  opacity: 0;
+}
+
+.dc-fade-enter-from .dc-term-modal, .dc-fade-leave-to .dc-term-modal {
+  transform: translateY(20px);
+}
 </style>

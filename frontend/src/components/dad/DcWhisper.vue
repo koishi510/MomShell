@@ -5,158 +5,157 @@
       <span class="dc-sh-text">./whisper</span>
     </div>
 
-    <!-- Mom view: write whispers -->
-    <template v-if="isMom">
-      <div class="dc-panel dc-float" style="--float-i:0">
-        <div class="dc-panel-label">写下心声</div>
-        <div class="dc-whisper-form">
-          <textarea
-            v-model="newContent"
-            class="dc-textarea"
-            placeholder="此刻你在想什么？"
-            rows="4"
-            maxlength="2000"
-          />
-          <button class="dc-execute-btn" :disabled="submitting || !newContent.trim()" @click="onSubmit">
-            <span>{{ submitting ? '保存中...' : '保存心声' }}</span>
-          </button>
-        </div>
-        <div v-if="error" class="dc-error">{{ error }}</div>
-        <div v-if="success" class="dc-success">{{ success }}</div>
-      </div>
+    <div v-if="loading && !view" class="dc-state"><span>正在同步心语情报...</span></div>
+    <div v-else-if="error && !view" class="dc-state dc-error-state"><span>{{ error }}</span></div>
 
-      <div v-if="whispers.length > 0" class="dc-panel dc-float" style="--float-i:1">
-        <div class="dc-panel-head">
-          <h3 class="dc-panel-title">我的心声（{{ whispers.length }}）</h3>
-        </div>
-        <div class="dc-whisper-list">
-          <div v-for="(w, i) in whispers" :key="w.id" class="dc-whisper-entry dc-float" :style="{ '--float-i': i + 2 }">
-            <div class="dc-entry-body">
-              <p class="dc-entry-text">{{ w.content }}</p>
-              <span class="dc-entry-time">{{ formatTime(w.created_at) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <!-- Dad view: read whispers + AI tips -->
     <template v-else>
-      <div v-if="loading" class="dc-state"><span>正在加载心声...</span></div>
-
-      <template v-else>
-        <!-- AI Tips -->
-        <div class="dc-panel dc-float" style="--float-i:0">
-          <div class="dc-panel-label">陪伴建议</div>
-          <div v-if="tips" class="dc-tips-content">
-            <p class="dc-tips-text">{{ tips }}</p>
+      <div class="dc-panel dc-float" style="--float-i:0">
+        <div class="dc-panel-label">intel.summary</div>
+        <div v-if="latestResponse" class="dc-intel-head">
+          <div>
+            <h3 class="dc-panel-title">{{ latestResponse.dad_plan_title }}</h3>
+            <p class="dc-panel-copy">{{ latestResponse.dad_headline }}</p>
           </div>
-          <div v-else class="dc-tips-action">
-            <button class="dc-execute-btn" :disabled="loadingTips" @click="onLoadTips">
-              <span>{{ loadingTips ? '生成中...' : '获取建议' }}</span>
-            </button>
-          </div>
+          <span class="dc-time-block">{{ formatTime(latestResponse.created_at) }}</span>
         </div>
+        <div v-if="latestResponse" class="dc-signal-row">
+          <span class="dc-signal-chip">{{ latestResponse.stage_label }}</span>
+          <span class="dc-signal-chip">{{ latestResponse.state_label }}</span>
+        </div>
+        <p v-if="latestResponse" class="dc-summary">{{ latestResponse.dad_summary }}</p>
+        <div v-else class="dc-empty-copy">
+          她还没有发来新的心语情报。等她在 mom 端提交问卷和一句心愿，这里会同步 AI 解读结果。
+        </div>
+      </div>
 
-        <!-- Whisper list -->
-        <div v-if="whispers.length > 0" class="dc-panel dc-float" style="--float-i:1">
-          <div class="dc-panel-head">
-            <h3 class="dc-panel-title">心声记录（{{ whispers.length }}）</h3>
-          </div>
-          <div class="dc-whisper-list">
-            <div v-for="(w, i) in whispers" :key="w.id" class="dc-whisper-entry dc-float" :style="{ '--float-i': i + 2 }">
-              <div class="dc-entry-body">
-                <p class="dc-entry-text">{{ w.content }}</p>
-                <span class="dc-entry-time">{{ formatTime(w.created_at) }}</span>
-              </div>
+      <div v-if="latestResponse?.wish_content" class="dc-panel dc-float" style="--float-i:1">
+        <div class="dc-panel-label">wish.raw</div>
+        <p class="dc-quote">“{{ latestResponse.wish_content }}”</p>
+      </div>
+
+      <div v-if="latestResponse?.dad_tasks?.length" class="dc-panel dc-float" style="--float-i:2">
+        <div class="dc-panel-head">
+          <h3 class="dc-panel-title">小石光的建议</h3>
+          <span class="dc-panel-note">工单已同步到 `./issue`</span>
+        </div>
+        <div class="dc-task-grid">
+          <article v-for="(task, index) in latestResponse.dad_tasks" :key="task.title" class="dc-task-card dc-float" :style="{ '--float-i': index + 3 }">
+            <div class="dc-task-top">
+              <span class="dc-task-badge">{{ categoryLabel(task.category) }}</span>
+              <span class="dc-task-stars">{{ difficultyStars(task.difficulty) }}</span>
             </div>
+            <h4 class="dc-task-title">{{ task.title }}</h4>
+            <p class="dc-task-desc">{{ task.description }}</p>
+            <div class="dc-task-foot">{{ priorityLabel(task.priority) }}</div>
+          </article>
+        </div>
+      </div>
+
+      <div v-if="historyList.length > 0" class="dc-panel dc-float" style="--float-i:3">
+        <div class="dc-panel-head">
+          <h3 class="dc-panel-title">最近情报记录</h3>
+          <span class="dc-panel-note">最近 {{ historyList.length }} 条</span>
+        </div>
+        <div class="dc-history-list">
+          <div v-for="(item, index) in historyList" :key="item.id" class="dc-history-entry dc-float" :style="{ '--float-i': index + 4 }">
+            <div class="dc-history-meta">
+              <span>{{ item.dad_plan_title }}</span>
+              <span>{{ formatTime(item.created_at) }}</span>
+            </div>
+            <p class="dc-history-copy">{{ item.stage_label }} / {{ item.state_label }}</p>
+            <p class="dc-history-headline">{{ item.dad_headline }}</p>
           </div>
         </div>
-        <div v-else-if="!loading" class="dc-state dc-state-sm dc-float" style="--float-i:1">暂时还没有心声记录</div>
-      </template>
+      </div>
+
+      <div v-if="error && view" class="dc-inline-error dc-float" style="--float-i:4">{{ error }}</div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { createWhisper, getWhispers, getWhisperTips, type WhisperItem } from '@/lib/api/whisper'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { getErrorMessage } from '@/lib/apiClient'
-
-const authStore = useAuthStore()
+import { getFutureLetter, type FutureLetterResponseItem, type FutureLetterView } from '@/lib/api/whisper'
 
 const props = withDefaults(defineProps<{ visible?: boolean }>(), { visible: true })
 
-const isMom = computed(() => authStore.user?.role === 'mom')
-
-const whispers = ref<WhisperItem[]>([])
+const view = ref<FutureLetterView | null>(null)
 const loading = ref(false)
-const newContent = ref('')
-const submitting = ref(false)
 const error = ref('')
-const success = ref('')
-const tips = ref('')
-const loadingTips = ref(false)
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+const latestResponse = computed<FutureLetterResponseItem | null>(() => view.value?.latest_response ?? null)
+const historyList = computed(() => view.value?.recent_responses.slice(1) ?? [])
 
 watch(() => props.visible, async (active) => {
-  if (active) {
-    error.value = ''
-    success.value = ''
-    tips.value = ''
-    loading.value = true
-    try {
-      whispers.value = await getWhispers()
-    } catch {
-      // silent
-    } finally {
-      loading.value = false
-    }
+  if (!active) {
+    stopPolling()
+    return
   }
+
+  await loadFutureLetter()
+  startPolling()
 }, { immediate: true })
 
-async function onSubmit() {
-  const content = newContent.value.trim()
-  if (!content) return
+onUnmounted(stopPolling)
 
-  error.value = ''
-  success.value = ''
-  submitting.value = true
+async function loadFutureLetter() {
+  loading.value = true
   try {
-    const item = await createWhisper(content)
-    whispers.value = [item, ...whispers.value]
-    newContent.value = ''
-    success.value = '心语已写下'
-    setTimeout(() => { success.value = '' }, 3000)
+    view.value = await getFutureLetter()
+    error.value = ''
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
-    submitting.value = false
+    loading.value = false
   }
 }
 
-async function onLoadTips() {
-  loadingTips.value = true
-  try {
-    const result = await getWhisperTips()
-    tips.value = result.tips
-    if (result.whispers.length > 0) {
-      whispers.value = result.whispers
-    }
-  } catch {
-    tips.value = '暂时无法生成建议，请稍后再试。'
-  } finally {
-    loadingTips.value = false
+function startPolling() {
+  stopPolling()
+  pollTimer = setInterval(() => {
+    void loadFutureLetter()
+  }, 5000)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
   }
 }
 
-function formatTime(iso: string) {
-  const d = new Date(iso)
-  const month = d.getMonth() + 1
-  const day = d.getDate()
-  const h = String(d.getHours()).padStart(2, '0')
-  const m = String(d.getMinutes()).padStart(2, '0')
-  return `${month}/${day} ${h}:${m}`
+function categoryLabel(category: string) {
+  const map: Record<string, string> = {
+    housework: '后勤',
+    parenting: '育儿',
+    health: '修复',
+    emotional: '陪伴',
+  }
+  return map[category] ?? category
+}
+
+function priorityLabel(priority: string) {
+  const map: Record<string, string> = {
+    T0: '立即执行',
+    T1: '今晚完成',
+    T2: '顺手补齐',
+  }
+  return map[priority] ?? priority
+}
+
+function difficultyStars(value: number) {
+  return '★'.repeat(Math.max(1, value))
+}
+
+function formatTime(value: string) {
+  const date = new Date(value)
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${month}/${day} ${hour}:${minute}`
 }
 </script>
 
@@ -169,8 +168,9 @@ function formatTime(iso: string) {
 
 .dc-float {
   animation: floatUp 0.4s ease-out both;
-  animation-delay: calc(var(--float-i, 0) * 0.06s);
+  animation-delay: calc(var(--float-i, 0) * 0.05s);
 }
+
 @keyframes floatUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
@@ -180,8 +180,16 @@ function formatTime(iso: string) {
 .dc-sh-icon { color: var(--dc-accent, #7DCFFF); }
 .dc-sh-text { font-family: var(--dc-font-mono); font-size: 13px; font-weight: bold; }
 
-.dc-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 20px; color: var(--dc-comment, #565F89); font-family: var(--dc-font-mono); font-size: 13px; }
-.dc-state-sm { padding: 30px 16px; }
+.dc-state {
+  display: flex;
+  justify-content: center;
+  padding: 56px 20px;
+  color: var(--dc-comment, #565F89);
+  font-family: var(--dc-font-mono);
+  font-size: 13px;
+}
+
+.dc-error-state { color: var(--dc-danger, #F7768E); }
 
 .dc-panel {
   background: var(--dc-surface, rgba(255, 255, 255, 0.05));
@@ -198,133 +206,115 @@ function formatTime(iso: string) {
   margin-bottom: 16px;
 }
 
-.dc-panel-head {
+.dc-intel-head,
+.dc-task-top,
+.dc-panel-head,
+.dc-history-meta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
-  padding-bottom: 12px;
-}
-
-.dc-panel-title {
-  margin: 0;
-  font-family: var(--dc-font-mono);
-  font-size: 14px;
-  color: var(--dc-text, #C0CAF5);
-}
-
-.dc-whisper-form {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
 }
 
-.dc-textarea {
-  width: 100%;
-  padding: 14px 16px;
-  background: var(--dc-bg, #1A1B26);
-  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
-  border-radius: var(--dc-radius, 2px);
-  color: var(--dc-text, #C0CAF5);
-  font-family: var(--dc-font-mono);
-  font-size: 13px;
-  line-height: 1.6;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.2s;
+.dc-panel-head {
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
 }
-.dc-textarea:focus { border-color: rgba(125, 207, 255, 0.3); }
-.dc-textarea::placeholder { color: var(--dc-comment, #565F89); }
 
-.dc-execute-btn {
+.dc-panel-title,
+.dc-task-title {
+  margin: 0;
+  color: var(--dc-text, #C0CAF5);
+}
+
+.dc-panel-copy,
+.dc-summary,
+.dc-task-desc,
+.dc-history-copy,
+.dc-history-headline,
+.dc-empty-copy,
+.dc-quote {
+  margin: 10px 0 0;
+  color: var(--dc-comment, #8b92b5);
+  line-height: 1.7;
+}
+
+.dc-panel-copy,
+.dc-history-headline {
+  color: var(--dc-accent, #7DCFFF);
+}
+
+.dc-signal-row {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.dc-signal-chip,
+.dc-task-badge {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 20px;
-  background: transparent;
-  border: 1px solid rgba(125, 207, 255, 0.3);
+  padding: 4px 10px;
+  border: 1px solid rgba(125, 207, 255, 0.25);
   border-radius: var(--dc-radius, 2px);
   color: var(--dc-accent, #7DCFFF);
   font-family: var(--dc-font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 1px;
+  font-size: 11px;
 }
-.dc-execute-btn:hover:not(:disabled) {
-  border-color: var(--dc-accent, #7DCFFF);
-  background: rgba(125, 207, 255, 0.08);
-  box-shadow: 0 0 20px rgba(125, 207, 255, 0.15);
-}
-.dc-execute-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.dc-error {
+.dc-task-grid,
+.dc-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.dc-task-card,
+.dc-history-entry {
+  border: 1px solid rgba(125, 207, 255, 0.12);
+  background: rgba(17, 24, 39, 0.45);
+  border-radius: var(--dc-radius, 2px);
+  padding: 16px;
+}
+
+.dc-task-title {
   margin-top: 12px;
-  padding: 10px 14px;
-  background: rgba(247, 118, 142, 0.08);
-  border-left: 3px solid var(--dc-danger, #F7768E);
+  font-size: 16px;
+}
+
+.dc-task-foot,
+.dc-time-block,
+.dc-panel-note,
+.dc-history-meta {
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+  color: var(--dc-comment, #565F89);
+}
+
+.dc-task-stars {
+  color: #fbbf24;
+  letter-spacing: 0.15em;
+}
+
+.dc-quote {
+  color: var(--dc-string, #9ECE6A);
+}
+
+.dc-inline-error {
   color: var(--dc-danger, #F7768E);
   font-family: var(--dc-font-mono);
   font-size: 12px;
-  border-radius: var(--dc-radius, 2px);
 }
 
-.dc-success {
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: rgba(158, 206, 106, 0.08);
-  border-left: 3px solid var(--dc-success, #9ECE6A);
-  color: var(--dc-success, #9ECE6A);
-  font-family: var(--dc-font-mono);
-  font-size: 12px;
-  border-radius: var(--dc-radius, 2px);
-}
-
-.dc-tips-content {
-  font-family: var(--dc-font-mono);
-}
-
-.dc-tips-text {
-  font-size: 13px;
-  color: var(--dc-text, #C0CAF5);
-  line-height: 1.7;
-  white-space: pre-wrap;
-  margin: 0;
-}
-
-.dc-whisper-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dc-whisper-entry {
-  display: flex;
-  gap: 10px;
-  padding: 12px;
-  background: var(--dc-bg, #1A1B26);
-  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.06));
-  border-radius: var(--dc-radius, 2px);
-  transition: border-color 0.2s;
-}
-.dc-whisper-entry:hover { border-color: rgba(125, 207, 255, 0.15); }
-
-.dc-entry-body { flex: 1; min-width: 0; }
-
-.dc-entry-text {
-  font-family: var(--dc-font-mono);
-  font-size: 13px;
-  color: var(--dc-text, #C0CAF5);
-  line-height: 1.6;
-  margin: 0 0 4px;
-  word-break: break-word;
-}
-
-.dc-entry-time {
-  font-family: var(--dc-font-mono);
-  font-size: 11px;
-  color: var(--dc-comment, #565F89);
+@media (max-width: 768px) {
+  .dc-intel-head,
+  .dc-task-top,
+  .dc-panel-head,
+  .dc-history-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

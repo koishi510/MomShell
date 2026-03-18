@@ -53,9 +53,9 @@ func main() {
 	echoRepo := repository.NewEchoRepo(db)
 	photoRepo := repository.NewPhotoRepo(db)
 	whisperRepo := repository.NewWhisperRepo(db)
+	futureLetterRepo := repository.NewFutureLetterRepo(db)
 	taskRepo := repository.NewTaskRepo(db)
 	ragRepo := repository.NewRAGRepo(db)
-	shellGiftRepo := repository.NewShellGiftRepo(db)
 	achievementRepo := repository.NewAchievementRepo(db)
 	perkCardRepo := repository.NewPerkCardRepo(db)
 
@@ -87,14 +87,11 @@ func main() {
 	chatService := service.NewChatService(chatClient, chatRepo, userRepo, ragService, firecrawlClient, cfg.JWTSecretKey)
 	echoService := service.NewEchoService(chatClient, echoRepo, userRepo, ragService)
 	photoService := service.NewPhotoService(photoRepo, userRepo, chatClient, cfg.ImageModel)
-	whisperService := service.NewWhisperService(whisperRepo, userRepo, chatClient, ragService)
-
-	// Pass nil to shell gift service when no real API key — avoids dummy client network calls
-	var shellGiftAIClient *openai.Client
+	var whisperAIClient *openai.Client
 	if cfg.OpenAIAPIKey != "" {
-		shellGiftAIClient = chatClient
+		whisperAIClient = chatClient
 	}
-	shellGiftService := service.NewShellGiftService(shellGiftRepo, userRepo, shellGiftAIClient)
+	whisperService := service.NewWhisperService(whisperRepo, futureLetterRepo, userRepo, chatRepo, taskRepo, whisperAIClient, ragService)
 
 	achievementService := service.NewAchievementService(taskRepo, achievementRepo, userRepo)
 	perkCardService := service.NewPerkCardService(perkCardRepo, userRepo)
@@ -104,7 +101,7 @@ func main() {
 	if cfg.OpenAIAPIKey != "" {
 		taskAIClient = chatClient
 	}
-	taskService := service.NewTaskService(taskRepo, userRepo, chatRepo, whisperRepo, photoRepo, taskAIClient, cfg.ImageModel, shellGiftService, achievementService)
+	taskService := service.NewTaskService(taskRepo, userRepo, chatRepo, whisperRepo, photoRepo, taskAIClient, cfg.ImageModel, achievementService)
 
 	// Ensure AI user exists for community AI replies
 	aiUserID := ensureAIUser(userRepo)
@@ -146,7 +143,6 @@ func main() {
 	photoHandler := handler.NewPhotoHandler(photoService)
 	whisperHandler := handler.NewWhisperHandler(whisperService)
 	taskHandler := handler.NewTaskHandler(taskService, achievementService)
-	shellGiftHandler := handler.NewShellGiftHandler(shellGiftService)
 	perkCardHandler := handler.NewPerkCardHandler(perkCardService)
 
 	// Setup Gin
@@ -175,7 +171,6 @@ func main() {
 			Photo:       photoHandler,
 			Whisper:     whisperHandler,
 			Task:        taskHandler,
-			ShellGift:   shellGiftHandler,
 			PerkCard:    perkCardHandler,
 		},
 	)

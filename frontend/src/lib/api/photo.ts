@@ -8,7 +8,7 @@ export interface Photo {
   image_url: string
   is_on_wall: boolean
   wall_position: number | null
-  source: 'upload' | 'ai_generated'
+  source: 'upload' | 'ai_generated' | 'task_card'
   owner_id: string
   owner_nickname: string
   created_at: string
@@ -34,10 +34,6 @@ export function uploadPhoto(file: File, title?: string): Promise<Photo> {
   formData.append('photo', file)
   if (title) formData.append('title', title)
   return apiClient.post('/api/v1/photos/upload', formData).then((r) => r.data)
-}
-
-export function generatePhoto(prompt: string): Promise<Photo> {
-  return apiClient.post('/api/v1/photos/generate', { prompt }).then((r) => r.data)
 }
 
 export function updatePhoto(

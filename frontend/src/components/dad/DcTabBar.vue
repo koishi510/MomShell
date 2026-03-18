@@ -27,7 +27,7 @@ const tabs = [
   { key: 'dashboard', label: '系统遥测' },
   { key: 'chat', label: 'AI通信' },
   { key: 'community', label: '互助网络' },
-  { key: 'whisper', label: '心声情报' },
+  { key: 'whisper', label: '心语情报' },
   { key: 'profile', label: '个人资料' },
 ]
 </script>

@@ -25,13 +25,9 @@
         :key="tabKey"
         :sorted-tasks="sortedTasks"
         :loading="loading"
-        :has-age="!!currentAge"
         :completing="completing"
-        :regenerating="regenerating"
         :error="error"
         @complete="openCompleteDialog"
-        @regenerate="onRegenerate"
-        @open-age-picker="showAgeMenu = true"
       />
 
       <!-- Dashboard -->
@@ -64,16 +60,13 @@
     <DcMemoryCardDialog
       :visible="showCompleteDialog"
       :target-title="completeTarget?.title ?? ''"
-      :preview-url="cardPreviewUrl"
-      :generating="generatingCard"
+      :preview-url="proofPreviewUrl"
       :uploading="proofUploading"
       :error="completeDialogError"
       @close="closeCompleteDialog"
-      @generate="onGenerateCard"
       @upload="onProofFileChange"
-      @reset="resetCard"
-      @submit-without-card="submitWithoutCard"
-      @submit-with-card="submitWithCard"
+      @submit-without-photo="submitCompleteWithoutPhoto"
+      @submit-with-photo="submitCompleteWithPhoto"
     />
 
     <DcAgePicker
@@ -102,13 +95,11 @@ import DcAgePicker from './DcAgePicker.vue'
 import { uploadPhoto } from '@/lib/api/photo'
 import {
   completeTask,
-  generateTaskCard,
   getAchievements,
   getBabyAge,
   getDailyTasks,
   getSkillRadar,
   getTaskStats,
-  regenerateTasks,
   type AchievementItem,
   type SkillRadar,
   type TaskStats,
@@ -132,11 +123,11 @@ function handleCommand(cmd: string) {
   const lower = cmd.toLowerCase()
   const map: Record<string, Tab> = {
     'home': 'home', './home': 'home',
-    'tasks': 'tasks', './tasks': 'tasks',
+    'issue': 'tasks', './issue': 'tasks',
     'status': 'dashboard', './status': 'dashboard',
     'chat': 'chat', './chat': 'chat',
     'community': 'community', './community': 'community',
-    'whisper': 'whisper', './whisper': 'whisper', './whisper.sh': 'whisper',
+    'whisper': 'whisper', './whisper': 'whisper', './whisper.sh': 'whisper', 'future-letter': 'whisper', './future-letter': 'whisper',
     'profile': 'profile', './profile': 'profile',
     'memory': 'chat', './memory': 'chat',
   }
@@ -175,7 +166,6 @@ const stats = ref<TaskStats | null>(null)
 const loading = ref(false)
 const error = ref('')
 const completing = ref('')
-const regenerating = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const priorityRank: Record<string, number> = { T0: 3, T1: 2, T2: 1 }
@@ -195,24 +185,10 @@ async function fetchTasks() {
   stats.value = taskStats
 }
 
-function mergeTaskList(incoming: UserTaskItem[]) {
-  for (const inc of incoming) {
-    const ex = tasks.value.find((t) => t.id === inc.id)
-    if (ex) {
-      if (ex.status !== inc.status) ex.status = inc.status
-      if (ex.score !== inc.score) ex.score = inc.score
-      if (ex.comment !== inc.comment) ex.comment = inc.comment
-      if (ex.proof_photo_url !== inc.proof_photo_url) ex.proof_photo_url = inc.proof_photo_url
-      if (ex.completed_at !== inc.completed_at) ex.completed_at = inc.completed_at
-      if (ex.scored_at !== inc.scored_at) ex.scored_at = inc.scored_at
-    }
-  }
-}
-
 async function pollTasks() {
   try {
     const [taskList, taskStats] = await Promise.all([getDailyTasks(), getTaskStats()])
-    mergeTaskList(taskList)
+    tasks.value = taskList
     if (stats.value?.xp !== taskStats.xp || stats.value?.level !== taskStats.level) {
       stats.value = taskStats
     }
@@ -221,7 +197,7 @@ async function pollTasks() {
 
 function startPolling() {
   stopPolling()
-  pollTimer = setInterval(pollTasks, 10000)
+  pollTimer = setInterval(pollTasks, 5000)
 }
 function stopPolling() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
@@ -269,21 +245,20 @@ const completeTarget = ref<UserTaskItem | null>(null)
 const proofFile = ref<File | null>(null)
 const proofUploading = ref(false)
 const completeDialogError = ref('')
-const generatingCard = ref(false)
-const cardPreviewUrl = ref('')
+const proofPreviewUrl = ref('')
 
-function resetCard() {
-  if (cardPreviewUrl.value && cardPreviewUrl.value.startsWith('blob:')) {
-    URL.revokeObjectURL(cardPreviewUrl.value)
+function resetProof() {
+  if (proofPreviewUrl.value) {
+    URL.revokeObjectURL(proofPreviewUrl.value)
   }
   proofFile.value = null
-  cardPreviewUrl.value = ''
+  proofPreviewUrl.value = ''
 }
 
 function openCompleteDialog(task: UserTaskItem) {
   completeTarget.value = task
   completeDialogError.value = ''
-  resetCard()
+  resetProof()
   showCompleteDialog.value = true
 }
 
@@ -291,35 +266,21 @@ function closeCompleteDialog() {
   showCompleteDialog.value = false
   completeTarget.value = null
   completeDialogError.value = ''
-  resetCard()
+  resetProof()
 }
 
 function onProofFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0] ?? null
-  resetCard()
+  resetProof()
   if (file) {
     proofFile.value = file
-    cardPreviewUrl.value = URL.createObjectURL(file)
+    proofPreviewUrl.value = URL.createObjectURL(file)
   }
   input.value = ''
 }
 
-async function onGenerateCard() {
-  if (!completeTarget.value) return
-  generatingCard.value = true
-  completeDialogError.value = ''
-  try {
-    const resp = await generateTaskCard(completeTarget.value.id)
-    cardPreviewUrl.value = resp.image_url
-  } catch (e) {
-    completeDialogError.value = getErrorMessage(e)
-  } finally {
-    generatingCard.value = false
-  }
-}
-
-async function submitWithoutCard() {
+async function submitCompleteWithoutPhoto() {
   if (!completeTarget.value) return
   const id = completeTarget.value.id
   completing.value = id
@@ -337,19 +298,15 @@ async function submitWithoutCard() {
   }
 }
 
-async function submitWithCard() {
-  if (!completeTarget.value || !cardPreviewUrl.value) return
+async function submitCompleteWithPhoto() {
+  if (!completeTarget.value || !proofFile.value) return
   const id = completeTarget.value.id
   completing.value = id
   proofUploading.value = true
   completeDialogError.value = ''
   try {
-    let imageUrl = cardPreviewUrl.value
-    if (proofFile.value) {
-      const uploaded = await uploadPhoto(proofFile.value, `记忆卡片：${completeTarget.value.title}`)
-      imageUrl = uploaded.image_url
-    }
-    const updated = await completeTask(id, { proof_photo_url: imageUrl })
+    const uploaded = await uploadPhoto(proofFile.value, `任务证明：${completeTarget.value.title}`)
+    const updated = await completeTask(id, { proof_photo_url: uploaded.image_url })
     tasks.value = tasks.value.map((t) => (t.id === id ? updated : t))
     closeCompleteDialog()
   } catch (e) {
@@ -370,20 +327,6 @@ async function fetchBabyAge() {
     const resp = await getBabyAge()
     currentAge.value = resp.age_stage || ''
   } catch { /* ignore */ }
-}
-
-async function onRegenerate() {
-  regenerating.value = true
-  error.value = ''
-  try {
-    const newTasks = await regenerateTasks()
-    tasks.value = newTasks
-    stats.value = await getTaskStats()
-  } catch (e) {
-    error.value = getErrorMessage(e)
-  } finally {
-    regenerating.value = false
-  }
 }
 
 async function onSelectAge(value: string) {
