@@ -197,6 +197,7 @@ func Setup(
 		whisper.GET("/tips", aiLimiter, h.Whisper.Tips)
 		whisper.GET("/future-letter", h.Whisper.FutureLetter)
 		whisper.POST("/future-letter/respond", h.Whisper.RespondFutureLetter)
+		whisper.POST("/future-letter/regenerate", h.Whisper.RegenerateFutureLetter)
 	}
 
 	// ==================== Tasks ====================

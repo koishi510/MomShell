@@ -1,8 +1,28 @@
 <template>
   <div class="dc-tab-content">
-    <div class="dc-section-header">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      <span class="dc-sh-text">./whisper</span>
+    <div class="dc-section-head">
+      <div class="dc-section-header">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span class="dc-sh-text">./whisper</span>
+      </div>
+      <button class="dc-settings-btn" type="button" @click="showSettings = !showSettings">
+        设置
+      </button>
+    </div>
+
+    <div v-if="showSettings" class="dc-settings-card">
+      <div class="dc-settings-copy">
+        <span class="dc-settings-title">情报设置</span>
+        <span class="dc-settings-note">基于最近一条 mom 心语，重新生成建议和今天的工单。</span>
+      </div>
+      <button
+        class="dc-regenerate-btn"
+        type="button"
+        :disabled="regenerating"
+        @click="$emit('regenerate-intel')"
+      >
+        {{ regenerating ? '重生成中...' : '重新生成情报建议和工单' }}
+      </button>
     </div>
 
     <div v-if="loading && !view" class="dc-state"><span>正在同步心语情报...</span></div>
@@ -23,8 +43,9 @@
           <span class="dc-signal-chip">{{ latestResponse.state_label }}</span>
         </div>
         <p v-if="latestResponse" class="dc-summary">{{ latestResponse.dad_summary }}</p>
+        <p v-if="latestResponse" class="dc-summary-note">这是一份陪伴建议，不是任务工单。</p>
         <div v-else class="dc-empty-copy">
-          她还没有发来新的心语情报。等她在 mom 端提交问卷和一句心愿，这里会同步 AI 解读结果。
+          暂无心语情报，等待同步 AI 解读。
         </div>
       </div>
 
@@ -33,31 +54,52 @@
         <p class="dc-quote">“{{ latestResponse.wish_content }}”</p>
       </div>
 
-      <div v-if="latestResponse?.dad_tasks?.length" class="dc-panel dc-float" style="--float-i:2">
+      <div v-if="latestResponse?.dad_advice_sources?.length" class="dc-panel dc-float" style="--float-i:2">
         <div class="dc-panel-head">
-          <h3 class="dc-panel-title">小石光的建议</h3>
-          <span class="dc-panel-note">工单已同步到 `./issue`</span>
+          <h3 class="dc-panel-title">建议依据</h3>
+          <span class="dc-panel-note">问卷 · 心愿 · 对话 · 记忆</span>
         </div>
-        <div class="dc-task-grid">
-          <article v-for="(task, index) in latestResponse.dad_tasks" :key="task.title" class="dc-task-card dc-float" :style="{ '--float-i': index + 3 }">
-            <div class="dc-task-top">
-              <span class="dc-task-badge">{{ categoryLabel(task.category) }}</span>
-              <span class="dc-task-stars">{{ difficultyStars(task.difficulty) }}</span>
-            </div>
-            <h4 class="dc-task-title">{{ task.title }}</h4>
-            <p class="dc-task-desc">{{ task.description }}</p>
-            <div class="dc-task-foot">{{ priorityLabel(task.priority) }}</div>
+        <div class="dc-source-list">
+          <article
+            v-for="(source, index) in latestResponse.dad_advice_sources"
+            :key="`${source.label}-${index}`"
+            class="dc-source-card dc-float"
+            :style="{ '--float-i': index + 3 }"
+          >
+            <span class="dc-source-label">{{ source.label }}</span>
+            <p class="dc-source-detail">{{ source.detail }}</p>
           </article>
         </div>
       </div>
 
-      <div v-if="historyList.length > 0" class="dc-panel dc-float" style="--float-i:3">
+      <div v-if="latestResponse?.dad_advice_items?.length" class="dc-panel dc-float" style="--float-i:3">
+        <div class="dc-panel-head">
+          <h3 class="dc-panel-title">小石光的建议</h3>
+          <span class="dc-panel-note">更适合 Dad 端阅读的非工单建议</span>
+        </div>
+        <div class="dc-advice-grid">
+          <article
+            v-for="(advice, index) in latestResponse.dad_advice_items"
+            :key="`${advice.kind}-${advice.title}`"
+            class="dc-advice-card dc-float"
+            :style="{ '--float-i': index + 4 }"
+          >
+            <div class="dc-advice-top">
+              <span class="dc-advice-badge">{{ adviceKindLabel(advice.kind) }}</span>
+            </div>
+            <h4 class="dc-task-title">{{ advice.title }}</h4>
+            <p class="dc-task-desc">{{ advice.description }}</p>
+          </article>
+        </div>
+      </div>
+
+      <div v-if="historyList.length > 0" class="dc-panel dc-float" style="--float-i:4">
         <div class="dc-panel-head">
           <h3 class="dc-panel-title">最近情报记录</h3>
           <span class="dc-panel-note">最近 {{ historyList.length }} 条</span>
         </div>
         <div class="dc-history-list">
-          <div v-for="(item, index) in historyList" :key="item.id" class="dc-history-entry dc-float" :style="{ '--float-i': index + 4 }">
+          <div v-for="(item, index) in historyList" :key="item.id" class="dc-history-entry dc-float" :style="{ '--float-i': index + 5 }">
             <div class="dc-history-meta">
               <span>{{ item.dad_plan_title }}</span>
               <span>{{ formatTime(item.created_at) }}</span>
@@ -68,7 +110,8 @@
         </div>
       </div>
 
-      <div v-if="error && view" class="dc-inline-error dc-float" style="--float-i:4">{{ error }}</div>
+      <div v-if="error && view" class="dc-inline-error dc-float" style="--float-i:5">{{ error }}</div>
+      <div v-if="actionError" class="dc-inline-error dc-float" style="--float-i:6">{{ actionError }}</div>
     </template>
   </div>
 </template>
@@ -78,11 +121,26 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { getErrorMessage } from '@/lib/apiClient'
 import { getFutureLetter, type FutureLetterResponseItem, type FutureLetterView } from '@/lib/api/whisper'
 
-const props = withDefaults(defineProps<{ visible?: boolean }>(), { visible: true })
+const props = withDefaults(defineProps<{
+  visible?: boolean
+  refreshToken?: number
+  regenerating?: boolean
+  actionError?: string
+}>(), {
+  visible: true,
+  refreshToken: 0,
+  regenerating: false,
+  actionError: '',
+})
+
+defineEmits<{
+  'regenerate-intel': []
+}>()
 
 const view = ref<FutureLetterView | null>(null)
 const loading = ref(false)
 const error = ref('')
+const showSettings = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const latestResponse = computed<FutureLetterResponseItem | null>(() => view.value?.latest_response ?? null)
@@ -97,6 +155,11 @@ watch(() => props.visible, async (active) => {
   await loadFutureLetter()
   startPolling()
 }, { immediate: true })
+
+watch(() => props.refreshToken, async () => {
+  if (!props.visible) return
+  await loadFutureLetter()
+})
 
 onUnmounted(stopPolling)
 
@@ -126,27 +189,14 @@ function stopPolling() {
   }
 }
 
-function categoryLabel(category: string) {
+function adviceKindLabel(kind: string) {
   const map: Record<string, string> = {
-    housework: '后勤',
-    parenting: '育儿',
-    health: '修复',
-    emotional: '陪伴',
+    decode: '她在表达什么',
+    opening: '怎么开口',
+    observe: '留意什么',
+    avoid: '先别这样',
   }
-  return map[category] ?? category
-}
-
-function priorityLabel(priority: string) {
-  const map: Record<string, string> = {
-    T0: '立即执行',
-    T1: '今晚完成',
-    T2: '顺手补齐',
-  }
-  return map[priority] ?? priority
-}
-
-function difficultyStars(value: number) {
-  return '★'.repeat(Math.max(1, value))
+  return map[kind] ?? '陪伴建议'
 }
 
 function formatTime(value: string) {
@@ -180,6 +230,71 @@ function formatTime(value: string) {
 .dc-sh-icon { color: var(--dc-accent, #7DCFFF); }
 .dc-sh-text { font-family: var(--dc-font-mono); font-size: 13px; font-weight: bold; }
 
+.dc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dc-settings-btn,
+.dc-regenerate-btn {
+  background: transparent;
+  border: 1px solid rgba(125, 207, 255, 0.2);
+  color: var(--dc-accent, #7DCFFF);
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+  border-radius: var(--dc-radius, 2px);
+}
+
+.dc-settings-btn {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.dc-settings-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(125, 207, 255, 0.12);
+  border-radius: var(--dc-radius, 2px);
+}
+
+.dc-settings-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dc-settings-title {
+  color: var(--dc-text, #C0CAF5);
+  font-family: var(--dc-font-mono);
+  font-size: 13px;
+}
+
+.dc-settings-note {
+  color: var(--dc-comment, #565F89);
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dc-regenerate-btn {
+  padding: 10px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dc-regenerate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .dc-state {
   display: flex;
   justify-content: center;
@@ -207,7 +322,7 @@ function formatTime(value: string) {
 }
 
 .dc-intel-head,
-.dc-task-top,
+.dc-advice-top,
 .dc-panel-head,
 .dc-history-meta {
   display: flex;
@@ -230,11 +345,13 @@ function formatTime(value: string) {
 
 .dc-panel-copy,
 .dc-summary,
+.dc-summary-note,
 .dc-task-desc,
 .dc-history-copy,
 .dc-history-headline,
 .dc-empty-copy,
-.dc-quote {
+.dc-quote,
+.dc-source-detail {
   margin: 10px 0 0;
   color: var(--dc-comment, #8b92b5);
   line-height: 1.7;
@@ -245,6 +362,11 @@ function formatTime(value: string) {
   color: var(--dc-accent, #7DCFFF);
 }
 
+.dc-summary-note {
+  color: var(--dc-comment, #565F89);
+  font-size: 13px;
+}
+
 .dc-signal-row {
   display: flex;
   flex-wrap: wrap;
@@ -253,7 +375,8 @@ function formatTime(value: string) {
 }
 
 .dc-signal-chip,
-.dc-task-badge {
+.dc-advice-badge,
+.dc-source-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -265,13 +388,15 @@ function formatTime(value: string) {
   font-size: 11px;
 }
 
-.dc-task-grid,
+.dc-source-list,
+.dc-advice-grid,
 .dc-history-list {
   display: grid;
   gap: 12px;
 }
 
-.dc-task-card,
+.dc-source-card,
+.dc-advice-card,
 .dc-history-entry {
   border: 1px solid rgba(125, 207, 255, 0.12);
   background: rgba(17, 24, 39, 0.45);
@@ -279,23 +404,21 @@ function formatTime(value: string) {
   padding: 16px;
 }
 
+.dc-source-label {
+  justify-content: flex-start;
+}
+
 .dc-task-title {
   margin-top: 12px;
   font-size: 16px;
 }
 
-.dc-task-foot,
 .dc-time-block,
 .dc-panel-note,
 .dc-history-meta {
   font-family: var(--dc-font-mono);
   font-size: 12px;
   color: var(--dc-comment, #565F89);
-}
-
-.dc-task-stars {
-  color: #fbbf24;
-  letter-spacing: 0.15em;
 }
 
 .dc-quote {
@@ -309,12 +432,18 @@ function formatTime(value: string) {
 }
 
 @media (max-width: 768px) {
+  .dc-section-head,
+  .dc-settings-card,
   .dc-intel-head,
-  .dc-task-top,
+  .dc-advice-top,
   .dc-panel-head,
   .dc-history-meta {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .dc-regenerate-btn {
+    width: 100%;
   }
 }
 </style>

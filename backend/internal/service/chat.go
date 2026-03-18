@@ -1027,7 +1027,7 @@ func formatTurns(turns []map[string]interface{}, summary string, pronoun string)
 
 	// Prepend summary of older conversations (Phase 2)
 	if summary != "" {
-		result += "【earlier conversation summary】\n" + summary + "\n\n【recent conversations】\n"
+		result += "[earlier conversation summary]\n" + summary + "\n\n[recent conversations]\n"
 	}
 
 	start := 0

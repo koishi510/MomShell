@@ -35,10 +35,10 @@
             <span class="dc-meta-sep">·</span>
             <span>{{ q.answer_count }} 条回答</span>
             <span class="dc-q-action" @click.stop="onLikeQuestion(q)">
-              <svg :class="['icon-like', { active: q.is_liked }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ q.like_count }}
+              <svg :class="['icon-like', { active: q.is_liked }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg> {{ q.like_count }}
             </span>
             <span class="dc-q-action" @click.stop="onCollectListQuestion(q)">
-              <svg :class="['icon-collect', { active: q.is_collected }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> {{ q.collection_count }}
+              <svg :class="['icon-collect', { active: q.is_collected }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg> {{ q.collection_count }}
             </span>
           </div>
         </button>
@@ -113,10 +113,10 @@
             <!-- Actions bar -->
             <div class="dc-actions-bar">
               <button class="dc-action-btn" @click="onLikeDetailQuestion">
-                <svg :class="['icon-like', { active: selectedDetail.is_liked }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ selectedDetail.like_count }}
+                <svg :class="['icon-like', { active: selectedDetail.is_liked }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg> {{ selectedDetail.like_count }}
               </button>
               <button class="dc-action-btn" @click="onCollectQuestion">
-                <svg :class="['icon-collect', { active: selectedDetail.is_collected }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> {{ selectedDetail.collection_count }}
+                <svg :class="['icon-collect', { active: selectedDetail.is_collected }]" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg> {{ selectedDetail.collection_count }}
               </button>
             </div>
 
@@ -150,7 +150,7 @@
                 </template>
                 <div class="dc-answer-meta">
                   <button class="dc-like-btn" @click="onLikeAnswer(a)">
-                    <svg :class="['icon-like', { active: a.is_liked }]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ a.like_count }}
+                    <svg :class="['icon-like', { active: a.is_liked }]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg> {{ a.like_count }}
                   </button>
                   <button class="dc-comment-toggle" @click="onToggleComments(a)">
                     评论（{{ a.comment_count }}）
@@ -170,7 +170,7 @@
                       <div class="dc-comment-body">{{ c.content }}</div>
                       <div class="dc-comment-actions">
                         <button class="dc-comment-action" @click="onLikeComment(c)">
-                          <svg :class="['icon-like', { active: c.is_liked }]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ c.like_count }}
+                          <svg :class="['icon-like', { active: c.is_liked }]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg> {{ c.like_count }}
                         </button>
                         <button class="dc-comment-action" @click="setCommentTarget(a.id, c)">回复</button>
                         <button v-if="canModify(c.author.id)" class="dc-comment-action dc-comment-del" @click="onDeleteComment(c, a.id)">删除</button>

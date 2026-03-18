@@ -4,7 +4,6 @@
     ref="container"
     @pointermove="onPointerMove"
   >
-
     <!-- Central Shell Morph -->
     <div class="shell-wrapper" ref="shellWrapper" @click="handleEnter">
       <svg class="shell-svg" viewBox="0 0 200 200">
@@ -29,7 +28,7 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
-import anime from 'animejs/lib/anime.es.js'
+import anime from 'animejs'
 import { useUiStore } from '@/stores/ui'
 
 const uiStore = useUiStore()

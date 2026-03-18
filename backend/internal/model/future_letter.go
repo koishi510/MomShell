@@ -22,11 +22,12 @@ type FutureLetterResponse struct {
 
 	WishContent *string `gorm:"type:text" json:"wish_content"`
 
-	DadPlanCode  string `gorm:"type:varchar(60);index;not null" json:"dad_plan_code"`
-	DadPlanTitle string `gorm:"type:varchar(160);not null" json:"dad_plan_title"`
-	DadHeadline  string `gorm:"type:text;not null" json:"dad_headline"`
-	DadSummary   string `gorm:"type:text;not null" json:"dad_summary"`
-	DadTasksJSON string `gorm:"type:text;not null" json:"dad_tasks_json"`
+	DadPlanCode          string `gorm:"type:varchar(60);index;not null" json:"dad_plan_code"`
+	DadPlanTitle         string `gorm:"type:varchar(160);not null" json:"dad_plan_title"`
+	DadHeadline          string `gorm:"type:text;not null" json:"dad_headline"`
+	DadSummary           string `gorm:"type:text;not null" json:"dad_summary"`
+	DadTasksJSON         string `gorm:"type:text;not null" json:"dad_tasks_json"`
+	DadAdviceSourcesJSON string `gorm:"type:text" json:"dad_advice_sources_json"`
 
 	ImagePrompt string    `gorm:"type:text;not null" json:"image_prompt"`
 	CreatedAt   time.Time `gorm:"index" json:"created_at"`

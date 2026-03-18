@@ -17,6 +17,10 @@ func (r *FutureLetterRepo) Create(item *model.FutureLetterResponse) error {
 	return r.db.Create(item).Error
 }
 
+func (r *FutureLetterRepo) Update(item *model.FutureLetterResponse) error {
+	return r.db.Save(item).Error
+}
+
 func (r *FutureLetterRepo) FindRecentByAuthorID(authorID string, limit int) ([]model.FutureLetterResponse, error) {
 	var items []model.FutureLetterResponse
 	err := r.db.Where("author_id = ?", authorID).
