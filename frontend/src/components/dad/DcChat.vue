@@ -1,73 +1,73 @@
 <template>
   <div class="dc-tab-content">
     <Transition name="dc-view" mode="out-in">
-    <!-- Inline AI memory -->
-    <DcAiMemory v-if="showInlineMemory" key="memory" @back="showInlineMemory = false; emit('update:show-memory', false)" />
+      <!-- Inline AI memory -->
+      <DcAiMemory v-if="showInlineMemory" key="memory" @back="showInlineMemory = false; emit('update:show-memory', false)" />
 
-    <div v-else key="chat" class="dc-chat-view">
-      <div class="dc-section-header">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        <span class="dc-sh-text">./chat</span>
-        <button v-if="authStore.isAuthenticated" class="dc-mem-btn" @click="showInlineMemory = true">记忆库</button>
-      </div>
-
-      <div class="dc-chat-wrap" :style="ambientStyle">
-        <!-- Ambient bg -->
-        <div class="dc-ambient-bg" :style="ambientGradientStyle" />
-
-        <!-- Grid pulse on send -->
-        <Transition name="dc-grid">
-          <div v-if="showGridPulse" class="dc-send-grid" />
-        </Transition>
-
-        <!-- Memory toast -->
-        <Transition name="dc-toast">
-          <div v-if="showMemoryToast" class="dc-memory-toast">记忆已更新</div>
-        </Transition>
-
-        <!-- Messages -->
-        <div class="dc-messages" ref="messagesEl">
-          <Transition name="dc-msg-replace" mode="out-in">
-            <div v-if="messages.length === 0 && !sending" key="empty" class="dc-chat-empty">
-              <p class="dc-empty-greeting" v-if="preferredName">你好，{{ preferredName }}</p>
-              <p class="dc-empty-greeting" v-else>你好</p>
-              <p class="dc-empty-sub">想聊什么都可以和我说。</p>
-            </div>
-            <div v-else-if="sending" key="loading" class="dc-msg-center">
-              <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
-              <div class="dc-typing"><span /><span /><span /></div>
-            </div>
-            <div v-else-if="latestAssistantMsg" :key="latestAssistantMsg.id" class="dc-msg-center">
-              <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
-              <p
-                :class="[
-                  'dc-msg-ai',
-                  latestAssistantMsg.showEffect && latestAssistantMsg.visualMeta
-                    ? `dc-fx-${latestAssistantMsg.visualMeta.effect_type}` : '',
-                ]"
-                :style="getBubbleStyle(latestAssistantMsg)"
-              >
-                {{ displayedAssistantText }}<span v-if="!typingComplete" class="dc-cursor" />
-              </p>
-            </div>
-          </Transition>
+      <div v-else key="chat" class="dc-chat-view">
+        <div class="dc-section-header">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span class="dc-sh-text">./chat</span>
+          <button v-if="authStore.isAuthenticated" class="dc-mem-btn" @click="showInlineMemory = true">记忆库</button>
         </div>
 
-        <!-- Input -->
-        <form class="dc-input-area" @submit.prevent="onSend">
-          <input
-            v-model="input"
-            type="text"
-            class="dc-chat-input"
-            placeholder="说说你的心情..."
-            :disabled="sending"
-          />
-          <button type="submit" class="dc-send-btn" :disabled="!input.trim() || sending">
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-          </button>
-        </form>
+        <div class="dc-chat-wrap" :style="ambientStyle">
+          <!-- Ambient bg -->
+          <div class="dc-ambient-bg" :style="ambientGradientStyle" />
+
+          <!-- Grid pulse on send -->
+          <Transition name="dc-grid">
+            <div v-if="showGridPulse" class="dc-send-grid" />
+          </Transition>
+
+          <!-- Memory toast -->
+          <Transition name="dc-toast">
+            <div v-if="showMemoryToast" class="dc-memory-toast">记忆已更新</div>
+          </Transition>
+
+          <!-- Messages -->
+          <div class="dc-messages" ref="messagesEl">
+            <Transition name="dc-msg-replace" mode="out-in">
+              <div v-if="messages.length === 0 && !sending" key="empty" class="dc-chat-empty">
+                <p class="dc-empty-greeting" v-if="preferredName">你好，{{ preferredName }}</p>
+                <p class="dc-empty-greeting" v-else>你好</p>
+                <p class="dc-empty-sub">想聊什么都可以和我说。</p>
+              </div>
+              <div v-else-if="sending" key="loading" class="dc-msg-center">
+                <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
+                <div class="dc-typing"><span /><span /><span /></div>
+              </div>
+              <div v-else-if="latestAssistantMsg" :key="latestAssistantMsg.id" class="dc-msg-center">
+                <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
+                <p
+                  :class="[
+                    'dc-msg-ai',
+                    latestAssistantMsg.showEffect && latestAssistantMsg.visualMeta
+                      ? `dc-fx-${latestAssistantMsg.visualMeta.effect_type}` : '',
+                  ]"
+                  :style="getBubbleStyle(latestAssistantMsg)"
+                >
+                  {{ displayedAssistantText }}<span v-if="!typingComplete" class="dc-cursor" />
+                </p>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- Input -->
+          <form class="dc-input-area" @submit.prevent="onSend">
+            <input
+              v-model="input"
+              type="text"
+              class="dc-chat-input"
+              placeholder="说说你的心情..."
+              :disabled="sending"
+            />
+            <button type="submit" class="dc-send-btn" :disabled="!input.trim() || sending">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
     </Transition>
   </div>
 </template>

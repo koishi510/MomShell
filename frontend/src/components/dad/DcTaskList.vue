@@ -1,8 +1,28 @@
 <template>
   <div class="dc-tab-content">
-    <div class="dc-section-header">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
-      <span class="dc-sh-text">./issue</span>
+    <div class="dc-section-head">
+      <div class="dc-section-header">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
+        <span class="dc-sh-text">./issue</span>
+      </div>
+      <button class="dc-settings-btn" type="button" @click="showSettings = !showSettings">
+        设置
+      </button>
+    </div>
+
+    <div v-if="showSettings" class="dc-settings-card">
+      <div class="dc-settings-copy">
+        <span class="dc-settings-title">工单设置</span>
+        <span class="dc-settings-note">重新生成最新情报建议，并同步刷新今天的工单。</span>
+      </div>
+      <button
+        class="dc-regenerate-btn"
+        type="button"
+        :disabled="regenerating"
+        @click="$emit('regenerate-intel')"
+      >
+        {{ regenerating ? '重生成中...' : '重新生成情报建议和工单' }}
+      </button>
     </div>
 
     <div v-if="loading" class="dc-state">
@@ -12,39 +32,74 @@
 
     <div v-else-if="sortedTasks.length === 0" class="dc-state">
       <span class="dc-state-icon">等待新情报</span>
-      <span>她还没有发来新的心语情报</span>
-      <span class="dc-state-copy">去 `./whisper` 看看最近的 AI 解读，或者等她提交新的问卷与心愿。</span>
+      <span>当前无待办任务</span>
+      <span class="dc-state-copy">暂无新工单，请等待心语情报同步。</span>
     </div>
 
-    <TransitionGroup v-else name="card-list" tag="div" class="dc-task-list">
-      <DcTaskCard
-        v-for="(t, index) in sortedTasks"
-        :key="t.id"
-        :task="t"
-        :index="index"
-        :completing="completing === t.id"
-        @complete="$emit('complete', $event)"
-      />
-    </TransitionGroup>
+    <div v-else class="dc-task-sections">
+      <section
+        v-for="section in groupedTasks"
+        :key="section.priority"
+        class="dc-task-section"
+      >
+        <div class="dc-task-section-head">
+          <h3 class="dc-task-section-title">{{ section.label }}</h3>
+          <span class="dc-task-section-count">{{ section.tasks.length }}</span>
+        </div>
+        <TransitionGroup name="card-list" tag="div" class="dc-task-list">
+          <DcTaskCard
+            v-for="(t, index) in section.tasks"
+            :key="t.id"
+            :task="t"
+            :index="index"
+            :completing="completing === t.id"
+            @complete="$emit('complete', $event)"
+          />
+        </TransitionGroup>
+      </section>
+    </div>
 
     <p v-if="error" class="dc-error">{{ error }}</p>
+    <p v-if="actionError" class="dc-error">{{ actionError }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import type { UserTaskItem } from '@/lib/api/task'
 import DcTaskCard from './DcTaskCard.vue'
 
-defineProps<{
+const props = defineProps<{
   sortedTasks: UserTaskItem[]
   loading: boolean
   completing: string
   error: string
+  regenerating: boolean
+  actionError: string
 }>()
 
 defineEmits<{
   complete: [task: UserTaskItem]
+  'regenerate-intel': []
 }>()
+
+const showSettings = ref(false)
+
+const priorityLabels: Record<string, string> = {
+  T0: '紧急',
+  T1: '里程碑',
+  T2: '日常',
+}
+
+const groupedTasks = computed(() =>
+  ['T0', 'T1', 'T2']
+    .map((priority) => ({
+      priority,
+      label: priorityLabels[priority],
+      tasks: props.sortedTasks.filter((task) => (task.priority || 'T2').toUpperCase() === priority),
+    }))
+    .filter((section) => section.tasks.length > 0),
+)
 </script>
 
 <style scoped>
@@ -74,6 +129,14 @@ defineEmits<{
   font-family: var(--dc-font-mono);
   font-size: 13px;
   font-weight: bold;
+}
+
+.dc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .dc-state {
@@ -110,6 +173,86 @@ defineEmits<{
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.dc-settings-btn,
+.dc-regenerate-btn {
+  background: transparent;
+  border: 1px solid rgba(125, 207, 255, 0.2);
+  color: var(--dc-accent, #7DCFFF);
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+  border-radius: var(--dc-radius, 2px);
+}
+
+.dc-settings-btn {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.dc-settings-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(125, 207, 255, 0.12);
+  border-radius: var(--dc-radius, 2px);
+}
+
+.dc-settings-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dc-settings-title,
+.dc-task-section-title {
+  margin: 0;
+  color: var(--dc-text, #C0CAF5);
+  font-family: var(--dc-font-mono);
+  font-size: 13px;
+}
+
+.dc-settings-note,
+.dc-task-section-count {
+  color: var(--dc-comment, #565F89);
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+}
+
+.dc-regenerate-btn {
+  padding: 10px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dc-regenerate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dc-task-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dc-task-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dc-task-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--dc-border, rgba(255, 255, 255, 0.15));
+}
+
 .dc-task-list {
   display: flex;
   flex-direction: column;
@@ -131,4 +274,17 @@ defineEmits<{
 .card-list-enter-from { opacity: 0; transform: translateY(20px); }
 .card-list-leave-to { opacity: 0; transform: translateX(-20px); }
 .card-list-move { transition: transform 0.3s ease; }
+
+@media (max-width: 768px) {
+  .dc-settings-card,
+  .dc-section-head,
+  .dc-task-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dc-regenerate-btn {
+    width: 100%;
+  }
+}
 </style>

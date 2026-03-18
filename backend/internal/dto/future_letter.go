@@ -14,12 +14,15 @@ type FutureLetterQuestion struct {
 	Options []FutureLetterOption `json:"options"`
 }
 
-type FutureLetterTaskItem struct {
+type FutureLetterAdviceItem struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	Category    string `json:"category"`
-	Priority    string `json:"priority"`
-	Difficulty  int    `json:"difficulty"`
+	Kind        string `json:"kind"`
+}
+
+type FutureLetterAdviceSource struct {
+	Label  string `json:"label"`
+	Detail string `json:"detail"`
 }
 
 type FutureLetterResponseItem struct {
@@ -33,11 +36,12 @@ type FutureLetterResponseItem struct {
 
 	WishContent *string `json:"wish_content"`
 
-	DadPlanCode  string                 `json:"dad_plan_code"`
-	DadPlanTitle string                 `json:"dad_plan_title"`
-	DadHeadline  string                 `json:"dad_headline"`
-	DadSummary   string                 `json:"dad_summary"`
-	DadTasks     []FutureLetterTaskItem `json:"dad_tasks"`
+	DadPlanCode      string                     `json:"dad_plan_code"`
+	DadPlanTitle     string                     `json:"dad_plan_title"`
+	DadHeadline      string                     `json:"dad_headline"`
+	DadSummary       string                     `json:"dad_summary"`
+	DadAdviceItems   []FutureLetterAdviceItem   `json:"dad_advice_items"`
+	DadAdviceSources []FutureLetterAdviceSource `json:"dad_advice_sources"`
 
 	ImagePrompt string    `json:"image_prompt"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -58,8 +62,10 @@ type FutureLetterView struct {
 }
 
 type FutureLetterRespondRequest struct {
-	LetterCode    string `json:"letter_code" binding:"required"`
-	StageOptionID string `json:"stage_option_id" binding:"required"`
-	StateOptionID string `json:"state_option_id" binding:"required"`
-	WishContent   string `json:"wish_content" binding:"max=300"`
+	LetterCode       string `json:"letter_code" binding:"required"`
+	StageOptionID    string `json:"stage_option_id" binding:"required"`
+	StateOptionID    string `json:"state_option_id" binding:"required"`
+	StageOptionLabel string `json:"stage_option_label" binding:"required"`
+	StateOptionLabel string `json:"state_option_label" binding:"required"`
+	WishContent      string `json:"wish_content" binding:"max=300"`
 }

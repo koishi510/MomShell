@@ -23,12 +23,15 @@ export interface FutureLetterQuestion {
   options: FutureLetterOption[];
 }
 
-export interface FutureLetterTaskItem {
+export interface FutureLetterAdviceItem {
   title: string;
   description: string;
-  category: string;
-  priority: string;
-  difficulty: number;
+  kind: string;
+}
+
+export interface FutureLetterAdviceSource {
+  label: string;
+  detail: string;
 }
 
 export interface FutureLetterResponseItem {
@@ -43,7 +46,8 @@ export interface FutureLetterResponseItem {
   dad_plan_title: string;
   dad_headline: string;
   dad_summary: string;
-  dad_tasks: FutureLetterTaskItem[];
+  dad_advice_items: FutureLetterAdviceItem[];
+  dad_advice_sources: FutureLetterAdviceSource[];
   image_prompt: string;
   created_at: string;
 }
@@ -82,9 +86,17 @@ export function respondFutureLetter(data: {
   letter_code: string;
   stage_option_id: string;
   state_option_id: string;
+  stage_option_label: string;
+  state_option_label: string;
   wish_content?: string;
 }): Promise<FutureLetterResponseItem> {
   return apiClient
     .post("/api/v1/whisper/future-letter/respond", data)
+    .then((r) => r.data);
+}
+
+export function regenerateFutureLetter(): Promise<FutureLetterResponseItem> {
+  return apiClient
+    .post("/api/v1/whisper/future-letter/regenerate")
     .then((r) => r.data);
 }

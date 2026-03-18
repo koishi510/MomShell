@@ -42,8 +42,14 @@
           <span>每日简报</span>
         </div>
         <div class="dc-widget-body">
-          <p class="dc-tip-text">"父亲能为孩子做的最重要的事情，就是爱他们的母亲。"</p>
-          <p class="dc-tip-sub">- 记得检查任务队列并完成使命，以此赚取经验值并解锁特权卡片。</p>
+          <div v-if="loadingTips" class="dc-loading-text" style="color: var(--dc-comment, #565F89); font-size: 13px;">正在生成 AI 简报...</div>
+          <template v-else-if="tipsData && tipsData.tips">
+            <p class="dc-tip-text">"{{ tipsData.tips }}"</p>
+          </template>
+          <template v-else>
+            <p class="dc-tip-text">"父亲能为孩子做的最重要的事情，就是爱他们的母亲。"</p>
+            <p class="dc-tip-sub">- 记得检查队列并完成使命</p>
+          </template>
         </div>
       </div>
     </div>
@@ -115,9 +121,26 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { getWhisperTips, type WhisperTips } from '@/lib/api/whisper'
+
 defineEmits<{
   navigate: [tab: string]
 }>()
+
+const tipsData = ref<WhisperTips | null>(null)
+const loadingTips = ref(false)
+
+onMounted(async () => {
+  loadingTips.value = true
+  try {
+    tipsData.value = await getWhisperTips()
+  } catch (e) {
+    console.error('Failed to load tips:', e)
+  } finally {
+    loadingTips.value = false
+  }
+})
 </script>
 
 <style scoped>

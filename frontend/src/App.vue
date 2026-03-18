@@ -25,24 +25,8 @@
   </div>
 </template>
 
-    <!-- Shared overlays (auth, role) -->
-    <AuthPanel />
-    <RoleSelectPanel />
-<<<<<<< HEAD
-=======
-    <CarPage v-if="!isDad" />
-    <CommunityPanel v-if="!isDad" />
-    <BarPage v-if="!isDad" />
-    <ChatPanel v-if="!isDad" />
-    <AiMemoryPanel v-if="!isDad" />
-    <WhisperPanel v-if="!isDad" />
-    <TaskPanel v-if="!isDad" />
->>>>>>> 430ee74 (feat: replace shell gifts with future letter workflow)
-  </div>
-</template>
-
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useBackgroundMusicLoop } from '@/composables/useBackgroundMusicLoop'
 import AnimeLanding from '@/components/overlay/AnimeLanding.vue'
 import DadConsole from '@/components/dad/DadConsole.vue'
@@ -63,40 +47,64 @@ import { useTutorial } from '@/composables/useTutorial'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
-const { startTutorial, stopTutorial, cancelPending } = useTutorial()
-
-const isDad = computed(() => authStore.isAuthenticated && authStore.user?.role === 'dad')
-
+const { startTutorial } = useTutorial()
 useBackgroundMusicLoop()
 
+const isDad = computed(() => authStore.user?.role === 'dad')
+
 onMounted(async () => {
+  // Always initialize auth state
   await authStore.init()
-})
 
-// Trigger tutorial when user enters the system (auth or guest) + no panel open
-watch(
-  () => ({
-    entered: authStore.isAuthenticated || authStore.isGuest,
-    panel: uiStore.activePanel,
-  }),
-  (state) => {
-    if (state.entered && !state.panel && !isDad.value) {
+  // Clear URL params that might be confusing
+  if (window.location.search.includes('token=') || window.location.search.includes('error=')) {
+    window.history.replaceState({}, document.title, window.location.pathname)
+  }
+
+  // Handle tutorial logic only for new standard users (not dad, not guest)
+  if (authStore.isAuthenticated && !authStore.isGuest && !isDad.value) {
+    const hasSeenTutorial = localStorage.getItem('momshell_tutorial_seen')
+    if (!hasSeenTutorial) {
       setTimeout(() => {
+        uiStore.closePanel()
         startTutorial()
-      }, 1000)
-    }
-  },
-  { deep: true, immediate: true }
-)
-
-// If a panel opens while the tutorial is pending or active, stop/cancel it
-watch(
-  () => uiStore.activePanel,
-  (panel) => {
-    if (panel) {
-      cancelPending()
-      stopTutorial()
+        localStorage.setItem('momshell_tutorial_seen', 'true')
+      }, 500)
     }
   }
-)
+})
 </script>
+
+<style>
+/* Full screen layout */
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #f7f1e3;
+}
+
+#app {
+  position: relative;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Open Sans',
+    'Helvetica Neue',
+    sans-serif;
+  color: #333;
+}
+
+.dad-mode {
+  background-color: #1A1B26; /* Terminal background */
+  color: #C0CAF5;
+}
+</style>

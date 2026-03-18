@@ -72,14 +72,13 @@
               <span class="signal-chip">{{ latestResponse.stage_label }}</span>
               <span class="signal-chip">{{ latestResponse.state_label }}</span>
             </div>
-            <div v-if="latestResponse.dad_tasks.length > 0" class="task-preview-list">
-              <article v-for="task in latestResponse.dad_tasks" :key="task.title" class="task-preview-card">
+            <div v-if="latestResponse.dad_advice_items.length > 0" class="task-preview-list">
+              <article v-for="advice in latestResponse.dad_advice_items" :key="`${advice.kind}-${advice.title}`" class="task-preview-card">
                 <div class="task-preview-top">
-                  <span class="task-badge">{{ categoryLabel(task.category) }}</span>
-                  <span class="task-inline-meta">{{ priorityLabel(task.priority) }} · {{ difficultyStars(task.difficulty) }}</span>
+                  <span class="task-badge">{{ adviceKindLabel(advice.kind) }}</span>
                 </div>
-                <h4 class="task-preview-title">{{ task.title }}</h4>
-                <p class="task-preview-desc">{{ task.description }}</p>
+                <h4 class="task-preview-title">{{ advice.title }}</h4>
+                <p class="task-preview-desc">{{ advice.description }}</p>
               </article>
             </div>
           </section>
@@ -108,7 +107,7 @@
 
       <template v-else>
         <h2 class="panel-title">心语情报</h2>
-        <p class="panel-subtitle">查看她刚刚发来的心愿、AI 解读和执行建议。</p>
+        <p class="panel-subtitle">查看她刚刚发来的问卷、心愿，以及 AI 结合对话与记忆整理出的建议。</p>
 
         <div v-if="loading && !view" class="loading-state">加载中...</div>
         <div v-else-if="error && !view" class="error-msg">{{ error }}</div>
@@ -134,26 +133,46 @@
                 <p class="card-kicker">她补充的一句心愿</p>
                 <p class="wish-note-copy">“{{ latestResponse.wish_content }}”</p>
               </div>
+              <div v-if="latestResponse.dad_advice_sources.length > 0" class="history-section">
+                <div class="section-head">
+                  <div>
+                    <p class="card-kicker">建议依据</p>
+                    <h3 class="section-title">小石光看了什么</h3>
+                  </div>
+                  <span class="section-note">问卷 · 心愿 · 对话 · 记忆</span>
+                </div>
+                <div class="history-list">
+                  <article
+                    v-for="(source, index) in latestResponse.dad_advice_sources"
+                    :key="`${source.label}-${index}`"
+                    class="history-card"
+                  >
+                    <div class="history-meta">
+                      <span>{{ source.label }}</span>
+                    </div>
+                    <p class="history-text">{{ source.detail }}</p>
+                  </article>
+                </div>
+              </div>
             </template>
             <p v-else class="card-copy">她还没有提交新的问卷与心愿。等她写下之后，这里会出现 AI 整理后的情报。</p>
           </section>
 
-          <section v-if="latestResponse?.dad_tasks?.length" class="history-section">
+          <section v-if="latestResponse?.dad_advice_items?.length" class="history-section">
             <div class="section-head">
               <div>
-                <p class="card-kicker">执行建议</p>
-                <h3 class="section-title">已同步到任务面板</h3>
+                <p class="card-kicker">AI 建议</p>
+                <h3 class="section-title">这不是工单，是更好的靠近方式</h3>
               </div>
-              <span class="section-note">去任务页提交回执</span>
+              <span class="section-note">更适合 Dad 端阅读</span>
             </div>
             <div class="task-preview-list">
-              <article v-for="task in latestResponse.dad_tasks" :key="task.title" class="task-preview-card">
+              <article v-for="advice in latestResponse.dad_advice_items" :key="`${advice.kind}-${advice.title}`" class="task-preview-card">
                 <div class="task-preview-top">
-                  <span class="task-badge">{{ categoryLabel(task.category) }}</span>
-                  <span class="task-inline-meta">{{ priorityLabel(task.priority) }} · {{ difficultyStars(task.difficulty) }}</span>
+                  <span class="task-badge">{{ adviceKindLabel(advice.kind) }}</span>
                 </div>
-                <h4 class="task-preview-title">{{ task.title }}</h4>
-                <p class="task-preview-desc">{{ task.description }}</p>
+                <h4 class="task-preview-title">{{ advice.title }}</h4>
+                <p class="task-preview-desc">{{ advice.description }}</p>
               </article>
             </div>
           </section>
@@ -223,6 +242,8 @@ const stateQuestion = computed<FutureLetterQuestion | null>(
   () => view.value?.questions.find((item) => item.id === 'state') ?? null,
 )
 const latestResponse = computed<FutureLetterResponseItem | null>(() => view.value?.latest_response ?? null)
+const selectedStageLabel = computed(() => stageQuestion.value?.options.find((item) => item.id === selectedStage.value)?.label ?? '')
+const selectedStateLabel = computed(() => stateQuestion.value?.options.find((item) => item.id === selectedState.value)?.label ?? '')
 const historyList = computed(() => view.value?.recent_responses.slice(1) ?? [])
 const dadHistoryList = computed(() => view.value?.recent_responses.slice(1) ?? [])
 const hasValidSelection = computed(() => {
@@ -300,6 +321,8 @@ async function onSubmit() {
       letter_code: view.value.letter_code,
       stage_option_id: selectedStage.value,
       state_option_id: selectedState.value,
+      stage_option_label: selectedStageLabel.value,
+      state_option_label: selectedStateLabel.value,
       wish_content: wishContent.value.trim() || undefined,
     })
     applyResponse(response)
@@ -325,27 +348,14 @@ function applyResponse(response: FutureLetterResponseItem) {
   }
 }
 
-function categoryLabel(category: string) {
+function adviceKindLabel(kind: string) {
   const map: Record<string, string> = {
-    housework: '后勤',
-    parenting: '育儿',
-    health: '修复',
-    emotional: '陪伴',
+    decode: '她在表达什么',
+    opening: '怎么开口',
+    observe: '留意什么',
+    avoid: '先别这样',
   }
-  return map[category] ?? category
-}
-
-function priorityLabel(priority: string) {
-  const map: Record<string, string> = {
-    T0: '立即执行',
-    T1: '今晚完成',
-    T2: '顺手补齐',
-  }
-  return map[priority] ?? priority
-}
-
-function difficultyStars(value: number) {
-  return '★'.repeat(Math.max(1, value))
+  return map[kind] ?? '陪伴建议'
 }
 
 function formatTime(value: string) {

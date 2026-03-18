@@ -96,3 +96,19 @@ func (h *WhisperHandler) RespondFutureLetter(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, item)
 }
+
+// POST /api/v1/whisper/future-letter/regenerate
+func (h *WhisperHandler) RegenerateFutureLetter(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	item, err := h.whisperService.RegenerateFutureLetterForDad(userID)
+	if err != nil {
+		status := http.StatusBadRequest
+		if err.Error() == "用户不存在" {
+			status = http.StatusUnauthorized
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}

@@ -27,7 +27,10 @@
         :loading="loading"
         :completing="completing"
         :error="error"
+        :regenerating="regeneratingIntel"
+        :action-error="intelActionError"
         @complete="openCompleteDialog"
+        @regenerate-intel="onRegenerateIntel"
       />
 
       <!-- Dashboard -->
@@ -50,7 +53,15 @@
       <DcCommunity v-else-if="activeTab === 'community'" :key="tabKey" :visible="activeTab === 'community'" />
 
       <!-- Whisper -->
-      <DcWhisper v-else-if="activeTab === 'whisper'" :key="tabKey" :visible="activeTab === 'whisper'" />
+      <DcWhisper
+        v-else-if="activeTab === 'whisper'"
+        :key="tabKey"
+        :visible="activeTab === 'whisper'"
+        :refresh-token="intelRefreshToken"
+        :regenerating="regeneratingIntel"
+        :action-error="intelActionError"
+        @regenerate-intel="onRegenerateIntel"
+      />
 
       <!-- Profile -->
       <DcProfile v-else-if="activeTab === 'profile'" :key="tabKey" :visible="activeTab === 'profile'" @logout="onLogout" />
@@ -109,6 +120,7 @@ import { getErrorMessage } from '@/lib/apiClient'
 import { getPerkCards, usePerkCard, type PerkCardItem } from '@/lib/api/perkCard'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
+import { regenerateFutureLetter } from '@/lib/api/whisper'
 
 const authStore = useAuthStore()
 const uiStore = useUiStore()
@@ -166,6 +178,9 @@ const stats = ref<TaskStats | null>(null)
 const loading = ref(false)
 const error = ref('')
 const completing = ref('')
+const regeneratingIntel = ref(false)
+const intelActionError = ref('')
+const intelRefreshToken = ref(0)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const priorityRank: Record<string, number> = { T0: 3, T1: 2, T2: 1 }
@@ -193,6 +208,20 @@ async function pollTasks() {
       stats.value = taskStats
     }
   } catch { /* ignore */ }
+}
+
+async function onRegenerateIntel() {
+  regeneratingIntel.value = true
+  intelActionError.value = ''
+  try {
+    await regenerateFutureLetter()
+    await fetchTasks()
+    intelRefreshToken.value++
+  } catch (e) {
+    intelActionError.value = getErrorMessage(e)
+  } finally {
+    regeneratingIntel.value = false
+  }
 }
 
 function startPolling() {
@@ -332,6 +361,7 @@ async function fetchBabyAge() {
 async function onSelectAge(value: string) {
   settingAge.value = true
   error.value = ''
+  intelActionError.value = ''
   try {
     const { setBabyAge } = await import('@/lib/api/task')
     await setBabyAge(value)
