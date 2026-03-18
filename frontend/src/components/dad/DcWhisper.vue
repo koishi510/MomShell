@@ -5,23 +5,15 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         <span class="dc-sh-text">./whisper</span>
       </div>
-      <button class="dc-settings-btn" type="button" @click="showSettings = !showSettings">
-        设置
-      </button>
-    </div>
-
-    <div v-if="showSettings" class="dc-settings-card">
-      <div class="dc-settings-copy">
-        <span class="dc-settings-title">情报设置</span>
-        <span class="dc-settings-note">基于最近一条 mom 心语，重新生成建议和今天的工单。</span>
-      </div>
       <button
-        class="dc-regenerate-btn"
+        class="dc-header-action-btn"
         type="button"
         :disabled="regenerating"
         @click="$emit('regenerate-intel')"
       >
-        {{ regenerating ? '重生成中...' : '重新生成情报建议和工单' }}
+        <svg v-if="regenerating" class="dc-spin" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg v-else viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        <span>{{ regenerating ? '重生成中...' : '重新生成' }}</span>
       </button>
     </div>
 
@@ -30,7 +22,6 @@
 
     <template v-else>
       <div class="dc-panel dc-float" style="--float-i:0">
-        <div class="dc-panel-label">intel.summary</div>
         <div v-if="latestResponse" class="dc-intel-head">
           <div>
             <h3 class="dc-panel-title">{{ latestResponse.dad_plan_title }}</h3>
@@ -43,39 +34,26 @@
           <span class="dc-signal-chip">{{ latestResponse.state_label }}</span>
         </div>
         <p v-if="latestResponse" class="dc-summary">{{ latestResponse.dad_summary }}</p>
-        <p v-if="latestResponse" class="dc-summary-note">这是一份陪伴建议，不是任务工单。</p>
-        <div v-else class="dc-empty-copy">
-          暂无心语情报，等待同步 AI 解读。
-        </div>
-      </div>
 
-      <div v-if="latestResponse?.wish_content" class="dc-panel dc-float" style="--float-i:1">
-        <div class="dc-panel-label">wish.raw</div>
-        <p class="dc-quote">“{{ latestResponse.wish_content }}”</p>
-      </div>
-
-      <div v-if="latestResponse?.dad_advice_sources?.length" class="dc-panel dc-float" style="--float-i:2">
-        <div class="dc-panel-head">
-          <h3 class="dc-panel-title">建议依据</h3>
-          <span class="dc-panel-note">问卷 · 心愿 · 对话 · 记忆</span>
-        </div>
-        <div class="dc-source-list">
-          <article
-            v-for="(source, index) in latestResponse.dad_advice_sources"
-            :key="`${source.label}-${index}`"
-            class="dc-source-card dc-float"
-            :style="{ '--float-i': index + 3 }"
-          >
-            <span class="dc-source-label">{{ source.label }}</span>
-            <p class="dc-source-detail">{{ source.detail }}</p>
+        <!-- Integrated Wish -->
+        <div v-if="latestResponse?.wish_content" class="dc-wish-block">
+          <div class="dc-wish-top">
+            <h4 class="dc-panel-title dc-wish-title">她的心愿</h4>
+            <span class="dc-source-label">原话</span>
+          </div>
+          <article class="dc-source-card dc-wish-card">
+            <p class="dc-quote">“{{ latestResponse.wish_content }}”</p>
           </article>
+        </div>
+
+        <div v-else-if="!latestResponse" class="dc-empty-copy">
+          暂无心语情报，等待同步 AI 解读。
         </div>
       </div>
 
       <div v-if="latestResponse?.dad_advice_items?.length" class="dc-panel dc-float" style="--float-i:3">
         <div class="dc-panel-head">
           <h3 class="dc-panel-title">小石光的建议</h3>
-          <span class="dc-panel-note">更适合 Dad 端阅读的非工单建议</span>
         </div>
         <div class="dc-advice-grid">
           <article
@@ -89,6 +67,23 @@
             </div>
             <h4 class="dc-task-title">{{ advice.title }}</h4>
             <p class="dc-task-desc">{{ advice.description }}</p>
+          </article>
+        </div>
+      </div>
+
+      <div v-if="latestResponse?.dad_advice_sources?.length" class="dc-panel dc-float" style="--float-i:2">
+        <div class="dc-panel-head">
+          <h3 class="dc-panel-title">建议依据</h3>
+        </div>
+        <div class="dc-source-list">
+          <article
+            v-for="(source, index) in latestResponse.dad_advice_sources"
+            :key="`${source.label}-${index}`"
+            class="dc-source-card dc-float"
+            :style="{ '--float-i': index + 3 }"
+          >
+            <span class="dc-source-label">{{ source.label }}</span>
+            <p class="dc-source-detail">{{ source.detail }}</p>
           </article>
         </div>
       </div>
@@ -140,7 +135,6 @@ defineEmits<{
 const view = ref<FutureLetterView | null>(null)
 const loading = ref(false)
 const error = ref('')
-const showSettings = ref(false)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const latestResponse = computed<FutureLetterResponseItem | null>(() => view.value?.latest_response ?? null)
@@ -191,12 +185,12 @@ function stopPolling() {
 
 function adviceKindLabel(kind: string) {
   const map: Record<string, string> = {
-    decode: '她在表达什么',
-    opening: '怎么开口',
-    observe: '留意什么',
-    avoid: '先别这样',
+    decode: '状态解读',
+    opening: '沟通建议',
+    observe: '观察建议',
+    avoid: '避免事项',
   }
-  return map[kind] ?? '陪伴建议'
+  return map[kind] ?? '行动建议'
 }
 
 function formatTime(value: string) {
@@ -425,10 +419,74 @@ function formatTime(value: string) {
   color: var(--dc-string, #9ECE6A);
 }
 
+.dc-wish-block {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--dc-border, rgba(255, 255, 255, 0.1));
+  display: grid;
+  gap: 12px;
+}
+
+.dc-wish-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dc-wish-title {
+  font-size: 14px;
+}
+
+.dc-wish-card {
+  position: relative;
+}
+
+.dc-wish-card .dc-quote {
+  margin: 0;
+  color: var(--dc-text, #C0CAF5);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
 .dc-inline-error {
   color: var(--dc-danger, #F7768E);
   font-family: var(--dc-font-mono);
   font-size: 12px;
+}
+
+.dc-header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(125, 207, 255, 0.3);
+  color: var(--dc-accent, #7DCFFF);
+  font-family: var(--dc-font-mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dc-header-action-btn:hover:not(:disabled) {
+  background: rgba(125, 207, 255, 0.1);
+  border-color: var(--dc-accent, #7DCFFF);
+}
+
+.dc-header-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dc-spin {
+  animation: dc-spin 1s linear infinite;
+}
+
+@keyframes dc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {
@@ -436,6 +494,7 @@ function formatTime(value: string) {
   .dc-settings-card,
   .dc-intel-head,
   .dc-advice-top,
+  .dc-wish-top,
   .dc-panel-head,
   .dc-history-meta {
     flex-direction: column;

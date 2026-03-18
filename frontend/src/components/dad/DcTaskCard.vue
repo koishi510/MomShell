@@ -69,7 +69,7 @@ const categoryLabels: Record<string, string> = { housework: '家务', parenting:
 function priorityLabel(p?: string): string {
   const v = (p || 'T2').toUpperCase()
   if (v === 'T0') return '紧急'
-  if (v === 'T1') return '里程碑'
+  if (v === 'T1') return '重要'
   return '日常'
 }
 
