@@ -1,9 +1,10 @@
 <template>
   <div class="dc-tab-content">
+    <Transition name="dc-view" mode="out-in">
     <!-- Inline AI memory -->
-    <DcAiMemory v-if="showInlineMemory" @back="showInlineMemory = false" />
+    <DcAiMemory v-if="showInlineMemory" key="memory" @back="showInlineMemory = false; emit('update:show-memory', false)" />
 
-    <template v-else>
+    <div v-else key="chat" class="dc-chat-view">
       <div class="dc-section-header">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="dc-sh-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         <span class="dc-sh-text">./chat</span>
@@ -66,7 +67,8 @@
           </button>
         </form>
       </div>
-    </template>
+    </div>
+    </Transition>
   </div>
 </template>
 
@@ -99,7 +101,8 @@ import {
 
 const authStore = useAuthStore()
 
-const props = withDefaults(defineProps<{ visible?: boolean }>(), { visible: true })
+const props = withDefaults(defineProps<{ visible?: boolean; showMemory?: boolean }>(), { visible: true, showMemory: false })
+const emit = defineEmits<{ 'update:show-memory': [val: boolean] }>()
 
 const messages = ref<ChatMessage[]>(_messages.map(m => ({ ...m, showEffect: false })))
 const input = ref('')
@@ -111,7 +114,11 @@ const showGridPulse = ref(false)
 const typedLength = ref(0)
 const typingComplete = ref(true)
 let typingTimer: ReturnType<typeof setInterval> | null = null
-const showInlineMemory = ref(false)
+const showInlineMemory = ref(props.showMemory)
+
+watch(() => props.showMemory, (val) => {
+  showInlineMemory.value = val
+})
 
 function startTypewriter(text: string) {
   typedLength.value = 0
@@ -345,6 +352,11 @@ async function onSend() {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* View switch transition (memory <-> chat) */
+.dc-view-enter-active { animation: fadeIn 0.3s ease-out; }
+.dc-view-leave-active { transition: opacity 0.15s ease; }
+.dc-view-leave-to { opacity: 0; }
 
 .dc-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding-top: 8px; color: var(--dc-accent, #7DCFFF); }
 .dc-sh-icon { color: var(--dc-accent, #7DCFFF); }
