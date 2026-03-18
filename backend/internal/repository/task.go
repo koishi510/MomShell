@@ -111,10 +111,10 @@ func (r *TaskRepo) FindVerifiedTasksByUserID(userID string) ([]model.UserTask, e
 
 // AI cache operations
 
-func (r *TaskRepo) FindAICache(coupleKey, date string) (*model.AIGeneratedTask, error) {
+func (r *TaskRepo) FindAICache(coupleKey, date, cacheType string) (*model.AIGeneratedTask, error) {
 	var cache model.AIGeneratedTask
 	err := r.db.Session(&gorm.Session{Logger: r.db.Logger.LogMode(logger.Silent)}).
-		Where("couple_key = ? AND date = ?", coupleKey, date).First(&cache).Error
+		Where("couple_key = ? AND date = ? AND type = ?", coupleKey, date, cacheType).First(&cache).Error
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +125,8 @@ func (r *TaskRepo) SaveAICache(cache *model.AIGeneratedTask) error {
 	return r.db.Create(cache).Error
 }
 
-func (r *TaskRepo) DeleteAICacheByCouple(coupleKey, date string) error {
-	return r.db.Where("couple_key = ? AND date = ?", coupleKey, date).
+func (r *TaskRepo) DeleteAICacheByCouple(coupleKey, date, cacheType string) error {
+	return r.db.Where("couple_key = ? AND date = ? AND type = ?", coupleKey, date, cacheType).
 		Delete(&model.AIGeneratedTask{}).Error
 }
 

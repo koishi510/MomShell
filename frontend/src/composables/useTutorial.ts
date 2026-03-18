@@ -43,9 +43,9 @@ export function useTutorial() {
     {
       element: "#sprite-star",
       popover: {
-        title: "Tasks (心语工单)",
+        title: "Tasks (任务回执)",
         description:
-          "海星这边会同步他提交的任务回执。完成、验收、留存纪念卡，都会从这里串起来。",
+          "这边会同步他提交的任务回执。完成、验收、留存纪念卡，都会从这里串起来。",
         side: "top",
         align: "center",
       },
@@ -53,9 +53,9 @@ export function useTutorial() {
     {
       element: "#sprite-conque",
       popover: {
-        title: "Whisper Intel (心语情报)",
+        title: "Whisper Intel (心语信箱)",
         description:
-          "海螺会把你的问卷选择和一句心愿整理成可执行的心语情报，再发给伴侣。",
+          "信箱会把你的问卷选择和一句心愿整理成可执行的心语情报，再发给伴侣。",
         side: "top",
         align: "center",
       },

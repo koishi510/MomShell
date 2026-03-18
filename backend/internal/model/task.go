@@ -100,13 +100,14 @@ type UserTask struct {
 	ScoredBy *User      `gorm:"foreignKey:ScoredByID" json:"scored_by,omitempty"`
 }
 
-// AIGeneratedTask caches the AI-generated task set per couple per day.
+// AIGeneratedTask caches the AI-generated content per couple per day.
 type AIGeneratedTask struct {
 	ID        uint      `gorm:"primaryKey"`
-	CoupleKey string    `gorm:"type:varchar(80);uniqueIndex:idx_couple_date" json:"couple_key"`
-	Date      string    `gorm:"type:varchar(10);uniqueIndex:idx_couple_date" json:"date"`
+	CoupleKey string    `gorm:"type:varchar(80);uniqueIndex:idx_couple_date_type" json:"couple_key"`
+	Date      string    `gorm:"type:varchar(10);uniqueIndex:idx_couple_date_type" json:"date"`
+	Type      string    `gorm:"type:varchar(20);default:'task';uniqueIndex:idx_couple_date_type" json:"type"`
 	AgeStage  string    `gorm:"type:varchar(20)" json:"age_stage"`
-	TasksJSON string    `gorm:"type:text" json:"tasks_json"`
+	Content   string    `gorm:"column:tasks_json;type:text" json:"content"` // Reusing tasks_json column for content
 	CreatedAt time.Time `json:"created_at"`
 }
 

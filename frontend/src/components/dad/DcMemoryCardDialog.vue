@@ -9,7 +9,7 @@
 
         <div class="dc-term-modal-body">
           <h3 class="dc-dialog-title">上传执行凭证</h3>
-          <p v-if="targetTitle" class="dc-dialog-sub">当前工单：{{ targetTitle }}</p>
+          <p v-if="targetTitle" class="dc-dialog-sub">当前任务：{{ targetTitle }}</p>
           <p class="dc-dialog-copy">可以上传一张现场照片作为执行凭证，也可以直接跳过。任务验收通过后，系统会自动为妈妈生成纪念卡片并存入照片库。</p>
 
           <div class="dc-card-options">

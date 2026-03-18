@@ -253,15 +253,15 @@ func getOrGenerateAITasks(
 	tctx TaskContext,
 ) ([]AITaskData, error) {
 	// Check cache
-	cache, err := taskRepo.FindAICache(ck, date)
+	cache, err := taskRepo.FindAICache(ck, date, "task")
 	if err == nil && cache != nil {
 		var tasks []AITaskData
-		if err := json.Unmarshal([]byte(cache.TasksJSON), &tasks); err == nil {
+		if err := json.Unmarshal([]byte(cache.Content), &tasks); err == nil {
 			return normalizeAITasks(tasks), nil
 		}
 		// Bad cache entry — delete it so the unique index won't block re-save
 		log.Printf("[TaskAI] cache parse error for %s/%s, deleting and regenerating", ck, date)
-		_ = taskRepo.DeleteAICacheByCouple(ck, date)
+		_ = taskRepo.DeleteAICacheByCouple(ck, date, "task")
 	}
 
 	// Generate
@@ -275,8 +275,9 @@ func getOrGenerateAITasks(
 	cacheEntry := &model.AIGeneratedTask{
 		CoupleKey: ck,
 		Date:      date,
+		Type:      "task",
 		AgeStage:  tctx.AgeStage,
-		TasksJSON: string(tasksJSON),
+		Content:   string(tasksJSON),
 	}
 	if err := taskRepo.SaveAICache(cacheEntry); err != nil {
 		log.Printf("[TaskAI] failed to cache AI tasks: %v", err)

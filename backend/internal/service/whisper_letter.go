@@ -169,8 +169,8 @@ var toddlerAgeStages = map[string]bool{
 var overviewMissionTemplates = map[string]dadMissionTemplate{
 	"PREGNANCY:PHYSICAL_PAIN": {
 		Code:     "pregnancy-edema",
-		Title:    "消肿计划工单",
-		Headline: "[核心指令] 今晚请执行消肿计划。",
+		Title:    "消肿行动计划",
+		Headline: "[今日侧重] 今晚请执行消肿计划。",
 		Summary:  "她现在更需要被温柔地修复，而不是一句“多喝水”。先从腿脚、皮肤和站立负担开始减压。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "检查脚踝水肿", Description: "先看脚踝和小腿是否明显发紧，问一句今天站得久不久。", Category: "health", Priority: "T0", Difficulty: 2},
@@ -181,8 +181,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"PREGNANCY:EXHAUSTED": {
 		Code:     "pregnancy-rest",
-		Title:    "静养补觉工单",
-		Headline: "[核心指令] 今晚请把她的体力还回去一点。",
+		Title:    "静养补觉计划",
+		Headline: "[今日侧重] 今晚请把她的体力还回去一点。",
 		Summary:  "孕期的累不是忍一忍就过去。把琐事抽走，给她一段不被打断的休息，比口头安慰更有效。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "接管晚间杂务", Description: "把厨房收尾、外卖、洗漱前准备一并接走，别让她再站着忙。", Category: "housework", Priority: "T0", Difficulty: 2},
@@ -193,8 +193,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"PREGNANCY:MENTAL_SPACE": {
 		Code:     "pregnancy-space",
-		Title:    "留白陪伴工单",
-		Headline: "[核心指令] 今晚请替她挡掉一点世界的声音。",
+		Title:    "留白陪伴计划",
+		Headline: "[今日侧重] 今晚请替她挡掉一点世界的声音。",
 		Summary:  "她不是不需要你，而是需要一个不用继续做决定、解释和撑场的晚上。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "接管外界回应", Description: "家务安排、家人消息、临时沟通先由你挡下，让她先退出调度位。", Category: "housework", Priority: "T0", Difficulty: 2},
@@ -205,8 +205,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"INFANT_0_12M:PHYSICAL_PAIN": {
 		Code:     "infant-relief",
-		Title:    "抱睡减负工单",
-		Headline: "[核心指令] 今晚请把她的腰背和手腕接过去一会儿。",
+		Title:    "抱睡减负计划",
+		Headline: "[今日侧重] 今晚请把她的腰背和手腕接过去一会儿。",
 		Summary:  "新生儿阶段的身体负荷很具体。减一段抱娃时间、少一次弯腰，都会让她好过很多。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "承包一轮抱哄", Description: "今晚主动接手一轮抱哄、拍嗝或安抚，把她的手腕先放下来。", Category: "parenting", Priority: "T0", Difficulty: 3},
@@ -217,8 +217,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"INFANT_0_12M:EXHAUSTED": {
 		Code:     "infant-night-shift",
-		Title:    "深夜静音作战工单",
-		Headline: "[核心指令] 承包零点后的护理。",
+		Title:    "深夜静音计划",
+		Headline: "[今日侧重] 承包零点后的护理。",
 		Summary:  "她现在最缺的不是建议，是一段真实可落地的睡眠。今晚请把最容易把人拖垮的那段夜班接过去。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "承包零点后换尿布", Description: "零点后先由你处理换尿布和安抚，让她少醒一次是一次。", Category: "parenting", Priority: "T0", Difficulty: 3},
@@ -229,8 +229,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"INFANT_0_12M:MENTAL_SPACE": {
 		Code:     "infant-breathing-room",
-		Title:    "换班透气工单",
-		Headline: "[核心指令] 请给她腾出一段完整不抱娃的时间。",
+		Title:    "换班透气计划",
+		Headline: "[今日侧重] 请给她腾出一段完整不抱娃的时间。",
 		Summary:  "她不是不爱孩子，她只是需要一小段重新做回自己的空当。你要做的是稳稳接班，而不是在门口等她回来继续上岗。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "完整接班 45 分钟", Description: "明确接手哄娃、换尿布和观察状态，让她离开这条照护链 45 分钟。", Category: "parenting", Priority: "T0", Difficulty: 3},
@@ -241,8 +241,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"TODDLER_2Y:PHYSICAL_PAIN": {
 		Code:     "toddler-low-impact",
-		Title:    "低冲击接管工单",
-		Headline: "[核心指令] 今晚请把高强度体力活从她身上拆下来。",
+		Title:    "低冲击接管计划",
+		Headline: "[今日侧重] 今晚请把高强度体力活从她身上卸下来。",
 		Summary:  "两岁以上的高频追跑、抱起和收拾最磨人。你接手的不是一件事，是那种停不下来的消耗。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "接管跑跳陪玩", Description: "晚饭后 20 分钟高能陪玩由你来，减少她跟着追、蹲、抱。", Category: "parenting", Priority: "T0", Difficulty: 3},
@@ -253,8 +253,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"TODDLER_2Y:EXHAUSTED": {
 		Code:     "toddler-bedtime-cover",
-		Title:    "早睡护航工单",
-		Headline: "[核心指令] 今晚请一口气护送她下班。",
+		Title:    "早睡护航计划",
+		Headline: "[今日侧重] 今晚请一口气护送她下班。",
 		Summary:  "成长期的累往往来自一整天不停切换。你要做的是把睡前那段最吵、最碎的流程整段接走。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "接管睡前高频流程", Description: "洗澡、换衣、讲故事、关灯前安抚，今晚尽量由你连着做完。", Category: "parenting", Priority: "T0", Difficulty: 4},
@@ -265,8 +265,8 @@ var overviewMissionTemplates = map[string]dadMissionTemplate{
 	},
 	"TODDLER_2Y:MENTAL_SPACE": {
 		Code:     "toddler-energy-takeover",
-		Title:    "能量接管计划工单",
-		Headline: "[核心指令] 启动能量接管计划。",
+		Title:    "能量接管计划",
+		Headline: "[今日侧重] 启动能量接管计划。",
 		Summary:  "她现在需要的不是“你去休息吧”这句话，而是你真的把孩子高能量的那一面接住，让她短暂退出妈妈模式。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "接管睡前 15 分钟高能运动", Description: "带娃在客厅或户外做 15 分钟跑跳游戏，把剩余电量消耗掉。", Category: "parenting", Priority: "T0", Difficulty: 3},
@@ -297,12 +297,19 @@ func (s *WhisperService) GetFutureLetterView(callerID string) (*dto.FutureLetter
 
 	currentAgeStage := resolvedFutureLetterAgeStage(user, s.userRepo, s.chatRepo)
 
-	// Use AI to generate template dynamically
+	// Use AI to generate template dynamically (skip for Dad, cache for Mom)
 	var template futureLetterTemplate
-	if s.aiClient != nil {
-		prompt := fmt.Sprintf(`[MomShell 垂直场景“时空关怀”脚本引擎]
+	if user.Role == model.RoleMom && s.aiClient != nil {
+		ck := coupleKey(user.ID, *user.PartnerID)
+		date := time.Now().Format("2006-01-02")
+		if cache, err := s.taskRepo.FindAICache(ck, date, "future-letter-template"); err == nil && cache != nil {
+			_ = json.Unmarshal([]byte(cache.Content), &template)
+		}
+
+		if template.Code == "" {
+			prompt := fmt.Sprintf(`[MomShell 垂直场景“时空关怀”脚本引擎]
 Role:
-你是一位走过育儿长路、温柔睿智的“未来的自己”。你正在给过去那个正处于育儿难关中的自己写信。
+你是一位走过育儿长路、温柔睿智的“未来的自己”。你正在给过去那个正处于育儿难关中的自己写信.
 
 Objective:
 通过一封带有感官温度的信件，引导用户完成一次特定场景下的需求调研。我们需要通过互动，识别用户在该任务中的当前进度和核心卡点（瓶颈）。
@@ -346,28 +353,38 @@ Structure (必须遵循的模板结构) 并严格输出为以下JSON格式：
   ]
 }`, currentAgeStage)
 
-		respStr, err := s.aiClient.Chat(context.Background(), []openai.Message{
-			{Role: "user", Content: prompt},
-		})
-		if err == nil {
-			var aiTemplate struct {
-				Title      string                     `json:"title"`
-				Intro      string                     `json:"intro"`
-				Outro      string                     `json:"outro"`
-				SceneHint  string                     `json:"scene_hint"`
-				WishPrompt string                     `json:"wish_prompt"`
-				Questions  []dto.FutureLetterQuestion `json:"questions"`
-			}
-			if err := json.Unmarshal([]byte(strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(respStr), "```"), "```json")), &aiTemplate); err == nil {
-				template = futureLetterTemplate{
-					Code:       fmt.Sprintf("ai-dynamic-%d", time.Now().Unix()),
-					Title:      aiTemplate.Title,
-					Intro:      aiTemplate.Intro,
-					Outro:      aiTemplate.Outro,
-					Signature:  "小石光",
-					WishPrompt: aiTemplate.WishPrompt,
-					SceneHint:  aiTemplate.SceneHint,
-					Questions:  aiTemplate.Questions,
+			respStr, err := s.aiClient.Chat(context.Background(), []openai.Message{
+				{Role: "user", Content: prompt},
+			})
+			if err == nil {
+				var aiTemplate struct {
+					Title      string                     `json:"title"`
+					Intro      string                     `json:"intro"`
+					Outro      string                     `json:"outro"`
+					SceneHint  string                     `json:"scene_hint"`
+					WishPrompt string                     `json:"wish_prompt"`
+					Questions  []dto.FutureLetterQuestion `json:"questions"`
+				}
+				if err := json.Unmarshal([]byte(strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(respStr), "```"), "```json")), &aiTemplate); err == nil {
+					template = futureLetterTemplate{
+						Code:       fmt.Sprintf("ai-dynamic-%d", time.Now().Unix()),
+						Title:      aiTemplate.Title,
+						Intro:      aiTemplate.Intro,
+						Outro:      aiTemplate.Outro,
+						Signature:  "——未来的自己",
+						WishPrompt: aiTemplate.WishPrompt,
+						SceneHint:  aiTemplate.SceneHint,
+						Questions:  aiTemplate.Questions,
+					}
+					// Cache it
+					templateJSON, _ := json.Marshal(template)
+					_ = s.taskRepo.SaveAICache(&model.AIGeneratedTask{
+						CoupleKey: ck,
+						Date:      date,
+						Type:      "future-letter-template",
+						AgeStage:  currentAgeStage,
+						Content:   string(templateJSON),
+					})
 				}
 			}
 		}
@@ -644,39 +661,30 @@ func (s *WhisperService) translateDadAdviceWithAI(
 你的任务是读取妈妈本次问卷、她补充的心愿、她与 AI 的聊天记录和记忆，生成一份给爸爸看的陪伴建议卡。
 
 严格要求：
-- 这不是 issue 工单，不要使用“工单、执行、指令、T0/T1/T2、优先级”这类语言
-- 你会同时看到已经同步到任务系统的执行工单，请不要重复那些工单里的动作
-- 这里不是任务区，禁止再给家务、育儿、陪诊、预约、整理、收纳、接管流程、跑腿、准备物品这类执行任务
-- 输出 4 条建议，必须且只能包含 1 条 decode、1 条 opening、1 条 observe、1 条 avoid
-- decode 是帮爸爸理解：她今天真正需要被接住的是什么
-- opening 是一句更好的开口方式
-- observe 是执行完任务后，今天要留意的细微信号
-- avoid 是今天不要说或不要做的事
-- kind 只能是 decode、opening、observe、avoid
-- title 要短，4 到 10 个中文字符
-- description 用 1 到 2 句话写具体建议，语气温和，不要训诫，不要空话
-- 建议必须偏“理解、表达、观察、避坑”，而不是“再安排一个动作”
-- summary 用 1 到 2 句话解释她此刻更需要什么
-- headline 不要以“[核心指令]”开头，不要使用工单口吻
-- sources 返回 2 到 4 条，必须真实对应你看到的依据，不要编造
+- 语气必须温和、细腻、富有同理心。仿佛一个懂她的老友在提醒你。
+- 禁止使用“工单、工单号、指令、任务、同步、执行、系统、T0/T1/T2、优先级、反馈”等词汇。
+- 输出 4 条建议，必须且只能包含 1 条 decode、1 条 opening、1 条 observe、1 条 avoid。
+- decode：帮爸爸解读她行为背后的情绪，如“她其实是想说...”。
+- opening：给出一句温暖、不生硬的开场白。
+- observe：提醒爸爸观察她的一个小动作或表情变化。
+- avoid：提醒爸爸今天避开哪个雷区。
+- title 必须短，4 到 8 个中文字符，不要有系统标签感。
+- summary 是一句总结性的叮嘱，温暖有力，不要有指令感。
+- headline 是一句温和的现状判断。
+- sources 对应你看到的真实依据。
 
 只返回 JSON 对象，不要附加解释，不要使用 Markdown 代码块。
 JSON 格式：
 {
-  "title": "建议卡标题",
-  "headline": "一句温和的判断",
-  "summary": "为什么今天该这样靠近她",
-  "sources": [
-    {
-      "label": "问卷信号",
-      "detail": "......"
-    }
-  ],
+  "title": "情报主题",
+  "headline": "温和的现状判断",
+  "summary": "一句温暖的总结性叮嘱",
+  "sources": [{"label": "依据来源", "detail": "具体内容"}],
   "items": [
     {
-      "title": "她在表达什么",
-      "description": "......",
-      "kind": "decode"
+      "title": "解析/开口/观察/避坑",
+      "description": "具体的温暖建议",
+      "kind": "decode/opening/observe/avoid"
     }
   ]
 }`
@@ -716,12 +724,13 @@ JSON 格式：
 		sb.WriteString("\n")
 	}
 	if len(mission.Tasks) > 0 {
-		sb.WriteString("\n已经同步到任务系统的执行工单（请不要重复这些动作）：\n")
+		sb.WriteString("\n已经同步到任务系统的行动计划（请不要重复这些动作）：\n")
 		for _, task := range mission.Tasks {
-			fmt.Fprintf(&sb, "- %s：%s\n", task.Title, task.Description)
+			fmt.Fprintf(&sb, "- %s: %s\n", task.Title, task.Description)
 		}
+
+		sb.WriteString("\n请基于这些信息，为 Dad 端生成一份非指令化的陪伴建议卡。")
 	}
-	sb.WriteString("\n请基于这些信息，为 Dad 端生成一份非工单化的陪伴建议卡。")
 
 	reqCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -770,16 +779,7 @@ JSON 格式：
 	}, nil
 }
 
-func (s *WhisperService) translateDadMissionWithAI(
-	author *model.User,
-	letterCode string,
-	ageStage string,
-	primaryTag string,
-	primaryLabel string,
-	secondaryTag string,
-	secondaryLabel string,
-	wish string,
-) (dadMissionTemplate, error) {
+func (s *WhisperService) translateDadMissionWithAI(author *model.User, letterCode string, ageStage string, primaryTag string, primaryLabel string, secondaryTag string, secondaryLabel string, wish string) (dadMissionTemplate, error) {
 	if s.aiClient == nil {
 		return dadMissionTemplate{}, fmt.Errorf("ai unavailable")
 	}
@@ -842,48 +842,29 @@ func (s *WhisperService) translateDadMissionWithAI(
 	systemPrompt := `你是 MomShell 的“心语情报编译器”。
 你的任务是：读取妈妈今天在心语情报问卷中的选择、她补充的心愿、她与 AI 的聊天记忆、过往心愿记录和历史情报，把这些信息转译成给爸爸的精准行动指令。
 
-你需要参考以下示例的风格来生成：
-[示例1]
-条件：孕中晚期 / 还在“合体”中
-输出：
-headline: "[核心指令] 今晚请执行消肿计划。"
-tasks: [{"title": "执行消肿计划", "description": "检查她的脚踝是否有水肿，帮她涂抹防妊娠纹霜，或者进行10分钟足部放松。这比说“多喝水”有效100倍。", "category": "health", "priority": "T0", "difficulty": 2}]
-
-[示例2]
-条件：0-12个月 / TA还很软糯
-输出：
-headline: "[核心指令] 承包零点后的护理。"
-tasks: [{"title": "接管拍嗝与哄睡", "description": "宝宝喝完奶后，请把手掌微微扣起，呈“空心掌”（像握着一个蛋）。让宝宝坐在你的大腿上，身体略微前倾。一只手用虎口扶住宝宝的下巴和胸部（避开脖子），另一只手在背部由下向上轻拍或转圈揉搓。直到听见一声“隔”。", "category": "parenting", "priority": "T0", "difficulty": 3}]
-
-[示例3]
-条件：2岁+ / 已是“满地跑”
-输出：
-headline: "[核心指令] 启动能量接管计划。"
-tasks: [{"title": "接管睡前大消耗", "description": "接管“睡前大消耗”环节，带娃在客厅进行15分钟跑跳游戏。把安静的时间留给老婆，让她去洗个热水澡或者放空一会儿。", "category": "parenting", "priority": "T0", "difficulty": 3}]
+我们需要你生成极具落地感的行动，直接告诉爸爸他今晚该做什么来支持老婆。
 
 严格要求：
-- 必须优先回应妈妈今天这份情报里的真实诉求，不能忽视当前主题。
-- 必须贴合宝宝当前年龄阶段，不能脱离年龄乱提建议。
-- 模仿示例的语气，指令要非常具体、有画面感、有步骤（如空心掌怎么拍、去哪散步等）。
+- 指令要非常具体、有画面感、有步骤。
 - 输出 1 到 3 个任务。
-- title 要短、像任务关键词，4 到 12 个中文字符即可。
-- description 只写具体、操作性强的动作，直接告诉爸爸怎么做。
+- 禁止使用“工单、执行、T0/T1/T2、优先级、反馈、汇报”等机械化的系统词汇。
+- title 要短（4到10个字），有行动感。
+- description 指导性强，不要说废话，不要讲大道理。
 - category 只能是 housework、parenting、health、emotional。
-- priority 只能是 T0、T1、T2。
-- difficulty 只能是 1 到 4 的整数。
-- headline 要以“[核心指令]”开头。
-- summary 用 1 到 2 句话解释为什么要执行这个指令（例如：“这比说多喝水有效一百倍”）。
+- priority 依然返回 T0、T1、T2 格式（供后端使用），但在展示字段中不要体现这个词。
+- headline 是一句掷地有声的行动口号，不要以“[核心指令]”开头，可以尝试用“[今日侧重]”或直接描述目标。
+- summary 是一句解释为什么要这么做的理由，温暖且有说服力。
 
 只返回 JSON 对象，不要附加解释，不要使用 Markdown 代码块。
 JSON 格式：
 {
-  "title": "工单标题",
-  "headline": "[核心指令] ...",
+  "title": "行动主题",
+  "headline": "[今日侧重] ...",
   "summary": "...",
   "tasks": [
     {
-      "title": "任务关键词",
-      "description": "具体行动",
+      "title": "具体任务名",
+      "description": "怎么做...",
       "category": "housework",
       "priority": "T0",
       "difficulty": 1
@@ -921,11 +902,12 @@ JSON 格式：
 		sb.WriteString("\n")
 	}
 	if len(responseLines) > 0 {
-		sb.WriteString("\n历史情报与已生成工单记录：\n")
+		sb.WriteString("\n历史情报与已生成行动建议记录：\n")
 		sb.WriteString(strings.Join(responseLines, "\n"))
 		sb.WriteString("\n")
 	}
-	sb.WriteString("\n请把这些信息编译成爸爸今天的执行工单。")
+
+	sb.WriteString("\n请把这些信息编译成爸爸今天的具体行动建议。")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -1079,7 +1061,7 @@ func (s *WhisperService) RegenerateFutureLetterForDad(callerID string) (*dto.Fut
 		wish,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("重新生成工单失败，请稍后再试")
+		return nil, fmt.Errorf("重新生成任务失败，请稍后再试")
 	}
 
 	advice := s.buildDadAdvice(
@@ -1094,7 +1076,7 @@ func (s *WhisperService) RegenerateFutureLetterForDad(callerID string) (*dto.Fut
 	)
 
 	if err := s.syncDadMissionTasks(user.ID, author.ID, mission); err != nil {
-		return nil, fmt.Errorf("重新生成工单失败，请重试")
+		return nil, fmt.Errorf("重新生成任务失败，请重试")
 	}
 
 	itemsJSON, _ := json.Marshal(advice.Items)
@@ -1226,7 +1208,7 @@ func fallbackAdviceSummary(ctx futureLetterAdviceContext) string {
 		summary = "今天这份建议同时参考了她在问卷里的状态和她补充写下的心愿。先让她少解释一点、少承担一点，比急着给方案更有效。"
 	}
 	if ctx.MemorySummary != "" || len(ctx.FactLines) > 0 {
-		summary = "今天这份建议除了参考问卷和心愿，也结合了她与 AI 的聊天摘要和记忆。重点不是重复工单，而是用她更能接住的方式靠近她。"
+		summary = "今天这份建议除了参考问卷和心愿，也结合了她与 AI 的聊天摘要和记忆。重点不是重复说教，而是用她更能接住的方式靠近她。"
 	}
 	return summary
 }
@@ -1486,9 +1468,10 @@ func compileOverviewMission(stageTag, stateTag string) dadMissionTemplate {
 
 	return dadMissionTemplate{
 		Code:     "default-gentle-cover",
-		Title:    "温柔接管工单",
-		Headline: "[核心指令] 今晚请先替她接一段力。",
-		Summary:  "先把最费神、最费体力的部分接过去，再问她还想要什么。",
+		Title:    "温柔分担计划",
+		Headline: "[今日侧重] 今晚请先替她接一段力。",
+
+		Summary: "先把最费神、最费体力的部分接过去，再问她还想要什么。",
 		Tasks: []dadMissionTaskDef{
 			{Title: "接走一段高消耗流程", Description: "找出今天最累的那一段，由你整段接手完成。", Category: "parenting", Priority: "T0", Difficulty: 2},
 			{Title: "补齐手边资源", Description: "把水、热饮、纸巾、毛毯和常用物品放到她伸手就能拿到的位置。", Category: "housework", Priority: "T1", Difficulty: 1},
@@ -1728,7 +1711,9 @@ func (s *WhisperService) syncDadMissionTasks(dadID, momID string, mission dadMis
 	if err := s.taskRepo.DeletePendingUserTasksByDate(dadID, date); err != nil {
 		return err
 	}
-	_ = s.taskRepo.DeleteAICacheByCouple(ck, dateStr)
+	_ = s.taskRepo.DeleteAICacheByCouple(ck, dateStr, "task")
+	_ = s.taskRepo.DeleteAICacheByCouple(ck, dateStr, "tips")
+	_ = s.taskRepo.DeleteAICacheByCouple(ck, dateStr, "future-letter-template")
 
 	for _, task := range mission.Tasks {
 		ut := &model.UserTask{
