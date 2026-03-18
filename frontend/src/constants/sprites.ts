@@ -134,7 +134,7 @@ export const SPRITES: SpriteData[] = [
     top: "22%",
     width: "12vw",
     rotate: 0,
-    label: "心愿签",
+    label: "心语情报",
     labelSize: "1.2rem",
     mobile: { width: "15vw", left: "56%", top: "31%" },
     landscape: { width: "8vw", left: "50%", top: "15%" },

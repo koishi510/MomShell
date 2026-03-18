@@ -59,6 +59,7 @@ type TaskSource string
 const (
 	TaskSourceTemplate TaskSource = "template"
 	TaskSourceAI       TaskSource = "ai"
+	TaskSourceWhisper  TaskSource = "whisper"
 )
 
 // UserTask is a concrete task assigned to a user on a given date.

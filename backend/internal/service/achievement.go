@@ -235,7 +235,7 @@ func computeSkillRadar(tasks []model.UserTask) dto.SkillRadar {
 }
 
 func resolveUserTaskCategory(ut model.UserTask) string {
-	if ut.Source == model.TaskSourceAI {
+	if ut.Source != model.TaskSourceTemplate {
 		return strings.ToLower(strings.TrimSpace(ut.AICategory))
 	}
 	if ut.Task != nil {

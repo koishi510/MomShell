@@ -14,16 +14,30 @@
       <CommunityPanel />
       <BarPage />
       <ChatPanel />
-      <MemoryPanel />
       <AiMemoryPanel />
       <WhisperPanel />
       <TaskPanel />
-      <ShellGiftPanel />
     </template>
 
     <!-- Shared overlays (auth, role) -->
     <AuthPanel />
     <RoleSelectPanel />
+  </div>
+</template>
+
+    <!-- Shared overlays (auth, role) -->
+    <AuthPanel />
+    <RoleSelectPanel />
+<<<<<<< HEAD
+=======
+    <CarPage v-if="!isDad" />
+    <CommunityPanel v-if="!isDad" />
+    <BarPage v-if="!isDad" />
+    <ChatPanel v-if="!isDad" />
+    <AiMemoryPanel v-if="!isDad" />
+    <WhisperPanel v-if="!isDad" />
+    <TaskPanel v-if="!isDad" />
+>>>>>>> 430ee74 (feat: replace shell gifts with future letter workflow)
   </div>
 </template>
 
@@ -40,11 +54,9 @@ import CarPage from '@/components/overlay/CarPage.vue'
 import CommunityPanel from '@/components/overlay/CommunityPanel.vue'
 import BarPage from '@/components/overlay/BarPage.vue'
 import ChatPanel from '@/components/overlay/ChatPanel.vue'
-import MemoryPanel from '@/components/overlay/MemoryPanel.vue'
 import AiMemoryPanel from '@/components/overlay/AiMemoryPanel.vue'
 import WhisperPanel from '@/components/overlay/WhisperPanel.vue'
 import TaskPanel from '@/components/overlay/TaskPanel.vue'
-import ShellGiftPanel from '@/components/overlay/ShellGiftPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { useTutorial } from '@/composables/useTutorial'

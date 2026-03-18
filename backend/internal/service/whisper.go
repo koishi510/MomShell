@@ -20,23 +20,32 @@ const (
 )
 
 type WhisperService struct {
-	whisperRepo *repository.WhisperRepo
-	userRepo    *repository.UserRepo
-	aiClient    *openai.Client
-	ragService  *RAGService
+	whisperRepo      *repository.WhisperRepo
+	futureLetterRepo *repository.FutureLetterRepo
+	userRepo         *repository.UserRepo
+	chatRepo         *repository.ChatRepo
+	taskRepo         *repository.TaskRepo
+	aiClient         *openai.Client
+	ragService       *RAGService
 }
 
 func NewWhisperService(
 	whisperRepo *repository.WhisperRepo,
+	futureLetterRepo *repository.FutureLetterRepo,
 	userRepo *repository.UserRepo,
+	chatRepo *repository.ChatRepo,
+	taskRepo *repository.TaskRepo,
 	aiClient *openai.Client,
 	ragService *RAGService,
 ) *WhisperService {
 	return &WhisperService{
-		whisperRepo: whisperRepo,
-		userRepo:    userRepo,
-		aiClient:    aiClient,
-		ragService:  ragService,
+		whisperRepo:      whisperRepo,
+		futureLetterRepo: futureLetterRepo,
+		userRepo:         userRepo,
+		chatRepo:         chatRepo,
+		taskRepo:         taskRepo,
+		aiClient:         aiClient,
+		ragService:       ragService,
 	}
 }
 
@@ -153,6 +162,12 @@ func (s *WhisperService) GetWhisperTips(callerID string) (*dto.WhisperTips, erro
 	if len(whispers) == 0 {
 		return &dto.WhisperTips{
 			Tips:     "她还没有写下心语，也许你可以主动关心一下她今天过得怎么样。",
+			Whispers: items,
+		}, nil
+	}
+	if s.aiClient == nil {
+		return &dto.WhisperTips{
+			Tips:     "她最近留下了一些心声。先别急着解决问题，今晚可以先问问她最想让你接走哪一件事。",
 			Whispers: items,
 		}, nil
 	}

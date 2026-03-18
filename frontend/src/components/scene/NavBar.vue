@@ -56,13 +56,6 @@ const IconCar: FunctionalComponent = () =>
     h('path', { d: 'M5 17h14M5 17a2 2 0 0 1-2-2v-4l2-5h14l2 5v4a2 2 0 0 1-2 2M5 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0' }),
   ])
 
-const IconShell: FunctionalComponent = () =>
-  h('svg', iconProps, [
-    h('path', { d: 'M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9' }),
-    h('path', { d: 'M12 3c3 2.5 5 6 5 9' }),
-    h('path', { d: 'M12 3c-3 2.5-5 6-5 9' }),
-  ])
-
 const IconBoard: FunctionalComponent = () =>
   h('svg', iconProps, [
     h('rect', { x: '3', y: '3', width: '18', height: '18', rx: '2' }),
@@ -93,10 +86,9 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { iconComponent: IconChat, label: '聊天', spriteId: 'stone' },
   { iconComponent: IconCar, label: '关系', spriteId: 'car' },
-  { iconComponent: IconShell, label: '记忆', spriteId: 'shell' },
   { iconComponent: IconBoard, label: '公告板', spriteId: 'bar' },
-  { iconComponent: IconConque, label: '悄悄话', spriteId: 'mailbox' },
-  { iconComponent: IconStar, label: '任务', spriteId: 'chair' },
+  { iconComponent: IconConque, label: '心语情报', spriteId: 'mailbox' },
+  { iconComponent: IconStar, label: '心语工单', spriteId: 'chair' },
 ]
 
 function highlightSprite(spriteId: string) {

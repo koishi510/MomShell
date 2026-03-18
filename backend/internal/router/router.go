@@ -32,7 +32,6 @@ type Handlers struct {
 	Photo       *handler.PhotoHandler
 	Whisper     *handler.WhisperHandler
 	Task        *handler.TaskHandler
-	ShellGift   *handler.ShellGiftHandler
 	PerkCard    *handler.PerkCardHandler
 }
 
@@ -184,7 +183,6 @@ func Setup(
 	{
 		photos.GET("", h.Photo.List)
 		photos.POST("/upload", h.Photo.Upload)
-		photos.POST("/generate", aiLimiter, h.Photo.Generate)
 		photos.PUT("/wall", h.Photo.BatchUpdateWall)
 		photos.PUT("/:id", h.Photo.Update)
 		photos.DELETE("/:id", h.Photo.Delete)
@@ -197,6 +195,8 @@ func Setup(
 		whisper.POST("", h.Whisper.Create)
 		whisper.GET("", h.Whisper.List)
 		whisper.GET("/tips", aiLimiter, h.Whisper.Tips)
+		whisper.GET("/future-letter", h.Whisper.FutureLetter)
+		whisper.POST("/future-letter/respond", h.Whisper.RespondFutureLetter)
 	}
 
 	// ==================== Tasks ====================
@@ -205,7 +205,6 @@ func Setup(
 		tasks.GET("/daily", h.Task.DailyTasks)
 		tasks.POST("/:id/complete", h.Task.Complete)
 		tasks.GET("/partner", h.Task.PartnerTasks)
-		tasks.POST("/:id/generate-card", h.Task.GenerateCard)
 		tasks.POST("/:id/score", h.Task.Score)
 		tasks.POST("/:id/reject", h.Task.Reject)
 		tasks.GET("/stats", h.Task.Stats)
@@ -214,13 +213,6 @@ func Setup(
 		tasks.GET("/baby-age", h.Task.GetBabyAge)
 		tasks.PUT("/baby-age", h.Task.SetBabyAge)
 		tasks.POST("/regenerate", h.Task.Regenerate)
-	}
-
-	// ==================== Shell Gifts ====================
-	shellGifts := api.Group("/shell-gifts", middleware.AuthRequired(cfg))
-	{
-		shellGifts.GET("", h.ShellGift.List)
-		shellGifts.POST("/:id/open", h.ShellGift.Open)
 	}
 
 	// ==================== Perk Cards ====================

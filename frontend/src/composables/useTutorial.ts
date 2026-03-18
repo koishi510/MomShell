@@ -31,16 +31,6 @@ export function useTutorial() {
       },
     },
     {
-      element: "#sprite-shell",
-      popover: {
-        title: "Echo / Memoir (记忆绘本)",
-        description:
-          "每一个贝壳都藏着一个关于你的专属回忆。提供几个标签，AI 就会为你生成充满怀旧感的个人绘本。",
-        side: "top",
-        align: "center",
-      },
-    },
-    {
       element: "#sprite-car",
       popover: {
         title: "Partner Connection (伴侣视角)",
@@ -53,9 +43,9 @@ export function useTutorial() {
     {
       element: "#sprite-star",
       popover: {
-        title: "Tasks (恢复目标)",
+        title: "Tasks (心语工单)",
         description:
-          "点亮这颗海星，给自己设定一些小目标吧！比如做五分钟冥想或者散步，每天一点点进步。",
+          "海星这边会同步他提交的任务回执。完成、验收、留存纪念卡，都会从这里串起来。",
         side: "top",
         align: "center",
       },
@@ -63,9 +53,9 @@ export function useTutorial() {
     {
       element: "#sprite-conque",
       popover: {
-        title: "Whisper (海螺低语)",
+        title: "Whisper Intel (心语情报)",
         description:
-          "不想打字时，就对着海螺诉说吧。它会倾听并将你的声音化为文字记录下来。",
+          "海螺会把你的问卷选择和一句心愿整理成可执行的心语情报，再发给伴侣。",
         side: "top",
         align: "center",
       },

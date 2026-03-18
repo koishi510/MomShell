@@ -1,13 +1,8 @@
 <template>
   <OverlayPanel :visible="uiStore.activePanel === 'task'" position="center" @close="uiStore.closePanel()">
     <div class="task-panel">
-      <button class="age-menu-btn" @click="showAgeMenu = !showAgeMenu" title="修改宝宝年龄" aria-label="修改宝宝年龄" :aria-expanded="showAgeMenu">⋯</button>
-
       <h2 class="panel-title">{{ headerTitle }}</h2>
-      <p class="panel-subtitle">
-        {{ headerSubtitle }}
-        <span v-if="currentAge" class="age-badge">{{ ageLabel(currentAge) }}</span>
-      </p>
+      <p class="panel-subtitle">{{ headerSubtitle }}</p>
 
       <!-- Stats bar -->
       <div v-if="stats" class="stats-bar">
@@ -35,9 +30,9 @@
       <template v-if="activeTab === 'board'">
         <!-- Dad view: daily tasks -->
         <template v-if="isDad">
-          <div v-if="loading" class="loading-state">{{ currentAge ? '正在生成任务...' : '加载中...' }}</div>
+          <div v-if="loading" class="loading-state">正在同步心语工单...</div>
 
-          <div v-else-if="tasks.length === 0" class="empty-state">今天没有任务</div>
+          <div v-else-if="tasks.length === 0" class="empty-state">她还没有发来新的心语情报</div>
 
           <div v-else class="task-list">
             <div
@@ -102,7 +97,7 @@
 
         <!-- Mom view: partner tasks review -->
         <template v-else>
-          <div v-if="loading" class="loading-state">{{ currentAge ? '正在生成任务...' : '加载中...' }}</div>
+          <div v-if="loading" class="loading-state">正在同步他的执行回执...</div>
 
           <div v-else-if="momVisibleTasks.length === 0" class="empty-state">暂无已完成的任务</div>
 
@@ -337,26 +332,6 @@
       </Transition>
 
       <p v-if="activeTab === 'board' && error" class="error-msg">{{ error }}</p>
-
-      <!-- Age picker popup -->
-      <Transition name="age-fade">
-        <div v-if="showAgeMenu" class="age-picker-overlay" @click.self="showAgeMenu = false">
-          <div class="age-picker">
-            <h3 class="age-picker-title">选择宝宝年龄</h3>
-            <div class="age-options">
-              <button
-                v-for="opt in AGE_OPTIONS"
-                :key="opt.value"
-                :class="['age-option', { active: currentAge === opt.value }]"
-                :disabled="settingAge"
-                @click="onSelectAge(opt.value)"
-              >
-                {{ opt.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
     </div>
   </OverlayPanel>
 </template>
@@ -369,14 +344,12 @@ import { uploadPhoto } from '@/lib/api/photo'
 import {
   completeTask,
   getAchievements,
-  getBabyAge,
   getDailyTasks,
   getPartnerTasks,
   getSkillRadar,
   getTaskStats,
   rejectTask,
   scoreTask,
-  setBabyAge,
   type AchievementItem,
   type SkillRadar,
   type TaskStats,
@@ -406,12 +379,12 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const headerTitle = computed(() => {
   if (activeTab.value === 'dashboard') return '战绩与背包'
-  return isDad.value ? '今日任务' : '伴侣任务'
+  return isDad.value ? '心语工单' : '执行回执'
 })
 
 const headerSubtitle = computed(() => {
   if (activeTab.value === 'dashboard') return isDad.value ? '成长数据与权益核销' : '他的成长数据与权益记录'
-  return isDad.value ? '完成任务，一起成长' : '查看他的完成情况'
+  return isDad.value ? '她的情报会在这里变成待执行工单' : '查看他的完成情况并完成验收'
 })
 
 const priorityRank: Record<string, number> = { T0: 3, T1: 2, T2: 1 }
@@ -625,56 +598,6 @@ async function submitCompleteWithPhoto() {
   }
 }
 
-const AGE_OPTIONS = [
-  { value: 'pregnancy', label: '孕期' },
-  { value: '0-3m', label: '0-3个月' },
-  { value: '3-6m', label: '3-6个月' },
-  { value: '6-12m', label: '6-12个月' },
-  { value: '1-2y', label: '1-2岁' },
-  { value: '2-3y', label: '2-3岁' },
-  { value: '3-4y', label: '3-4岁' },
-  { value: '4-5y', label: '4-5岁' },
-] as const
-
-const ageLabelMap: Record<string, string> = Object.fromEntries(
-  AGE_OPTIONS.map((o) => [o.value, o.label]),
-)
-
-const showAgeMenu = ref(false)
-const currentAge = ref('')
-const settingAge = ref(false)
-
-function ageLabel(value: string): string {
-  return ageLabelMap[value] || value
-}
-
-async function fetchBabyAge() {
-  try {
-    const resp = await getBabyAge()
-    currentAge.value = resp.age_stage || ''
-  } catch {
-    // ignore
-  }
-}
-
-async function onSelectAge(value: string) {
-  settingAge.value = true
-  error.value = ''
-  try {
-    await setBabyAge(value)
-    currentAge.value = value
-    showAgeMenu.value = false
-    // Refresh tasks immediately
-    loading.value = true
-    await fetchTasks()
-  } catch (e) {
-    error.value = getErrorMessage(e)
-  } finally {
-    settingAge.value = false
-    loading.value = false
-  }
-}
-
 async function fetchTasks() {
   const [taskList, taskStats] = await Promise.all([
     isDad.value ? getDailyTasks() : getPartnerTasks(),
@@ -693,32 +616,13 @@ function initScoreMap(taskList: UserTaskItem[]) {
   }
 }
 
-function mergeTaskFields(existing: UserTaskItem, incoming: UserTaskItem) {
-  if (existing.status !== incoming.status) existing.status = incoming.status
-  if (existing.priority !== incoming.priority) existing.priority = incoming.priority
-  if (existing.score !== incoming.score) existing.score = incoming.score
-  if (existing.comment !== incoming.comment) existing.comment = incoming.comment
-  if (existing.proof_photo_url !== incoming.proof_photo_url) existing.proof_photo_url = incoming.proof_photo_url
-  if (existing.completed_at !== incoming.completed_at) existing.completed_at = incoming.completed_at
-  if (existing.scored_at !== incoming.scored_at) existing.scored_at = incoming.scored_at
-}
-
-function mergeTaskList(taskList: UserTaskItem[]) {
-  for (const incoming of taskList) {
-    const existing = tasks.value.find((t) => t.id === incoming.id)
-    if (existing) {
-      mergeTaskFields(existing, incoming)
-    }
-  }
-}
-
 async function pollTasks() {
   try {
     const [taskList, taskStats] = await Promise.all([
       isDad.value ? getDailyTasks() : getPartnerTasks(),
       getTaskStats(),
     ])
-    mergeTaskList(taskList)
+    tasks.value = taskList
     if (stats.value?.xp !== taskStats.xp || stats.value?.level !== taskStats.level) {
       stats.value = taskStats
     }
@@ -730,7 +634,7 @@ async function pollTasks() {
 
 function startPolling() {
   stopPolling()
-  pollTimer = setInterval(pollTasks, 10000)
+  pollTimer = setInterval(pollTasks, 5000)
 }
 
 function stopPolling() {
@@ -753,7 +657,7 @@ watch(
       showPerkIssue.value = false
       loading.value = true
       try {
-        await Promise.all([fetchTasks(), fetchBabyAge()])
+        await fetchTasks()
       } catch (e) {
         error.value = getErrorMessage(e)
       } finally {

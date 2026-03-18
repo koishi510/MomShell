@@ -3,10 +3,8 @@ package service
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -100,46 +98,55 @@ func buildTaskCardPrompt(title, description string) string {
 	)
 }
 
-// GenerateTaskCard generates an AI image card for a pending task.
-func (s *TaskService) GenerateTaskCard(userID, taskID string) (string, error) {
-	ut, err := s.taskRepo.FindUserTaskByID(taskID)
-	if err != nil {
-		return "", errors.New(errTaskNotFound)
-	}
-	if ut.UserID != userID {
-		return "", fmt.Errorf("无权操作此任务")
-	}
-	if ut.Status != model.TaskPending {
-		return "", fmt.Errorf("只有待完成的任务可以生成记忆卡片")
-	}
-	if s.openaiClient == nil {
-		return "", fmt.Errorf("AI 服务不可用")
+func buildVerifiedTaskCardPrompt(title, description string, score *int, comment *string) string {
+	prompt := buildTaskCardPrompt(title, description)
+	if score == nil && (comment == nil || *comment == "") {
+		return prompt + " 这是一张妈妈验收通过后存入照片库的纪念卡片。"
 	}
 
-	// Resolve task title/description
-	title := ut.AITitle
-	desc := ut.AIDescription
-	if ut.Source != model.TaskSourceAI && ut.Task != nil {
-		title = ut.Task.Title
-		desc = ut.Task.Description
+	var details string
+	if score != nil {
+		details = fmt.Sprintf(" 妈妈已经验收通过，评分 %d/5。", *score)
+	}
+	if comment != nil && *comment != "" {
+		details += fmt.Sprintf(" 她留下的话是：%s。", *comment)
+	}
+	return prompt + details + " 整体像家庭任务完成后的温暖纪念卡。"
+}
+
+func (s *TaskService) generateVerifiedTaskCardPhoto(momID string, ut model.UserTask) error {
+	if s.openaiClient == nil || s.imageModel == "" || s.photoRepo == nil {
+		return nil
 	}
 
-	prompt := buildTaskCardPrompt(title, desc)
-
+	title, desc, _, _ := resolveTaskContent(ut)
+	if title == "" {
+		title = "任务纪念卡"
+	}
+	prompt := buildVerifiedTaskCardPrompt(title, desc, ut.Score, ut.Comment)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	imgResp, err := s.openaiClient.GenerateImage(ctx, s.imageModel, prompt)
 	if err != nil {
-		log.Printf("[TaskCard] image generation failed: %v", err)
-		return "", fmt.Errorf("图片生成失败，请重试")
+		return fmt.Errorf("image generation failed: %w", err)
 	}
 
 	imageURL, err := downloadTaskCardImage(imgResp)
 	if err != nil {
-		log.Printf("[TaskCard] image download failed: %v", err)
-		return "", fmt.Errorf("图片保存失败，请重试")
+		return fmt.Errorf("image download failed: %w", err)
 	}
 
-	return imageURL, nil
+	description := "妈妈已验收通过的任务纪念卡"
+	if ut.Comment != nil && *ut.Comment != "" {
+		description = *ut.Comment
+	}
+
+	return s.photoRepo.Create(&model.Photo{
+		UserID:      momID,
+		Title:       title,
+		Description: description,
+		ImageURL:    imageURL,
+		Source:      "task_card",
+	})
 }

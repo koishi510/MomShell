@@ -62,3 +62,37 @@ func (h *WhisperHandler) Tips(c *gin.Context) {
 
 	c.JSON(http.StatusOK, tips)
 }
+
+// GET /api/v1/whisper/future-letter
+func (h *WhisperHandler) FutureLetter(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	view, err := h.whisperService.GetFutureLetterView(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, view)
+}
+
+// POST /api/v1/whisper/future-letter/respond
+func (h *WhisperHandler) RespondFutureLetter(c *gin.Context) {
+	var req dto.FutureLetterRespondRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+	item, err := h.whisperService.RespondFutureLetter(userID, req)
+	if err != nil {
+		status := http.StatusBadRequest
+		if err.Error() == "用户不存在" {
+			status = http.StatusUnauthorized
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, item)
+}

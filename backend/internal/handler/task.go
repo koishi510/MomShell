@@ -194,26 +194,6 @@ func (h *TaskHandler) Achievements(c *gin.Context) {
 	c.JSON(http.StatusOK, items)
 }
 
-// POST /api/v1/tasks/:id/generate-card
-func (h *TaskHandler) GenerateCard(c *gin.Context) {
-	taskID := c.Param("id")
-	userID := middleware.GetUserID(c)
-
-	imageURL, err := h.taskService.GenerateTaskCard(userID, taskID)
-	if err != nil {
-		status := http.StatusBadRequest
-		if err.Error() == "任务不存在" {
-			status = http.StatusNotFound
-		} else if err.Error() == "无权操作此任务" {
-			status = http.StatusForbidden
-		}
-		c.JSON(status, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"image_url": imageURL})
-}
-
 // POST /api/v1/tasks/regenerate
 func (h *TaskHandler) Regenerate(c *gin.Context) {
 	userID := middleware.GetUserID(c)
