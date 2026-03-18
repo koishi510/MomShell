@@ -29,16 +29,15 @@
           <div class="dc-messages" ref="messagesEl">
             <Transition name="dc-msg-replace" mode="out-in">
               <div v-if="messages.length === 0 && !sending" key="empty" class="dc-chat-empty">
-                <p class="dc-empty-greeting" v-if="preferredName">你好，{{ preferredName }}</p>
-                <p class="dc-empty-greeting" v-else>你好</p>
+                <p class="dc-empty-greeting"><span class="dc-prompt-sign">$</span> <span v-if="preferredName">你好，{{ preferredName }}</span><span v-else>你好</span></p>
                 <p class="dc-empty-sub">想聊什么都可以和我说。</p>
               </div>
-              <div v-else-if="sending" key="loading" class="dc-msg-center">
-                <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
+              <div v-else-if="sending" key="loading" class="dc-msg-list">
+                <p v-if="latestUserMsg" class="dc-msg-user"><span class="dc-prompt-sign">$</span> {{ latestUserMsg.text }}</p>
                 <div class="dc-typing"><span /><span /><span /></div>
               </div>
-              <div v-else-if="latestAssistantMsg" :key="latestAssistantMsg.id" class="dc-msg-center">
-                <p v-if="latestUserMsg" class="dc-msg-user">你：{{ latestUserMsg.text }}</p>
+              <div v-else-if="latestAssistantMsg" :key="latestAssistantMsg.id" class="dc-msg-list">
+                <p v-if="latestUserMsg" class="dc-msg-user"><span class="dc-prompt-sign">$</span> {{ latestUserMsg.text }}</p>
                 <p
                   :class="[
                     'dc-msg-ai',
@@ -46,9 +45,7 @@
                       ? `dc-fx-${latestAssistantMsg.visualMeta.effect_type}` : '',
                   ]"
                   :style="getBubbleStyle(latestAssistantMsg)"
-                >
-                  {{ displayedAssistantText }}<span v-if="!typingComplete" class="dc-cursor" />
-                </p>
+                >{{ displayedAssistantText }}<span v-if="!typingComplete" class="dc-cursor" /></p>
               </div>
             </Transition>
           </div>
@@ -442,36 +439,36 @@ async function onSend() {
 .dc-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 0 24px 16px;
+  padding: 20px 24px 16px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-end;
   position: relative;
   z-index: 2;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
-.dc-msg-center {
-  text-align: center;
+.dc-msg-list {
   width: 100%;
-  max-width: 520px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .dc-chat-empty {
-  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-family: var(--dc-font-mono);
 }
-.dc-empty-greeting { font-size: 16px; color: var(--dc-text, #C0CAF5); font-weight: 300; }
-.dc-empty-sub { font-size: 13px; color: var(--dc-comment, #565F89); }
+.dc-empty-greeting { font-size: 15px; color: var(--dc-text, #C0CAF5); font-weight: 300; }
+.dc-empty-sub { font-size: 13px; color: var(--dc-comment, #565F89); padding-left: 18px; }
+
+.dc-prompt-sign {
+  color: var(--dc-success, #9ECE6A);
+  font-weight: bold;
+}
 
 .dc-msg-replace-enter-active { transition: opacity 0.6s ease, transform 0.6s ease; }
 .dc-msg-replace-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
@@ -481,17 +478,18 @@ async function onSend() {
 .dc-msg-user {
   font-family: var(--dc-font-mono);
   font-size: 13px;
-  color: var(--dc-comment, #565F89);
+  color: var(--dc-text, #C0CAF5);
   line-height: 1.6;
 }
 
 .dc-msg-ai {
   font-family: var(--dc-font-mono);
-  font-size: 17px;
+  font-size: 15px;
   color: var(--dc-text, #C0CAF5);
   font-weight: 300;
   line-height: 1.8;
-  max-width: 480px;
+  padding-left: 18px;
+  white-space: pre-wrap;
   transition: text-shadow 0.6s ease;
 }
 
@@ -528,7 +526,7 @@ async function onSend() {
 
 /* Typing */
 .dc-typing {
-  display: flex; gap: 6px; justify-content: center; padding: 8px 0;
+  display: flex; gap: 6px; padding: 8px 0 8px 18px;
 }
 .dc-typing span {
   width: 6px; height: 6px; border-radius: 50%;
@@ -606,8 +604,8 @@ async function onSend() {
 
 @media (max-width: 768px) {
   .dc-chat-wrap { height: calc(100vh - 200px); }
-  .dc-messages { padding: 0 12px 12px; }
-  .dc-msg-ai { max-width: 100%; font-size: 15px; }
+  .dc-messages { padding: 16px 12px 12px; }
+  .dc-msg-ai { font-size: 14px; }
   .dc-input-area { padding: 10px 12px; }
   .dc-chat-input { font-size: 16px; }
 }
