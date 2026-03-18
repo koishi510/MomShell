@@ -17,11 +17,12 @@
     <!-- ── Scrollable Body ── -->
     <main class="dc-body">
       <!-- Home -->
-      <DcHome v-if="activeTab === 'home'" @navigate="activeTab = $event as Tab" />
+      <DcHome v-if="activeTab === 'home'" :key="tabKey" @navigate="activeTab = $event as Tab" />
 
       <!-- Tasks -->
       <DcTaskList
         v-else-if="activeTab === 'tasks'"
+        :key="tabKey"
         :sorted-tasks="sortedTasks"
         :loading="loading"
         :has-age="!!currentAge"
@@ -36,6 +37,7 @@
       <!-- Dashboard -->
       <DcDashboard
         v-else-if="activeTab === 'dashboard'"
+        :key="tabKey"
         :loading="loadingDashboard"
         :error="dashboardError"
         :radar="skillRadar"
@@ -46,16 +48,16 @@
       />
 
       <!-- Chat -->
-      <DcChat v-else-if="activeTab === 'chat'" :visible="activeTab === 'chat'" />
+      <DcChat v-else-if="activeTab === 'chat'" :key="tabKey" :visible="activeTab === 'chat'" :show-memory="chatShowMemory" @update:show-memory="chatShowMemory = $event" />
 
       <!-- Community -->
-      <DcCommunity v-else-if="activeTab === 'community'" :visible="activeTab === 'community'" />
+      <DcCommunity v-else-if="activeTab === 'community'" :key="tabKey" :visible="activeTab === 'community'" />
 
       <!-- Whisper -->
-      <DcWhisper v-else-if="activeTab === 'whisper'" :visible="activeTab === 'whisper'" />
+      <DcWhisper v-else-if="activeTab === 'whisper'" :key="tabKey" :visible="activeTab === 'whisper'" />
 
       <!-- Profile -->
-      <DcProfile v-else-if="activeTab === 'profile'" :visible="activeTab === 'profile'" @logout="onLogout" />
+      <DcProfile v-else-if="activeTab === 'profile'" :key="tabKey" :visible="activeTab === 'profile'" @logout="onLogout" />
     </main>
 
     <!-- ── Dialogs ── -->
@@ -123,6 +125,8 @@ const uiStore = useUiStore()
 // ── Tabs ──
 type Tab = 'home' | 'tasks' | 'dashboard' | 'chat' | 'community' | 'whisper' | 'profile'
 const activeTab = ref<Tab>('home')
+const chatShowMemory = ref(false)
+const tabKey = ref(0)
 
 function handleCommand(cmd: string) {
   const lower = cmd.toLowerCase()
@@ -134,15 +138,30 @@ function handleCommand(cmd: string) {
     'community': 'community', './community': 'community',
     'whisper': 'whisper', './whisper': 'whisper', './whisper.sh': 'whisper',
     'profile': 'profile', './profile': 'profile',
+    'memory': 'chat', './memory': 'chat',
   }
 
   if (lower === 'logout' || lower === 'exit' || lower === 'quit') {
     onLogout()
-  } else if (map[lower]) {
-    activeTab.value = map[lower]
-  } else {
-    // just ignore or maybe show a toast. For now, do nothing if invalid.
+    return
   }
+
+  const isMemory = lower === 'memory' || lower === './memory'
+  const target = map[lower]
+  if (!target) return
+
+  // Re-entering the same page: bump key to re-trigger entry animation
+  if (target === activeTab.value && !isMemory) {
+    tabKey.value++
+  }
+
+  if (isMemory) {
+    chatShowMemory.value = true
+  } else if (target === 'chat') {
+    chatShowMemory.value = false
+  }
+
+  activeTab.value = target
 }
 
 function onLogout() {

@@ -11,7 +11,7 @@
         <div class="dc-avatar" @click="triggerAvatarUpload">
           <img v-if="profileAvatarUrl" :src="profileAvatarUrl" alt="" @error="onAvatarImgError" />
           <span v-else class="dc-avatar-placeholder">{{ displayInitial }}</span>
-          <span class="dc-avatar-hint">{{ avatarUploading ? '...' : '换图' }}</span>
+          <span class="dc-avatar-hint">{{ avatarUploading ? '...' : '编辑' }}</span>
           <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" @change="onAvatarChange" />
         </div>
         <div class="dc-profile-info">
