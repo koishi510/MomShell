@@ -1,17 +1,19 @@
 <template>
-  <div :class="['anime-landing', { 'is-blurred': isBlurred }]" ref="container">
-    <!-- Background Particles -->
-    <div class="particles">
-      <div v-for="i in 40" :key="i" class="particle"></div>
-    </div>
+  <div
+    :class="['anime-landing', { 'is-blurred': isBlurred }]"
+    ref="container"
+    @pointermove="onPointerMove"
+  >
 
     <!-- Central Shell Morph -->
-    <div class="shell-wrapper" @click="handleEnter">
+    <div class="shell-wrapper" ref="shellWrapper" @click="handleEnter">
       <svg class="shell-svg" viewBox="0 0 200 200">
         <path class="shell-path path-1" d="M100,40 C140,40 170,80 170,120 C170,160 140,180 100,180 C60,180 30,160 30,120 C30,80 60,40 100,40" />
         <path class="shell-path path-2" d="M100,60 C130,60 150,90 150,120 C150,150 130,165 100,165 C70,165 50,150 50,120 C50,90 70,60 100,60" />
         <path class="shell-path path-3" d="M100,80 C120,80 130,100 130,120 C130,140 120,150 100,150 C80,150 70,140 70,120 C70,100 80,80 100,80" />
       </svg>
+      <!-- Pearl: particle that follows mouse, constrained to outer ring -->
+      <div class="pearl" :style="{ transform: `translate(${pearlOffsetX}px, ${pearlOffsetY}px)` }"></div>
       <div class="enter-hint">PRESS TO RESONATE</div>
     </div>
 
@@ -22,30 +24,64 @@
       </h1>
       <p class="tagline">Resonance of the Deep Soul</p>
     </div>
-
-    <!-- Entrance Flash -->
-    <div class="flash-overlay" ref="flash"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
 import anime from 'animejs/lib/anime.es.js'
 import { useUiStore } from '@/stores/ui'
 
 const uiStore = useUiStore()
 const container = ref<HTMLElement | null>(null)
-const flash = ref<HTMLElement | null>(null)
+const shellWrapper = ref<HTMLElement | null>(null)
 
 const isBlurred = computed(() => !!uiStore.activePanel)
 
-// Reset animations when panel is closed
+// ─── Pearl state (particle-style, constrained to outer shell ring) ───
+// Shell center is at ~(50%, 55%) of the wrapper; max radius ~31% of width
+const pearlOffsetX = ref(0)
+const pearlOffsetY = ref(12)
+let targetOffsetX = 0
+let targetOffsetY = 12
+let rafId = 0
+
+function updatePearl() {
+  pearlOffsetX.value += (targetOffsetX - pearlOffsetX.value) * 0.06
+  pearlOffsetY.value += (targetOffsetY - pearlOffsetY.value) * 0.06
+  rafId = requestAnimationFrame(updatePearl)
+}
+
+function onPointerMove(e: PointerEvent) {
+  const wrapper = shellWrapper.value
+  if (!wrapper) return
+
+  const rect = wrapper.getBoundingClientRect()
+  const cx = rect.width * 0.5
+  const cy = rect.height * 0.55
+
+  let dx = (e.clientX - rect.left) - cx
+  let dy = (e.clientY - rect.top) - cy
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  const maxR = rect.width * 0.31
+
+  if (dist > maxR) {
+    dx = (dx / dist) * maxR
+    dy = (dy / dist) * maxR
+  }
+
+  targetOffsetX = dx
+  targetOffsetY = dy
+}
+
+// ─── Reset when panel closes ───────────────────
 watch(isBlurred, (blurred) => {
   if (!blurred) {
     anime({
       targets: '.shell-svg',
       scale: 1,
       opacity: 1,
+      rotate: '0turn',
       duration: 1000,
       easing: 'easeOutQuart'
     })
@@ -57,10 +93,20 @@ watch(isBlurred, (blurred) => {
       duration: 800,
       easing: 'easeOutBack'
     })
+
+    anime({
+      targets: '.particle',
+      opacity: 0.6,
+      duration: 1200,
+      easing: 'easeOutQuad'
+    })
   }
 })
 
 onMounted(() => {
+  // Start pearl smooth-follow loop
+  rafId = requestAnimationFrame(updatePearl)
+
   // 1. Particle entrance and floating
   anime({
     targets: '.particle',
@@ -83,15 +129,22 @@ onMounted(() => {
     easing: 'easeInOutSine'
   })
 
-  // 2. Shell path drawing
-  anime({
-    targets: '.shell-path',
-    strokeDashoffset: [anime.setDashoffset, 0],
-    easing: 'easeInOutQuart',
-    duration: 2500,
-    delay: (el, i) => i * 250,
-    direction: 'alternate',
-    loop: true
+  // 2. Shell paths — continuous clockwise with trailing dash
+  document.querySelectorAll('.shell-path').forEach((el, i) => {
+    const path = el as SVGPathElement
+    const length = path.getTotalLength()
+    const trailRatio = [0.85, 0.75, 0.65][i] ?? 0.7
+
+    path.style.strokeDasharray = `${length * trailRatio} ${length * (1 - trailRatio)}`
+    path.style.strokeDashoffset = String(length)
+
+    anime({
+      targets: path,
+      strokeDashoffset: [length, 0],
+      duration: 2600 + i * 700,
+      easing: 'linear',
+      loop: true
+    })
   })
 
   // 3. Title Stagger
@@ -117,43 +170,46 @@ onMounted(() => {
   })
 })
 
-const handleEnter = () => {
-  if (isBlurred.value) return // Don't trigger if already in auth/panel mode
+onBeforeUnmount(() => {
+  cancelAnimationFrame(rafId)
+})
 
-  // Trigger cool exit animation for elements
+// ─── Enter handler: dissolve inward ────────────
+const handleEnter = () => {
+  if (isBlurred.value) return
+
+  // Shell spirals inward and dissolves
   anime({
     targets: '.shell-svg',
-    scale: 15,
-    opacity: 0,
-    duration: 800,
-    easing: 'easeInQuart'
+    scale: [1, 0.12],
+    rotate: '1turn',
+    opacity: [1, 0],
+    duration: 900,
+    easing: 'easeInBack'
   })
 
+  // Title fades upward
   anime({
     targets: '.title-container',
     opacity: 0,
-    translateY: -20,
+    translateY: -24,
     duration: 500,
     easing: 'easeInQuad'
   })
 
-  if (flash.value) {
-    // Flash white and then fade out, trigger login at peak brightness
-    anime({
-      targets: flash.value,
-      opacity: [0, 1, 0],
-      duration: 1200,
-      easing: 'easeInOutQuad',
-      changeBegin: () => {
-        // Halfway through flash peak, open auth
-        setTimeout(() => {
-          uiStore.openAuth('login')
-        }, 600)
-      }
-    })
-  } else {
-    uiStore.openAuth('login')
-  }
+  // Particles converge to center and vanish
+  anime({
+    targets: '.particle',
+    translateX: 0,
+    translateY: 0,
+    scale: 0,
+    opacity: 0,
+    duration: 700,
+    easing: 'easeInQuart'
+  })
+
+  // Open auth after the dissolve settles
+  setTimeout(() => uiStore.openAuth('login'), 750)
 }
 </script>
 
@@ -167,7 +223,7 @@ const handleEnter = () => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  z-index: 50; /* Base level, AuthPanel is 100 */
+  z-index: 50;
   cursor: default;
   transition: filter 0.8s ease, transform 0.8s ease;
 }
@@ -219,11 +275,29 @@ const handleEnter = () => {
   fill: none;
   stroke: #a5b4fc;
   stroke-width: 0.5;
+  stroke-linecap: round;
 }
 
 .path-1 { stroke-opacity: 0.8; stroke-width: 1; }
 .path-2 { stroke-opacity: 0.5; }
 .path-3 { stroke-opacity: 0.3; }
+
+/* Pearl (particle-style, follows mouse) */
+.pearl {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 8px;
+  height: 8px;
+  margin-left: -2.5px;
+  margin-top: -2.5px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
+              0 0 14px rgba(165, 180, 252, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
 
 .enter-hint {
   position: absolute;
@@ -248,7 +322,6 @@ const handleEnter = () => {
   margin: 0;
   display: flex;
   justify-content: center;
-  /* Offset the last letter's spacing to ensure perfect centering */
   padding-left: 12px;
 }
 
@@ -265,15 +338,6 @@ const handleEnter = () => {
   color: #94a3b8;
   text-transform: uppercase;
   font-weight: 300;
-}
-
-.flash-overlay {
-  position: absolute;
-  inset: 0;
-  background: #fff;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1000; /* Over everything during flash */
 }
 
 @keyframes pulseHint {
