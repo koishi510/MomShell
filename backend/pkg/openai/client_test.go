@@ -39,16 +39,10 @@ func TestExtractImagesFromTaskStatus_OutputResults(t *testing.T) {
 	resp := extractImagesFromTaskStatus(&taskStatusResponse{
 		TaskStatus: "SUCCEED",
 		Output: &struct {
-			TaskID  string `json:"task_id"`
-			Results []struct {
-				URL     string `json:"url,omitempty"`
-				B64JSON string `json:"b64_json,omitempty"`
-			} `json:"results"`
+			TaskID  string          `json:"task_id"`
+			Results []ImageDataItem `json:"results"`
 		}{
-			Results: []struct {
-				URL     string `json:"url,omitempty"`
-				B64JSON string `json:"b64_json,omitempty"`
-			}{
+			Results: []ImageDataItem{
 				{URL: "https://example.com/a.png"},
 				{B64JSON: "base64data"},
 			},
@@ -359,10 +353,7 @@ func TestGenerateImage_ServerError(t *testing.T) {
 func TestGenerateImage_SyncResponse(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		resp := ImageResponse{
-			Data: []struct {
-				URL     string `json:"url,omitempty"`
-				B64JSON string `json:"b64_json,omitempty"`
-			}{
+			Data: []ImageDataItem{
 				{URL: "https://example.com/generated.png"},
 			},
 		}
@@ -380,5 +371,77 @@ func TestGenerateImage_SyncResponse(t *testing.T) {
 	}
 	if resp.Data[0].URL != "https://example.com/generated.png" {
 		t.Errorf("unexpected URL: %s", resp.Data[0].URL)
+	}
+}
+
+func TestCreateEmbedding_Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := map[string]any{
+			"data": []map[string]any{
+				{"embedding": []float32{0.1, 0.2, 0.3}},
+			},
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := NewClient("key", srv.URL, "model", "embed-model")
+	emb, err := c.CreateEmbedding(context.Background(), "hello")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(emb) != 3 {
+		t.Fatalf("expected 3 floats, got %d", len(emb))
+	}
+}
+
+func TestCreateEmbedding_ServerError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c := NewClient("key", srv.URL, "model", "embed-model")
+	_, err := c.CreateEmbedding(context.Background(), "hello")
+	if err == nil {
+		t.Fatal("expected error for 500 response")
+	}
+}
+
+func TestCreateEmbedding_EmptyData(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"data": []any{}})
+	}))
+	defer srv.Close()
+
+	c := NewClient("key", srv.URL, "model", "embed-model")
+	_, err := c.CreateEmbedding(context.Background(), "hello")
+	if err == nil {
+		t.Fatal("expected error for empty data")
+	}
+}
+
+func TestDoPost_SetsHeaders(t *testing.T) {
+	var gotAuth, gotContentType string
+	var gotCustom string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		gotContentType = r.Header.Get("Content-Type")
+		gotCustom = r.Header.Get("X-Custom")
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+
+	c := NewClient("test-key", srv.URL, "m", "e")
+	_, _ = c.doPost(context.Background(), "/test", map[string]string{"a": "b"}, 1024, map[string]string{"X-Custom": "val"})
+
+	if gotAuth != "Bearer test-key" {
+		t.Errorf("auth = %q, want 'Bearer test-key'", gotAuth)
+	}
+	if gotContentType != "application/json" {
+		t.Errorf("content-type = %q", gotContentType)
+	}
+	if gotCustom != "val" {
+		t.Errorf("custom header = %q, want 'val'", gotCustom)
 	}
 }

@@ -64,6 +64,42 @@ type chatResponse struct {
 	} `json:"error,omitempty"`
 }
 
+// doPost sends an authenticated POST request and returns the response body.
+// It handles marshaling, header setup, and status code validation.
+func (c *Client) doPost(ctx context.Context, path string, reqBody any, maxSize int64, extraHeaders map[string]string) ([]byte, error) {
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+path, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(headerAuthorization, bearerPrefix+c.apiKey)
+	for k, v := range extraHeaders {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request to %s failed: %w", path, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxSize))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return respBody, fmt.Errorf("request to %s failed: status %d", path, resp.StatusCode)
+	}
+
+	return respBody, nil
+}
+
 func (c *Client) Chat(ctx context.Context, messages []Message) (string, error) {
 	reqBody := chatRequest{
 		Model:          c.model,
@@ -73,32 +109,9 @@ func (c *Client) Chat(ctx context.Context, messages []Message) (string, error) {
 		EnableThinking: false,
 	}
 
-	body, err := json.Marshal(reqBody)
+	respBody, err := c.doPost(ctx, "/chat/completions", reqBody, maxChatResponseSize, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(headerAuthorization, bearerPrefix+c.apiKey)
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("openai chat request failed: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxChatResponseSize))
-	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("openai chat completion failed: status %d, body_len: %d",
-			resp.StatusCode, len(respBody))
+		return "", err
 	}
 
 	var chatResp chatResponse
@@ -137,31 +150,9 @@ func (c *Client) CreateEmbedding(ctx context.Context, input string) ([]float32, 
 		Input: input,
 	}
 
-	body, err := json.Marshal(reqBody)
+	respBody, err := c.doPost(ctx, "/embeddings", reqBody, maxChatResponseSize, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/embeddings", bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(headerAuthorization, bearerPrefix+c.apiKey)
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("openai embedding request failed: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxChatResponseSize))
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("openai embedding failed: status %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, err
 	}
 
 	var embResp embeddingResponse
@@ -191,11 +182,14 @@ type imageRequest struct {
 	GuidanceScale     float64 `json:"guidance_scale"`
 }
 
+// ImageDataItem represents a single image result.
+type ImageDataItem struct {
+	URL     string `json:"url,omitempty"`
+	B64JSON string `json:"b64_json,omitempty"`
+}
+
 type ImageResponse struct {
-	Data []struct {
-		URL     string `json:"url,omitempty"`
-		B64JSON string `json:"b64_json,omitempty"`
-	} `json:"data"`
+	Data  []ImageDataItem `json:"data"`
 	Error *struct {
 		Message string `json:"message"`
 	} `json:"error,omitempty"`
@@ -236,40 +230,27 @@ func (c *Client) GenerateImage(ctx context.Context, model, prompt string) (*Imag
 		GuidanceScale:     0.0,
 	}
 
-	body, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal image request: %w", err)
+	headers := map[string]string{"X-ModelScope-Async-Mode": "true"}
+	respBody, err := c.doPost(ctx, "/images/generations", reqBody, maxImageResponseSize, headers)
+	if err != nil && respBody == nil {
+		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/images/generations", bytes.NewReader(body))
+	log.Printf("[ImageGen] model=%s POST body_len=%d", model, len(respBody))
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to create image request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(headerAuthorization, bearerPrefix+c.apiKey)
-	req.Header.Set("X-ModelScope-Async-Mode", "true")
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("image generation request failed: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxImageResponseSize))
-	if err != nil {
-		return nil, fmt.Errorf("failed to read image response: %w", err)
-	}
-
-	log.Printf("[ImageGen] model=%s POST status=%d body_len=%d", model, resp.StatusCode, len(respBody))
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, fmt.Errorf("image generation failed: status code: %d, body_len: %d",
-			resp.StatusCode, len(respBody))
+		// doPost returns non-nil respBody with error for non-200 status.
+		// Image API also accepts 202 (Accepted) for async tasks.
+		// Try parsing as async task before failing.
+		if asyncResp, asyncErr := c.handleAsyncTask(ctx, respBody); asyncResp != nil || asyncErr != nil {
+			return asyncResp, asyncErr
+		}
+		return nil, err
 	}
 
 	// Try parsing as an async task response (ModelScope returns task_id for polling)
-	if asyncResp, err := c.handleAsyncTask(ctx, respBody); asyncResp != nil || err != nil {
-		return asyncResp, err
+	if asyncResp, asyncErr := c.handleAsyncTask(ctx, respBody); asyncResp != nil || asyncErr != nil {
+		return asyncResp, asyncErr
 	}
 
 	// Synchronous response (standard OpenAI format)
@@ -295,29 +276,21 @@ func extractImagesFromTaskStatus(status *taskStatusResponse) *ImageResponse {
 		return nil
 	}
 
-	imgResp := &ImageResponse{}
-
 	if len(status.OutputImages) > 0 {
-		imgResp.Data = make([]struct {
-			URL     string `json:"url,omitempty"`
-			B64JSON string `json:"b64_json,omitempty"`
-		}, len(status.OutputImages))
+		data := make([]ImageDataItem, len(status.OutputImages))
 		for i, u := range status.OutputImages {
-			imgResp.Data[i].URL = u
+			data[i].URL = u
 		}
-		return imgResp
+		return &ImageResponse{Data: data}
 	}
 
 	if status.Output != nil && len(status.Output.Results) > 0 {
-		imgResp.Data = make([]struct {
-			URL     string `json:"url,omitempty"`
-			B64JSON string `json:"b64_json,omitempty"`
-		}, len(status.Output.Results))
+		data := make([]ImageDataItem, len(status.Output.Results))
 		for i, r := range status.Output.Results {
-			imgResp.Data[i].URL = r.URL
-			imgResp.Data[i].B64JSON = r.B64JSON
+			data[i].URL = r.URL
+			data[i].B64JSON = r.B64JSON
 		}
-		return imgResp
+		return &ImageResponse{Data: data}
 	}
 
 	return nil // Status is SUCCEED but no images found
@@ -329,11 +302,8 @@ type taskStatusResponse struct {
 	TaskStatus   string   `json:"task_status"`
 	OutputImages []string `json:"output_images,omitempty"`
 	Output       *struct {
-		TaskID  string `json:"task_id"`
-		Results []struct {
-			URL     string `json:"url,omitempty"`
-			B64JSON string `json:"b64_json,omitempty"`
-		} `json:"results"`
+		TaskID  string          `json:"task_id"`
+		Results []ImageDataItem `json:"results"`
 	} `json:"output,omitempty"`
 	Error *struct {
 		Message string `json:"message"`
