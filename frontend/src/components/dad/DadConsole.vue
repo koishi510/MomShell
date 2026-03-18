@@ -12,12 +12,12 @@
     />
 
     <!-- ── Tab Bar (top, below header) ── -->
-    <DcTabBar v-model="activeTab" />
+    <DcTabBar v-model="activeTab" :open-tabs="openTabs" @close="closeTab" />
 
     <!-- ── Scrollable Body ── -->
     <main class="dc-body">
       <!-- Home -->
-      <DcHome v-if="activeTab === 'home'" :key="tabKey" @navigate="activeTab = $event as Tab" />
+      <DcHome v-if="activeTab === 'home'" :key="tabKey" @navigate="ensureTabOpen($event as Tab); activeTab = $event as Tab" />
 
       <!-- Tasks -->
       <DcTaskList
@@ -128,8 +128,28 @@ const uiStore = useUiStore()
 // ── Tabs ──
 type Tab = 'home' | 'tasks' | 'dashboard' | 'chat' | 'community' | 'whisper' | 'profile'
 const activeTab = ref<Tab>('home')
+const openTabs = ref<Tab[]>(['home'])
 const chatShowMemory = ref(false)
 const tabKey = ref(0)
+
+function ensureTabOpen(tab: Tab) {
+  if (!openTabs.value.includes(tab)) {
+    openTabs.value = [...openTabs.value, tab]
+  }
+}
+
+function closeTab(key: string) {
+  const tab = key as Tab
+  if (tab === 'home') return
+  const idx = openTabs.value.indexOf(tab)
+  if (idx === -1) return
+  openTabs.value = openTabs.value.filter((t) => t !== tab)
+  if (activeTab.value === tab) {
+    // Switch to previous tab in list, or home
+    const newIdx = Math.min(idx, openTabs.value.length - 1)
+    activeTab.value = openTabs.value[newIdx] ?? 'home'
+  }
+}
 
 function handleCommand(cmd: string) {
   const lower = cmd.toLowerCase()
@@ -152,6 +172,8 @@ function handleCommand(cmd: string) {
   const isMemory = lower === 'memory' || lower === './memory'
   const target = map[lower]
   if (!target) return
+
+  ensureTabOpen(target)
 
   // Re-entering the same page: bump key to re-trigger entry animation
   if (target === activeTab.value && !isMemory) {

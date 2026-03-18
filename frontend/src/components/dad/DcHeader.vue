@@ -18,6 +18,8 @@
             @mouseup="syncCaretPosition"
             @select="syncCaretPosition"
             @keydown.enter="submitCmd"
+            @keydown.tab.prevent="handleTabComplete"
+            @keydown="onKeyDown"
           />
           <span
             v-if="isFocused"
@@ -105,7 +107,54 @@ function submitCmd(e: KeyboardEvent) {
   emit('command', raw)
   cmdInput.value = ''
   caretIndex.value = 0
+  tabCycleMatches.value = []
   target.blur()
+}
+
+// ── Tab completion ──
+const COMMANDS = [
+  'home', './home',
+  'tasks', './tasks',
+  'status', './status',
+  'chat', './chat',
+  'community', './community',
+  'whisper', './whisper', './whisper.sh',
+  'profile', './profile',
+  'memory', './memory',
+  'logout', 'exit', 'quit',
+]
+const tabCycleMatches = ref<string[]>([])
+let tabCycleIndex = 0
+let lastTabPrefix = ''
+
+function handleTabComplete() {
+  const current = cmdInput.value
+  if (!current) return
+
+  // If we're already cycling, advance to next match
+  if (tabCycleMatches.value.length > 0 && current === tabCycleMatches.value[tabCycleIndex]) {
+    tabCycleIndex = (tabCycleIndex + 1) % tabCycleMatches.value.length
+    cmdInput.value = tabCycleMatches.value[tabCycleIndex]
+    void syncCaretPosition()
+    return
+  }
+
+  // New prefix — find matches
+  lastTabPrefix = current.toLowerCase()
+  const matches = COMMANDS.filter((c) => c.startsWith(lastTabPrefix))
+  if (matches.length === 0) return
+
+  tabCycleMatches.value = matches
+  tabCycleIndex = 0
+  cmdInput.value = matches[0]
+  void syncCaretPosition()
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  // Reset tab cycle on any key except Tab
+  if (e.key !== 'Tab') {
+    tabCycleMatches.value = []
+  }
 }
 
 const AGE_LABELS: Record<string, string> = {

@@ -40,6 +40,7 @@
         <div class="dc-widget-header">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="dc-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           <span>每日简报</span>
+          <button v-if="!briefingLoading" class="dc-refresh-btn" @click="refreshBriefing" title="刷新">&#8635;</button>
         </div>
         <div class="dc-widget-body">
           <div v-if="loadingTips" class="dc-loading-text" style="color: var(--dc-comment, #565F89); font-size: 13px;">正在生成 AI 简报...</div>
@@ -47,8 +48,8 @@
             <p class="dc-tip-text">"{{ tipsData.tips }}"</p>
           </template>
           <template v-else>
-            <p class="dc-tip-text">"父亲能为孩子做的最重要的事情，就是爱他们的母亲。"</p>
-            <p class="dc-tip-sub">- 记得检查队列并完成使命</p>
+            <p class="dc-tip-text">"{{ briefingQuote }}"</p>
+            <p class="dc-tip-sub">- {{ briefingTip }}</p>
           </template>
         </div>
       </div>
@@ -131,7 +132,75 @@ defineEmits<{
 const tipsData = ref<WhisperTips | null>(null)
 const loadingTips = ref(false)
 
+const BRIEFINGS = [
+  { quote: '父亲能为孩子做的最重要的事情，就是爱他们的母亲。', tip: '今天给妈妈一个拥抱，告诉她辛苦了。' },
+  { quote: '陪伴是最长情的告白。', tip: '放下手机，和孩子一起玩20分钟。' },
+  { quote: '孩子的安全感，来自父亲的肩膀。', tip: '检查任务队列，完成一项待办任务。' },
+  { quote: '最好的教育，是言传身教。', tip: '今天带孩子做一件有意义的小事。' },
+  { quote: '不要等到完美才开始，开始了才会完美。', tip: '从任务列表里挑一个最简单的开始做。' },
+  { quote: '家是最小国，国是千万家。', tip: '和家人一起吃一顿饭，聊聊今天的趣事。' },
+  { quote: '耐心是给孩子最好的礼物。', tip: '今天试着多听孩子说，少急着给答案。' },
+  { quote: '成长不可逆，每一天都值得珍惜。', tip: '用手机记录一个孩子今天的可爱瞬间。' },
+  { quote: '真正的强大，是温柔地对待最亲近的人。', tip: '主动承担一项家务，让妈妈休息一会。' },
+  { quote: '你不必完美，但你需要在场。', tip: '今晚给孩子讲一个睡前故事。' },
+  { quote: '每个孩子都是独一无二的星星。', tip: '发现并夸赞孩子今天做得好的一件事。' },
+  { quote: '父爱如山，不在于高度，而在于厚度。', tip: '查看心声情报，了解妈妈最近的心情。' },
+  { quote: '最好的投资，是投资在家人身上。', tip: '计划一次周末家庭活动。' },
+  { quote: '生活的意义，在于那些微小而确定的幸福。', tip: '给家人准备一份小惊喜。' },
+  { quote: '做一个有温度的爸爸。', tip: '今天主动问问妈妈需要什么帮助。' },
+  { quote: '孩子不会记住你给了什么，只会记住你陪了多久。', tip: '抽出30分钟陪孩子做他喜欢的事。' },
+  { quote: '情绪稳定，是一个家庭最大的风水。', tip: '遇到烦心事时，先深呼吸三次再回应。' },
+  { quote: '父亲的格局，决定孩子的未来。', tip: '和孩子分享一个你今天学到的新知识。' },
+  { quote: '幸福不是拥有最多，而是需要最少。', tip: '整理一下家里不用的物品，简化生活。' },
+  { quote: '爱是动词，需要每天练习。', tip: '对家里每个人说一句感谢的话。' },
+  { quote: '好爸爸不是天生的，是练出来的。', tip: '回顾本周完成的任务，看看自己的进步。' },
+  { quote: '与其担心未来，不如把握当下。', tip: '今天专注完成任务队列中的第一个任务。' },
+  { quote: '有质量的十分钟，胜过心不在焉的一小时。', tip: '和孩子全身心地玩一个短游戏。' },
+  { quote: '家庭的温度，取决于你回家时的态度。', tip: '进门前调整心情，用微笑打开家门。' },
+  { quote: '一个微笑，能治愈一天的疲惫。', tip: '给妈妈发一条温暖的消息。' },
+  { quote: '沟通是桥梁，沉默是高墙。', tip: '今天和妈妈聊聊最近的感受。' },
+  { quote: '成为孩子的榜样，比成为孩子的英雄更重要。', tip: '让孩子看到你认真做事的样子。' },
+  { quote: '每一次弯腰系鞋带，都是最温柔的力量。', tip: '帮孩子做一件他还做不到的小事。' },
+  { quote: '用心倾听，是最好的回应。', tip: '今天找机会认真听妈妈说完一件事。' },
+  { quote: '幸福的家庭都相似：彼此尊重，互相支持。', tip: '在社区互助网络看看其他爸爸的经验。' },
+]
+
+const briefingQuote = ref('')
+const briefingTip = ref('')
+const briefingLoading = ref(false)
+
+function getDayIndex(): number {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 0)
+  const diff = now.getTime() - start.getTime()
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24))
+  return dayOfYear % BRIEFINGS.length
+}
+
+function setBriefing(index: number) {
+  const b = BRIEFINGS[index]
+  briefingQuote.value = b.quote
+  briefingTip.value = b.tip
+}
+
+function refreshBriefing() {
+  // Try API first, fallback to local rotation
+  loadingTips.value = true
+  getWhisperTips()
+    .then((data) => { tipsData.value = data })
+    .catch(() => {
+      const current = BRIEFINGS.findIndex((b) => b.quote === briefingQuote.value)
+      let next = Math.floor(Math.random() * BRIEFINGS.length)
+      while (next === current && BRIEFINGS.length > 1) {
+        next = Math.floor(Math.random() * BRIEFINGS.length)
+      }
+      setBriefing(next)
+    })
+    .finally(() => { loadingTips.value = false })
+}
+
 onMounted(async () => {
+  setBriefing(getDayIndex())
   loadingTips.value = true
   try {
     tipsData.value = await getWhisperTips()
@@ -262,6 +331,19 @@ onMounted(async () => {
   margin: 0;
   line-height: 1.4;
 }
+
+.dc-refresh-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--dc-comment, #565F89);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.dc-refresh-btn:hover { color: var(--dc-accent, #7DCFFF); }
 
 /* Section Title */
 .dc-section-title {
