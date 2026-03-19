@@ -1140,13 +1140,16 @@ watch(visible, async (isVisible) => {
 
 /* ── Photo Wall (Left) ── */
 .photo-wall {
-  position: relative;
-  flex: 1;
+  position: absolute;
+  top: 19.2%;
+  left: 16.5%;
+  width: 49.2%;
+  height: 57.9%;
   display: flex;
-  align-self: stretch;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 21vh;
+  z-index: 2;
+  overflow: hidden;
 }
 
 .photo-grid {
@@ -1156,7 +1159,9 @@ watch(visible, async (isVisible) => {
   grid-template-columns: repeat(5, 1fr);
   gap: 18px;
   width: 100%;
-  max-width: 880px;
+  max-width: 92%;
+  padding: 48px 16px 16px;
+  box-sizing: border-box;
   pointer-events: none;
 }
 
@@ -2582,6 +2587,9 @@ watch(visible, async (isVisible) => {
   }
 
   .photo-wall {
+    position: relative;
+    top: auto;
+    left: auto;
     flex: none;
     width: 94vw;
     max-width: none;
