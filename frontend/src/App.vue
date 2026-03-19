@@ -26,8 +26,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useBackgroundMusicLoop } from '@/composables/useBackgroundMusicLoop'
+import { computed, onMounted, watch } from 'vue'
+import { useBackgroundMusicLoop, pauseBackgroundMusic, playBackgroundMusic } from '@/composables/useBackgroundMusicLoop'
 import AnimeLanding from '@/components/overlay/AnimeLanding.vue'
 import DadConsole from '@/components/dad/DadConsole.vue'
 import BeachScene from '@/components/scene/BeachScene.vue'
@@ -51,6 +51,11 @@ const { startTutorial } = useTutorial()
 useBackgroundMusicLoop()
 
 const isDad = computed(() => authStore.user?.role === 'dad')
+
+watch(isDad, (dad) => {
+  if (dad) pauseBackgroundMusic()
+  else playBackgroundMusic()
+}, { immediate: true })
 
 onMounted(async () => {
   // Always initialize auth state
