@@ -1,5 +1,7 @@
 # MomShell
 
+> MomShell--YourFamilyTranslator
+
 [![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=koishi510_MomShell&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=koishi510_MomShell)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=koishi510_MomShell&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=koishi510_MomShell)
