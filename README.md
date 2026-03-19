@@ -78,8 +78,8 @@ MomShell/
 ## Docker Deployment
 
 ```bash
-cp .env.example .env    # Edit with your config
-make docker-build-backend
+cp .env.example .env    # Edit .env: set DATABASE_URL, JWT_SECRET_KEY, OPENAI_API_KEY, etc.
+make docker-up          # Build and start app + postgres on http://localhost
 ```
 
 [Full deployment guide](docs/deployment.md)
