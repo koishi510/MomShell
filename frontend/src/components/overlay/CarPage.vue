@@ -18,12 +18,8 @@
       </button>
 
       <div class="car-layout">
-        <!-- LEFT: Photo Wall -->
+        <!-- Photo Wall Layer (Bulletin Board Area) -->
         <div class="photo-wall">
-          <!-- Dedicated PearlShell activation zone -->
-          <div v-if="!showPearlShell" class="pearl-shell-trigger-zone" @click="activatePearlShell()" />
-
-          <!-- Original grid (visible when PearlShell not active or in fullscreen) -->
           <div v-if="!showPearlShell || pearlShellFullscreen" class="photo-grid">
             <div
               v-for="(photo, idx) in wallPhotos"
@@ -36,59 +32,64 @@
             </div>
             <div v-for="n in emptySlots" :key="'empty-' + n" class="photo-frame empty" />
           </div>
-          <!-- Embedded PearlShell -->
-          <div v-if="showPearlShell && !pearlShellFullscreen" class="pearl-shell-embedded">
-            <PearlShellWrapper
-              :photo-urls="allPhotoUrls"
-              :is-fullscreen="false"
-              @request-fullscreen="handleRequestFullscreen"
-            />
-            <button class="pearl-shell-close" @click.stop="showPearlShell = false" aria-label="关闭贝壳">✕</button>
+        </div>
+      </div>
+
+      <!-- ABSOLUTE LAYER: Gesture Zones (You can tune these percentages) -->
+      <div
+        v-if="!showPearlShell && !pearlShellFullscreen"
+        class="pearl-shell-trigger-zone"
+        @click="activatePearlShell()"
+      />
+
+      <div v-if="showPearlShell && !pearlShellFullscreen" class="pearl-shell-embedded">
+        <PearlShellWrapper
+          :photo-urls="allPhotoUrls"
+          :is-fullscreen="false"
+          @request-fullscreen="handleRequestFullscreen"
+        />
+        <button class="pearl-shell-close" @click.stop="showPearlShell = false">✕</button>
+      </div>
+
+      <!-- ABSOLUTE LAYER: Right Section (Wooden Board Area) -->
+      <div class="right-section">
+        <div class="avatars" @click="openProfile">
+          <div class="avatar-wrapper">
+            <img class="avatar-photo" :class="{ 'avatar-custom': hasPartnerCustomAvatar }" :src="partnerAvatarUrl" alt="partner avatar" @error="onAvatarImgError" />
+            <img class="avatar-frame" :src="avatarFrame" alt="partner frame" />
+          </div>
+          <div class="ecg-link">
+            <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+              <path class="ecg-path-bg" d="M0 20 L35 20 L38 16 L41 24 L45 4 L49 36 L52 20 L100 20" />
+              <path class="ecg-path-pulse" d="M0 20 L35 20 L38 16 L41 24 L45 4 L49 36 L52 20 L100 20" />
+            </svg>
+          </div>
+          <div class="avatar-wrapper">
+            <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="my avatar" @error="onAvatarImgError" />
+            <img class="avatar-frame" :src="avatarFrame" alt="my frame" />
           </div>
         </div>
 
-        <!-- RIGHT: Avatar Frames + Profile Entry -->
-        <div class="right-section">
-          <div class="avatars" @click="openProfile">
-            <div class="avatar-wrapper">
-              <img class="avatar-photo" :class="{ 'avatar-custom': hasPartnerCustomAvatar }" :src="partnerAvatarUrl" alt="partner avatar" @error="onAvatarImgError" />
-              <img class="avatar-frame" :src="avatarFrame" alt="partner frame" />
-            </div>
-            <div class="ecg-link">
-              <svg viewBox="0 0 100 40" preserveAspectRatio="none">
-                <path class="ecg-path-bg" d="M0 20 L35 20 L38 16 L41 24 L45 4 L49 36 L52 20 L100 20" />
-                <path class="ecg-path-pulse" d="M0 20 L35 20 L38 16 L41 24 L45 4 L49 36 L52 20 L100 20" />
-              </svg>
-            </div>
-            <div class="avatar-wrapper">
-              <img class="avatar-photo" :class="{ 'avatar-custom': hasCustomAvatar }" :src="profileAvatarUrl" alt="my avatar" @error="onAvatarImgError" />
-              <img class="avatar-frame" :src="avatarFrame" alt="my frame" />
+        <div v-if="timelineNodes.length > 0" class="pearl-timeline">
+          <div class="timeline-line" />
+          <div
+            v-for="(node, idx) in timelineNodes"
+            :key="node.id"
+            class="timeline-node"
+            :style="{ animationDelay: `${idx * 0.15}s` }"
+            @click.stop="activatePearlShell()"
+          >
+            <img :src="starImg" class="pearl-dot" :style="{ transform: `rotate(${node.rotate}deg)` }" alt="" />
+            <div class="timeline-label">
+              <span class="timeline-date">{{ node.date }}</span>
+              <span class="timeline-title">{{ node.label }}</span>
             </div>
           </div>
+        </div>
 
-          <!-- Pearl Timeline -->
-          <div v-if="timelineNodes.length > 0" class="pearl-timeline">
-            <div class="timeline-line" />
-            <div
-              v-for="(node, idx) in timelineNodes"
-              :key="node.id"
-              class="timeline-node"
-              :style="{ animationDelay: `${idx * 0.15}s` }"
-              @click.stop="activatePearlShell()"
-            >
-              <img :src="starImg" class="pearl-dot" :style="{ transform: `rotate(${node.rotate}deg)` }" alt="" />
-              <div class="timeline-label">
-                <span class="timeline-date">{{ node.date }}</span>
-                <span class="timeline-title">{{ node.label }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Box -->
-          <div ref="boxRef" class="overflow-box" @click="openSuitcase">
-            <img :src="boxImg" class="box-icon" alt="overflow box" />
-            <span v-if="allPhotos.length > 0" class="box-badge">{{ allPhotos.length }}</span>
-          </div>
+        <div ref="boxRef" class="overflow-box" @click="openSuitcase">
+          <img :src="boxImg" class="box-icon" alt="overflow box" />
+          <span v-if="allPhotos.length > 0" class="box-badge">{{ allPhotos.length }}</span>
         </div>
       </div>
 
@@ -1131,9 +1132,10 @@ watch(visible, async (isVisible) => {
 .car-layout {
   display: flex;
   height: 100%;
-  padding: 5vh 5vw 5vh 20vw;
-  gap: 4vw;
+  padding: 5vh 8vw;
+  gap: 10vw;
   align-items: center;
+  justify-content: space-between;
 }
 
 /* ── Photo Wall (Left) ── */
@@ -1145,37 +1147,6 @@ watch(visible, async (isVisible) => {
   align-items: flex-start;
   justify-content: center;
   padding-top: 21vh;
-}
-
-/* ── PearlShell Trigger Zone ── */
-.pearl-shell-trigger-zone {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 936px;
-  height: 544px;
-  margin-top: -17px;
-  margin-left: 0px;
-  z-index: 1; /* Below photos but above background */
-  cursor: pointer;
-  border-radius: 0;
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: inset 0 0 40px 20px rgba(255, 180, 200, 0.05), inset 0 0 25px 12px rgba(255, 210, 80, 0.05); }
-  50% { box-shadow: inset 0 0 80px 40px rgba(255, 180, 200, 0.2), inset 0 0 60px 30px rgba(255, 210, 80, 0.3); }
-}
-
-.pearl-shell-trigger-zone:hover {
-  animation-name: pulse-glow-hover;
-  animation-duration: 2s;
-}
-
-@keyframes pulse-glow-hover {
-  0%, 100% { box-shadow: inset 0 0 60px 30px rgba(255, 170, 190, 0.2), inset 0 0 40px 20px rgba(255, 210, 80, 0.25); }
-  50% { box-shadow: inset 0 0 120px 60px rgba(255, 150, 180, 0.5), inset 0 0 90px 45px rgba(255, 210, 80, 0.55); }
 }
 
 .photo-grid {
@@ -1244,13 +1215,15 @@ watch(visible, async (isVisible) => {
 
 /* ── Right Section ── */
 .right-section {
+  position: absolute;
+  top: 18.5%;    /* 顶部与公告板齐平 */
+  left: 69%;   /* 起始于右侧木板区域 */
+  width: 15%;    /* 覆盖木板宽度 */
+  height: 65%;   /* 覆盖到行李箱位置 */
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 400px;
-  align-self: stretch;
-  padding-top: 18vh;
-  margin-right: 8vw;
+  z-index: 10;
 }
 
 .avatars {
@@ -1258,7 +1231,7 @@ watch(visible, async (isVisible) => {
   align-items: center;
   gap: 0;
   cursor: pointer;
-  margin-bottom: 48px;
+  margin-bottom: 70%; /* 缩小间距 */
 }
 
 @keyframes floating-group {
@@ -1267,7 +1240,7 @@ watch(visible, async (isVisible) => {
 }
 
 .ecg-link {
-  width: 120px;
+  width: 100px;
   height: 60px;
   margin: 0 -30px;
   z-index: 5;
@@ -1320,8 +1293,8 @@ watch(visible, async (isVisible) => {
 
 .avatar-wrapper {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 120px;
+  height: 120px;
   transition: transform 0.2s;
 }
 
@@ -2367,17 +2340,41 @@ watch(visible, async (isVisible) => {
 }
 
 /* ── PearlShell ── */
+.pearl-shell-trigger-zone {
+  position: absolute;
+  top: 19.2%;    /* 对齐公告板顶部 */
+  left: 16.5%;   /* 对齐公告板左侧 */
+  width: 49.2%;  /* 覆盖公告板宽度 */
+  height: 57.9%; /* 覆盖公告板高度 */
+  z-index: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
 .pearl-shell-embedded {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 936px;
-  height: 544px;
-  margin-top: -17px;
-  margin-left: 0px;
+  top: 19.2%;    /* 对齐公告板顶部 */
+  left: 16.6%;   /* 对齐公告板左侧 */
+  width: 49.2%;  /* 覆盖公告板宽度 */
+  height: 57.9%;
   border-radius: 2px;
   overflow: hidden;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: inset 0 0 40px 20px rgba(255, 180, 200, 0.05), inset 0 0 25px 12px rgba(255, 210, 80, 0.05); }
+  50% { box-shadow: inset 0 0 80px 40px rgba(255, 180, 200, 0.2), inset 0 0 60px 30px rgba(255, 210, 80, 0.3); }
+}
+
+.pearl-shell-trigger-zone:hover {
+  animation-name: pulse-glow-hover;
+  animation-duration: 2s;
+}
+
+@keyframes pulse-glow-hover {
+  0%, 100% { box-shadow: inset 0 0 60px 30px rgba(255, 170, 190, 0.2), inset 0 0 40px 20px rgba(255, 210, 80, 0.25); }
+  50% { box-shadow: inset 0 0 120px 60px rgba(255, 150, 180, 0.5), inset 0 0 90px 45px rgba(255, 210, 80, 0.55); }
 }
 
 .pearl-shell-close {

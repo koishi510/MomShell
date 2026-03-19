@@ -105,7 +105,7 @@ type AIGeneratedTask struct {
 	ID        uint      `gorm:"primaryKey"`
 	CoupleKey string    `gorm:"type:varchar(80);uniqueIndex:idx_couple_date_type" json:"couple_key"`
 	Date      string    `gorm:"type:varchar(10);uniqueIndex:idx_couple_date_type" json:"date"`
-	Type      string    `gorm:"type:varchar(20);default:'task';uniqueIndex:idx_couple_date_type" json:"type"`
+	Type      string    `gorm:"type:varchar(50);default:'task';uniqueIndex:idx_couple_date_type" json:"type"`
 	AgeStage  string    `gorm:"type:varchar(20)" json:"age_stage"`
 	Content   string    `gorm:"column:tasks_json;type:text" json:"content"` // Reusing tasks_json column for content
 	CreatedAt time.Time `json:"created_at"`
