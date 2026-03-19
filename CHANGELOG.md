@@ -5,20 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2026-03-16
+## [1.3.0] - 2026-03-19
 
 ### Added
 
-- **Task priorities (T0/T1/T2)**: Tasks now carry a `priority` field across template and AI tasks; the UI sorts and highlights urgent/milestone tasks.
-- **Proof photo completion**: Dad can optionally upload a proof photo when completing a task; Mom review UI shows thumbnails.
-- **Shell Gifts (blind-box shells)**: Completing a task generates a shell gift for Mom (AI-generated title/content + optional proof photo); Mom can list and open shell gifts.
-- **Dad dashboard**: Skill radar (six dimensions), achievements (seeded defaults + auto-unlock on verification), and perk cards (Mom issues, Dad redeems).
+#### Dad Console
+
+- **Empathetic Terminal theme**: Redesigned DadConsole with terminal-inspired UI, inline panels, and profile page
+- **Dad console modular architecture**: Split monolithic DadConsole into modular components (chat, community, tasks, whisper, profile)
+- **Dad chat & community panels**: Polished chat interface and community board for dad mode
+- **Dad dashboard**: Skill radar (six dimensions), achievements (seeded defaults + auto-unlock on verification), and perk cards (Mom issues, Dad redeems)
+- **Memory card generation**: AI-generated memory cards from task completions with mom view filtering
+
+#### Tasks & Whisper
+
+- **Task priorities (T0/T1/T2)**: Tasks now carry a `priority` field across template and AI tasks; the UI sorts and highlights urgent/milestone tasks
+- **Proof photo completion**: Dad can optionally upload a proof photo when completing a task; Mom review UI shows thumbnails
+- **Future letter workflow**: Replaced shell gift system with future letters — a more meaningful way to capture and deliver care messages over time
+- **Enhanced whisper intelligence**: Refreshed whisper flows with scene guidance and improved AI tips
+- **Time-space care engine**: Updated mom future letter prompt to use a time-space care engine for richer, more contextual letters
+
+#### Entry & Auth
+
+- **Anime landing page**: New animated entry page for unauthenticated users
+- **Redesigned login/register**: New login and register page with improved UX
+
+#### AI & Search
+
+- **Deep RAG**: Implemented RAG with pgvector and ModelScope embeddings for semantic document retrieval
+
+### Changed
+
+- **Dad mode BGM disabled**: Background music pauses automatically in dad mode and resumes when switching back to mom mode
 
 ### Fixed
 
-- **Vite 8 dependency resolution**: Updated `@vitejs/plugin-react` to match Vite 8 peer dependencies so `npm ci` succeeds.
-- **MediaPipe Hands build**: Switched to side-effect import + global `Hands` usage to avoid missing ESM named exports under Vite 8/Rolldown.
-- **ESLint**: Removed `any` usage in MediaPipe global access.
+- **SonarCloud reliability**: Fixed reliability and maintainability issues across frontend and backend
+- **Code duplication**: Reduced duplication in `task.go`, `useTutorial.ts`, and other modules to meet SonarCloud quality gate (≤3%)
+- **Vite 8 compatibility**: Updated `@vitejs/plugin-react` and switched MediaPipe Hands to side-effect import for Vite 8/Rolldown
+- **Pearl shell gesture**: Fixed gesture recognition failure in pearl shell interaction
+- **Pearl position**: Fixed pearl sprite positioning and pearl menu entry
+- **Photo grid**: Fixed photo grid layout issues
+- **Avatar display**: Fixed avatar rendering
+- **Dad mode header**: Fixed header display issues in dad console
+- **Dad task & whisper panels**: Polished panel layout and interactions
+- **Docker build**: Fixed Dockerfile configuration
+- **Staticcheck warnings**: Resolved staticcheck and nilness lint warnings in Go backend
+
+### Security
+
+- **Removed hardcoded AI user password** (SonarCloud S2068)
+- **Frontend security hardening**: Addressed PR review security findings
+- **Backend security hardening**: Addressed PR review security findings
+
+### Dependencies
+
+- Vite 7.3.1 → 8.0.0
+- Vue 3.5.29 → 3.5.30
+- golang.org/x/crypto 0.48.0 → 0.49.0
+- puppeteer 24.38.0 → 24.39.1
+- typescript-eslint 8.56.1 → 8.57.0
+- @vitejs/plugin-vue 6.0.4 → 6.0.5
+- GitHub Actions: checkout 4.3.1 → 6.0.2, upload-artifact 4.6.2 → 7.0.0, download-artifact 4.3.0 → 8.0.1
+- SonarSource/sonarqube-scan-action 6.0.0 → 7.0.0
 
 ---
 
