@@ -11,7 +11,7 @@
           <button v-if="authStore.isAuthenticated" class="dc-mem-btn" @click="showInlineMemory = true">记忆库</button>
         </div>
 
-        <div class="dc-chat-wrap" :style="ambientStyle">
+        <div class="dc-chat-wrap" :style="ambientStyle" @click="onConsoleClick">
           <div class="dc-terminal-noise" />
 
           <div class="dc-messages" ref="messagesEl">
@@ -80,7 +80,7 @@
                 @keydown.up.prevent="navigateHistory('up')"
                 @keydown.down.prevent="navigateHistory('down')"
                 @keydown.enter.exact.prevent="onSend"
-                />
+              />
             </form>
           </div>
         </div>
@@ -265,6 +265,17 @@ function focusInput() {
     inputEl.value.setSelectionRange(length, length)
     caretIndex.value = length
   })
+}
+
+function onConsoleClick(e: MouseEvent) {
+  if (sending.value || isStreaming.value) return
+  // Don't interfere with text selection
+  const sel = window.getSelection()
+  if (sel && sel.toString().length > 0) return
+  // Don't steal focus from interactive elements
+  const target = e.target as HTMLElement
+  if (target.closest('a, button, textarea, input')) return
+  focusInput()
 }
 
 function setInputValue(value: string) {
@@ -514,6 +525,8 @@ async function onSend() {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .dc-log-entry {
@@ -626,11 +639,11 @@ async function onSend() {
 }
 
 .dc-terminal-editor {
-  position: fixed;
-  top: -9999px;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 1.8em;
   border: none;
   background: transparent;
   color: transparent;
