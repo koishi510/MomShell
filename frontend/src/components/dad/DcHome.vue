@@ -190,9 +190,12 @@ function refreshBriefing() {
     .then((data) => { tipsData.value = data })
     .catch(() => {
       const current = BRIEFINGS.findIndex((b) => b.quote === briefingQuote.value)
-      let next = Math.floor(Math.random() * BRIEFINGS.length)
+      const arr = new Uint32Array(1)
+      crypto.getRandomValues(arr)
+      let next = arr[0] % BRIEFINGS.length
       while (next === current && BRIEFINGS.length > 1) {
-        next = Math.floor(Math.random() * BRIEFINGS.length)
+        crypto.getRandomValues(arr)
+        next = arr[0] % BRIEFINGS.length
       }
       setBriefing(next)
     })
