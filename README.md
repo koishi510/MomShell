@@ -1,7 +1,5 @@
 # MomShell
 
-> MomShell--YourFamilyTranslator
-
 [![CI](https://img.shields.io/github/actions/workflow/status/koishi510/MomShell/ci.yml?branch=main&style=flat&label=CI)](https://github.com/koishi510/MomShell/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=koishi510_MomShell&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=koishi510_MomShell)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=koishi510_MomShell&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=koishi510_MomShell)
@@ -15,23 +13,23 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-AI-powered wellness platform combining emotional companionship, community support, and self-reflection tools in a calming beach-themed experience.
+_Your Family Translator_ — An AI-powered wellness platform combining emotional companionship, community support, and self-reflection tools in a calming beach-themed experience.
 
 ## Features
 
-| Module              | Description                                                                        |
-| ------------------- | ---------------------------------------------------------------------------------- |
-| **Soul Companion**  | AI chat companion with conversation memory, history viewing, and emotional support |
-| **Sisterhood Bond** | Community Q&A with verified healthcare professionals and content moderation        |
-| **Echo / Memoir**   | Self-reflection space with AI-generated memoir stickers and partner connection     |
-| **Photo Gallery**   | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI        |
-| **Whisper**         | Audio-to-text whisper tips with AI-generated scene guidance                         |
+| Module                  | Description                                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Soul Companion**      | AI chat companion with conversation memory, history viewing, and emotional support                                                          |
+| **Sisterhood Bond**     | Community Q&A with verified healthcare professionals and content moderation                                                                 |
+| **Echo / Memoir**       | Self-reflection space with AI-generated memoir stickers and partner connection                                                              |
+| **Photo Gallery**       | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI                                                                 |
+| **Whisper**             | Audio-to-text whisper tips with AI-generated scene guidance                                                                                 |
 | **Tasks / Dad Console** | Daily task board with T0/T1/T2 priority, proof photos, partner review, XP/level, skill radar + achievements, perk cards, and future letters |
-| **Dad Console**     | Terminal-themed modular dad UI with chat, community, tasks, whisper, dashboard, profile, and memory cards |
-| **Deep RAG**        | Semantic document retrieval using pgvector embeddings for AI-grounded responses     |
-| **Entry & Auth**    | Anime landing page with redesigned login/register flow and role selection           |
-| **Mobile & PWA**    | Responsive mobile layout with portrait/landscape sprite configs, touch gestures, dynamic viewport units, and offline-capable service worker |
-| **Admin Panel**     | Embedded single-page admin at `/admin` — dashboard, user CRUD, config management   |
+| **Dad Console**         | Terminal-themed modular dad UI with chat, community, tasks, whisper, dashboard, profile, and memory cards                                   |
+| **Deep RAG**            | Semantic document retrieval using pgvector embeddings for AI-grounded responses                                                             |
+| **Entry & Auth**        | Anime landing page with redesigned login/register flow and role selection                                                                   |
+| **Mobile & PWA**        | Responsive mobile layout with portrait/landscape sprite configs, touch gestures, dynamic viewport units, and offline-capable service worker |
+| **Admin Panel**         | Embedded single-page admin at `/admin` — dashboard, user CRUD, config management                                                            |
 
 ## Quick Start
 
