@@ -1,48 +1,58 @@
 <template>
   <Transition name="dc-fade">
-    <div v-if="visible" class="dc-dialog-backdrop" @click.self="$emit('close')">
+    <div v-if="visible" class="dc-dialog-backdrop" @click.self="!success && $emit('close')">
       <div class="dc-term-modal">
-        <div class="dc-term-modal-header">
-          <span>提交任务回执</span>
-          <button class="dc-term-modal-close" @click="$emit('close')">关闭</button>
-        </div>
+        <template v-if="success">
+          <div class="dc-term-modal-body dc-success-body">
+            <div class="dc-success-icon">✓</div>
+            <h3 class="dc-dialog-title dc-success-title">任务已提交</h3>
+            <p class="dc-dialog-copy dc-success-copy">等待妈妈验收后，系统会自动生成纪念卡片。</p>
+          </div>
+        </template>
 
-        <div class="dc-term-modal-body">
-          <h3 class="dc-dialog-title">上传执行凭证</h3>
-          <p v-if="targetTitle" class="dc-dialog-sub">当前任务：{{ targetTitle }}</p>
-          <p class="dc-dialog-copy">可以上传一张现场照片作为执行凭证，也可以直接跳过。任务验收通过后，系统会自动为妈妈生成纪念卡片并存入照片库。</p>
-
-          <div class="dc-card-options">
-            <label class="dc-proof-picker">
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                class="dc-proof-input"
-                :disabled="uploading"
-                @change="$emit('upload', $event)"
-              />
-              <span class="dc-action-btn dc-action-btn-outline">拍照或上传证明</span>
-            </label>
+        <template v-else>
+          <div class="dc-term-modal-header">
+            <span>提交任务回执</span>
+            <button class="dc-term-modal-close" @click="$emit('close')">关闭</button>
           </div>
 
-          <div v-if="previewUrl" class="dc-card-preview">
-            <img :src="previewUrl" alt="" class="dc-card-img" />
+          <div class="dc-term-modal-body">
+            <h3 class="dc-dialog-title">上传执行凭证</h3>
+            <p v-if="targetTitle" class="dc-dialog-sub">当前任务：{{ targetTitle }}</p>
+            <p class="dc-dialog-copy">可以上传一张现场照片作为执行凭证，也可以直接跳过。任务验收通过后，系统会自动为妈妈生成纪念卡片并存入照片库。</p>
+
+            <div class="dc-card-options">
+              <label class="dc-proof-picker">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  class="dc-proof-input"
+                  :disabled="uploading"
+                  @change="$emit('upload', $event)"
+                />
+                <span class="dc-action-btn dc-action-btn-outline">拍照或上传证明</span>
+              </label>
+            </div>
+
+            <div v-if="previewUrl" class="dc-card-preview">
+              <img :src="previewUrl" alt="" class="dc-card-img" />
+            </div>
+
+            <p v-if="error" class="dc-error">{{ error }}</p>
           </div>
 
-          <p v-if="error" class="dc-error">{{ error }}</p>
-        </div>
-
-        <div class="dc-term-modal-footer">
-          <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || !targetTitle" @click="$emit('submit-without-photo')">跳过照片</button>
-          <button
-            class="dc-action-btn"
-            :disabled="uploading || !targetTitle || !previewUrl"
-            @click="$emit('submit-with-photo')"
-          >
-            {{ uploading ? '提交中...' : '上传并提交' }}
-          </button>
-        </div>
+          <div class="dc-term-modal-footer">
+            <button class="dc-action-btn dc-action-btn-outline" :disabled="uploading || !targetTitle" @click="$emit('submit-without-photo')">跳过照片</button>
+            <button
+              class="dc-action-btn"
+              :disabled="uploading || !targetTitle || !previewUrl"
+              @click="$emit('submit-with-photo')"
+            >
+              {{ uploading ? '提交中...' : '上传并提交' }}
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </Transition>
@@ -55,6 +65,7 @@ defineProps<{
   previewUrl: string
   uploading: boolean
   error: string
+  success: boolean
 }>()
 
 defineEmits<{
@@ -244,5 +255,37 @@ defineEmits<{
 
 .dc-fade-enter-from .dc-term-modal, .dc-fade-leave-to .dc-term-modal {
   transform: translateY(20px);
+}
+
+.dc-success-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.dc-success-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(158, 206, 106, 0.15);
+  border: 2px solid rgba(158, 206, 106, 0.4);
+  color: var(--dc-success, #9ECE6A);
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dc-success-title {
+  color: var(--dc-success, #9ECE6A);
+}
+
+.dc-success-copy {
+  max-width: 300px;
 }
 </style>

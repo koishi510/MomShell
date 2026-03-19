@@ -17,53 +17,65 @@
             <div v-else-if="error && !view" class="error-msg">{{ error }}</div>
 
             <template v-else-if="view">
-              <section class="intro-card">
-                <p class="card-kicker">当前话题</p>
-                <h3 class="card-title">{{ view.title }}</h3>
-                <p class="card-copy">{{ view.intro }}</p>
-              </section>
-
-              <section v-for="(question, index) in view.questions" :key="question.id" class="question-card">
-                <div class="question-head">
-                  <span class="question-index">{{ index + 1 }}</span>
-                  <div>
-                    <h3 class="question-title">{{ question.prompt }}</h3>
-                  </div>
+              <div v-if="submitted" class="submit-done">
+                <div class="done-check">✓</div>
+                <h3 class="done-title">心声已分享给伴侣</h3>
+                <p class="done-copy">你的伴侣将会收到整理后的建议，帮助他更好地理解和陪伴你。</p>
+                <div class="done-summary">
+                  <span v-if="submittedStageLabel" class="signal-chip">{{ submittedStageLabel }}</span>
+                  <span v-if="submittedStateLabel" class="signal-chip">{{ submittedStateLabel }}</span>
                 </div>
-                <div class="option-list">
-                  <button
-                    v-for="option in question.options"
-                    :key="option.id"
-                    :class="['option-btn', { selected: selectedValue(question.id) === option.id }]"
-                    @click="selectOption(question.id, option.id)"
-                  >
-                    <span class="option-label">{{ option.label }}</span>
-                    <span v-if="option.hint" class="option-hint">{{ option.hint }}</span>
-                  </button>
-                </div>
-              </section>
-
-              <section class="wish-card">
-                <p class="card-kicker">补一句想说的话</p>
-                <textarea
-                  v-model="wishContent"
-                  class="wish-textarea"
-                  :placeholder="view.wish_prompt || '如果有想对他说的悄悄话，可以写在这里。'"
-                  maxlength="300"
-                />
-                <div class="wish-meta">
-                  <span>{{ wishContent.length }}/300</span>
-                </div>
-              </section>
-
-              <div class="action-row">
-                <button class="submit-btn" :disabled="submitting || !hasValidSelection" @click="onSubmit">
-                  {{ submitting ? '发送中...' : '分享心声' }}
-                </button>
+                <button class="submit-btn done-btn" @click="resetForm">再写一次</button>
               </div>
 
-              <p v-if="error" class="error-msg">{{ error }}</p>
-              <p v-if="success" class="success-msg">{{ success }}</p>
+              <template v-else>
+                <section class="intro-card">
+                  <p class="card-kicker">当前话题</p>
+                  <h3 class="card-title">{{ view.title }}</h3>
+                  <p class="card-copy">{{ view.intro }}</p>
+                </section>
+
+                <section v-for="(question, index) in view.questions" :key="question.id" class="question-card">
+                  <div class="question-head">
+                    <span class="question-index">{{ index + 1 }}</span>
+                    <div>
+                      <h3 class="question-title">{{ question.prompt }}</h3>
+                    </div>
+                  </div>
+                  <div class="option-list">
+                    <button
+                      v-for="option in question.options"
+                      :key="option.id"
+                      :class="['option-btn', { selected: selectedValue(question.id) === option.id }]"
+                      @click="selectOption(question.id, option.id)"
+                    >
+                      <span class="option-label">{{ option.label }}</span>
+                      <span v-if="option.hint" class="option-hint">{{ option.hint }}</span>
+                    </button>
+                  </div>
+                </section>
+
+                <section class="wish-card">
+                  <p class="card-kicker">补一句想说的话</p>
+                  <textarea
+                    v-model="wishContent"
+                    class="wish-textarea"
+                    :placeholder="view.wish_prompt || '如果有想对他说的悄悄话，可以写在这里。'"
+                    maxlength="300"
+                  />
+                  <div class="wish-meta">
+                    <span>{{ wishContent.length }}/300</span>
+                  </div>
+                </section>
+
+                <div class="action-row">
+                  <button class="submit-btn" :disabled="submitting || !hasValidSelection" @click="onSubmit">
+                    {{ submitting ? '发送中...' : '分享心声' }}
+                  </button>
+                </div>
+
+                <p v-if="error" class="error-msg">{{ error }}</p>
+              </template>
             </template>
           </template>
 
@@ -200,6 +212,9 @@ const loading = ref(false)
 const submitting = ref(false)
 const error = ref('')
 const success = ref('')
+const submitted = ref(false)
+const submittedStageLabel = ref('')
+const submittedStateLabel = ref('')
 const selectedStage = ref('')
 const selectedState = ref('')
 const wishContent = ref('')
@@ -295,11 +310,10 @@ async function onSubmit() {
       wish_content: wishContent.value.trim() || undefined,
     })
     applyResponse(response)
+    submittedStageLabel.value = selectedStageLabel.value
+    submittedStateLabel.value = selectedStateLabel.value
     wishContent.value = ''
-    success.value = '心声已分享给伴侣。'
-    window.setTimeout(() => {
-      success.value = ''
-    }, 3200)
+    submitted.value = true
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
@@ -315,6 +329,15 @@ function applyResponse(response: FutureLetterResponseItem) {
     latest_response: response,
     recent_responses: nextHistory.slice(0, 6),
   }
+}
+
+function resetForm() {
+  submitted.value = false
+  selectedStage.value = ''
+  selectedState.value = ''
+  submittedStageLabel.value = ''
+  submittedStateLabel.value = ''
+  error.value = ''
 }
 
 function adviceKindLabel(kind: string) {
@@ -655,6 +678,65 @@ function formatTime(value: string) {
   color: #27ae60;
   font-size: 12px;
   margin-top: 12px;
+}
+
+.submit-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  gap: 12px;
+}
+
+.done-check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(39, 174, 96, 0.15);
+  border: 2px solid rgba(39, 174, 96, 0.4);
+  color: #27ae60;
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.done-title {
+  margin: 0;
+  color: #3a2a1a;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.done-copy {
+  margin: 0;
+  color: #6a5a4a;
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+.done-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.done-btn {
+  margin-top: 8px;
+  background: transparent;
+  color: #8a6a4a;
+  border: 1px solid rgba(138, 106, 74, 0.3);
+}
+
+.done-btn:hover:not(:disabled) {
+  background: rgba(138, 106, 74, 0.08);
 }
 
 @media (max-width: 768px) {

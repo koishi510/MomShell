@@ -74,6 +74,7 @@
       :preview-url="proofPreviewUrl"
       :uploading="proofUploading"
       :error="completeDialogError"
+      :success="completeSuccess"
       @close="closeCompleteDialog"
       @upload="onProofFileChange"
       @submit-without-photo="submitCompleteWithoutPhoto"
@@ -220,6 +221,7 @@ async function fetchTasks() {
   const [taskList, taskStats] = await Promise.all([getDailyTasks(), getTaskStats()])
   tasks.value = taskList
   stats.value = taskStats
+  error.value = ''
 }
 
 async function pollTasks() {
@@ -229,6 +231,7 @@ async function pollTasks() {
     if (stats.value?.xp !== taskStats.xp || stats.value?.level !== taskStats.level) {
       stats.value = taskStats
     }
+    if (error.value) error.value = ''
   } catch { /* ignore */ }
 }
 
@@ -297,6 +300,7 @@ const proofFile = ref<File | null>(null)
 const proofUploading = ref(false)
 const completeDialogError = ref('')
 const proofPreviewUrl = ref('')
+const completeSuccess = ref(false)
 
 function resetProof() {
   if (proofPreviewUrl.value) {
@@ -317,7 +321,15 @@ function closeCompleteDialog() {
   showCompleteDialog.value = false
   completeTarget.value = null
   completeDialogError.value = ''
+  completeSuccess.value = false
   resetProof()
+}
+
+function showSuccessThenClose() {
+  completeSuccess.value = true
+  window.setTimeout(() => {
+    closeCompleteDialog()
+  }, 1800)
 }
 
 function onProofFileChange(e: Event) {
@@ -340,7 +352,7 @@ async function submitCompleteWithoutPhoto() {
   try {
     const updated = await completeTask(id)
     tasks.value = tasks.value.map((t) => (t.id === id ? updated : t))
-    closeCompleteDialog()
+    showSuccessThenClose()
   } catch (e) {
     completeDialogError.value = getErrorMessage(e)
   } finally {
@@ -359,7 +371,7 @@ async function submitCompleteWithPhoto() {
     const uploaded = await uploadPhoto(proofFile.value, `任务证明：${completeTarget.value.title}`)
     const updated = await completeTask(id, { proof_photo_url: uploaded.image_url })
     tasks.value = tasks.value.map((t) => (t.id === id ? updated : t))
-    closeCompleteDialog()
+    showSuccessThenClose()
   } catch (e) {
     completeDialogError.value = getErrorMessage(e)
   } finally {
