@@ -12,6 +12,7 @@ export interface UserTaskItem {
   score: number | null;
   comment: string | null;
   proof_photo_url: string | null;
+  memory_photo_url?: string | null;
   completed_at: string | null;
   scored_at: string | null;
   date: string;
@@ -103,4 +104,8 @@ export function setBabyAge(ageStage: string): Promise<void> {
 
 export function regenerateTasks(): Promise<UserTaskItem[]> {
   return apiClient.post("/api/v1/tasks/regenerate").then((r) => r.data);
+}
+
+export function regenerateTaskCard(id: string): Promise<{ message: string }> {
+  return apiClient.post(`/api/v1/tasks/${id}/card/regenerate`).then((r) => r.data);
 }

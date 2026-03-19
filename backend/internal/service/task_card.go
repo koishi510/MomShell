@@ -20,11 +20,11 @@ func buildTaskCardPrompt(title, description string) string {
 	}
 
 	return fmt.Sprintf(
-		"贴纸插画风格，场景：爸爸完成了一项家庭任务——%s。"+
-			"根据任务内容自然呈现画面，可能出现的角色有爸爸、妈妈、宝宝，"+
-			"按任务场景合理搭配，也可能只有物品没有人物。"+
-			"可爱卡通风格，暖色调，白色边框，矢量风格，高质量。"+
-			"不要文字，不要水印。",
+		"一张充满温度的家庭时光拍立得照片，定格了一个温馨瞬间：%s。"+
+			"画面氛围：治愈、松弛感的日系清新漫画风格或绘本插画风格，绝对不要写实风格、不要3D渲染。"+
+			"如果有家庭成员（爸爸、妈妈、宝宝），他们的互动要自然且充满爱意，人物造型要是可爱的漫画感；如果不包含人物，则通过物品光影和环境展现出温暖的居家氛围。"+
+			"画面有留白，就像一张珍贵的家庭记忆卡片。"+
+			"禁止任何文字、字母或水印。",
 		scene,
 	)
 }
@@ -32,17 +32,23 @@ func buildTaskCardPrompt(title, description string) string {
 func buildVerifiedTaskCardPrompt(title, description string, score *int, comment *string) string {
 	prompt := buildTaskCardPrompt(title, description)
 	if score == nil && (comment == nil || *comment == "") {
-		return prompt + " 这是一张妈妈验收通过后存入照片库的纪念卡片。"
+		return prompt + " 这是一段被用心珍藏的家庭生活记忆。"
 	}
 
 	var details string
 	if score != nil {
-		details = fmt.Sprintf(" 妈妈已经验收通过，评分 %d/5。", *score)
+		if *score == 5 {
+			details = " 充满极大的惊喜与感动，画面格外明亮欢乐。"
+		} else if *score >= 3 {
+			details = " 充满平淡的踏实与温馨。"
+		} else {
+			details = " 带着些许波折但依然真实的家庭日常。"
+		}
 	}
 	if comment != nil && *comment != "" {
-		details += fmt.Sprintf(" 她留下的话是：%s。", *comment)
+		details += fmt.Sprintf(" 照片背后的情绪线索是：“%s”。请将这种情绪自然融入画面的氛围中。", *comment)
 	}
-	return prompt + details + " 整体像家庭任务完成后的温暖纪念卡。"
+	return prompt + details
 }
 
 func (s *TaskService) generateVerifiedTaskCardPhoto(momID string, ut model.UserTask) error {
@@ -73,11 +79,19 @@ func (s *TaskService) generateVerifiedTaskCardPhoto(momID string, ut model.UserT
 		description = *ut.Comment
 	}
 
-	return s.photoRepo.Create(&model.Photo{
+	photo := &model.Photo{
 		UserID:      momID,
 		Title:       title,
 		Description: description,
 		ImageURL:    imageURL,
 		Source:      "task_card",
-	})
+	}
+
+	if err := s.photoRepo.Create(photo); err != nil {
+		return err
+	}
+
+	// Update the task with the generated photo URL
+	ut.MemoryPhotoURL = &photo.ImageURL
+	return s.taskRepo.UpdateUserTask(&ut)
 }

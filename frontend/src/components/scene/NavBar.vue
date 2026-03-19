@@ -84,11 +84,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { iconComponent: IconChat, label: '聊天', spriteId: 'stone' },
-  { iconComponent: IconCar, label: '关系', spriteId: 'car' },
-  { iconComponent: IconBoard, label: '公告板', spriteId: 'bar' },
-  { iconComponent: IconConque, label: '心语情报', spriteId: 'mailbox' },
+  { iconComponent: IconBoard, label: '智育社区', spriteId: 'bar' },
+  { iconComponent: IconCar, label: '个人中心', spriteId: 'car' },
+  { iconComponent: IconConque, label: '心语信箱', spriteId: 'mailbox' },
   { iconComponent: IconStar, label: '行动回执', spriteId: 'chair' },
+  { iconComponent: IconChat, label: '智聊助手', spriteId: 'stone' },
 ]
 
 function highlightSprite(spriteId: string) {

@@ -66,6 +66,7 @@ func (s *UserService) GetProfile(userID string) (*dto.UserProfile, error) {
 		Email:              user.Email,
 		AvatarURL:          user.AvatarURL,
 		Role:               string(user.Role),
+		DadChatStyle:       string(model.NormalizeDadChatStyle(user.DadChatStyle)),
 		IsAdmin:            user.IsAdmin,
 		ShellCode:          user.ShellCode,
 		IsCertified:        info.IsCertified,
@@ -136,6 +137,13 @@ func (s *UserService) applyProfileFieldUpdates(user *model.User, req dto.UserPro
 			return err
 		}
 		user.Role = model.UserRole(*req.Role)
+	}
+
+	if req.DadChatStyle != nil {
+		if user.Role != model.RoleDad {
+			return errors.New("只有守护者可以设置聊天样式")
+		}
+		user.DadChatStyle = model.NormalizeDadChatStyle(model.DadChatStyle(*req.DadChatStyle))
 	}
 
 	return nil

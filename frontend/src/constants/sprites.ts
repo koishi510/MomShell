@@ -120,7 +120,7 @@ export const SPRITES: SpriteData[] = [
     top: "2.5%",
     width: "40vw",
     rotate: 0,
-    label: "同频任务",
+    label: "行动回执",
     labelSize: "1.2rem",
     labelOffsetY: "-6%",
     mobile: { width: "40vw", left: "60%", top: "30%" },

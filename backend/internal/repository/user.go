@@ -79,6 +79,13 @@ func (r *UserRepo) Update(user *model.User) error {
 	return r.db.Save(user).Error
 }
 
+// FindBoundMoms returns all mom users that have a bound partner.
+func (r *UserRepo) FindBoundMoms() ([]model.User, error) {
+	var users []model.User
+	err := r.db.Where("role = ? AND partner_id IS NOT NULL", model.RoleMom).Find(&users).Error
+	return users, err
+}
+
 func (r *UserRepo) UpdatePassword(id, passwordHash string) error {
 	return r.db.Model(&model.User{}).Where(whereID, id).Update("password_hash", passwordHash).Error
 }

@@ -215,6 +215,32 @@ func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dt
 	return &item, nil
 }
 
+// RegenerateTaskCard allows Mom to regenerate the memory card for a verified task.
+func (s *TaskService) RegenerateTaskCard(callerID, taskID string) error {
+	caller, err := s.requireMomWithPartner(callerID)
+	if err != nil {
+		return err
+	}
+
+	ut, err := s.findPartnerTask(*caller.PartnerID, taskID, model.TaskVerified)
+	if err != nil {
+		return err
+	}
+
+	if s.openaiClient == nil || s.photoRepo == nil || s.imageModel == "" {
+		return errors.New("AI 绘图服务未配置，无法生成卡片")
+	}
+
+	verifiedCopy := *ut
+	go func() {
+		if err := s.generateVerifiedTaskCardPhoto(callerID, verifiedCopy); err != nil {
+			log.Printf("[TaskService] failed to regenerate verified task card: %v", err)
+		}
+	}()
+
+	return nil
+}
+
 // RejectTask allows Mom to reject a completed task back to pending.
 func (s *TaskService) RejectTask(callerID, taskID string, comment string) (*dto.UserTaskItem, error) {
 	caller, err := s.requireMomWithPartner(callerID)
@@ -271,16 +297,17 @@ func (s *TaskService) GetTaskStats(userID string) (*dto.TaskStats, error) {
 
 func toTaskItem(ut model.UserTask) dto.UserTaskItem {
 	item := dto.UserTaskItem{
-		ID:            ut.ID,
-		Priority:      string(ut.Priority),
-		Status:        string(ut.Status),
-		Source:        string(ut.Source),
-		Score:         ut.Score,
-		Comment:       ut.Comment,
-		ProofPhotoURL: ut.ProofPhotoURL,
-		CompletedAt:   ut.CompletedAt,
-		ScoredAt:      ut.ScoredAt,
-		Date:          ut.Date,
+		ID:             ut.ID,
+		Priority:       string(ut.Priority),
+		Status:         string(ut.Status),
+		Source:         string(ut.Source),
+		Score:          ut.Score,
+		Comment:        ut.Comment,
+		ProofPhotoURL:  ut.ProofPhotoURL,
+		MemoryPhotoURL: ut.MemoryPhotoURL,
+		CompletedAt:    ut.CompletedAt,
+		ScoredAt:       ut.ScoredAt,
+		Date:           ut.Date,
 	}
 
 	if ut.Source != model.TaskSourceTemplate {

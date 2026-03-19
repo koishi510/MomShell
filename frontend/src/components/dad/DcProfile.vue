@@ -59,8 +59,29 @@
       </div>
     </div>
 
+    <div v-if="isDad" class="dc-panel dc-float" style="--float-i:3">
+      <div class="dc-panel-label">AI聊天样式</div>
+      <div class="dc-style-grid">
+        <button
+          v-for="option in dadChatStyleOptions"
+          :key="option.value"
+          type="button"
+          class="dc-style-option"
+          :class="{ 'is-active': dadChatStyle === option.value }"
+          @click="dadChatStyle = option.value"
+        >
+          <span class="dc-style-title">{{ option.label }}</span>
+        </button>
+      </div>
+      <div v-if="chatStyleError" class="dc-inline-error">{{ chatStyleError }}</div>
+      <div v-if="chatStyleSuccess" class="dc-inline-success">{{ chatStyleSuccess }}</div>
+      <button class="dc-execute-btn" style="width:100%" :disabled="chatStyleLoading || dadChatStyle === currentDadChatStyle" @click="onSaveDadChatStyle">
+        {{ chatStyleLoading ? '保存中...' : '保存样式' }}
+      </button>
+    </div>
+
     <!-- Shell code / Partner binding -->
-    <div class="dc-panel dc-float" style="--float-i:3">
+    <div class="dc-panel dc-float" :style="{ '--float-i': isDad ? 4 : 3 }">
       <div class="dc-panel-label">贝壳码</div>
       <template v-if="isBound">
         <div class="dc-partner-info">
@@ -92,7 +113,7 @@
     </div>
 
     <!-- Password -->
-    <div class="dc-panel dc-float" style="--float-i:4">
+    <div class="dc-panel dc-float" :style="{ '--float-i': isDad ? 5 : 4 }">
       <div class="dc-panel-label">账号安全</div>
       <form class="dc-form" @submit.prevent="onChangePassword">
         <input v-model="pwForm.old_password" type="password" class="dc-form-input" placeholder="当前密码" required autocomplete="current-password" />
@@ -107,7 +128,7 @@
     </div>
 
     <!-- Logout -->
-    <div class="dc-float" style="--float-i:5">
+    <div class="dc-float" :style="{ '--float-i': isDad ? 6 : 5 }">
       <button class="dc-logout-btn" @click="$emit('logout')">
         退出登录
       </button>
@@ -131,6 +152,11 @@ import {
 import { getErrorMessage } from '@/lib/apiClient'
 import avatarDefault from '@/assets/images/avatar.png'
 import aiAvatar from '@/assets/images/ai_avatar.png'
+import {
+  DAD_CHAT_STYLE_OPTIONS,
+  normalizeDadChatStyle,
+  type DadChatStyle,
+} from '@/constants/dadChat'
 
 const auth = useAuthStore()
 
@@ -152,6 +178,10 @@ const profileForm = reactive({ username: '', nickname: '', email: '' })
 const profileFormError = ref('')
 const profileFormSuccess = ref('')
 const profileFormLoading = ref(false)
+const dadChatStyle = ref<DadChatStyle>('terminal')
+const chatStyleLoading = ref(false)
+const chatStyleError = ref('')
+const chatStyleSuccess = ref('')
 
 const avatarInput = ref<HTMLInputElement | null>(null)
 const avatarUploading = ref(false)
@@ -167,6 +197,7 @@ const unbindLoading = ref(false)
 
 const isBound = computed(() => !!profile.value?.partner)
 const isMom = computed(() => (profile.value?.role || auth.user?.role) === 'mom')
+const dadChatStyleOptions = DAD_CHAT_STYLE_OPTIONS
 
 const roleMap: Record<string, string> = { mom: '溯源者', dad: '守护者', professional: '专业认证' }
 const displayNickname = computed(() => profile.value?.nickname || auth.user?.nickname || '用户')
@@ -175,6 +206,9 @@ const isDad = computed(() => (profile.value?.role || auth.user?.role) === 'dad')
 const defaultAvatar = computed(() => isDad.value ? aiAvatar : avatarDefault)
 const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || defaultAvatar.value)
 const roleName = computed(() => roleMap[profile.value?.role || auth.user?.role || 'mom'] || '溯源者')
+const currentDadChatStyle = computed<DadChatStyle>(() =>
+  normalizeDadChatStyle(profile.value?.dad_chat_style || auth.user?.dad_chat_style),
+)
 
 function onAvatarImgError(e: Event) {
   const img = e.target as HTMLImageElement
@@ -185,6 +219,9 @@ function syncProfileForm() {
   profileForm.username = profile.value?.username || auth.user?.username || ''
   profileForm.nickname = profile.value?.nickname || auth.user?.nickname || ''
   profileForm.email = profile.value?.email || auth.user?.email || ''
+  dadChatStyle.value = currentDadChatStyle.value
+  chatStyleError.value = ''
+  chatStyleSuccess.value = ''
 }
 
 async function fetchProfile() {
@@ -250,6 +287,29 @@ async function onSaveProfile() {
     profileFormSuccess.value = '资料已更新'
   } catch (e) { profileFormError.value = getErrorMessage(e) }
   finally { profileFormLoading.value = false }
+}
+
+async function onSaveDadChatStyle() {
+  chatStyleError.value = ''
+  chatStyleSuccess.value = ''
+  if (!isDad.value) return
+  if (dadChatStyle.value === currentDadChatStyle.value) {
+    chatStyleSuccess.value = '当前已是该样式'
+    return
+  }
+
+  chatStyleLoading.value = true
+  try {
+    const updated = await updateUserProfile({ dad_chat_style: dadChatStyle.value })
+    profile.value = updated
+    if (auth.user) auth.user.dad_chat_style = updated.dad_chat_style
+    dadChatStyle.value = normalizeDadChatStyle(updated.dad_chat_style)
+    chatStyleSuccess.value = 'AI聊天样式已更新'
+  } catch (e) {
+    chatStyleError.value = getErrorMessage(e)
+  } finally {
+    chatStyleLoading.value = false
+  }
 }
 
 async function onGenerateShellCode() {
@@ -380,6 +440,56 @@ watch(() => props.visible, (active) => {
 .dc-execute-btn:hover:not(:disabled) { border-color: var(--dc-accent, #7DCFFF); background: rgba(125,207,255,0.08); box-shadow: 0 0 20px rgba(125,207,255,0.15); }
 .dc-execute-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.dc-style-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dc-style-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--dc-border, rgba(255,255,255,0.12));
+  border-radius: var(--dc-radius, 2px);
+  color: var(--dc-text, #C0CAF5);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dc-style-option:hover {
+  border-color: rgba(125,207,255,0.3);
+}
+
+.dc-style-option.is-active {
+  border-color: rgba(125,207,255,0.45);
+  background: rgba(125,207,255,0.08);
+  box-shadow: 0 0 20px rgba(125,207,255,0.1);
+}
+
+.dc-style-title {
+  font-family: var(--dc-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.dc-style-desc {
+  font-family: var(--dc-font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--dc-comment, #565F89);
+}
+
+.dc-style-command {
+  font-family: var(--dc-font-mono);
+  font-size: 10px;
+  color: var(--dc-accent, #7DCFFF);
+}
+
 .dc-inline-error { padding: 6px 10px; background: rgba(247,118,142,0.08); border-left: 2px solid var(--dc-danger, #F7768E); color: var(--dc-danger, #F7768E); font-family: var(--dc-font-mono); font-size: 11px; border-radius: var(--dc-radius, 2px); margin-top: 6px; }
 .dc-inline-success { padding: 6px 10px; background: rgba(158,206,106,0.08); border-left: 2px solid var(--dc-success, #9ECE6A); color: var(--dc-success, #9ECE6A); font-family: var(--dc-font-mono); font-size: 11px; border-radius: var(--dc-radius, 2px); margin-top: 6px; }
 
@@ -421,5 +531,6 @@ watch(() => props.visible, (active) => {
   .dc-avatar { width: 52px; height: 52px; }
   .dc-nick { font-size: 16px; }
   .dc-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dc-style-grid { grid-template-columns: 1fr; }
 }
 </style>

@@ -68,13 +68,16 @@
                   <div class="task-k">怎么做</div>
                   <p class="task-desc">{{ t.description }}</p>
                 </div>
-                <img
-                  v-if="t.proof_photo_url && t.status !== 'pending'"
-                  class="proof-thumb"
-                  :src="t.proof_photo_url"
-                  alt=""
-                  loading="lazy"
-                />
+                <div class="task-photos">
+                  <div v-if="t.proof_photo_url && t.status !== 'pending'" class="photo-wrapper" @click="openZoomImage(t.proof_photo_url)">
+                    <img class="proof-thumb" :src="t.proof_photo_url" alt="执行凭证" loading="lazy" />
+                    <span class="photo-tag">执行凭证</span>
+                  </div>
+                  <div v-if="t.memory_photo_url && t.status === 'verified'" class="photo-wrapper" @click="openZoomImage(t.memory_photo_url)">
+                    <img class="proof-thumb" :src="t.memory_photo_url" alt="纪念卡片" loading="lazy" />
+                    <span class="photo-tag">纪念卡片</span>
+                  </div>
+                </div>
               </div>
 
               <div class="task-footer">
@@ -135,13 +138,16 @@
                   <div class="task-k">怎么做</div>
                   <p class="task-desc">{{ t.description }}</p>
                 </div>
-                <img
-                  v-if="t.proof_photo_url && t.status !== 'pending'"
-                  class="proof-thumb"
-                  :src="t.proof_photo_url"
-                  alt=""
-                  loading="lazy"
-                />
+                <div class="task-photos">
+                  <div v-if="t.proof_photo_url && t.status !== 'pending'" class="photo-wrapper" @click="openZoomImage(t.proof_photo_url)">
+                    <img class="proof-thumb" :src="t.proof_photo_url" alt="执行凭证" loading="lazy" />
+                    <span class="photo-tag">执行凭证</span>
+                  </div>
+                  <div v-if="t.memory_photo_url && t.status === 'verified'" class="photo-wrapper" @click="openZoomImage(t.memory_photo_url)">
+                    <img class="proof-thumb" :src="t.memory_photo_url" alt="纪念卡片" loading="lazy" />
+                    <span class="photo-tag">纪念卡片</span>
+                  </div>
+                </div>
               </div>
 
               <div class="task-footer">
@@ -168,6 +174,7 @@
                   placeholder="留一句评价..."
                   maxlength="500"
                 />
+                <p class="score-hint">验收后将自动生成一张纪念卡片，留作家庭的温暖回忆。</p>
                 <div class="score-actions">
                   <button
                     class="action-btn reject-btn"
@@ -186,7 +193,19 @@
                 </div>
               </div>
 
-              <p v-if="t.comment && t.status === 'verified'" class="score-comment">{{ t.comment }}</p>
+              <div v-if="t.status === 'verified'" class="verified-section">
+                <p v-if="t.comment" class="score-comment">{{ t.comment }}</p>
+                <div class="verified-actions">
+                  <button
+                    class="action-btn regenerate-btn"
+                    :class="{ 'regen-done': regenDone === t.id }"
+                    :disabled="regenerating === t.id || regenDone === t.id"
+                    @click="onRegenerateCard(t.id)"
+                  >
+                    {{ regenDone === t.id ? '已更新' : regenerating === t.id ? '生成中...' : '重新生成' }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </template>
@@ -331,6 +350,15 @@
         </div>
       </Transition>
 
+      <Transition name="zoom-fade">
+        <div v-if="showZoomImage" class="zoom-overlay" @click.self="closeZoomImage">
+          <div class="zoom-glass">
+            <button class="zoom-close" @click="closeZoomImage">✕</button>
+            <img :src="zoomImageUrl" class="zoom-img" alt="Zoomed image" />
+          </div>
+        </div>
+      </Transition>
+
       <p v-if="activeTab === 'board' && error" class="error-msg">{{ error }}</p>
     </div>
   </OverlayPanel>
@@ -350,6 +378,7 @@ import {
   getTaskStats,
   rejectTask,
   scoreTask,
+  regenerateTaskCard,
   type AchievementItem,
   type SkillRadar,
   type TaskStats,
@@ -374,8 +403,24 @@ const loading = ref(false)
 const error = ref('')
 const completing = ref('')
 const scoring = ref('')
+const regenerating = ref('')
+const regenDone = ref('')
 const scoreMap = reactive<Record<string, { score: number; comment: string }>>({})
 let pollTimer: ReturnType<typeof setInterval> | null = null
+
+const zoomImageUrl = ref('')
+const showZoomImage = ref(false)
+
+function openZoomImage(url: string | null | undefined) {
+  if (!url) return
+  zoomImageUrl.value = url
+  showZoomImage.value = true
+}
+
+function closeZoomImage() {
+  showZoomImage.value = false
+  zoomImageUrl.value = ''
+}
 
 const headerTitle = computed(() => {
   if (activeTab.value === 'dashboard') return '战绩与背包'
@@ -722,6 +767,30 @@ async function onReject(id: string) {
     error.value = getErrorMessage(e)
   } finally {
     scoring.value = ''
+  }
+}
+
+async function onRegenerateCard(id: string) {
+  regenerating.value = id
+  regenDone.value = ''
+  error.value = ''
+  const oldUrl = tasks.value.find((t) => t.id === id)?.memory_photo_url || ''
+  try {
+    await regenerateTaskCard(id)
+    // Backend generates image async; poll until URL changes or timeout
+    const maxAttempts = 20
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 3000))
+      await fetchTasks()
+      const newUrl = tasks.value.find((t) => t.id === id)?.memory_photo_url || ''
+      if (newUrl && newUrl !== oldUrl) break
+    }
+    regenDone.value = id
+    setTimeout(() => { if (regenDone.value === id) regenDone.value = '' }, 3000)
+  } catch (e) {
+    error.value = getErrorMessage(e)
+  } finally {
+    regenerating.value = ''
   }
 }
 
@@ -1183,12 +1252,48 @@ function difficultyStars(d: number) {
   line-height: 1.4;
 }
 
+.task-photos {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.photo-wrapper {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.photo-wrapper:hover {
+  transform: scale(1.05);
+}
+
 .proof-thumb {
   width: 100%;
-  max-height: 180px;
+  height: 100%;
   object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: block;
+}
+
+.photo-tag {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  text-align: center;
+  padding: 4px 0;
+  backdrop-filter: blur(4px);
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
 .task-footer {
@@ -1273,6 +1378,15 @@ function difficultyStars(d: number) {
 
 .score-input::placeholder { color: var(--text-secondary); }
 
+.score-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
 .score-actions {
   display: flex;
   justify-content: flex-end;
@@ -1303,6 +1417,40 @@ function difficultyStars(d: number) {
   font-style: italic;
 }
 
+.verified-section {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.verified-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.regenerate-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.regenerate-btn.regen-done {
+  border-color: rgba(80, 200, 120, 0.4);
+  color: rgba(80, 200, 120, 0.9);
+}
+
+.tip-fade-enter-active { transition: opacity 0.3s ease; }
+.tip-fade-leave-active { transition: opacity 0.6s ease; }
+.tip-fade-enter-from, .tip-fade-leave-to { opacity: 0; }
+.regenerate-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
 .complete-overlay {
   position: absolute;
   inset: 0;
@@ -1312,6 +1460,153 @@ function difficultyStars(d: number) {
   justify-content: center;
   z-index: 11;
   border-radius: inherit;
+}
+
+.suitcase-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.suitcase-modal {
+  position: relative;
+  width: auto;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-radius: var(--glass-radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.suitcase-panel-enter-active {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.suitcase-panel-enter-active .suitcase-modal {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+.suitcase-panel-leave-active {
+  transition: opacity 0.25s ease;
+}
+.suitcase-panel-leave-active .suitcase-modal {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.suitcase-panel-enter-from {
+  opacity: 0;
+}
+.suitcase-panel-enter-from .suitcase-modal {
+  transform: scale(0.92) translateY(20px);
+  opacity: 0;
+}
+.suitcase-panel-leave-to {
+  opacity: 0;
+}
+.suitcase-panel-leave-to .suitcase-modal {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
+}
+
+/* ── Image zoom overlay (frosted glass) ── */
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.zoom-glass {
+  position: relative;
+  width: min(480px, 82vw);
+  height: min(480px, 65vh);
+  padding: 12px;
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow), var(--glass-inner-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.zoom-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.zoom-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.zoom-close:hover {
+  background: var(--glass-bg-heavy);
+  border-color: var(--glass-border-strong);
+  transform: scale(1.1);
+}
+
+/* ── Zoom transition ── */
+.zoom-fade-enter-active {
+  transition: opacity 0.25s ease;
+}
+.zoom-fade-enter-active .zoom-glass {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+.zoom-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.zoom-fade-leave-active .zoom-glass {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.zoom-fade-enter-from {
+  opacity: 0;
+}
+.zoom-fade-enter-from .zoom-glass {
+  transform: scale(0.9);
+  opacity: 0;
+}
+.zoom-fade-leave-to {
+  opacity: 0;
+}
+.zoom-fade-leave-to .zoom-glass {
+  transform: scale(0.95);
+  opacity: 0;
 }
 
 .complete-dialog {

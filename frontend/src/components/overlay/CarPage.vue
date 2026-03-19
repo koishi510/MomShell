@@ -143,7 +143,7 @@
                     :title="p.is_on_wall ? '从照片墙移除' : '添加到照片墙'"
                     @click="onToggleWall(p)"
                   >
-                    {{ p.is_on_wall ? '✦' : '☆' }}
+                    <span :class="['icon-wall', { active: p.is_on_wall }]">&#9733;</span>
                   </button>
                   <button
                     class="card-action-btn delete-btn"
@@ -154,7 +154,7 @@
                   </button>
                 </div>
                 <span v-if="p.source !== 'upload'" class="source-badge">
-                  {{ p.source === 'task_card' ? '任务卡' : 'AI' }}
+                  {{ p.source === 'task_card' ? '纪念卡' : 'AI' }}
                 </span>
               </div>
             </div>
@@ -721,6 +721,8 @@ async function onPhotoUpload(e: Event) {
   try {
     const photo = await uploadPhoto(file)
     allPhotos.value = [photo, ...allPhotos.value]
+    openDetail(photo)
+    startEditDetail()
   } catch (err) {
     photoError.value = getErrorMessage(err)
   } finally {
@@ -1239,7 +1241,7 @@ watch(visible, async (isVisible) => {
   align-items: center;
   gap: 0;
   cursor: pointer;
-  margin-bottom: 70%; /* 缩小间距 */
+  margin-bottom: 30%;
 }
 
 @keyframes floating-group {
@@ -1342,13 +1344,14 @@ watch(visible, async (isVisible) => {
   align-items: center;
   justify-content: center;
   margin-top: auto;
-  margin-bottom: -3vh; /* 落地基准调试：进一步向下移动 */
+  margin-bottom: -3vh;
+  transform: translateY(5vh);
   cursor: pointer;
   transition: transform 0.2s;
 }
 
 .overflow-box:hover {
-  transform: scale(1.08);
+  transform: scale(1.08) translateY(5vh);
 }
 
 .box-icon {
@@ -1388,6 +1391,7 @@ watch(visible, async (isVisible) => {
   max-height: 420px;
   padding: 16px 0;
   transform: translateX(-24px);
+  z-index: 2;
 }
 
 .timeline-line {

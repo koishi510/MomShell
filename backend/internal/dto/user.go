@@ -10,6 +10,7 @@ type UserProfile struct {
 	Email              string       `json:"email"`
 	AvatarURL          *string      `json:"avatar_url"`
 	Role               string       `json:"role"`
+	DadChatStyle       string       `json:"dad_chat_style"`
 	IsAdmin            bool         `json:"is_admin"`
 	ShellCode          *string      `json:"shell_code"`
 	Partner            *PartnerInfo `json:"partner"`
@@ -37,11 +38,12 @@ type UserStats struct {
 
 // UserProfileUpdate is the request body for updating user profile
 type UserProfileUpdate struct {
-	Username  *string `json:"username" binding:"omitempty,min=3,max=50"`
-	Nickname  *string `json:"nickname" binding:"omitempty,min=1,max=50"`
-	Email     *string `json:"email" binding:"omitempty,email"`
-	AvatarURL *string `json:"avatar_url"`
-	Role      *string `json:"role" binding:"omitempty,oneof=mom dad"`
+	Username     *string `json:"username" binding:"omitempty,min=3,max=50"`
+	Nickname     *string `json:"nickname" binding:"omitempty,min=1,max=50"`
+	Email        *string `json:"email" binding:"omitempty,email"`
+	AvatarURL    *string `json:"avatar_url"`
+	Role         *string `json:"role" binding:"omitempty,oneof=mom dad"`
+	DadChatStyle *string `json:"dad_chat_style" binding:"omitempty,oneof=terminal ambient"`
 }
 
 // BindPartnerRequest is the request body for binding a partner via shell code

@@ -21,9 +21,16 @@
       </div>
     </div>
 
-    <!-- Proof photo -->
-    <div v-if="task.proof_photo_url && task.status !== 'pending'" class="dc-proof-wrapper">
-      <img class="dc-proof-thumb" :src="task.proof_photo_url" alt="" loading="lazy" />
+    <!-- Proof photos -->
+    <div class="dc-photos">
+      <div v-if="task.proof_photo_url && task.status !== 'pending'" class="dc-proof-wrapper" @click="$emit('zoom-image', task.proof_photo_url)">
+        <img class="dc-proof-thumb" :src="task.proof_photo_url" alt="" loading="lazy" />
+        <span class="dc-photo-tag">执行凭证</span>
+      </div>
+      <div v-if="task.memory_photo_url && task.status === 'verified'" class="dc-proof-wrapper" @click="$emit('zoom-image', task.memory_photo_url)">
+        <img class="dc-proof-thumb" :src="task.memory_photo_url" alt="" loading="lazy" />
+        <span class="dc-photo-tag">纪念卡片</span>
+      </div>
     </div>
 
     <!-- Footer -->
@@ -62,6 +69,7 @@ defineProps<{
 
 defineEmits<{
   complete: [task: UserTaskItem]
+  'zoom-image': [url: string]
 }>()
 
 const categoryLabels: Record<string, string> = { housework: '家务', parenting: '育儿', health: '健康', emotional: '情感' }
@@ -174,19 +182,27 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
   line-height: 1.6;
 }
 
-/* Proof photo */
+/* Proof photos */
+.dc-photos {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
 .dc-proof-wrapper {
   position: relative;
-  width: 100%;
+  width: 120px;
+  height: 120px;
   border-radius: var(--dc-radius, 2px);
   overflow: hidden;
   border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.06));
-  margin-bottom: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .dc-proof-thumb {
   width: 100%;
-  max-height: 200px;
+  height: 100%;
   object-fit: cover;
   display: block;
   opacity: 0.85;
@@ -194,6 +210,21 @@ function difficultyStars(d: number) { return '★'.repeat(d) }
 }
 
 .dc-proof-wrapper:hover .dc-proof-thumb { opacity: 1; }
+
+.dc-photo-tag {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-family: var(--dc-font-mono);
+  font-size: 10px;
+  text-align: center;
+  padding: 4px 0;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
 
 /* Footer */
 .dc-card-foot {

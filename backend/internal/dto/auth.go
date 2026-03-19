@@ -43,6 +43,7 @@ type UserResponse struct {
 	Nickname           string     `json:"nickname"`
 	AvatarURL          *string    `json:"avatar_url"`
 	Role               string     `json:"role"`
+	DadChatStyle       string     `json:"dad_chat_style"`
 	IsAdmin            bool       `json:"is_admin"`
 	IsCertified        bool       `json:"is_certified"`
 	TutorialCompleted  bool       `json:"tutorial_completed"`

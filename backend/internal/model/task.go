@@ -90,6 +90,9 @@ type UserTask struct {
 	// Proof photo (optional, attached when completing)
 	ProofPhotoURL *string `gorm:"type:varchar(500)" json:"proof_photo_url"`
 
+	// Generated memory photo (optional, attached when generating verified card)
+	MemoryPhotoURL *string `gorm:"type:varchar(500)" json:"memory_photo_url"`
+
 	CompletedAt *time.Time `json:"completed_at"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`

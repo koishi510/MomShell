@@ -194,6 +194,26 @@ func (h *TaskHandler) Achievements(c *gin.Context) {
 	c.JSON(http.StatusOK, items)
 }
 
+// POST /api/v1/tasks/:id/card/regenerate
+func (h *TaskHandler) RegenerateCard(c *gin.Context) {
+	taskID := c.Param("id")
+	userID := middleware.GetUserID(c)
+
+	err := h.taskService.RegenerateTaskCard(userID, taskID)
+	if err != nil {
+		status := http.StatusBadRequest
+		if err.Error() == "任务不存在" {
+			status = http.StatusNotFound
+		} else if err.Error() == "只能验收伴侣的任务" || err.Error() == "只有妈妈角色可以验收任务" {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "正在重新生成纪念卡片，稍后将存入照片墙"})
+}
+
 // POST /api/v1/tasks/regenerate
 func (h *TaskHandler) Regenerate(c *gin.Context) {
 	userID := middleware.GetUserID(c)

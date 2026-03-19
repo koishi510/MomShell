@@ -93,6 +93,13 @@ func main() {
 	}
 	whisperService := service.NewWhisperService(whisperRepo, futureLetterRepo, userRepo, chatRepo, taskRepo, whisperAIClient, ragService)
 
+	// Pre-generate daily letter when a mom logs in
+	authService.OnLogin(func(userID string, role model.UserRole) {
+		if role == model.RoleMom {
+			whisperService.PreGenerateForUser(userID)
+		}
+	})
+
 	achievementService := service.NewAchievementService(taskRepo, achievementRepo, userRepo)
 	perkCardService := service.NewPerkCardService(perkCardRepo, userRepo)
 

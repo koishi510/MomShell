@@ -208,6 +208,7 @@ func Setup(
 		tasks.GET("/partner", h.Task.PartnerTasks)
 		tasks.POST("/:id/score", h.Task.Score)
 		tasks.POST("/:id/reject", h.Task.Reject)
+		tasks.POST("/:id/card/regenerate", h.Task.RegenerateCard)
 		tasks.GET("/stats", h.Task.Stats)
 		tasks.GET("/radar", h.Task.Radar)
 		tasks.GET("/achievements", h.Task.Achievements)

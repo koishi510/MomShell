@@ -36,7 +36,6 @@
       >
         <div class="dc-task-section-head">
           <h3 class="dc-task-section-title">{{ section.label }}</h3>
-          <span class="dc-task-section-count">{{ section.tasks.length }}</span>
         </div>
         <TransitionGroup name="card-list" tag="div" class="dc-task-list">
           <DcTaskCard
@@ -46,6 +45,7 @@
             :index="index"
             :completing="completing === t.id"
             @complete="$emit('complete', $event)"
+            @zoom-image="$emit('zoom-image', $event)"
           />
         </TransitionGroup>
       </section>
@@ -73,6 +73,7 @@ const props = defineProps<{
 defineEmits<{
   complete: [task: UserTaskItem]
   'regenerate-intel': []
+  'zoom-image': [url: string]
 }>()
 
 const priorityLabels: Record<string, string> = {

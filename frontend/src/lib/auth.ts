@@ -1,3 +1,5 @@
+import type { DadChatStyle } from "@/constants/dadChat";
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 const AUTH_API = `${API_BASE}/api/v1/auth`;
 
@@ -8,6 +10,7 @@ export interface User {
   nickname: string;
   avatar_url: string | null;
   role: string;
+  dad_chat_style: DadChatStyle;
   is_admin: boolean;
   is_certified: boolean;
   tutorial_completed: boolean;

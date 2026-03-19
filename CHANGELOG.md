@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-03-20
+
+### Added
+
+#### Dad Console
+
+- **Dad chat style preference**: New `dad_chat_style` field (terminal/ambient) stored in user model; selectable from dad profile with migration backfill
+- **Image zoom preview**: Dad console now supports full-screen image preview for task proof photos and memory cards
+- **Dad daily briefing cache**: AI-generated daily briefing cached in sessionStorage to avoid regeneration on page refresh
+- **Dad chat style constants**: Extracted chat style config to `constants/dadChat.ts`
+
+#### Tasks & Whisper
+
+- **Memory card regeneration**: Mom can regenerate verified task memory cards via `POST /tasks/:id/card/regenerate`; frontend polls for completion with loading state
+- **Memory photo URL tracking**: `memory_photo_url` field on tasks links generated card images directly to their tasks
+- **Whisper pre-generation on login**: Mom login triggers background pre-generation of daily whisper questionnaire via auth hook system
+- **Improved AI prompts**: Enhanced whisper and task card AI prompts with reference quotes, questionnaire context, and more evocative card descriptions
+
+### Changed
+
+- **Task image detail popup**: Redesigned mom-side task image popup with frosted glass effect, fixed size container, and proper close button positioning
+- **Photo preview sizing**: Mom task proof thumbnails enlarged (140x140px); dad task photos changed to compact side-by-side thumbnails (120x120px)
+- **Photo wall star icon**: Unified star icon in CarPage to use consistent filled star (★) matching BarPage collection icon
+- **CarPage right section layout**: Adjusted star timeline and suitcase positioning for better visual separation
+- **Dad profile buttons**: Chat style selector buttons restyled to match `dc-execute-btn`; save button set to full width
+- **Dad task section headers**: Removed redundant task count numbers from section headers
+- **Photo upload flow**: Auto-opens edit detail modal after photo upload in CarPage
+- **Task card border radius**: Fixed inconsistent border radius on mom-side task cards and proof previews
+
+### Fixed
+
+- **UTF-8 truncation bug**: Community post preview now uses `[]rune` slicing instead of byte slicing to prevent garbled Chinese characters
+- **Auth login hooks**: Added `onLoginHooks` callback system to `AuthService` for triggering post-login background work
+
 ## [1.3.0] - 2026-03-19
 
 ### Added

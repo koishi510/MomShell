@@ -20,12 +20,18 @@ const (
 )
 
 type AuthService struct {
-	cfg      *config.Config
-	userRepo *repository.UserRepo
+	cfg          *config.Config
+	userRepo     *repository.UserRepo
+	onLoginHooks []func(userID string, role model.UserRole)
 }
 
 func NewAuthService(cfg *config.Config, userRepo *repository.UserRepo) *AuthService {
 	return &AuthService{cfg: cfg, userRepo: userRepo}
+}
+
+// OnLogin registers a callback to be invoked after a successful login.
+func (s *AuthService) OnLogin(fn func(userID string, role model.UserRole)) {
+	s.onLoginHooks = append(s.onLoginHooks, fn)
 }
 
 func (s *AuthService) Register(req dto.RegisterRequest) (*dto.UserResponse, error) {
@@ -89,6 +95,10 @@ func (s *AuthService) Login(req dto.LoginRequest, clientIP string) (*dto.TokenRe
 
 	if user.IsAdmin {
 		log.Printf("[SECURITY] admin_login | ip=%s | user=%s | detail=admin login successful", clientIP, req.Login)
+	}
+
+	for _, fn := range s.onLoginHooks {
+		fn(user.ID, user.Role)
 	}
 
 	return s.generateTokens(user.ID)
@@ -236,6 +246,7 @@ func (s *AuthService) buildUserResponse(user *model.User) *dto.UserResponse {
 		Nickname:          user.Nickname,
 		AvatarURL:         user.AvatarURL,
 		Role:              string(user.Role),
+		DadChatStyle:      string(model.NormalizeDadChatStyle(user.DadChatStyle)),
 		IsAdmin:           user.IsAdmin,
 		TutorialCompleted: user.TutorialCompleted,
 		BabyBirthDate:     user.BabyBirthDate,

@@ -122,8 +122,9 @@ func buildTagInfo(tag model.Tag) dto.TagInfo {
 }
 
 func contentPreview(content string, maxLen int) string {
-	if len(content) > maxLen {
-		return content[:maxLen] + "..."
+	runes := []rune(content)
+	if len(runes) > maxLen {
+		return string(runes[:maxLen]) + "..."
 	}
 	return content
 }

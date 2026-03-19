@@ -183,11 +183,23 @@ function setBriefing(index: number) {
   briefingTip.value = b.tip
 }
 
+const TIPS_CACHE_KEY = 'dc_briefing_cache'
+
+function cacheTips(data: WhisperTips) {
+  try { sessionStorage.setItem(TIPS_CACHE_KEY, JSON.stringify(data)) } catch { /* ignore quota errors */ }
+}
+
+function loadCachedTips(): WhisperTips | null {
+  try {
+    const raw = sessionStorage.getItem(TIPS_CACHE_KEY)
+    return raw ? JSON.parse(raw) as WhisperTips : null
+  } catch { return null }
+}
+
 function refreshBriefing() {
-  // Try API first, fallback to local rotation
   loadingTips.value = true
   getWhisperTips()
-    .then((data) => { tipsData.value = data })
+    .then((data) => { tipsData.value = data; cacheTips(data) })
     .catch(() => {
       const current = BRIEFINGS.findIndex((b) => b.quote === briefingQuote.value)
       const arr = new Uint32Array(1)
@@ -204,9 +216,16 @@ function refreshBriefing() {
 
 onMounted(async () => {
   setBriefing(getDayIndex())
+  const cached = loadCachedTips()
+  if (cached) {
+    tipsData.value = cached
+    return
+  }
   loadingTips.value = true
   try {
-    tipsData.value = await getWhisperTips()
+    const data = await getWhisperTips()
+    tipsData.value = data
+    cacheTips(data)
   } catch (e) {
     console.error('Failed to load tips:', e)
   } finally {

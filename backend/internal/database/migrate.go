@@ -50,6 +50,9 @@ func Migrate(db *gorm.DB) error {
 		"role":     "mom",
 	})
 
+	// Backfill dad chat style for legacy users after the column is introduced.
+	db.Exec("UPDATE users SET dad_chat_style = 'terminal' WHERE dad_chat_style IS NULL OR dad_chat_style = ''")
+
 	// Backfill OwnerUserID for existing ChatMemoryFacts
 	db.Exec("UPDATE chat_memory_facts SET owner_user_id = user_id WHERE owner_user_id IS NULL OR owner_user_id = ''")
 

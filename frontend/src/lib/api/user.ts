@@ -1,5 +1,6 @@
 import apiClient from "@/lib/apiClient";
 import type { PaginatedResponse } from "./community";
+import type { DadChatStyle } from "@/constants/dadChat";
 
 export interface PartnerInfo {
   id: string;
@@ -15,6 +16,7 @@ export interface UserProfile {
   email: string;
   avatar_url: string | null;
   role: string;
+  dad_chat_style: DadChatStyle;
   is_admin: boolean;
   shell_code: string | null;
   partner: PartnerInfo | null;
@@ -71,6 +73,7 @@ export function updateUserProfile(data: {
   email?: string;
   avatar_url?: string;
   role?: string;
+  dad_chat_style?: DadChatStyle;
 }): Promise<UserProfile> {
   return apiClient.put("/api/v1/community/users/me", data).then((r) => r.data);
 }

@@ -552,6 +552,8 @@ func (s *WhisperService) translateDadAdviceWithAI(
 严格要求：
 - 语气必须温和、细腻、富有同理心。仿佛一个懂她的老友在提醒你。
 - 禁止使用“工单、工单号、指令、任务、同步、执行、系统、T0/T1/T2、优先级、反馈”等词汇。
+- 必须紧密结合妈妈在问卷中回答的【具体问题】和【答案】来进行解读，切勿只关注她补充的心愿。
+- 确保每次生成的建议具有独特性，避免同质化，要结合当次问卷的具体场景。
 - 输出 4 条建议，必须且只能包含 1 条 decode、1 条 opening、1 条 observe、1 条 avoid。
 - decode：帮爸爸解读她行为背后的情绪，如“她其实是想说...”。
 - opening：给出一句温暖、不生硬的开场白。
@@ -584,8 +586,14 @@ JSON 格式：
 	if ctx.AgeLabel != "" {
 		fmt.Fprintf(&sb, "宝宝当前年龄阶段：%s\n", ctx.AgeLabel)
 	}
-	fmt.Fprintf(&sb, "妈妈今天的第一层选择：%s（%s）\n", ctx.PrimaryLabel, ctx.PrimaryTag)
-	fmt.Fprintf(&sb, "妈妈今天的第二层选择：%s（%s）\n", ctx.SecondaryLabel, ctx.SecondaryTag)
+	if len(ctx.Template.Questions) > 0 {
+		fmt.Fprintf(&sb, "问卷问题一：%s\n", ctx.Template.Questions[0].Prompt)
+	}
+	fmt.Fprintf(&sb, "妈妈的回答（第一层选择）：%s（%s）\n", ctx.PrimaryLabel, ctx.PrimaryTag)
+	if len(ctx.Template.Questions) > 1 {
+		fmt.Fprintf(&sb, "问卷问题二：%s\n", ctx.Template.Questions[1].Prompt)
+	}
+	fmt.Fprintf(&sb, "妈妈的回答（第二层选择）：%s（%s）\n", ctx.SecondaryLabel, ctx.SecondaryTag)
 	if ctx.Wish != "" {
 		fmt.Fprintf(&sb, "妈妈额外写下的心愿：%s\n", ctx.Wish)
 	}
@@ -736,6 +744,7 @@ func (s *WhisperService) translateDadMissionWithAI(author *model.User, letterCod
 严格要求：
 - 指令要非常具体、有画面感、有步骤。
 - 输出 1 到 3 个任务。
+- 必须基于妈妈在问卷中回答的【具体问题】和【答案】进行生成，避免每次生成的任务都同质化。每次生成的任务都需要有针对性和新鲜感，切勿只关注她补充的心愿。
 - 禁止使用“工单、执行、T0/T1/T2、优先级、反馈、汇报”等机械化的系统词汇。
 - title 要短（4到10个字），有行动感。
 - description 指导性强，不要说废话，不要讲大道理。
@@ -767,8 +776,14 @@ JSON 格式：
 	if ageLabel != "" {
 		fmt.Fprintf(&sb, "宝宝当前年龄阶段：%s\n", ageLabel)
 	}
-	fmt.Fprintf(&sb, "妈妈今天的第一层选择：%s（%s）\n", primaryLabel, primaryTag)
-	fmt.Fprintf(&sb, "妈妈今天的第二层选择：%s（%s）\n", secondaryLabel, secondaryTag)
+	if len(template.Questions) > 0 {
+		fmt.Fprintf(&sb, "问卷问题一：%s\n", template.Questions[0].Prompt)
+	}
+	fmt.Fprintf(&sb, "妈妈的回答（第一层选择）：%s（%s）\n", primaryLabel, primaryTag)
+	if len(template.Questions) > 1 {
+		fmt.Fprintf(&sb, "问卷问题二：%s\n", template.Questions[1].Prompt)
+	}
+	fmt.Fprintf(&sb, "妈妈的回答（第二层选择）：%s（%s）\n", secondaryLabel, secondaryTag)
 	if wish != "" {
 		fmt.Fprintf(&sb, "妈妈额外写下的心愿：%s\n", wish)
 	}
@@ -1472,4 +1487,33 @@ func toFutureLetterResponseItem(item model.FutureLetterResponse) dto.FutureLette
 		ImagePrompt:      item.ImagePrompt,
 		CreatedAt:        item.CreatedAt,
 	}
+}
+
+// PreGenerateDailyLetters pre-generates future letter templates for all bound moms.
+// Call this from a background goroutine on server startup and daily.
+func (s *WhisperService) PreGenerateDailyLetters() {
+	if s.aiClient == nil {
+		return
+	}
+	moms, err := s.userRepo.FindBoundMoms()
+	if err != nil {
+		log.Printf("[WhisperService] PreGenerateDailyLetters: failed to find bound moms: %v", err)
+		return
+	}
+	for _, mom := range moms {
+		s.PreGenerateForUser(mom.ID)
+	}
+	log.Printf("[WhisperService] PreGenerateDailyLetters: completed for %d moms", len(moms))
+}
+
+// PreGenerateForUser pre-generates the daily letter template for a single user in background.
+func (s *WhisperService) PreGenerateForUser(userID string) {
+	if s.aiClient == nil {
+		return
+	}
+	go func() {
+		if _, err := s.GetFutureLetterView(userID); err != nil {
+			log.Printf("[WhisperService] PreGenerateForUser: failed for user %s: %v", userID, err)
+		}
+	}()
 }

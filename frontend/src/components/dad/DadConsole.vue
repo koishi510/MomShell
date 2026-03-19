@@ -31,6 +31,7 @@
         :action-error="intelActionError"
         @complete="openCompleteDialog"
         @regenerate-intel="onRegenerateIntel"
+        @zoom-image="openZoomImage"
       />
 
       <!-- Dashboard -->
@@ -88,6 +89,20 @@
       @select="onSelectAge"
       @close="showAgeMenu = false"
     />
+
+    <Transition name="dc-fade">
+      <div v-if="showZoomImage" class="dc-dialog-backdrop" @click.self="closeZoomImage">
+        <div class="dc-term-modal">
+          <div class="dc-term-modal-header">
+            <span>IMAGE_PREVIEW</span>
+            <button class="dc-term-modal-close" @click="closeZoomImage">关闭</button>
+          </div>
+          <div class="dc-term-modal-body dc-zoom-body">
+            <img :src="zoomImageUrl" class="dc-zoom-img" alt="Zoomed image" />
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -132,6 +147,20 @@ const activeTab = ref<Tab>('home')
 const openTabs = ref<Tab[]>(['home'])
 const chatShowMemory = ref(false)
 const tabKey = ref(0)
+
+const zoomImageUrl = ref('')
+const showZoomImage = ref(false)
+
+function openZoomImage(url: string | null | undefined) {
+  if (!url) return
+  zoomImageUrl.value = url
+  showZoomImage.value = true
+}
+
+function closeZoomImage() {
+  showZoomImage.value = false
+  zoomImageUrl.value = ''
+}
 
 function ensureTabOpen(tab: Tab) {
   if (!openTabs.value.includes(tab)) {
@@ -482,6 +511,88 @@ watch(activeTab, async (tab) => {
   font-family: var(--dc-font-sans);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+}
+
+.dc-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 27, 38, 0.9);
+  padding: 20px;
+}
+
+.dc-term-modal {
+  width: 100%;
+  max-width: 90vw;
+  background: var(--dc-bg2, #24283B);
+  border: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--dc-radius, 2px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dc-term-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--dc-bg, #1A1B26);
+  border-bottom: 1px solid var(--dc-border, rgba(255, 255, 255, 0.15));
+  font-family: var(--dc-font-mono);
+  font-size: 12px;
+  color: var(--dc-comment, #565F89);
+}
+
+.dc-term-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--dc-comment, #565F89);
+  font-family: var(--dc-font-mono);
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.dc-term-modal-close:hover {
+  color: var(--dc-text, #C0CAF5);
+}
+
+.dc-term-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dc-zoom-body {
+  padding: 16px;
+}
+
+.dc-zoom-img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--dc-radius, 2px);
+}
+
+.dc-fade-enter-active, .dc-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.dc-fade-enter-from, .dc-fade-leave-to {
+  opacity: 0;
+}
+
+.dc-fade-enter-from .dc-term-modal, .dc-fade-leave-to .dc-term-modal {
+  transform: translateY(20px);
 }
 
 /* ── Ambient Background ── */

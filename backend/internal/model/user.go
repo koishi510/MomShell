@@ -20,6 +20,13 @@ const (
 	RoleAIAssistant        UserRole = "ai_assistant"
 )
 
+type DadChatStyle string
+
+const (
+	DadChatStyleTerminal DadChatStyle = "terminal"
+	DadChatStyleAmbient  DadChatStyle = "ambient"
+)
+
 var ProfessionalRoles = map[UserRole]bool{
 	RoleCertifiedDoctor:    true,
 	RoleCertifiedTherapist: true,
@@ -43,17 +50,18 @@ const (
 )
 
 type User struct {
-	ID           string   `gorm:"type:varchar(36);primaryKey" json:"id"`
-	Username     string   `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
-	Email        string   `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string   `gorm:"type:varchar(255);not null" json:"-"`
-	Nickname     string   `gorm:"type:varchar(50);not null" json:"nickname"`
-	AvatarURL    *string  `gorm:"type:varchar(500)" json:"avatar_url"`
-	Role         UserRole `gorm:"type:varchar(30);default:'mom'" json:"role"`
-	ShellCode    *string  `gorm:"type:varchar(8);uniqueIndex" json:"shell_code"`
-	IsGuest      bool     `gorm:"default:false" json:"is_guest"`
-	IsAdmin      bool     `gorm:"default:false" json:"is_admin"`
-	PartnerID    *string  `gorm:"type:varchar(36)" json:"partner_id"`
+	ID           string       `gorm:"type:varchar(36);primaryKey" json:"id"`
+	Username     string       `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
+	Email        string       `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	PasswordHash string       `gorm:"type:varchar(255);not null" json:"-"`
+	Nickname     string       `gorm:"type:varchar(50);not null" json:"nickname"`
+	AvatarURL    *string      `gorm:"type:varchar(500)" json:"avatar_url"`
+	Role         UserRole     `gorm:"type:varchar(30);default:'mom'" json:"role"`
+	DadChatStyle DadChatStyle `gorm:"type:varchar(20);default:'terminal'" json:"dad_chat_style"`
+	ShellCode    *string      `gorm:"type:varchar(8);uniqueIndex" json:"shell_code"`
+	IsGuest      bool         `gorm:"default:false" json:"is_guest"`
+	IsAdmin      bool         `gorm:"default:false" json:"is_admin"`
+	PartnerID    *string      `gorm:"type:varchar(36)" json:"partner_id"`
 
 	// Postpartum info
 	BabyBirthDate   *time.Time `json:"baby_birth_date"`
@@ -78,7 +86,17 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if u.ID == "" {
 		u.ID = uuid.New().String()
 	}
+	if u.DadChatStyle == "" {
+		u.DadChatStyle = DadChatStyleTerminal
+	}
 	return nil
+}
+
+func NormalizeDadChatStyle(style DadChatStyle) DadChatStyle {
+	if style == DadChatStyleAmbient {
+		return style
+	}
+	return DadChatStyleTerminal
 }
 
 type UserCertification struct {
