@@ -138,8 +138,8 @@ func (s *TaskService) GetPartnerTasks(callerID string) ([]dto.UserTaskItem, erro
 	return toTaskItems(visible), nil
 }
 
-// ScoreTask allows Mom to verify and score a completed task.
-func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dto.UserTaskItem, error) {
+// requireMomWithPartner validates that the caller is a Mom with a linked partner.
+func (s *TaskService) requireMomWithPartner(callerID string) (*model.User, error) {
 	caller, err := s.userRepo.FindByID(callerID)
 	if err != nil {
 		return nil, errors.New(errUserNotFound)
@@ -150,16 +150,37 @@ func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dt
 	if caller.PartnerID == nil {
 		return nil, errors.New(errPartnerRequired)
 	}
+	return caller, nil
+}
 
+// findPartnerTask finds a task and validates it belongs to the caller's partner with the expected status.
+func (s *TaskService) findPartnerTask(partnerID, taskID string, expectedStatus model.TaskStatus) (*model.UserTask, error) {
 	ut, err := s.taskRepo.FindUserTaskByID(taskID)
 	if err != nil {
 		return nil, errors.New(errTaskNotFound)
 	}
-	if ut.UserID != *caller.PartnerID {
+	if ut.UserID != partnerID {
 		return nil, fmt.Errorf("只能验收伴侣的任务")
 	}
-	if ut.Status != model.TaskCompleted {
-		return nil, fmt.Errorf("只能验收已完成的任务")
+	if ut.Status != expectedStatus {
+		if expectedStatus == model.TaskCompleted {
+			return nil, fmt.Errorf("只能验收已完成的任务")
+		}
+		return nil, fmt.Errorf("任务状态不符合要求")
+	}
+	return ut, nil
+}
+
+// ScoreTask allows Mom to verify and score a completed task.
+func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dto.UserTaskItem, error) {
+	caller, err := s.requireMomWithPartner(callerID)
+	if err != nil {
+		return nil, err
+	}
+
+	ut, err := s.findPartnerTask(*caller.PartnerID, taskID, model.TaskCompleted)
+	if err != nil {
+		return nil, err
 	}
 
 	now := time.Now()
@@ -196,26 +217,14 @@ func (s *TaskService) ScoreTask(callerID, taskID string, req dto.TaskScore) (*dt
 
 // RejectTask allows Mom to reject a completed task back to pending.
 func (s *TaskService) RejectTask(callerID, taskID string, comment string) (*dto.UserTaskItem, error) {
-	caller, err := s.userRepo.FindByID(callerID)
+	caller, err := s.requireMomWithPartner(callerID)
 	if err != nil {
-		return nil, errors.New(errUserNotFound)
-	}
-	if caller.Role != model.RoleMom {
-		return nil, fmt.Errorf("只有妈妈角色可以验收任务")
-	}
-	if caller.PartnerID == nil {
-		return nil, errors.New(errPartnerRequired)
+		return nil, err
 	}
 
-	ut, err := s.taskRepo.FindUserTaskByID(taskID)
+	ut, err := s.findPartnerTask(*caller.PartnerID, taskID, model.TaskCompleted)
 	if err != nil {
-		return nil, errors.New(errTaskNotFound)
-	}
-	if ut.UserID != *caller.PartnerID {
-		return nil, fmt.Errorf("只能验收伴侣的任务")
-	}
-	if ut.Status != model.TaskCompleted {
-		return nil, fmt.Errorf("只能驳回已完成的任务")
+		return nil, err
 	}
 
 	ut.Status = model.TaskPending
