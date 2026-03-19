@@ -2,80 +2,11 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/momshell/backend/internal/model"
-	"github.com/momshell/backend/pkg/openai"
 )
-
-// downloadTaskCardImage saves the generated image to disk and returns its URL path.
-func downloadTaskCardImage(imgResp *openai.ImageResponse) (string, error) {
-	uploadDir := "uploads/photos"
-	if err := os.MkdirAll(uploadDir, 0o755); err != nil {
-		return "", fmt.Errorf("failed to create upload dir: %w", err)
-	}
-
-	filename := fmt.Sprintf("%s_%d.png", uuid.New().String(), time.Now().Unix())
-	savePath := filepath.Join(uploadDir, filename)
-
-	data := imgResp.Data[0]
-
-	if data.URL != "" {
-		return downloadCardFromURL(data.URL, savePath)
-	}
-
-	if data.B64JSON != "" {
-		decoded, err := base64.StdEncoding.DecodeString(data.B64JSON)
-		if err != nil {
-			return "", fmt.Errorf("failed to decode base64 image: %w", err)
-		}
-		if err := os.WriteFile(savePath, decoded, 0o644); err != nil {
-			return "", fmt.Errorf("failed to write image file: %w", err)
-		}
-		return "/uploads/photos/" + filename, nil
-	}
-
-	return "", fmt.Errorf("no image data in response")
-}
-
-func downloadCardFromURL(imageURL, savePath string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", imageURL, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to create download request: %w", err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to download image: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("download failed with status: %d", resp.StatusCode)
-	}
-
-	out, err := os.Create(savePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to create file: %w", err)
-	}
-	defer func() { _ = out.Close() }()
-
-	if _, err := io.Copy(out, io.LimitReader(resp.Body, 20<<20)); err != nil {
-		return "", fmt.Errorf("failed to write file: %w", err)
-	}
-
-	return "/uploads/photos/" + filepath.Base(savePath), nil
-}
 
 // buildTaskCardPrompt creates an image generation prompt for a task memory card.
 func buildTaskCardPrompt(title, description string) string {
@@ -132,7 +63,7 @@ func (s *TaskService) generateVerifiedTaskCardPhoto(momID string, ut model.UserT
 		return fmt.Errorf("image generation failed: %w", err)
 	}
 
-	imageURL, err := downloadTaskCardImage(imgResp)
+	imageURL, err := saveGeneratedImage(imgResp)
 	if err != nil {
 		return fmt.Errorf("image download failed: %w", err)
 	}

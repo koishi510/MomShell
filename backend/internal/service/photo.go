@@ -291,6 +291,12 @@ func (s *PhotoService) BatchUpdateWall(userID string, req dto.BatchWallUpdateReq
 }
 
 func (s *PhotoService) downloadGeneratedImage(imgResp *openai.ImageResponse) (string, error) {
+	return saveGeneratedImage(imgResp)
+}
+
+// saveGeneratedImage saves an AI-generated image response to disk and returns its URL path.
+// Shared by PhotoService and task card generation.
+func saveGeneratedImage(imgResp *openai.ImageResponse) (string, error) {
 	uploadDir := "uploads/photos"
 	if err := os.MkdirAll(uploadDir, 0o755); err != nil {
 		return "", fmt.Errorf("failed to create upload dir: %w", err)
@@ -302,7 +308,7 @@ func (s *PhotoService) downloadGeneratedImage(imgResp *openai.ImageResponse) (st
 	data := imgResp.Data[0]
 
 	if data.URL != "" {
-		return s.downloadFromURL(data.URL, savePath)
+		return downloadFromURL(data.URL, savePath)
 	}
 
 	if data.B64JSON != "" {
@@ -319,7 +325,8 @@ func (s *PhotoService) downloadGeneratedImage(imgResp *openai.ImageResponse) (st
 	return "", fmt.Errorf("no image data in response")
 }
 
-func (s *PhotoService) downloadFromURL(imageURL, savePath string) (string, error) {
+// downloadFromURL fetches an image from a URL and saves it to savePath.
+func downloadFromURL(imageURL, savePath string) (string, error) {
 	// Validate URL to prevent SSRF
 	if err := validateExternalURL(imageURL); err != nil {
 		return "", fmt.Errorf("invalid image URL: %w", err)
