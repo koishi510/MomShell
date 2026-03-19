@@ -496,6 +496,7 @@ import { useBackgroundMusicControls } from '@/composables/useBackgroundMusicLoop
 
 import avatarFrame from '@/assets/images/frame.png'
 import avatarDefault from '@/assets/images/avatar.png'
+import aiAvatar from '@/assets/images/ai_avatar.png'
 import boxImg from '@/assets/images/box.png'
 import starImg from '@/assets/images/star.png'
 import PearlShellWrapper from '@/components/react/PearlShellWrapper.vue'
@@ -632,16 +633,18 @@ const roleMap: Record<string, string> = {
 
 const displayNickname = computed(() => profile.value?.nickname || auth.user?.nickname || '用户')
 const displayInitial = computed(() => displayNickname.value.charAt(0))
-const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || avatarDefault)
+const ownRole = computed(() => profile.value?.role || auth.user?.role || 'mom')
+const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || (ownRole.value === 'dad' ? aiAvatar : avatarDefault))
 const hasCustomAvatar = computed(() => !!(profile.value?.avatar_url || auth.user?.avatar_url))
-const partnerAvatarUrl = computed(() => profile.value?.partner?.avatar_url || avatarDefault)
+const partnerRole = computed(() => profile.value?.partner?.role || '')
+const partnerAvatarUrl = computed(() => profile.value?.partner?.avatar_url || (partnerRole.value === 'dad' ? aiAvatar : avatarDefault))
 const hasPartnerCustomAvatar = computed(() => !!profile.value?.partner?.avatar_url)
 
 function onAvatarImgError(e: Event) {
   const img = e.target as HTMLImageElement
   if (!img.dataset.fallback) {
     img.dataset.fallback = '1'
-    img.src = avatarDefault
+    img.src = ownRole.value === 'dad' ? aiAvatar : avatarDefault
   }
 }
 const roleName = computed(() => roleMap[profile.value?.role || auth.user?.role || 'mom'] || '溯源者')

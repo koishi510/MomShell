@@ -130,6 +130,7 @@ import {
 } from '@/lib/api/user'
 import { getErrorMessage } from '@/lib/apiClient'
 import avatarDefault from '@/assets/images/avatar.png'
+import aiAvatar from '@/assets/images/ai_avatar.png'
 
 const auth = useAuthStore()
 
@@ -170,12 +171,14 @@ const isMom = computed(() => (profile.value?.role || auth.user?.role) === 'mom')
 const roleMap: Record<string, string> = { mom: '溯源者', dad: '守护者', professional: '专业认证' }
 const displayNickname = computed(() => profile.value?.nickname || auth.user?.nickname || '用户')
 const displayInitial = computed(() => displayNickname.value.charAt(0))
-const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || avatarDefault)
+const isDad = computed(() => (profile.value?.role || auth.user?.role) === 'dad')
+const defaultAvatar = computed(() => isDad.value ? aiAvatar : avatarDefault)
+const profileAvatarUrl = computed(() => profile.value?.avatar_url || auth.user?.avatar_url || defaultAvatar.value)
 const roleName = computed(() => roleMap[profile.value?.role || auth.user?.role || 'mom'] || '溯源者')
 
 function onAvatarImgError(e: Event) {
   const img = e.target as HTMLImageElement
-  if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = avatarDefault }
+  if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = defaultAvatar.value }
 }
 
 function syncProfileForm() {
