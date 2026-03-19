@@ -7,7 +7,7 @@
 | [Configuration](configuration.md) | Environment variables reference |
 | [Architecture](architecture.md) | Technical design and project structure |
 | [Deployment](deployment.md) | Docker and production deployment |
-| [Features](features.md) | Module descriptions (Soul Companion, Sisterhood Bond, Echo, Photo, Whisper, Tasks, Admin) |
+| [Features](features.md) | Module descriptions |
 
 ## Contributing
 
