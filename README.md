@@ -23,8 +23,11 @@ AI-powered wellness platform combining emotional companionship, community suppor
 | **Sisterhood Bond** | Community Q&A with verified healthcare professionals and content moderation        |
 | **Echo / Memoir**   | Self-reflection space with AI-generated memoir stickers and partner connection     |
 | **Photo Gallery**   | Photo wall with AI-generated images, lifecycle management, and drag/zoom UI        |
-| **Whisper**         | Audio-to-text conversation using speech recognition                                |
-| **Tasks / Dad Console** | Daily task board with T0/T1/T2 priority, proof photos, partner review, XP/level, skill radar + achievements, perk cards, and blind-box shell gifts |
+| **Whisper**         | Audio-to-text whisper tips with AI-generated scene guidance                         |
+| **Tasks / Dad Console** | Daily task board with T0/T1/T2 priority, proof photos, partner review, XP/level, skill radar + achievements, perk cards, and future letters |
+| **Dad Console**     | Terminal-themed modular dad UI with chat, community, tasks, whisper, dashboard, profile, and memory cards |
+| **Deep RAG**        | Semantic document retrieval using pgvector embeddings for AI-grounded responses     |
+| **Entry & Auth**    | Anime landing page with redesigned login/register flow and role selection           |
 | **Mobile & PWA**    | Responsive mobile layout with portrait/landscape sprite configs, touch gestures, dynamic viewport units, and offline-capable service worker |
 | **Admin Panel**     | Embedded single-page admin at `/admin` — dashboard, user CRUD, config management   |
 
@@ -55,9 +58,14 @@ MomShell/
 │   └── pkg/            # Shared utilities (JWT, password, OpenAI, Firecrawl)
 ├── frontend/           # Vue 3 (Vite + TypeScript + Pinia)
 │   └── src/
-│       ├── components/ # Overlay panels + beach scene + React 3D shell
-│       ├── composables/# Animation, parallax, waves, music, mobile detection
-│       ├── lib/api/    # API client modules (chat, community, echo, photo, etc.)
+│       ├── components/
+│       │   ├── dad/    # Dad console modules (chat, tasks, whisper, dashboard, profile, etc.)
+│       │   ├── overlay/# UI panels (Auth, Chat, Community, Whisper, Task, Landing, etc.)
+│       │   ├── react/  # React 3D pearl shell scene
+│       │   ├── scene/  # Beach scene layers (sky, ocean, sand, sprites)
+│       │   └── task/   # Task dashboard visuals (skill radar, etc.)
+│       ├── composables/# Animation, parallax, waves, music, mobile detection, tutorial
+│       ├── lib/api/    # API client modules (chat, community, echo, photo, task, etc.)
 │       ├── stores/     # Pinia stores (auth, UI)
 │       ├── types/      # TypeScript type definitions
 │       └── utils/      # Shared utility functions
