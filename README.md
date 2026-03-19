@@ -94,6 +94,7 @@ make docker-up          # Build and start app + postgres on http://localhost
 | [Architecture](docs/architecture.md)       | Technical overview      |
 | [Deployment](docs/deployment.md)           | Docker deployment       |
 | [Features](docs/features.md)               | Feature descriptions    |
+| [中文文档](docs/zh/README.md)              | Chinese documentation   |
 | [Contributing](CONTRIBUTING.md)            | Contribution guidelines |
 | [Changelog](CHANGELOG.md)                  | Version history         |
 
