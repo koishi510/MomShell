@@ -334,7 +334,8 @@ import aiAvatar from '@/assets/images/ai_avatar.png'
 
 function getAvatar(author: { avatar_url: string | null; role: string }) {
   if (author.role === 'ai_assistant') return aiAvatar
-  return author.avatar_url || avatarDefault
+  if (!author.avatar_url) return author.role === 'dad' ? aiAvatar : avatarDefault
+  return author.avatar_url
 }
 
 function onAvatarError(e: Event) {
