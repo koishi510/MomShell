@@ -7,7 +7,7 @@
 | [配置说明](configuration.md) | 环境变量参考 |
 | [架构设计](architecture.md) | 技术设计与项目结构 |
 | [部署指南](deployment.md) | Docker 与生产环境部署 |
-| [功能介绍](features.md) | 模块说明（心灵伙伴、姐妹纽带、回声、照片、悄悄话、任务、管理后台） |
+| [功能介绍](features.md) | 模块说明 |
 
 ## 贡献
 
@@ -17,7 +17,7 @@
 
 | 文档 | 说明 |
 |------|------|
-| [更新日志](../../CHANGELOG.md) | 版本历史（英文） |
+| [更新日志](../../CHANGELOG.md) | 版本历史 |
 | [安全政策](security.md) | 漏洞报告 |
 | [行为准则](code-of-conduct.md) | 社区规范 |
 
