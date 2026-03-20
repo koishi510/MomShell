@@ -189,7 +189,7 @@ func (s *WhisperService) GetFutureLetterView(callerID string) (*dto.FutureLetter
 
 	// Use AI to generate template dynamically (skip for Dad, cache for Mom)
 	var template futureLetterTemplate
-	if user.Role == model.RoleMom && s.aiClient != nil {
+	if user.Role == model.RoleMom && s.aiClient != nil && user.PartnerID != nil {
 		ck := coupleKey(user.ID, *user.PartnerID)
 		date := time.Now().Format("2006-01-02")
 		if cache, err := s.taskRepo.FindAICache(ck, date, "future-letter-template"); err == nil && cache != nil {
