@@ -87,9 +87,30 @@ else
   esac
 fi
 
-# Start backend in background
+# Start backend in background with auto-restart
 echo "[entrypoint] Starting backend server..."
-/app/server &
+(
+  while true; do
+    /app/server
+    exit_code=$?
+    echo "[entrypoint] Backend exited with code $exit_code, restarting in 3s..."
+    sleep 3
+  done
+) &
+BACKEND_PID=$!
+
+# Wait for backend to be ready before starting nginx
+echo "[entrypoint] Waiting for backend to be ready..."
+for i in $(seq 1 30); do
+  if wget -q -O /dev/null http://127.0.0.1:8000/health 2>/dev/null; then
+    echo "[entrypoint] Backend is ready."
+    break
+  fi
+  if [ "$i" -eq 30 ]; then
+    echo "[entrypoint] WARNING: Backend not ready after 30s, starting nginx anyway."
+  fi
+  sleep 1
+done
 
 # Start nginx in foreground
 echo "[entrypoint] Starting nginx..."
