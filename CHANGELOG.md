@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.1] - 2026-03-20
+## [1.3.1] - 2026-03-21
 
 ### Added
 
@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **UTF-8 truncation bug**: Community post preview now uses `[]rune` slicing instead of byte slicing to prevent garbled Chinese characters
 - **Auth login hooks**: Added `onLoginHooks` callback system to `AuthService` for triggering post-login background work
+- **Graceful pgvector handling**: Database migration no longer crashes when pgvector extension is unavailable; RAG features are disabled with a warning instead of fatal error
+- **Nil pointer crash on new user**: Fixed `PreGenerateForUser` panic when a mom user has no partner bound (`PartnerID` nil dereference)
+- **Backend auto-restart**: Entrypoint wraps backend in auto-restart loop with health check before starting nginx
 
 ## [1.3.0] - 2026-03-19
 
