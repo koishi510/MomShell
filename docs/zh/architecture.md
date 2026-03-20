@@ -15,6 +15,7 @@ MomShell 技术架构概览。
 | **JWT (golang-jwt)** | 认证（httpOnly cookies） |
 | **OpenAI SDK** | LLM 集成（Qwen / 任意 OpenAI 兼容模型） |
 | **Firecrawl** | 网络搜索，用于 AI 回复的事实依据 |
+| **llmvalidate** | LLM 输出交叉验证（结构校验 + 内容安全 + 事实核查） |
 | **go:embed** | 内嵌管理面板 |
 
 ### 前端
@@ -53,6 +54,7 @@ MomShell/
 │   └── pkg/
 │       ├── firecrawl/          # 网络搜索 API 客户端
 │       ├── jwt/                # JWT 生成 & 验证
+│       ├── llmvalidate/        # LLM 输出交叉验证 & 文本清洗
 │       ├── openai/             # OpenAI 兼容客户端
 │       └── password/           # bcrypt 哈希
 │

@@ -14,8 +14,10 @@ AI-powered emotional support companion.
 - **History clearing** — clear conversation history with confirmation for privacy control
 - **Auto-summarization** — older conversation turns are automatically compressed into a summary to keep context efficient
 - **Content moderation** with crisis keyword detection
+- **LLM cross-validation** — every AI response is verified by a second LLM call that checks JSON structure, content safety (harmful content, medical advice disclaimers, info leakage), and fact-checks against Firecrawl web search results
 - **Visual effects** — color tones and animations on AI responses
 - **Web search grounding** — AI responses reference web search results for factual questions
+- **Knowledge Q&A** — AI directly answers factual and knowledge questions (childcare, health, daily tips) instead of deflecting with emotional encouragement
 
 ## Sisterhood Bond
 

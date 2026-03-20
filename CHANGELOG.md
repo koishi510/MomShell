@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### LLM Cross-Validation
+
+- **LLM output cross-validation**: New `pkg/llmvalidate` package performs a second LLM call on every AI response to simultaneously validate JSON structure and audit content safety
+- **Fact-checking with web search**: Cross-validation integrates Firecrawl search results to verify factual claims against web sources, flagging inconsistencies and unverified data
+- **Content safety review**: Automated detection of harmful content (crisis hotline appended), unqualified medical advice (disclaimer appended), and sensitive information leakage (API keys, system prompt fragments)
+- **Local text sanitization**: Unified `Sanitize` / `StripCodeFence` functions consolidate scattered cleanup logic (Qwen3 `<think>` tag stripping, markdown code fence removal) from 5 service files into one reusable package
+- **Knowledge Q&A mode**: All 3 companion system prompts (Mom/Dad/Professional) now instruct the AI to answer factual and knowledge questions directly with specific, useful information instead of deflecting with emotional encouragement
+
 #### Dad Console
 
 - **Dad chat style preference**: New `dad_chat_style` field (terminal/ambient) stored in user model; selectable from dad profile with migration backfill

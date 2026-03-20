@@ -75,7 +75,7 @@
       </div>
       <div v-if="chatStyleError" class="dc-inline-error">{{ chatStyleError }}</div>
       <div v-if="chatStyleSuccess" class="dc-inline-success">{{ chatStyleSuccess }}</div>
-      <button class="dc-execute-btn" style="width:100%" :disabled="chatStyleLoading || dadChatStyle === currentDadChatStyle" @click="onSaveDadChatStyle">
+      <button class="dc-execute-btn" :disabled="chatStyleLoading || dadChatStyle === currentDadChatStyle" @click="onSaveDadChatStyle">
         {{ chatStyleLoading ? '保存中...' : '保存样式' }}
       </button>
     </div>
@@ -433,7 +433,7 @@ watch(() => props.visible, (active) => {
 .dc-form-input::placeholder { color: var(--dc-comment, #565F89); }
 
 .dc-execute-btn {
-  display: flex; align-items: center; justify-content: center; padding: 12px 20px;
+  display: flex; align-items: center; justify-content: center; width: 100%; padding: 12px 20px;
   background: transparent; border: 1px solid rgba(125,207,255,0.3); border-radius: var(--dc-radius, 2px);
   color: var(--dc-accent, #7DCFFF); font-family: var(--dc-font-mono); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; margin-top: 4px;
 }

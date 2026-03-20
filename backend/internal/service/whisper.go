@@ -11,6 +11,7 @@ import (
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
+	"github.com/momshell/backend/pkg/llmvalidate"
 	"github.com/momshell/backend/pkg/openai"
 )
 
@@ -212,7 +213,20 @@ func (s *WhisperService) GetWhisperTips(callerID string) (*dto.WhisperTips, erro
 		}, nil
 	}
 
+	tips = llmvalidate.Sanitize(tips)
+
+	// Cross-validate: content safety review
+	tvr, cvErr := llmvalidate.CrossValidate(ctx, s.aiClient, llmvalidate.TypePlainText, tips, "")
+	if cvErr != nil {
+		log.Printf("[WhisperService] cross-validate error: %v", cvErr)
+	}
+
 	finalTips := strings.TrimSpace(tips)
+
+	// Apply safety appendix if needed
+	if tvr != nil {
+		finalTips = llmvalidate.ApplyAppendix(finalTips, tvr)
+	}
 
 	// Save to cache
 	_ = s.taskRepo.SaveAICache(&model.AIGeneratedTask{

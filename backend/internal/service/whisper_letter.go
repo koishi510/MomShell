@@ -12,6 +12,7 @@ import (
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
+	"github.com/momshell/backend/pkg/llmvalidate"
 	"github.com/momshell/backend/pkg/openai"
 )
 
@@ -246,6 +247,17 @@ Structure (必须遵循的模板结构) 并严格输出为以下JSON格式：
 				{Role: "user", Content: prompt},
 			})
 			if err == nil {
+				respStr = llmvalidate.Sanitize(respStr)
+
+				// Cross-validate: structure + content safety review
+				ltVR, cvErr := llmvalidate.CrossValidate(context.Background(), s.aiClient, llmvalidate.TypeLetterTemplate, respStr, "")
+				if cvErr != nil {
+					log.Printf("[WhisperLetter] template cross-validate error: %v", cvErr)
+				}
+				if ltVR != nil && !ltVR.Valid {
+					log.Printf("[WhisperLetter] template structure invalid: %v", ltVR.StructErrors)
+				}
+
 				var aiTemplate struct {
 					Title      string                     `json:"title"`
 					Intro      string                     `json:"intro"`
@@ -254,7 +266,7 @@ Structure (必须遵循的模板结构) 并严格输出为以下JSON格式：
 					WishPrompt string                     `json:"wish_prompt"`
 					Questions  []dto.FutureLetterQuestion `json:"questions"`
 				}
-				if err := json.Unmarshal([]byte(strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(respStr), "```"), "```json")), &aiTemplate); err == nil {
+				if err := json.Unmarshal([]byte(llmvalidate.StripCodeFence(respStr)), &aiTemplate); err == nil {
 					template = futureLetterTemplate{
 						Code:       fmt.Sprintf("ai-dynamic-%d", time.Now().Unix()),
 						Title:      aiTemplate.Title,
@@ -640,13 +652,15 @@ JSON 格式：
 		return dadAdviceTemplate{}, err
 	}
 
-	cleaned := strings.TrimSpace(resp)
-	if strings.HasPrefix(cleaned, "```") {
-		if idx := strings.Index(cleaned[3:], "\n"); idx >= 0 {
-			cleaned = cleaned[3+idx+1:]
-		}
-		cleaned = strings.TrimSuffix(cleaned, "```")
-		cleaned = strings.TrimSpace(cleaned)
+	cleaned := llmvalidate.StripCodeFence(llmvalidate.Sanitize(resp))
+
+	// Cross-validate: structure + content safety review
+	avr, cvErr := llmvalidate.CrossValidate(reqCtx, s.aiClient, llmvalidate.TypeAdviceResponse, cleaned, "")
+	if cvErr != nil {
+		log.Printf("[WhisperLetter] advice cross-validate error: %v", cvErr)
+	}
+	if avr != nil && !avr.Valid {
+		log.Printf("[WhisperLetter] advice structure invalid: %v", avr.StructErrors)
 	}
 
 	var payload futureLetterAIAdvice
@@ -824,13 +838,15 @@ JSON 格式：
 		return dadMissionTemplate{}, err
 	}
 
-	cleaned := strings.TrimSpace(resp)
-	if strings.HasPrefix(cleaned, "```") {
-		if idx := strings.Index(cleaned[3:], "\n"); idx >= 0 {
-			cleaned = cleaned[3+idx+1:]
-		}
-		cleaned = strings.TrimSuffix(cleaned, "```")
-		cleaned = strings.TrimSpace(cleaned)
+	cleaned := llmvalidate.StripCodeFence(llmvalidate.Sanitize(resp))
+
+	// Cross-validate: structure + content safety review
+	mvr, cvErr := llmvalidate.CrossValidate(ctx, s.aiClient, llmvalidate.TypeMissionResponse, cleaned, "")
+	if cvErr != nil {
+		log.Printf("[WhisperLetter] mission cross-validate error: %v", cvErr)
+	}
+	if mvr != nil && !mvr.Valid {
+		log.Printf("[WhisperLetter] mission structure invalid: %v", mvr.StructErrors)
 	}
 
 	var payload futureLetterAIMission

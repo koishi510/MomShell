@@ -11,6 +11,7 @@ import (
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
 	"github.com/momshell/backend/pkg/firecrawl"
+	"github.com/momshell/backend/pkg/llmvalidate"
 	"github.com/momshell/backend/pkg/openai"
 )
 
@@ -416,11 +417,24 @@ func (s *CommunityAIService) generateReply(ctx context.Context, threadContext, s
 		return "", fmt.Errorf("AI 服务调用失败: %w", err)
 	}
 
+	reply = llmvalidate.Sanitize(reply)
+
+	// Cross-validate: content safety review
+	cvr, cvErr := llmvalidate.CrossValidate(ctx, s.client, llmvalidate.TypePlainText, reply, "")
+	if cvErr != nil {
+		log.Printf("[CommunityAI] cross-validate error: %v", cvErr)
+	}
+
 	reply = mentionPattern.ReplaceAllString(reply, "")
 	reply = strings.TrimSpace(reply)
 
 	if reply == "" {
 		reply = "谢谢你的分享。如果需要更多帮助，随时可以找我聊聊。"
+	}
+
+	// Apply safety appendix if needed
+	if cvr != nil {
+		reply = llmvalidate.ApplyAppendix(reply, cvr)
 	}
 
 	// Replace [来源N] markers with actual source names (fallback)

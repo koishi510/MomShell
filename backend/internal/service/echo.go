@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/momshell/backend/internal/dto"
 	"github.com/momshell/backend/internal/model"
 	"github.com/momshell/backend/internal/repository"
+	"github.com/momshell/backend/pkg/llmvalidate"
 	"github.com/momshell/backend/pkg/openai"
 )
 
@@ -136,9 +138,25 @@ func (s *EchoService) GenerateMemoir(ctx context.Context, userID string, req dto
 		return nil, fmt.Errorf("AI 服务调用失败: %w", err)
 	}
 
+	rawContent = llmvalidate.Sanitize(rawContent)
+
+	// Cross-validate: structure + content safety review
+	mvr, cvErr := llmvalidate.CrossValidate(ctx, s.client, llmvalidate.TypeMemoirResponse, rawContent, "")
+	if cvErr != nil {
+		log.Printf("[EchoService] cross-validate error: %v", cvErr)
+	}
+	if mvr != nil && !mvr.Valid {
+		log.Printf("[EchoService] memoir response structure invalid: %v", mvr.StructErrors)
+	}
+
 	parsed := parseMemoirLLMResponse(rawContent)
 	title, _ := parsed[memoirKeyTitle].(string)
 	content, _ := parsed[memoirKeyContent].(string)
+
+	// Apply safety appendix if needed
+	if mvr != nil {
+		content = llmvalidate.ApplyAppendix(content, mvr)
+	}
 
 	title = strings.TrimSpace(title)
 	content = strings.TrimSpace(content)

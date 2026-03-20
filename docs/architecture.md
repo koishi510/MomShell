@@ -15,6 +15,7 @@ Technical architecture overview of MomShell.
 | **JWT (golang-jwt)** | Authentication (httpOnly cookies) |
 | **OpenAI SDK** | LLM integration (Qwen / any OpenAI-compatible) |
 | **Firecrawl** | Web search for grounding AI responses |
+| **llmvalidate** | LLM output cross-validation (structure + safety + fact-check) |
 | **go:embed** | Embedded admin panel |
 
 ### Frontend
@@ -53,6 +54,7 @@ MomShell/
 │   └── pkg/
 │       ├── firecrawl/          # Web search API client
 │       ├── jwt/                # JWT generation & validation
+│       ├── llmvalidate/        # LLM output cross-validation & sanitization
 │       ├── openai/             # OpenAI-compatible client
 │       └── password/           # bcrypt hashing
 │
