@@ -1,17 +1,21 @@
 package database
 
 import (
+	"log"
+
 	"github.com/momshell/backend/internal/model"
 	"gorm.io/gorm"
 )
 
 func Migrate(db *gorm.DB) error {
-	// Enable pgvector extension
+	// Enable pgvector extension (non-fatal: RAG features disabled if unavailable)
+	hasPgvector := true
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS vector").Error; err != nil {
-		return err
+		log.Printf("[migrate] WARNING: pgvector extension not available, RAG features will be disabled: %v", err)
+		hasPgvector = false
 	}
 
-	if err := db.AutoMigrate(
+	models := []any{
 		&model.User{},
 		&model.UserCertification{},
 		&model.Tag{},
@@ -32,11 +36,15 @@ func Migrate(db *gorm.DB) error {
 		&model.DailyTask{},
 		&model.UserTask{},
 		&model.AIGeneratedTask{},
-		&model.KnowledgeEmbedding{},
 		&model.Achievement{},
 		&model.UserAchievement{},
 		&model.PerkCard{},
-	); err != nil {
+	}
+	if hasPgvector {
+		models = append(models, &model.KnowledgeEmbedding{})
+	}
+
+	if err := db.AutoMigrate(models...); err != nil {
 		return err
 	}
 

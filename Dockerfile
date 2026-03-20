@@ -19,7 +19,9 @@ RUN CGO_ENABLED=0 go build -o /server cmd/server/main.go
 
 # ---- Stage 3: Final image ----
 FROM nginx:alpine
-RUN apk --no-cache add ca-certificates tzdata postgresql postgresql-contrib
+RUN apk --no-cache add ca-certificates tzdata postgresql postgresql-contrib && \
+    # Install pgvector if available (enables RAG features; app works without it)
+    apk --no-cache add pgvector 2>/dev/null || true
 
 # Nginx config
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
