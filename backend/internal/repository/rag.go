@@ -6,6 +6,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	wherePublicOnly    = "user_id IS NULL"
+	wherePublicOrOwner = "user_id IS NULL OR user_id = ?"
+)
+
 type RAGRepo struct {
 	db *gorm.DB
 }
@@ -18,23 +23,19 @@ func (r *RAGRepo) CreateEmbedding(emb *model.KnowledgeEmbedding) error {
 	return r.db.Create(emb).Error
 }
 
+// applyUserFilter adds the user visibility clause to a query.
+func applyUserFilter(query *gorm.DB, userID *string) *gorm.DB {
+	if userID != nil {
+		return query.Where(wherePublicOrOwner, *userID)
+	}
+	return query.Where(wherePublicOnly)
+}
+
 func (r *RAGRepo) FindSimilar(embedding []float32, limit int, userID *string) ([]model.KnowledgeEmbedding, error) {
 	var results []model.KnowledgeEmbedding
 
-	// pgvector distance operators:
-	// <=> : cosine distance
-	// <-> : L2 distance
-	// <#> : negative inner product
-
 	query := r.db.Order("embedding <=> ?")
-
-	if userID != nil {
-		// Search public content OR user's own private content
-		query = query.Where("user_id IS NULL OR user_id = ?", *userID)
-	} else {
-		// Only search public content for guests
-		query = query.Where("user_id IS NULL")
-	}
+	query = applyUserFilter(query, userID)
 
 	err := query.Limit(limit).Find(&results, pgvector.NewVector(embedding)).Error
 	return results, err
@@ -54,12 +55,7 @@ func (r *RAGRepo) FindSimilarWithScore(embedding []float32, limit int, userID *s
 	query := r.db.Table("knowledge_embeddings").
 		Select("*, embedding <=> ? AS distance", vec).
 		Order("distance ASC")
-
-	if userID != nil {
-		query = query.Where("user_id IS NULL OR user_id = ?", *userID)
-	} else {
-		query = query.Where("user_id IS NULL")
-	}
+	query = applyUserFilter(query, userID)
 
 	err := query.Limit(limit).Find(&results).Error
 	return results, err
@@ -79,12 +75,7 @@ func (r *RAGRepo) FindByKeyword(keywords string, limit int, userID *string) ([]K
 		Select("*, ts_rank(to_tsvector('simple', content), plainto_tsquery('simple', ?)) AS rank", keywords).
 		Where("to_tsvector('simple', content) @@ plainto_tsquery('simple', ?)", keywords).
 		Order("rank DESC")
-
-	if userID != nil {
-		query = query.Where("user_id IS NULL OR user_id = ?", *userID)
-	} else {
-		query = query.Where("user_id IS NULL")
-	}
+	query = applyUserFilter(query, userID)
 
 	err := query.Limit(limit).Find(&results).Error
 	return results, err

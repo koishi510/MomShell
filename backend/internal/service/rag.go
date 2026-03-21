@@ -129,15 +129,86 @@ type rrfCandidate struct {
 
 const rrfK = 60 // RRF constant
 
+// collectVectorCandidates adds vector search results to the candidate map, filtering by threshold.
+func (s *RAGService) collectVectorCandidates(candidates map[string]*rrfCandidate, vectorResults []repository.ScoredEmbedding) {
+	for rank, vr := range vectorResults {
+		if vr.Distance > s.cfg.SimilarityThreshold {
+			continue
+		}
+		candidates[vr.ID] = &rrfCandidate{
+			embedding:  vr.KnowledgeEmbedding,
+			vectorRank: rank,
+			kwRank:     -1,
+		}
+	}
+}
+
+// collectKeywordCandidates merges keyword search results into the candidate map.
+func collectKeywordCandidates(candidates map[string]*rrfCandidate, kwResults []repository.KeywordResult) {
+	for rank, kr := range kwResults {
+		if c, ok := candidates[kr.ID]; ok {
+			c.kwRank = rank
+		} else {
+			candidates[kr.ID] = &rrfCandidate{
+				embedding:  kr.KnowledgeEmbedding,
+				vectorRank: -1,
+				kwRank:     rank,
+			}
+		}
+	}
+}
+
+// computeRRFScores calculates Reciprocal Rank Fusion scores for all candidates.
+func computeRRFScores(candidates map[string]*rrfCandidate) {
+	for _, c := range candidates {
+		if c.vectorRank >= 0 {
+			c.rrfScore += 0.7 / float64(rrfK+c.vectorRank)
+		}
+		if c.kwRank >= 0 {
+			c.rrfScore += 0.3 / float64(rrfK+c.kwRank)
+		}
+	}
+}
+
+// resolveMatchType determines the match type based on which retrieval paths found the candidate.
+func resolveMatchType(vectorRank, kwRank int) model.MatchType {
+	if vectorRank >= 0 && kwRank < 0 {
+		return model.MatchVector
+	}
+	if vectorRank < 0 && kwRank >= 0 {
+		return model.MatchKeyword
+	}
+	return model.MatchHybrid
+}
+
+// sortAndConvertCandidates sorts candidates by RRF score and converts to ScoredResult.
+func sortAndConvertCandidates(candidates map[string]*rrfCandidate) []model.ScoredResult {
+	sorted := make([]*rrfCandidate, 0, len(candidates))
+	for _, c := range candidates {
+		sorted = append(sorted, c)
+	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].rrfScore > sorted[j].rrfScore
+	})
+
+	results := make([]model.ScoredResult, 0, len(sorted))
+	for _, c := range sorted {
+		results = append(results, model.ScoredResult{
+			KnowledgeEmbedding: c.embedding,
+			Score:              c.rrfScore,
+			MatchType:          resolveMatchType(c.vectorRank, c.kwRank),
+		})
+	}
+	return results
+}
+
 // hybridRetrieve performs vector + keyword search and merges via RRF.
 func (s *RAGService) hybridRetrieve(ctx context.Context, qt queryTransformResult, userID *string) ([]model.ScoredResult, error) {
-	// Embed the rewritten query for vector search
 	embedding, err := s.client.CreateEmbedding(ctx, qt.RewrittenQuery)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create query embedding: %w", err)
 	}
 
-	// Fetch top-20 from both paths
 	const candidateLimit = 20
 
 	vectorResults, vecErr := s.ragRepo.FindSimilarWithScore(embedding, candidateLimit, userID)
@@ -150,69 +221,29 @@ func (s *RAGService) hybridRetrieve(ctx context.Context, qt queryTransformResult
 		log.Printf("[RAG] keyword search failed: %v", kwErr)
 	}
 
-	// Build candidate map keyed by ID
 	candidates := make(map[string]*rrfCandidate)
+	s.collectVectorCandidates(candidates, vectorResults)
+	collectKeywordCandidates(candidates, kwResults)
+	computeRRFScores(candidates)
 
-	for rank, vr := range vectorResults {
-		// Filter by similarity threshold (cosine distance: lower = more similar)
-		if vr.Distance > s.cfg.SimilarityThreshold {
-			continue
-		}
-		candidates[vr.ID] = &rrfCandidate{
-			embedding:  vr.KnowledgeEmbedding,
-			vectorRank: rank,
-			kwRank:     -1,
+	return sortAndConvertCandidates(candidates), nil
+}
+
+// applyRerankScores updates results with rerank scores and re-sorts by score descending.
+func applyRerankScores(results []model.ScoredResult, scores []openai.RerankResult) []model.ScoredResult {
+	scoreMap := make(map[string]float64, len(scores))
+	for _, s := range scores {
+		scoreMap[s.ID] = s.Score
+	}
+	for i := range results {
+		if score, ok := scoreMap[results[i].ID]; ok {
+			results[i].Score = score
 		}
 	}
-
-	for rank, kr := range kwResults {
-		if c, ok := candidates[kr.ID]; ok {
-			c.kwRank = rank
-		} else {
-			candidates[kr.ID] = &rrfCandidate{
-				embedding:  kr.KnowledgeEmbedding,
-				vectorRank: -1,
-				kwRank:     rank,
-			}
-		}
-	}
-
-	// Compute RRF scores
-	for _, c := range candidates {
-		if c.vectorRank >= 0 {
-			c.rrfScore += 0.7 / float64(rrfK+c.vectorRank)
-		}
-		if c.kwRank >= 0 {
-			c.rrfScore += 0.3 / float64(rrfK+c.kwRank)
-		}
-	}
-
-	// Sort by RRF score descending
-	sorted := make([]*rrfCandidate, 0, len(candidates))
-	for _, c := range candidates {
-		sorted = append(sorted, c)
-	}
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].rrfScore > sorted[j].rrfScore
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
 	})
-
-	// Convert to ScoredResult
-	results := make([]model.ScoredResult, 0, len(sorted))
-	for _, c := range sorted {
-		matchType := model.MatchHybrid
-		if c.vectorRank >= 0 && c.kwRank < 0 {
-			matchType = model.MatchVector
-		} else if c.vectorRank < 0 && c.kwRank >= 0 {
-			matchType = model.MatchKeyword
-		}
-		results = append(results, model.ScoredResult{
-			KnowledgeEmbedding: c.embedding,
-			Score:              c.rrfScore,
-			MatchType:          matchType,
-		})
-	}
-
-	return results, nil
+	return results
 }
 
 // rerank uses the LLM to re-score candidates by relevance.
@@ -235,23 +266,7 @@ func (s *RAGService) rerank(ctx context.Context, query string, results []model.S
 		return results
 	}
 
-	// Build score map
-	scoreMap := make(map[string]float64, len(scores))
-	for _, s := range scores {
-		scoreMap[s.ID] = s.Score
-	}
-
-	// Update scores and re-sort
-	for i := range results {
-		if score, ok := scoreMap[results[i].ID]; ok {
-			results[i].Score = score
-		}
-	}
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].Score > results[j].Score
-	})
-
-	return results
+	return applyRerankScores(results, scores)
 }
 
 // Search is the main entry point for RAG retrieval.
