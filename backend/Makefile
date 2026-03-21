@@ -1,4 +1,4 @@
-.PHONY: run build test clean
+.PHONY: run build test lint clean
 
 run:
 	go run cmd/server/main.go
@@ -8,6 +8,9 @@ build:
 
 test:
 	go test ./...
+
+lint:
+	golangci-lint run ./...
 
 clean:
 	rm -rf bin/
