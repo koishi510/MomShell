@@ -59,7 +59,7 @@ lint: lint-backend lint-frontend ## Run all linters
 
 lint-backend: ## Run backend linter (go vet)
 	@echo "$(CYAN)Linting backend...$(RESET)"
-	cd backend && go vet ./...
+	cd backend && go vet ./... && golangci-lint run ./...
 
 lint-frontend: ## Run frontend linter (eslint)
 	@echo "$(CYAN)Linting frontend...$(RESET)"
