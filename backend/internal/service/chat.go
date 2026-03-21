@@ -342,7 +342,7 @@ func (s *ChatService) chatAuthenticated(ctx context.Context, msg dto.UserMessage
 
 	// Perform Vector Search (RAG)
 	if s.ragService != nil {
-		ragResults, _ := s.ragService.SearchSimilar(ctx, msg.Content, 5, &userID)
+		ragResults, _ := s.ragService.Search(ctx, msg.Content, &userID)
 		ragContext := s.ragService.FormatContext(ragResults)
 		systemPrompt = appendRAGResults(systemPrompt, ragContext)
 	}
@@ -473,7 +473,7 @@ func (s *ChatService) chatGuest(ctx context.Context, msg dto.UserMessage) (*dto.
 
 	// Perform Vector Search (RAG)
 	if s.ragService != nil {
-		ragResults, _ := s.ragService.SearchSimilar(ctx, msg.Content, 5, nil)
+		ragResults, _ := s.ragService.Search(ctx, msg.Content, nil)
 		ragContext := s.ragService.FormatContext(ragResults)
 		systemPrompt = appendRAGResults(systemPrompt, ragContext)
 	}

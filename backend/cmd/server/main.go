@@ -68,7 +68,7 @@ func main() {
 	}
 
 	// Initialize RAG service
-	ragService := service.NewRAGService(chatClient, ragRepo)
+	ragService := service.NewRAGService(chatClient, ragRepo, cfg)
 
 	// Initialize services
 	moderationService := service.NewModerationService()

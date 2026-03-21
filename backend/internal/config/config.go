@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -41,6 +42,11 @@ type Config struct {
 	AdminUsername string
 	AdminEmail    string
 	AdminPassword string
+
+	// RAG
+	RAGSimilarityThreshold float64
+	RAGTopK                int
+	RAGRerankEnabled       bool
 }
 
 func Load() *Config {
@@ -66,6 +72,9 @@ func Load() *Config {
 		AdminUsername:             getEnv("ADMIN_USERNAME", ""),
 		AdminEmail:                getEnv("ADMIN_EMAIL", ""),
 		AdminPassword:             getEnv("ADMIN_PASSWORD", ""),
+		RAGSimilarityThreshold:    getEnvFloat64("RAG_SIMILARITY_THRESHOLD", 0.8),
+		RAGTopK:                   getEnvInt("RAG_TOP_K", 5),
+		RAGRerankEnabled:          getEnvBool("RAG_RERANK_ENABLED", true),
 	}
 
 	if cfg.JWTSecretKey == "change-me-in-production" {
@@ -92,4 +101,31 @@ func getEnvInt(key string, fallback int) int {
 		return fallback
 	}
 	return i
+}
+
+func getEnvFloat64(key string, fallback float64) float64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return fallback
+	}
+	return f
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	switch strings.ToLower(v) {
+	case "true", "1", "yes":
+		return true
+	case "false", "0", "no":
+		return false
+	default:
+		return fallback
+	}
 }
