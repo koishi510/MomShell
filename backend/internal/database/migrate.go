@@ -48,6 +48,11 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
+	// Create GIN index for full-text search on knowledge_embeddings.content
+	if hasPgvector {
+		db.Exec("CREATE INDEX IF NOT EXISTS idx_knowledge_embeddings_content_fts ON knowledge_embeddings USING GIN (to_tsvector('simple', content))")
+	}
+
 	// Seed default daily tasks if none exist
 	seedDailyTasks(db)
 	seedAchievements(db)

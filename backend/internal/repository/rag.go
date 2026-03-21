@@ -40,6 +40,56 @@ func (r *RAGRepo) FindSimilar(embedding []float32, limit int, userID *string) ([
 	return results, err
 }
 
+// ScoredEmbedding holds a KnowledgeEmbedding with its cosine distance score.
+type ScoredEmbedding struct {
+	model.KnowledgeEmbedding
+	Distance float64
+}
+
+// FindSimilarWithScore returns results with cosine distance scores.
+func (r *RAGRepo) FindSimilarWithScore(embedding []float32, limit int, userID *string) ([]ScoredEmbedding, error) {
+	var results []ScoredEmbedding
+
+	vec := pgvector.NewVector(embedding)
+	query := r.db.Table("knowledge_embeddings").
+		Select("*, embedding <=> ? AS distance", vec).
+		Order("distance ASC")
+
+	if userID != nil {
+		query = query.Where("user_id IS NULL OR user_id = ?", *userID)
+	} else {
+		query = query.Where("user_id IS NULL")
+	}
+
+	err := query.Limit(limit).Find(&results).Error
+	return results, err
+}
+
+// KeywordResult holds a KnowledgeEmbedding with its ts_rank score.
+type KeywordResult struct {
+	model.KnowledgeEmbedding
+	Rank float64
+}
+
+// FindByKeyword performs PostgreSQL full-text search on the content column.
+func (r *RAGRepo) FindByKeyword(keywords string, limit int, userID *string) ([]KeywordResult, error) {
+	var results []KeywordResult
+
+	query := r.db.Table("knowledge_embeddings").
+		Select("*, ts_rank(to_tsvector('simple', content), plainto_tsquery('simple', ?)) AS rank", keywords).
+		Where("to_tsvector('simple', content) @@ plainto_tsquery('simple', ?)", keywords).
+		Order("rank DESC")
+
+	if userID != nil {
+		query = query.Where("user_id IS NULL OR user_id = ?", *userID)
+	} else {
+		query = query.Where("user_id IS NULL")
+	}
+
+	err := query.Limit(limit).Find(&results).Error
+	return results, err
+}
+
 func (r *RAGRepo) Exists(source model.KnowledgeSource, sourceID string) (bool, error) {
 	var count int64
 	err := r.db.Model(&model.KnowledgeEmbedding{}).

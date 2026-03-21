@@ -34,3 +34,19 @@ func (ke *KnowledgeEmbedding) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+// MatchType indicates which retrieval path found this result.
+type MatchType string
+
+const (
+	MatchVector  MatchType = "vector"
+	MatchKeyword MatchType = "keyword"
+	MatchHybrid  MatchType = "hybrid"
+)
+
+// ScoredResult wraps a knowledge embedding with relevance scoring metadata.
+type ScoredResult struct {
+	KnowledgeEmbedding
+	Score     float64   `json:"score"`
+	MatchType MatchType `json:"match_type"`
+}

@@ -171,6 +171,85 @@ func (c *Client) CreateEmbedding(ctx context.Context, input string) ([]float32, 
 	return embResp.Data[0].Embedding, nil
 }
 
+// RerankCandidate is a single candidate for LLM-based reranking.
+type RerankCandidate struct {
+	ID      string
+	Content string
+}
+
+// RerankResult holds the reranked score for a candidate.
+type RerankResult struct {
+	ID    string
+	Score float64
+}
+
+// Rerank uses the LLM to score each candidate's relevance to the query.
+// Returns scores in the same order as candidates. On failure, returns nil error
+// so callers can fall back to the original ranking.
+func (c *Client) Rerank(ctx context.Context, query string, candidates []RerankCandidate) ([]RerankResult, error) {
+	if len(candidates) == 0 {
+		return nil, nil
+	}
+
+	var sb strings.Builder
+	for i, cand := range candidates {
+		fmt.Fprintf(&sb, "[%d] %s\n", i, cand.Content)
+	}
+
+	prompt := fmt.Sprintf(`给定用户问题和候选文档列表，为每个文档的相关性打分（0-10分，10分最相关）。
+只返回JSON数组，格式：[{"index":0,"score":8},{"index":1,"score":3}]
+不要返回其他内容。
+
+用户问题：%s
+
+候选文档：
+%s`, query, sb.String())
+
+	messages := []Message{
+		{Role: "system", Content: "你是一个文档相关性评分助手。只返回JSON数组。"},
+		{Role: "user", Content: prompt},
+	}
+
+	rawContent, err := c.Chat(ctx, messages)
+	if err != nil {
+		return nil, fmt.Errorf("rerank LLM call failed: %w", err)
+	}
+
+	// Parse the JSON array response
+	type scoreItem struct {
+		Index int     `json:"index"`
+		Score float64 `json:"score"`
+	}
+
+	// Try direct parse, then extract JSON from markdown
+	var scores []scoreItem
+	rawContent = strings.TrimSpace(rawContent)
+	if err := json.Unmarshal([]byte(rawContent), &scores); err != nil {
+		// Try extracting JSON array from response
+		start := strings.Index(rawContent, "[")
+		end := strings.LastIndex(rawContent, "]")
+		if start >= 0 && end > start {
+			if err2 := json.Unmarshal([]byte(rawContent[start:end+1]), &scores); err2 != nil {
+				return nil, fmt.Errorf("failed to parse rerank response: %w", err2)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to parse rerank response: %w", err)
+		}
+	}
+
+	results := make([]RerankResult, len(candidates))
+	for i := range candidates {
+		results[i] = RerankResult{ID: candidates[i].ID, Score: 0}
+	}
+	for _, s := range scores {
+		if s.Index >= 0 && s.Index < len(results) {
+			results[s.Index].Score = s.Score
+		}
+	}
+
+	return results, nil
+}
+
 type imageRequest struct {
 	Model             string  `json:"model"`
 	Prompt            string  `json:"prompt"`
