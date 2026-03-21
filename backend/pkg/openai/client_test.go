@@ -445,3 +445,155 @@ func TestDoPost_SetsHeaders(t *testing.T) {
 		t.Errorf("custom header = %q, want 'val'", gotCustom)
 	}
 }
+
+// --- parseRerankScores tests ---
+
+func TestParseRerankScores_DirectJSON(t *testing.T) {
+	scores, err := parseRerankScores(`[{"index":0,"score":8},{"index":1,"score":3}]`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(scores) != 2 {
+		t.Fatalf("expected 2 scores, got %d", len(scores))
+	}
+	if scores[0].Index != 0 || scores[0].Score != 8 {
+		t.Errorf("score[0] = %+v", scores[0])
+	}
+	if scores[1].Index != 1 || scores[1].Score != 3 {
+		t.Errorf("score[1] = %+v", scores[1])
+	}
+}
+
+func TestParseRerankScores_MarkdownWrapped(t *testing.T) {
+	input := "```json\n[{\"index\":0,\"score\":7}]\n```"
+	scores, err := parseRerankScores(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(scores) != 1 || scores[0].Score != 7 {
+		t.Errorf("unexpected scores: %+v", scores)
+	}
+}
+
+func TestParseRerankScores_WithPreamble(t *testing.T) {
+	input := "Here are the scores:\n[{\"index\":0,\"score\":5},{\"index\":1,\"score\":9}]\nDone."
+	scores, err := parseRerankScores(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(scores) != 2 {
+		t.Fatalf("expected 2 scores, got %d", len(scores))
+	}
+}
+
+func TestParseRerankScores_NoArray(t *testing.T) {
+	_, err := parseRerankScores("no json here at all")
+	if err == nil {
+		t.Fatal("expected error for input without JSON array")
+	}
+}
+
+func TestParseRerankScores_EmptyArray(t *testing.T) {
+	scores, err := parseRerankScores("[]")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(scores) != 0 {
+		t.Errorf("expected empty array, got %d", len(scores))
+	}
+}
+
+func TestParseRerankScores_InvalidJSON(t *testing.T) {
+	_, err := parseRerankScores("[{bad json}]")
+	if err == nil {
+		t.Fatal("expected error for invalid JSON")
+	}
+}
+
+// --- Rerank integration tests ---
+
+func TestRerank_EmptyCandidates(t *testing.T) {
+	c := NewClient("key", "http://localhost", "model", "embed")
+	results, err := c.Rerank(context.Background(), "query", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if results != nil {
+		t.Errorf("expected nil, got %+v", results)
+	}
+}
+
+func TestRerank_Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := map[string]interface{}{
+			"choices": []map[string]interface{}{
+				{
+					"message": map[string]string{
+						"content": `[{"index":0,"score":8},{"index":1,"score":2}]`,
+					},
+				},
+			},
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := NewClient("key", srv.URL, "model", "embed")
+	candidates := []RerankCandidate{
+		{ID: "a", Content: "doc1"},
+		{ID: "b", Content: "doc2"},
+	}
+	results, err := c.Rerank(context.Background(), "test query", candidates)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+	if results[0].ID != "a" || results[0].Score != 8 {
+		t.Errorf("results[0] = %+v", results[0])
+	}
+	if results[1].ID != "b" || results[1].Score != 2 {
+		t.Errorf("results[1] = %+v", results[1])
+	}
+}
+
+func TestRerank_OutOfBoundsIndex(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := map[string]interface{}{
+			"choices": []map[string]interface{}{
+				{
+					"message": map[string]string{
+						"content": `[{"index":0,"score":5},{"index":99,"score":10}]`,
+					},
+				},
+			},
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := NewClient("key", srv.URL, "model", "embed")
+	candidates := []RerankCandidate{{ID: "a", Content: "doc1"}}
+	results, err := c.Rerank(context.Background(), "query", candidates)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if results[0].Score != 5 {
+		t.Errorf("expected score 5, got %f", results[0].Score)
+	}
+}
+
+func TestRerank_LLMError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c := NewClient("key", srv.URL, "model", "embed")
+	candidates := []RerankCandidate{{ID: "a", Content: "doc1"}}
+	_, err := c.Rerank(context.Background(), "query", candidates)
+	if err == nil {
+		t.Fatal("expected error for server failure")
+	}
+}

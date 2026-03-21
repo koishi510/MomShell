@@ -183,6 +183,31 @@ type RerankResult struct {
 	Score float64
 }
 
+// rerankScoreItem represents a single score from the rerank LLM response.
+type rerankScoreItem struct {
+	Index int     `json:"index"`
+	Score float64 `json:"score"`
+}
+
+// parseRerankScores parses the JSON array of scores from raw LLM output.
+func parseRerankScores(raw string) ([]rerankScoreItem, error) {
+	raw = strings.TrimSpace(raw)
+	var scores []rerankScoreItem
+	if err := json.Unmarshal([]byte(raw), &scores); err == nil {
+		return scores, nil
+	}
+	// Try extracting JSON array from markdown wrapper
+	start := strings.Index(raw, "[")
+	end := strings.LastIndex(raw, "]")
+	if start >= 0 && end > start {
+		if err := json.Unmarshal([]byte(raw[start:end+1]), &scores); err == nil {
+			return scores, nil
+		}
+		return nil, fmt.Errorf("failed to parse rerank JSON array: %s", raw[start:end+1])
+	}
+	return nil, fmt.Errorf("no JSON array found in rerank response")
+}
+
 // Rerank uses the LLM to score each candidate's relevance to the query.
 // Returns scores in the same order as candidates. On failure, returns nil error
 // so callers can fall back to the original ranking.
@@ -215,26 +240,9 @@ func (c *Client) Rerank(ctx context.Context, query string, candidates []RerankCa
 		return nil, fmt.Errorf("rerank LLM call failed: %w", err)
 	}
 
-	// Parse the JSON array response
-	type scoreItem struct {
-		Index int     `json:"index"`
-		Score float64 `json:"score"`
-	}
-
-	// Try direct parse, then extract JSON from markdown
-	var scores []scoreItem
-	rawContent = strings.TrimSpace(rawContent)
-	if err := json.Unmarshal([]byte(rawContent), &scores); err != nil {
-		// Try extracting JSON array from response
-		start := strings.Index(rawContent, "[")
-		end := strings.LastIndex(rawContent, "]")
-		if start >= 0 && end > start {
-			if err2 := json.Unmarshal([]byte(rawContent[start:end+1]), &scores); err2 != nil {
-				return nil, fmt.Errorf("failed to parse rerank response: %w", err2)
-			}
-		} else {
-			return nil, fmt.Errorf("failed to parse rerank response: %w", err)
-		}
+	scores, err := parseRerankScores(rawContent)
+	if err != nil {
+		return nil, err
 	}
 
 	results := make([]RerankResult, len(candidates))
