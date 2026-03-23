@@ -8,7 +8,7 @@
     <!-- Welcome Header -->
     <div class="dc-home-header dc-float" style="--float-i:0">
       <h2 class="dc-greeting">欢迎来到 <span class="dc-hl">MomShell</span></h2>
-      <p class="dc-subtitle">版本 1.3.0</p>
+      <p class="dc-subtitle">版本 1.3.2</p>
     </div>
 
     <!-- Main Dashboard Grid -->
