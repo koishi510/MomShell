@@ -33,7 +33,7 @@
     "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitejs/plugin-vue": "^6.0.5",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "eslint-plugin-vue": "^10.8.0",
     "puppeteer": "^24.39.1",
     "tsx": "^4.21.0",
