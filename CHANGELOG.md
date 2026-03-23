@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-03-23
+
+### Added
+
+- **RAG hybrid retrieval pipeline**: Replaced basic single-vector cosine search with a 4-stage pipeline — query transformation (LLM keyword extraction + query rewrite), hybrid retrieval (vector + keyword search merged via Reciprocal Rank Fusion), LLM-based reranking with graceful fallback, and configurable similarity threshold / top-K filtering
+- **Full-text search index**: Added GIN tsvector index for keyword-based document retrieval alongside vector search
+- **RAG configuration**: Environment-configurable RAG parameters (similarity threshold, top-K, rerank toggle) via `internal/config`
+- **Rerank API support**: New `Rerank` method in OpenAI-compatible client for LLM-based passage reranking
+
+### Changed
+
+- **RAG code quality**: Broke down `hybridRetrieve` into 5 focused sub-functions and extracted `parseRerankScores` / `applyRerankScores` as testable pure functions to reduce cognitive complexity
+- **SQL literal deduplication**: Extracted repeated SQL where clause strings into constants in RAG repository
+- **golangci-lint integration**: Added `golangci-lint` to `make lint` pipeline; fixed errcheck warnings in tests using `t.Setenv`
+
+### Fixed
+
+- **SonarCloud quality gate**: Resolved duplicated string literals, high cognitive complexity, and insufficient test coverage flagged by SonarCloud
+- **Test coverage improvements**: Added comprehensive tests for RAG service (RRF scoring, match type resolution, candidate collection, threshold filtering, rerank score application), config package, and OpenAI client rerank functionality
+
 ## [1.3.1] - 2026-03-21
 
 ### Added
