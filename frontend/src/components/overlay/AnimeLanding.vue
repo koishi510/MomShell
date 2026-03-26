@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
-import anime from 'animejs'
+import { animate, stagger, random } from 'animejs'
 import { useUiStore } from '@/stores/ui'
 
 const uiStore = useUiStore()
@@ -76,8 +76,7 @@ function onPointerMove(e: PointerEvent) {
 // ─── Reset when panel closes ───────────────────
 watch(isBlurred, (blurred) => {
   if (!blurred) {
-    anime({
-      targets: '.shell-svg',
+    animate('.shell-svg', {
       scale: 1,
       opacity: 1,
       rotate: '0turn',
@@ -85,16 +84,14 @@ watch(isBlurred, (blurred) => {
       easing: 'easeOutQuart'
     })
 
-    anime({
-      targets: '.title-container',
+    animate('.title-container', {
       opacity: 1,
       translateY: 0,
       duration: 800,
       easing: 'easeOutBack'
     })
 
-    anime({
-      targets: '.particle',
+    animate('.particle', {
       opacity: 0.6,
       duration: 1200,
       easing: 'easeOutQuad'
@@ -107,24 +104,22 @@ onMounted(() => {
   rafId = requestAnimationFrame(updatePearl)
 
   // 1. Particle entrance and floating
-  anime({
-    targets: '.particle',
-    translateX: () => anime.random(-500, 500),
-    translateY: () => anime.random(-300, 300),
-    scale: () => anime.random(0.5, 1.5),
+  animate('.particle', {
+    translateX: () => random(-500, 500),
+    translateY: () => random(-300, 300),
+    scale: () => random(0.5, 1.5),
     opacity: [0, 0.6],
     duration: 3000,
-    delay: anime.stagger(20),
+    delay: stagger(20),
     easing: 'easeOutExpo'
   })
 
-  anime({
-    targets: '.particle',
+  animate('.particle', {
     translateX: '+=20',
     translateY: '+=20',
     direction: 'alternate',
     loop: true,
-    duration: () => anime.random(3000, 5000),
+    duration: () => random(3000, 5000),
     easing: 'easeInOutSine'
   })
 
@@ -137,8 +132,7 @@ onMounted(() => {
     path.style.strokeDasharray = `${length * trailRatio} ${length * (1 - trailRatio)}`
     path.style.strokeDashoffset = String(length)
 
-    anime({
-      targets: path,
+    animate(path, {
       strokeDashoffset: [length, 0],
       duration: 2600 + i * 700,
       easing: 'linear',
@@ -147,20 +141,18 @@ onMounted(() => {
   })
 
   // 3. Title Stagger
-  anime({
-    targets: '.letter',
+  animate('.letter', {
     translateY: [40, 0],
     opacity: [0, 1],
     rotateZ: [20, 0],
     filter: ['blur(10px)', 'blur(0px)'],
     duration: 1500,
-    delay: anime.stagger(100, { start: 500 }),
+    delay: stagger(100, { start: 500 }),
     easing: 'easeOutElastic(1, .6)'
   })
 
   // 4. Tagline fade in
-  anime({
-    targets: '.tagline',
+  animate('.tagline', {
     opacity: [0, 0.5],
     translateY: [10, 0],
     duration: 1000,
@@ -178,8 +170,7 @@ const handleEnter = () => {
   if (isBlurred.value) return
 
   // Shell spirals inward and dissolves
-  anime({
-    targets: '.shell-svg',
+  animate('.shell-svg', {
     scale: [1, 0.12],
     rotate: '1turn',
     opacity: [1, 0],
@@ -188,8 +179,7 @@ const handleEnter = () => {
   })
 
   // Title fades upward
-  anime({
-    targets: '.title-container',
+  animate('.title-container', {
     opacity: 0,
     translateY: -24,
     duration: 500,
@@ -197,8 +187,7 @@ const handleEnter = () => {
   })
 
   // Particles converge to center and vanish
-  anime({
-    targets: '.particle',
+  animate('.particle', {
     translateX: 0,
     translateY: 0,
     scale: 0,
